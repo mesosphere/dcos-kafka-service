@@ -1,0 +1,27 @@
+apply plugin: 'java'
+apply plugin: 'application'
+
+sourceCompatibility = 1.7
+targetCompatibility = 1.7
+
+mainClassName = "org.apache.mesos.kafka.scheduler.Main"
+
+repositories {
+  mavenCentral()
+}
+
+ext {
+  mesosVer = "0.24.1"
+    loggingVer = "1.1.1"
+    guiceVer = "3.0"
+}
+
+dependencies {
+  compile "org.apache.mesos:mesos:${mesosVer}"
+    compile "commons-logging:commons-logging:${loggingVer}"
+    compile "com.google.inject:guice:${guiceVer}"
+}
+
+task wrapper(type: Wrapper) {
+  gradleVersion = '2.3'
+}

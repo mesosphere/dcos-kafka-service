@@ -1,0 +1,30 @@
+plugins {
+    id 'com.github.johnrengelman.shadow' version '1.2.2'
+}
+
+ext {
+  mesosVer = "0.24.1"
+  loggingVer = "1.1.1"
+  guiceVer = "3.0"
+}
+
+dependencies {
+  compile project(':mesos-commons')
+  compile "org.apache.mesos:mesos:${mesosVer}"
+  compile "commons-logging:commons-logging:${loggingVer}"
+  compile "com.google.inject:guice:${guiceVer}"
+}
+
+shadowJar {
+    classifier = "uber"
+
+    mergeServiceFiles()
+
+    exclude 'META-INF/*.SF'
+    exclude 'META-INF/*.DSA'
+    exclude 'META-INF/*.RSA'
+}
+
+task wrapper(type: Wrapper) {
+  gradleVersion = '2.3'
+}

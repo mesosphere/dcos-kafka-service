@@ -1,0 +1,3 @@
+[submodule "mesos-commons"]
+	path = mesos-commons
+	url = git@github.com:mesosphere/mesos-commons.git

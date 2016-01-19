@@ -29,11 +29,12 @@ import org.apache.mesos.SchedulerDriver;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Observable;
 
 /**
  * Kafka Framework Scheduler.
  */
-public class KafkaScheduler implements org.apache.mesos.Scheduler, Runnable {
+public class KafkaScheduler extends Observable implements org.apache.mesos.Scheduler, Runnable {
   private final Log log = LogFactory.getLog(KafkaScheduler.class);
 
   private ConfigurationService config;
@@ -45,6 +46,7 @@ public class KafkaScheduler implements org.apache.mesos.Scheduler, Runnable {
   public KafkaScheduler() {
     config = KafkaConfigService.getConfigService();
     state = KafkaStateService.getStateService();
+    addObserver(state);
 
     offerReqProvider = new OfferRequirementProvider();
     offerAccepter =
@@ -99,6 +101,9 @@ public class KafkaScheduler implements org.apache.mesos.Scheduler, Runnable {
         status.getTaskId().getValue(),
         status.getState().toString(),
         status.getMessage()));
+
+    setChanged();
+    notifyObservers(status);
   }
 
   @Override

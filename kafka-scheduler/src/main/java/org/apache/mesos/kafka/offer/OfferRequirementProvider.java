@@ -1,4 +1,4 @@
-package org.apache.mesos.kafka.scheduler;
+package org.apache.mesos.kafka.offer;
 
 import java.util.Arrays;
 import java.util.List;
@@ -33,7 +33,8 @@ public class OfferRequirementProvider {
     Resource cpus = ResourceBuilder.cpus(1.0);
 
     CommandInfoBuilder cmdInfoBuilder = new CommandInfoBuilder();
-    cmdInfoBuilder.setCommand("env");
+    cmdInfoBuilder.setCommand("ls -l");
+    cmdInfoBuilder.addUri("https://s3-us-west-2.amazonaws.com/gabriel-kafka-test/kafka_2.10-0.9.0.0.tgz");
 
     TaskInfoBuilder taskBuilder = new TaskInfoBuilder(taskId, name, "");
     taskBuilder.addResource(cpus);

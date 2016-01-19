@@ -3,12 +3,19 @@ package org.apache.mesos.kafka.scheduler;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.apache.mesos.MesosSchedulerDriver;
+import org.apache.mesos.kafka.config.KafkaConfigService;
+import org.apache.mesos.kafka.offer.LogOperationRecorder;
+import org.apache.mesos.kafka.offer.OfferRequirementProvider;
+import org.apache.mesos.kafka.offer.ZooKeeperOperationRecorder;
+
+import org.apache.mesos.config.ConfigurationService;
 import org.apache.mesos.offer.OfferAccepter;
 import org.apache.mesos.offer.OfferEvaluator;
 import org.apache.mesos.offer.OfferRecommendation;
 import org.apache.mesos.offer.OfferRequirement;
 import org.apache.mesos.offer.OperationRecorder;
+
+import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos.ExecutorID;
 import org.apache.mesos.Protos.FrameworkID;
 import org.apache.mesos.Protos.FrameworkInfo;
@@ -27,11 +34,19 @@ import java.util.List;
  */
 public class KafkaScheduler implements org.apache.mesos.Scheduler, Runnable {
   private final Log log = LogFactory.getLog(KafkaScheduler.class);
-  private OperationRecorder opRecorder = new LogOperationRecorder();
-  private OfferRequirementProvider offerReqProvider = new OfferRequirementProvider();
-  private OfferAccepter offerAccepter = new OfferAccepter(opRecorder);
+
+  private ConfigurationService config;
+
+  private OfferRequirementProvider offerReqProvider;
+  private OfferAccepter offerAccepter;
 
   public KafkaScheduler() {
+    config = KafkaConfigService.getConfigService();
+    offerReqProvider = new OfferRequirementProvider();
+    offerAccepter =
+      new OfferAccepter(Arrays.asList(
+            new LogOperationRecorder(),
+            new ZooKeeperOperationRecorder()));
   }
 
   @Override
@@ -99,14 +114,19 @@ public class KafkaScheduler implements org.apache.mesos.Scheduler, Runnable {
 
   @Override
   public void run() {
-    FrameworkInfo.Builder frameworkInfo = FrameworkInfo.newBuilder()
-      .setName("kafka")
-      .setFailoverTimeout(600)
-      .setUser("root")
-      .setRole("*")
+    registerFramework(this, getFrameworkInfo(), "zk://master.mesos:2181/mesos");
+  }
+
+  private FrameworkInfo getFrameworkInfo() {
+
+    FrameworkInfo.Builder fwkInfoBuilder = FrameworkInfo.newBuilder()
+      .setName(config.get("FRAMEWORK_NAME"))
+      .setFailoverTimeout(Double.MAX_VALUE)
+      .setUser(config.get("USER"))
+      .setRole(config.get("ROLE"))
       .setCheckpoint(true);
 
-    registerFramework(this, frameworkInfo.build(), "zk://master.mesos:2181/mesos");
+    return fwkInfoBuilder.build();
   }
 
   private void logOffers(List<Offer> offers) {

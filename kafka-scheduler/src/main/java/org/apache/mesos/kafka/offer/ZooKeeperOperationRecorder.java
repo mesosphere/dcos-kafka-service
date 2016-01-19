@@ -7,8 +7,8 @@ import org.apache.mesos.offer.OperationRecorder;
 import org.apache.mesos.Protos.Offer;
 import org.apache.mesos.Protos.Offer.Operation;
 
-public class LogOperationRecorder implements OperationRecorder {
-  private final Log log = LogFactory.getLog(LogOperationRecorder.class);
+public class ZooKeeperOperationRecorder implements OperationRecorder {
+  private final Log log = LogFactory.getLog(ZooKeeperOperationRecorder.class);
 
   public void record(Operation operation, Offer offer) throws Exception {
     log.info("Offer: " + offer);

@@ -6,7 +6,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.kafka.config.KafkaConfigService;
 import org.apache.mesos.kafka.offer.LogOperationRecorder;
 import org.apache.mesos.kafka.offer.OfferRequirementProvider;
-import org.apache.mesos.kafka.offer.ZooKeeperOperationRecorder;
+import org.apache.mesos.kafka.offer.PersistentOperationRecorder;
+import org.apache.mesos.kafka.state.KafkaStateService;
 
 import org.apache.mesos.config.ConfigurationService;
 import org.apache.mesos.offer.OfferAccepter;
@@ -28,25 +29,30 @@ import org.apache.mesos.SchedulerDriver;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Observable;
 
 /**
  * Kafka Framework Scheduler.
  */
-public class KafkaScheduler implements org.apache.mesos.Scheduler, Runnable {
+public class KafkaScheduler extends Observable implements org.apache.mesos.Scheduler, Runnable {
   private final Log log = LogFactory.getLog(KafkaScheduler.class);
 
   private ConfigurationService config;
+  private KafkaStateService state;
 
   private OfferRequirementProvider offerReqProvider;
   private OfferAccepter offerAccepter;
 
   public KafkaScheduler() {
     config = KafkaConfigService.getConfigService();
+    state = KafkaStateService.getStateService();
+    addObserver(state);
+
     offerReqProvider = new OfferRequirementProvider();
     offerAccepter =
       new OfferAccepter(Arrays.asList(
             new LogOperationRecorder(),
-            new ZooKeeperOperationRecorder()));
+            new PersistentOperationRecorder()));
   }
 
   @Override
@@ -80,6 +86,7 @@ public class KafkaScheduler implements org.apache.mesos.Scheduler, Runnable {
   @Override
   public void registered(SchedulerDriver driver, FrameworkID frameworkId, MasterInfo masterInfo) {
     log.info("Registered framework frameworkId: " + frameworkId.getValue());
+    state.setFrameworkId(frameworkId);
   }
 
   @Override
@@ -94,6 +101,9 @@ public class KafkaScheduler implements org.apache.mesos.Scheduler, Runnable {
         status.getTaskId().getValue(),
         status.getState().toString(),
         status.getMessage()));
+
+    setChanged();
+    notifyObservers(status);
   }
 
   @Override
@@ -114,17 +124,22 @@ public class KafkaScheduler implements org.apache.mesos.Scheduler, Runnable {
 
   @Override
   public void run() {
-    registerFramework(this, getFrameworkInfo(), "zk://master.mesos:2181/mesos");
+    String zkPath = "zk://" + config.get("ZOOKEEPER_ADDR") + "/mesos";
+    registerFramework(this, getFrameworkInfo(), zkPath);
   }
 
   private FrameworkInfo getFrameworkInfo() {
-
     FrameworkInfo.Builder fwkInfoBuilder = FrameworkInfo.newBuilder()
       .setName(config.get("FRAMEWORK_NAME"))
       .setFailoverTimeout(Double.MAX_VALUE)
       .setUser(config.get("USER"))
       .setRole(config.get("ROLE"))
       .setCheckpoint(true);
+
+    FrameworkID fwkId = state.getFrameworkId();
+    if (fwkId != null) {
+      fwkInfoBuilder.setId(fwkId);
+    }
 
     return fwkInfoBuilder.build();
   }

@@ -1,8 +1,11 @@
 package org.apache.mesos.kafka.offer;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+
+import com.google.common.base.Joiner;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -71,7 +74,7 @@ public class OfferRequirementProvider {
       for (int i=0; i<targetBrokerCount; i++) {
         String brokerName = "broker-" + i;
         if (!taskNames.contains(brokerName)) {
-          return i; 
+          return i;
         }
       }
     } catch (Exception ex) {
@@ -89,32 +92,51 @@ public class OfferRequirementProvider {
     Resource cpus = ResourceBuilder.cpus(1.0);
     Resource mem = ResourceBuilder.mem(2048);
 
-    String statsdCmdFmt = "";
-    String statsdCmd = "";
+    List<String> commands = new ArrayList<>();
 
-    String kafkaCmdFmt = "export PATH=$PATH:$MESOS_SANDBOX/jre/bin && env && "
-                       + "$MESOS_SANDBOX/$KAFKA_VER_NAME/bin/kafka-server-start.sh "
-                       + "$MESOS_SANDBOX/$KAFKA_VER_NAME/config/server.properties "
-                       + "--override zookeeper.connect=$KAFKA_ZK/$FRAMEWORK_NAME "
-                       + "--override broker.id=%d "
-                       + "--override log.dirs=$MESOS_SANDBOX/kafka-logs "
-                       + "$STATSD_OVERRIDES";
+    // Run the hook script to perform any additional preparation work ...
+    boolean containerHooksEnabled = true; // TODO this could be a config option?
+    if (containerHooksEnabled) {
+      commands.add("echo \"### HOOK BEGIN\"");
+      // Do not use the /bin/bash-specific "source"
+      commands.add(". $MESOS_SANDBOX/container-hook/container-hook.sh");
+      commands.add("echo \"### HOOK END\"");
+    }
 
-    String kafkaCmd = String.format(kafkaCmdFmt, brokerId);
+    // ... then some quick housekeeping ...
+    commands.add("export PATH=$PATH:$MESOS_SANDBOX/jre/bin");
+    commands.add("echo \"### ENV BEGIN\"");
+    commands.add("env");
+    commands.add("echo \"### ENV END\"");
 
-    CommandInfoBuilder cmdInfoBuilder = new CommandInfoBuilder();
-    cmdInfoBuilder.addEnvironmentVar("KAFKA_ZK", config.get("ZOOKEEPER_ADDR"));
-    cmdInfoBuilder.addEnvironmentVar("KAFKA_VER_NAME", config.get("KAFKA_VER_NAME"));
-    cmdInfoBuilder.addEnvironmentVar("FRAMEWORK_NAME", config.get("FRAMEWORK_NAME"));
-    cmdInfoBuilder.addUri(config.get("KAFKA_URI"));
-    cmdInfoBuilder.addUri(config.get("JAVA_URI"));
-    cmdInfoBuilder.setCommand(statsdCmd + " && " + kafkaCmd);
+    // ... then run Kafka itself.
+    // TODO any tuning flags could be added here
+    String kafkaStartCmd = String.format("$MESOS_SANDBOX/%1$s/bin/kafka-server-start.sh "
+        + "$MESOS_SANDBOX/%1$s/config/server.properties "
+        + "--override zookeeper.connect=%2$s/%3$s "
+        + "--override broker.id=%4$s "
+        + "--override log.dirs=$MESOS_SANDBOX/kafka-logs",
+        config.get("KAFKA_VER_NAME"), // #1
+        config.get("ZOOKEEPER_ADDR"), // #2
+        config.get("FRAMEWORK_NAME"), // #3
+        brokerId); // #4
+    if (containerHooksEnabled) {
+      commands.add("echo Additional Kafka args: $CONTAINER_HOOK_FLAGS");
+      kafkaStartCmd += " $CONTAINER_HOOK_FLAGS";
+    }
+    commands.add(kafkaStartCmd);
+    String command = Joiner.on(" && ").join(commands);
+    log.info("Built command: " + command);
 
-    TaskInfoBuilder taskBuilder = new TaskInfoBuilder(taskId, brokerName, "");
-    taskBuilder.addResource(cpus);
-    taskBuilder.addResource(mem);
-    taskBuilder.setCommand(cmdInfoBuilder.build());
-
-    return Arrays.asList(taskBuilder.build());
+    return Arrays.asList(new TaskInfoBuilder(taskId, brokerName, "" /* slaveId */)
+        .addResource(cpus)
+        .addResource(mem)
+        .setCommand(new CommandInfoBuilder()
+            .addUri(config.get("KAFKA_URI"))
+            .addUri(config.get("CONTAINER_HOOK_URI"))
+            .addUri(config.get("JAVA_URI"))
+            .setCommand(command)
+            .build())
+        .build());
   }
 }

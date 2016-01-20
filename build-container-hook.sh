@@ -1,19 +1,19 @@
 #!/bin/sh
 
 #
-# This script is used to build an executor package with the following structure:
+# This script is used to build a container hook package for Kafka with the following structure:
 #
-#   kafka-executor/kafka-executor.sh
-#   kafka-executor/libs/kafka-statsd-metrics2-0.4.1.jar
-#   kafka-executor/libs/java-dogstatsd-client-2.0.13.jar
+#   container-hook/container-hook.sh
+#   container-hook/libs/kafka-statsd-metrics2-0.4.1.jar
+#   container-hook/libs/java-dogstatsd-client-2.0.13.jar
 #
 # The Kafka distribution itself is provided separately from this package.
 #
 
-EXECUTOR_VERSION="0.1.0"
-EXECUTOR_BASE_DIR="kafka-executor"
-EXECUTOR_PACKAGE_FILENAME="${EXECUTOR_BASE_DIR}-${EXECUTOR_VERSION}.tgz"
-EXECUTOR_SCRIPT="kafka-executor.sh"
+CONTAINER_HOOK_VERSION="0.1.0"
+CONTAINER_HOOK_BASE_DIR="container-hook"
+CONTAINER_HOOK_PACKAGE_FILENAME="${CONTAINER_HOOK_BASE_DIR}-${CONTAINER_HOOK_VERSION}.tgz"
+CONTAINER_HOOK_SCRIPT="container-hook.sh"
 
 DOGSTATSD_CLIENT_VERSION="2.0.13"
 DOGSTATSD_CLIENT_FILENAME="java-dogstatsd-client-${DOGSTATSD_CLIENT_VERSION}.jar"
@@ -26,7 +26,7 @@ KAFKA_STATSD_DOWNLOAD_URL="https://bintray.com/artifact/download/airbnb/jars/com
 PROJ_ROOT_PATH="$(dirname $0)"
 PACKAGE_PATH="${PROJ_ROOT_PATH}/package"
 DOWNLOAD_CACHE_PATH="${PACKAGE_PATH}/download_cache"
-STAGING_PATH="${PACKAGE_PATH}/${EXECUTOR_BASE_DIR}"
+STAGING_PATH="${PACKAGE_PATH}/${CONTAINER_HOOK_BASE_DIR}"
 
 download_copy () {
     DOWNLOAD_FILENAME="$(basename $1)"
@@ -57,13 +57,13 @@ download_copy ${DOGSTATSD_CLIENT_DOWNLOAD_URL} ${KAFKA_LIBS_PATH}
 download_copy ${KAFKA_STATSD_DOWNLOAD_URL} ${KAFKA_LIBS_PATH}
 
 # copy executor script to /
-cp ${PROJ_ROOT_PATH}/${EXECUTOR_SCRIPT} ${STAGING_PATH} || exit 1
+cp ${PROJ_ROOT_PATH}/${CONTAINER_HOOK_SCRIPT} ${STAGING_PATH} || exit 1
 
 # build executor package of /*
 cd ${PACKAGE_PATH}
-tar cf "${EXECUTOR_PACKAGE_FILENAME}" "${EXECUTOR_BASE_DIR}" || exit 1
+tar cf "${CONTAINER_HOOK_PACKAGE_FILENAME}" "${CONTAINER_HOOK_BASE_DIR}" || exit 1
 
 echo "---"
-echo "Built Executor package: ${EXECUTOR_PACKAGE_FILENAME}"
-tar tf "${EXECUTOR_PACKAGE_FILENAME}"
+echo "Built Container Environment Hook package: ${CONTAINER_HOOK_PACKAGE_FILENAME}"
+tar tf "${CONTAINER_HOOK_PACKAGE_FILENAME}"
 echo "---"

@@ -27,9 +27,8 @@ public class OfferRequirementProvider {
 
   public OfferRequirement getNextRequirement() {
     if (belowTargetBrokerCount()) {
-      String brokerId = getNextBrokerId();
-      String taskId = getNextTaskId(brokerId);
-      List<TaskInfo> taskInfos = getTaskInfos(taskId, brokerId);
+      Integer brokerId = getNextBrokerId();
+      List<TaskInfo> taskInfos = getTaskInfos(brokerId);
       return new OfferRequirement(taskInfos);
     } else {
       try{
@@ -64,19 +63,15 @@ public class OfferRequirementProvider {
     }
   }
 
-  private String getNextBrokerId() {
+  private Integer getNextBrokerId() {
     try {
       List<String> taskNames = state.getTaskNames();
-      for (String taskName : taskNames) {
-        log.warn("TaskName: " + taskName);
-      }
 
       int targetBrokerCount = Integer.parseInt(config.get("BROKER_COUNT"));
       for (int i=0; i<targetBrokerCount; i++) {
-        String brokerId = "broker-" + i;
-        log.warn("Searching for: " + brokerId);
-        if (!taskNames.contains(brokerId)) {
-          return brokerId;
+        String brokerName = "broker-" + i;
+        if (!taskNames.contains(brokerName)) {
+          return i; 
         }
       }
     } catch (Exception ex) {
@@ -87,19 +82,43 @@ public class OfferRequirementProvider {
     return null;
   }
 
-  private String getNextTaskId(String brokerId) {
-    return brokerId + "__" + UUID.randomUUID();
-  }
+  private List<TaskInfo> getTaskInfos(int brokerId) {
+    String brokerName = "broker-" + brokerId;
+    String taskId =  brokerName + "__" + UUID.randomUUID();
 
-  private List<TaskInfo> getTaskInfos(String taskId, String name) {
+    int port = 9092 + brokerId;
+
     Resource cpus = ResourceBuilder.cpus(1.0);
+    Resource mem = ResourceBuilder.mem(2048);
+    Resource ports = ResourceBuilder.ports(port, port);
+
+    String statsdCmdFmt = "";
+    String statsdCmd = "";
+
+    String kafkaCmdFmt = "export PATH=$PATH:$MESOS_SANDBOX/jre/bin && env && "
+                       + "$MESOS_SANDBOX/$KAFKA_VER_NAME/bin/kafka-server-start.sh "
+                       + "$MESOS_SANDBOX/$KAFKA_VER_NAME/config/server.properties "
+                       + "--override zookeeper.connect=$KAFKA_ZK/$FRAMEWORK_NAME "
+                       + "--override broker.id=%d "
+                       + "--override log.dirs=$MESOS_SANDBOX/kafka-logs "
+                       + "--override port=%d "
+                       + "--override listeners=PLAINTEXT://:%d "
+                       + "$STATSD_OVERRIDES";
+
+    String kafkaCmd = String.format(kafkaCmdFmt, brokerId, port, port);
 
     CommandInfoBuilder cmdInfoBuilder = new CommandInfoBuilder();
-    cmdInfoBuilder.setCommand("ls -l && sleep 60");
+    cmdInfoBuilder.addEnvironmentVar("KAFKA_ZK", config.get("ZOOKEEPER_ADDR"));
+    cmdInfoBuilder.addEnvironmentVar("KAFKA_VER_NAME", config.get("KAFKA_VER_NAME"));
+    cmdInfoBuilder.addEnvironmentVar("FRAMEWORK_NAME", config.get("FRAMEWORK_NAME"));
     cmdInfoBuilder.addUri(config.get("KAFKA_URI"));
+    cmdInfoBuilder.addUri(config.get("JAVA_URI"));
+    cmdInfoBuilder.setCommand(kafkaCmd);
 
-    TaskInfoBuilder taskBuilder = new TaskInfoBuilder(taskId, name, "");
+    TaskInfoBuilder taskBuilder = new TaskInfoBuilder(taskId, brokerName, "");
     taskBuilder.addResource(cpus);
+    taskBuilder.addResource(mem);
+    taskBuilder.addResource(ports);
     taskBuilder.setCommand(cmdInfoBuilder.build());
 
     return Arrays.asList(taskBuilder.build());

@@ -87,10 +87,8 @@ public class OfferRequirementProvider {
 
   private List<TaskInfo> getTaskInfos(int brokerId) {
     String brokerName = "broker-" + brokerId;
-    String taskId =  brokerName + "__" + UUID.randomUUID();
-
-    Resource cpus = ResourceBuilder.cpus(1.0);
-    Resource mem = ResourceBuilder.mem(2048);
+    String taskId = brokerName + "__" + UUID.randomUUID();
+    int port = 9092 + brokerId;
 
     List<String> commands = new ArrayList<>();
 
@@ -115,11 +113,14 @@ public class OfferRequirementProvider {
         + "$MESOS_SANDBOX/%1$s/config/server.properties "
         + "--override zookeeper.connect=%2$s/%3$s "
         + "--override broker.id=%4$s "
-        + "--override log.dirs=$MESOS_SANDBOX/kafka-logs",
+        + "--override log.dirs=$MESOS_SANDBOX/kafka-logs"
+        + "--override port=%5$d "
+        + "--override listeners=PLAINTEXT://:%5$d ",
         config.get("KAFKA_VER_NAME"), // #1
         config.get("ZOOKEEPER_ADDR"), // #2
         config.get("FRAMEWORK_NAME"), // #3
-        brokerId); // #4
+        brokerId, // #4
+        port); // #5
     if (containerHooksEnabled) {
       commands.add("echo Additional Kafka args: $CONTAINER_HOOK_FLAGS");
       kafkaStartCmd += " $CONTAINER_HOOK_FLAGS";
@@ -129,8 +130,9 @@ public class OfferRequirementProvider {
     log.info("Built command: " + command);
 
     return Arrays.asList(new TaskInfoBuilder(taskId, brokerName, "" /* slaveId */)
-        .addResource(cpus)
-        .addResource(mem)
+        .addResource(ResourceBuilder.cpus(1.0))
+        .addResource(ResourceBuilder.mem(2048))
+        .addResource(ResourceBuilder.ports(port, port))
         .setCommand(new CommandInfoBuilder()
             .addUri(config.get("KAFKA_URI"))
             .addUri(config.get("CONTAINER_HOOK_URI"))

@@ -4,6 +4,8 @@
 # should only contain logic that depends on the container environment itself; all other logic
 # belongs at the scheduler.
 
+echo "### HOOK BEGIN"
+
 # If our package included a library overlay, copy it onto the Kafka distribution's /libs directory
 LIB_OVERLAY_PATH="${MESOS_SANDBOX}/container-hook/libs"
 if [ -d "${LIB_OVERLAY_PATH}" ]; then
@@ -43,3 +45,5 @@ if [ -n "${STATSD_UDP_HOST}" -a -n "${STATSD_UDP_PORT}" ]; then
 else
     echo "No statsd endpoint found in container environment."
 fi
+
+echo "### HOOK END"

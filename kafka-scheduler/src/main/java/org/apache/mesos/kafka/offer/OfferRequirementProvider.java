@@ -53,7 +53,7 @@ public class OfferRequirementProvider {
 
     CommandInfoBuilder cmdInfoBuilder = new CommandInfoBuilder();
     cmdInfoBuilder.addEnvironmentVar("KAFKA_FMWK_BROKER_ID", String.valueOf(brokerId));
-    cmdInfoBuilder.addEnvironmentVar("KAFKA_FMWK_ZK_ENDPOINT", "master.mesos:2181");
+    cmdInfoBuilder.addEnvironmentVar("KAFKA_FMWK_ZK_ENDPOINT", config.get("ZOOKEEPER_ADDR"));
     cmdInfoBuilder.setCommand(String.format("sh kafka-executor/kafka-executor.sh"));
     cmdInfoBuilder.addUri("https://s3-us-west-2.amazonaws.com/gabriel-kafka-test/kafka_2.10-0.9.0.0.tgz");
     cmdInfoBuilder.addUri("https://s3-us-west-2.amazonaws.com/gabriel-kafka-test/kafka-executor-0.1.0.tgz");

@@ -27,9 +27,8 @@ public class OfferRequirementProvider {
 
   public OfferRequirement getNextRequirement() {
     if (belowTargetBrokerCount()) {
-      String brokerId = getNextBrokerId();
-      String taskId = getNextTaskId(brokerId);
-      List<TaskInfo> taskInfos = getTaskInfos(taskId, brokerId);
+      Integer brokerId = getNextBrokerId();
+      List<TaskInfo> taskInfos = getTaskInfos(brokerId);
       return new OfferRequirement(taskInfos);
     } else {
       try{
@@ -64,19 +63,15 @@ public class OfferRequirementProvider {
     }
   }
 
-  private String getNextBrokerId() {
+  private Integer getNextBrokerId() {
     try {
       List<String> taskNames = state.getTaskNames();
-      for (String taskName : taskNames) {
-        log.warn("TaskName: " + taskName);
-      }
 
       int targetBrokerCount = Integer.parseInt(config.get("BROKER_COUNT"));
       for (int i=0; i<targetBrokerCount; i++) {
-        String brokerId = "broker-" + i;
-        log.warn("Searching for: " + brokerId);
-        if (!taskNames.contains(brokerId)) {
-          return brokerId;
+        String brokerName = "broker-" + i;
+        if (!taskNames.contains(brokerName)) {
+          return i; 
         }
       }
     } catch (Exception ex) {
@@ -87,18 +82,20 @@ public class OfferRequirementProvider {
     return null;
   }
 
-  private String getNextTaskId(String brokerId) {
-    return brokerId + "__" + UUID.randomUUID();
-  }
+  private List<TaskInfo> getTaskInfos(int brokerId) {
+    String brokerName = "broker-" + brokerId;
+    String taskId =  brokerName + "__" + UUID.randomUUID();
 
-  private List<TaskInfo> getTaskInfos(String taskId, String name) {
     Resource cpus = ResourceBuilder.cpus(1.0);
 
     CommandInfoBuilder cmdInfoBuilder = new CommandInfoBuilder();
-    cmdInfoBuilder.setCommand("ls -l && sleep 60");
+    cmdInfoBuilder.addEnvironmentVar("KAFKA_FWK_BROKER_ID", String.valueOf(brokerId));
+    cmdInfoBuilder.addEnvironmentVar("KAFKA_FWK_ZK_ENDPOINT", config.get("ZOOKEEPER_ADDR"));
+    cmdInfoBuilder.setCommand(String.format("sh kafka-executor/kafka-executor.sh"));
     cmdInfoBuilder.addUri(config.get("KAFKA_URI"));
+    cmdInfoBuilder.addUri(config.get("EXECUTOR_URI"));
 
-    TaskInfoBuilder taskBuilder = new TaskInfoBuilder(taskId, name, "");
+    TaskInfoBuilder taskBuilder = new TaskInfoBuilder(taskId, brokerName, "");
     taskBuilder.addResource(cpus);
     taskBuilder.setCommand(cmdInfoBuilder.build());
 

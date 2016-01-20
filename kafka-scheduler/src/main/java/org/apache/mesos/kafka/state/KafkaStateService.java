@@ -82,6 +82,7 @@ public class KafkaStateService implements Observer {
   }
 
   public void recordTasks(List<TaskInfo> taskInfos) throws Exception {
+    recordTaskInfos(taskInfos);
     List<TaskStatus> taskStatuses = taskInfosToTaskStatuses(taskInfos); 
     recordTaskStatuses(taskStatuses);
   }
@@ -96,14 +97,95 @@ public class KafkaStateService implements Observer {
     }
   }
 
-  private void recordTaskStatus(TaskStatus taskStatus) throws Exception {
-    String statusPath = taskPath + "/" + taskStatus.getTaskId().getValue();
+  public List<TaskInfo> getTerminatedTaskInfos() throws Exception {
+    List<TaskInfo> taskInfos = new ArrayList<TaskInfo>();
 
-    if (zkClient.checkExists().forPath(statusPath) == null) {
-      zkClient.create().forPath(statusPath, taskStatus.toByteArray());
-    } else {
-      zkClient.setData().forPath(statusPath, taskStatus.toByteArray());
+    for (String taskId : getTaskIds()) {
+      TaskStatus taskStatus = getTaskStatus(taskId);
+      if (isTerminated(taskStatus)) {
+        taskInfos.add(getTaskInfo(taskId));
+      }
     }
+
+    return taskInfos;
+  }
+
+  public TaskStatus getTaskStatus(String taskId) throws Exception {
+    String path = getTaskStatusPath(taskId);
+    byte[] bytes = zkClient.getData().forPath(path);
+    return TaskStatus.parseFrom(bytes);
+  }
+
+  public TaskInfo getTaskInfo(String taskId) throws Exception {
+    String path = getTaskInfoPath(taskId);
+    byte[] bytes = zkClient.getData().forPath(path);
+    return TaskInfo.parseFrom(bytes);
+  }
+
+  public List<String> getTaskNames() throws Exception {
+    List<String> taskNames = new ArrayList<String>();
+
+    List<TaskInfo> taskInfos = getTaskInfos();
+    for (TaskInfo taskInfo : taskInfos) {
+      taskNames.add(taskInfo.getName());
+    }
+
+    return taskNames;
+  }
+
+  private List<TaskInfo> getTaskInfos() throws Exception {
+    List<TaskInfo> taskInfos = new ArrayList<TaskInfo>();
+    for (String taskId : getTaskIds()) {
+        taskInfos.add(getTaskInfo(taskId));
+    }
+
+    return taskInfos;
+  }
+
+  private boolean isTerminated(TaskStatus taskStatus) {
+    TaskState taskState = taskStatus.getState();
+    return taskState.equals(TaskState.TASK_FINISHED) ||
+      taskState.equals(TaskState.TASK_FAILED) ||
+      taskState.equals(TaskState.TASK_KILLED) ||
+      taskState.equals(TaskState.TASK_LOST) ||
+      taskState.equals(TaskState.TASK_ERROR);
+  }
+
+  private List<String> getTaskIds() throws Exception {
+    return zkClient.getChildren().forPath(taskPath);
+  }
+
+  private String getTaskInfoPath(String taskId) {
+    return taskPath + "/" + taskId + "/info";
+  }
+
+  private String getTaskStatusPath(String taskId) {
+    return taskPath + "/" + taskId + "/status";
+  }
+
+  private void record(String path, byte[] bytes) throws Exception {
+    if (zkClient.checkExists().forPath(path) == null) {
+      zkClient.create().creatingParentsIfNeeded().forPath(path, bytes);
+    } else {
+      zkClient.setData().forPath(path, bytes);
+    }
+  }
+
+  private void recordTaskInfo(TaskInfo taskInfo) throws Exception {
+    String infoPath = getTaskInfoPath(taskInfo.getTaskId().getValue());
+    record(infoPath, taskInfo.toByteArray());
+  }
+
+
+  private void recordTaskInfos(List<TaskInfo> taskInfos) throws Exception {
+    for (TaskInfo taskInfo : taskInfos) {
+      recordTaskInfo(taskInfo);
+    }
+  }
+
+  private void recordTaskStatus(TaskStatus taskStatus) throws Exception {
+    String statusPath = getTaskStatusPath(taskStatus.getTaskId().getValue());
+    record(statusPath, taskStatus.toByteArray());
   }
 
   private void recordTaskStatuses(List<TaskStatus> taskStatuses) throws Exception {

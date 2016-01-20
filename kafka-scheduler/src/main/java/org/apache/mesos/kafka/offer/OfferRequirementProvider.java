@@ -15,28 +15,32 @@ public class OfferRequirementProvider {
   private static int brokerId = 0;
 
   public OfferRequirement getNextRequirement() {
-    String brokerId = getNextBrokerId();
-    String taskId = getNextTaskId(brokerId);
-    List<TaskInfo> taskInfos = getTaskInfos(taskId, brokerId);
+    int brokerId = getNextBrokerId();
+    String brokerName = String.format("broker-%d", brokerId);
+    String taskId = getNextTaskId(brokerName);
+    List<TaskInfo> taskInfos = getTaskInfos(taskId, brokerName, brokerId);
     return new OfferRequirement(taskInfos);
   }
 
-  private String getNextBrokerId() {
-    return "broker-" + brokerId++;
+  private int getNextBrokerId() {
+    return brokerId++;
   }
 
   private String getNextTaskId(String brokerId) {
     return brokerId + "-" + UUID.randomUUID();
   }
 
-  private List<TaskInfo> getTaskInfos(String taskId, String name) {
+  private List<TaskInfo> getTaskInfos(String taskId, String brokerName, int brokerId) {
     Resource cpus = ResourceBuilder.cpus(1.0);
 
     CommandInfoBuilder cmdInfoBuilder = new CommandInfoBuilder();
-    cmdInfoBuilder.setCommand("ls -l");
+    cmdInfoBuilder.addEnvironmentVar("KAFKA_FMWK_BROKER_ID", String.valueOf(brokerId));
+    cmdInfoBuilder.addEnvironmentVar("KAFKA_FMWK_ZK_ENDPOINT", "master.mesos:2181");
+    cmdInfoBuilder.setCommand(String.format("sh kafka-executor/kafka-executor.sh"));
     cmdInfoBuilder.addUri("https://s3-us-west-2.amazonaws.com/gabriel-kafka-test/kafka_2.10-0.9.0.0.tgz");
+    cmdInfoBuilder.addUri("https://s3-us-west-2.amazonaws.com/gabriel-kafka-test/kafka-executor-0.1.0.tgz");
 
-    TaskInfoBuilder taskBuilder = new TaskInfoBuilder(taskId, name, "");
+    TaskInfoBuilder taskBuilder = new TaskInfoBuilder(taskId, brokerName, "");
     taskBuilder.addResource(cpus);
     taskBuilder.setCommand(cmdInfoBuilder.build());
 

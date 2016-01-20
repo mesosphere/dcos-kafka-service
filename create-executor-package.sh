@@ -10,7 +10,7 @@
 # The Kafka distribution itself is provided separately from this package.
 #
 
-EXECUTOR_VERSION="0.0.1"
+EXECUTOR_VERSION="0.1.0"
 EXECUTOR_BASE_DIR="kafka-executor"
 EXECUTOR_PACKAGE_FILENAME="${EXECUTOR_BASE_DIR}-${EXECUTOR_VERSION}.tgz"
 EXECUTOR_SCRIPT="kafka-executor.sh"

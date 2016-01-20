@@ -54,7 +54,6 @@ CMD="${KAFKA_DISTRIBUTION_ROOT}/bin/kafka-server-start.sh ${KAFKA_SERVER_PROPERT
 
 echo "Starting Kafka: ${CMD} (from ${EXECUTOR_ROOT})"
 echo "--- START KAFKA ---"
-echo "HELLO"
 ${CMD}
 RET=$?
 echo "--- END KAFKA ---"

@@ -87,16 +87,32 @@ public class OfferRequirementProvider {
     String taskId =  brokerName + "__" + UUID.randomUUID();
 
     Resource cpus = ResourceBuilder.cpus(1.0);
+    Resource mem = ResourceBuilder.mem(2048);
+
+    String statsdCmdFmt = "";
+    String statsdCmd = "";
+
+    String kafkaCmdFmt = "export PATH=$PATH:$MESOS_SANDBOX/jre/bin && env && "
+                       + "$MESOS_SANDBOX/$KAFKA_VER_NAME/bin/kafka-server-start.sh "
+                       + "$MESOS_SANDBOX/$KAFKA_VER_NAME/config/server.properties "
+                       + "--override zookeeper.connect=$KAFKA_ZK/$FRAMEWORK_NAME "
+                       + "--override broker.id=%d "
+                       + "--override log.dirs=$MESOS_SANDBOX/kafka-logs "
+                       + "$STATSD_OVERRIDES";
+
+    String kafkaCmd = String.format(kafkaCmdFmt, brokerId);
 
     CommandInfoBuilder cmdInfoBuilder = new CommandInfoBuilder();
-    cmdInfoBuilder.addEnvironmentVar("KAFKA_FWK_BROKER_ID", String.valueOf(brokerId));
-    cmdInfoBuilder.addEnvironmentVar("KAFKA_FWK_ZK_ENDPOINT", config.get("ZOOKEEPER_ADDR"));
-    cmdInfoBuilder.setCommand(String.format("sh kafka-executor/kafka-executor.sh"));
+    cmdInfoBuilder.addEnvironmentVar("KAFKA_ZK", config.get("ZOOKEEPER_ADDR"));
+    cmdInfoBuilder.addEnvironmentVar("KAFKA_VER_NAME", config.get("KAFKA_VER_NAME"));
+    cmdInfoBuilder.addEnvironmentVar("FRAMEWORK_NAME", config.get("FRAMEWORK_NAME"));
     cmdInfoBuilder.addUri(config.get("KAFKA_URI"));
-    cmdInfoBuilder.addUri(config.get("EXECUTOR_URI"));
+    cmdInfoBuilder.addUri(config.get("JAVA_URI"));
+    cmdInfoBuilder.setCommand(statsdCmd + " && " + kafkaCmd);
 
     TaskInfoBuilder taskBuilder = new TaskInfoBuilder(taskId, brokerName, "");
     taskBuilder.addResource(cpus);
+    taskBuilder.addResource(mem);
     taskBuilder.setCommand(cmdInfoBuilder.build());
 
     return Arrays.asList(taskBuilder.build());

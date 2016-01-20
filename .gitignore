@@ -1,4 +1,5 @@
 build
+package
 .gradle
 .DS_Store
 *.swp

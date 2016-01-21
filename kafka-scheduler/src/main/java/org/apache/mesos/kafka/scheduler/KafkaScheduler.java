@@ -157,6 +157,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
       .setFailoverTimeout(2 * 7 * 24 * 60 * 60) // 2 weeks
       .setUser(config.get("USER"))
       .setRole(config.get("ROLE"))
+      .setPrincipal(config.get("PRINCIPAL"))
       .setCheckpoint(true);
 
     FrameworkID fwkId = state.getFrameworkId();

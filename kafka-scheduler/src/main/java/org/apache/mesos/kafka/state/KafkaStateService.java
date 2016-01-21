@@ -116,6 +116,17 @@ public class KafkaStateService implements Observer {
     return TaskStatus.parseFrom(bytes);
   }
 
+  public List<TaskStatus> getTaskStatuses() throws Exception {
+    List<TaskStatus> taskStatuses = new ArrayList<TaskStatus>();
+
+    List<String> taskIds = getTaskIds(); 
+    for (String taskId : taskIds) {
+      taskStatuses.add(getTaskStatus(taskId));
+    }
+
+    return taskStatuses;
+  }
+
   public TaskInfo getTaskInfo(String taskId) throws Exception {
     String path = getTaskInfoPath(taskId);
     byte[] bytes = zkClient.getData().forPath(path);

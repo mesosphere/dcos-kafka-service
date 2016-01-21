@@ -19,7 +19,10 @@ import org.apache.mesos.protobuf.ResourceBuilder;
 import org.apache.mesos.protobuf.TaskInfoBuilder;
 
 import org.apache.mesos.Protos.Resource;
+import org.apache.mesos.Protos.Resource.DiskInfo;
+import org.apache.mesos.Protos.Resource.DiskInfo.Persistence;
 import org.apache.mesos.Protos.TaskInfo;
+import org.apache.mesos.Protos.Volume;
 
 public class OfferRequirementProvider {
   private final Log log = LogFactory.getLog(OfferRequirementProvider.class);
@@ -31,7 +34,8 @@ public class OfferRequirementProvider {
   public OfferRequirement getNextRequirement() {
     if (belowTargetBrokerCount()) {
       Integer brokerId = getNextBrokerId();
-      List<TaskInfo> taskInfos = getTaskInfos(brokerId);
+      List<Resource> resources = getResources(); 
+      List<TaskInfo> taskInfos = getTaskInfos(brokerId, resources);
       return new OfferRequirement(taskInfos);
     } else {
       try{
@@ -85,7 +89,75 @@ public class OfferRequirementProvider {
     return null;
   }
 
-  private List<TaskInfo> getTaskInfos(int brokerId) {
+  private List<Resource> getResources() {
+    boolean persistentVolumesEnabled = Boolean.parseBoolean(config.get("BROKER_PV"));
+
+    if (persistentVolumesEnabled) {
+      return getPersistentVolumeResources();
+    } else {
+      return getSandboxResources();
+    } 
+  }
+
+  private List<Resource> getSandboxResources() {
+    Resource cpus = ResourceBuilder.cpus(getBrokerCpus());
+    Resource mem = ResourceBuilder.mem(getBrokerMem());
+    return Arrays.asList(cpus, mem);
+  }
+
+  private List<Resource> getPersistentVolumeResources() {
+    Resource cpus = ResourceBuilder.reservedCpus(getBrokerCpus(), getRole(), getPrincipal());
+    Resource mem = ResourceBuilder.reservedMem(getBrokerMem(), getRole(), getPrincipal());
+    Resource volume = getVolumeResource();
+    return Arrays.asList(cpus, mem, volume);
+  }
+
+  private Resource getVolumeResource() {
+    Resource resource = ResourceBuilder.reservedDisk(getBrokerDisk(), getRole(), getPrincipal());
+    Resource.Builder builder = Resource.newBuilder(resource);
+    String persistenceId = UUID.randomUUID().toString();
+    String volumePath = "kafka-volume-" + persistenceId;
+    DiskInfo diskInfo = createDiskInfo(persistenceId, volumePath);
+    builder.setDisk(diskInfo);
+
+    return builder.build();
+  }
+
+  private static DiskInfo createDiskInfo(String persistenceId, String containerPath) {
+    return DiskInfo.newBuilder()
+      .setPersistence(Persistence.newBuilder()
+          .setId(persistenceId))
+      .setVolume(Volume.newBuilder()
+          .setMode(Volume.Mode.RW)
+          .setContainerPath(containerPath))
+      .build();
+  }
+
+  private String getRole() {
+    return config.get("ROLE");
+  }
+
+  private String getPrincipal() {
+    return config.get("PRINCIPAL");
+  }
+
+  private double getBrokerCpus() {
+    return getConfigDouble("BROKER_CPUS");
+  }
+
+  private double getBrokerMem() {
+    return getConfigDouble("BROKER_MEM");
+  }
+
+  private double getBrokerDisk() {
+    return getConfigDouble("BROKER_DISK");
+  }
+
+  private double getConfigDouble(String key) {
+    return Double.parseDouble(config.get(key));
+  }
+
+  private List<TaskInfo> getTaskInfos(int brokerId, List<Resource> resources) {
     String brokerName = "broker-" + brokerId;
     String taskId = brokerName + "__" + UUID.randomUUID();
     int port = 9092 + brokerId;
@@ -120,8 +192,7 @@ public class OfferRequirementProvider {
     String command = Joiner.on(" && ").join(commands);
 
     return Arrays.asList(new TaskInfoBuilder(taskId, brokerName, "" /* slaveId */)
-        .addResource(ResourceBuilder.cpus(1.0))
-        .addResource(ResourceBuilder.mem(2048))
+        .addAllResources(resources)
         .addResource(ResourceBuilder.ports(port, port))
         .setCommand(new CommandInfoBuilder()
             .addUri(config.get("KAFKA_URI"))

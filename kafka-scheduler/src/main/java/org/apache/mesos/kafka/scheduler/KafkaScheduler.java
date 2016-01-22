@@ -1,12 +1,20 @@
 package org.apache.mesos.kafka.scheduler;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Observable;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.apache.mesos.kafka.config.KafkaConfigService;
 import org.apache.mesos.kafka.offer.LogOperationRecorder;
+import org.apache.mesos.kafka.offer.MasterOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.OfferRequirementProvider;
+import org.apache.mesos.kafka.offer.PersistentOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.PersistentOperationRecorder;
+import org.apache.mesos.kafka.offer.SandboxOfferRequirementProvider;
 import org.apache.mesos.kafka.state.KafkaStateService;
 
 import org.apache.mesos.config.ConfigurationService;
@@ -15,6 +23,7 @@ import org.apache.mesos.offer.OfferEvaluator;
 import org.apache.mesos.offer.OfferRecommendation;
 import org.apache.mesos.offer.OfferRequirement;
 import org.apache.mesos.offer.OperationRecorder;
+import org.apache.mesos.reconciliation.Reconciler;
 
 import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos.ExecutorID;
@@ -27,10 +36,6 @@ import org.apache.mesos.Protos.SlaveID;
 import org.apache.mesos.Protos.TaskStatus;
 import org.apache.mesos.SchedulerDriver;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Observable;
-
 /**
  * Kafka Framework Scheduler.
  */
@@ -40,19 +45,36 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   private ConfigurationService config;
   private KafkaStateService state;
 
-  private OfferRequirementProvider offerReqProvider;
+  private MasterOfferRequirementProvider offerReqProvider;
   private OfferAccepter offerAccepter;
+
+  private Reconciler reconciler;
 
   public KafkaScheduler() {
     config = KafkaConfigService.getConfigService();
     state = KafkaStateService.getStateService();
-    addObserver(state);
+    reconciler = new Reconciler();
 
-    offerReqProvider = new OfferRequirementProvider();
+    addObserver(state);
+    addObserver(reconciler);
+
+    offerReqProvider = new MasterOfferRequirementProvider(getOfferRequirementProvider());
+
     offerAccepter =
       new OfferAccepter(Arrays.asList(
             new LogOperationRecorder(),
             new PersistentOperationRecorder()));
+
+  }
+
+  private OfferRequirementProvider getOfferRequirementProvider() {
+    boolean persistentVolumesEnabled = Boolean.parseBoolean(config.get("BROKER_PV"));
+
+    if (persistentVolumesEnabled) {
+      return new PersistentOfferRequirementProvider();
+    } else {
+      return new SandboxOfferRequirementProvider();
+    }
   }
 
   @Override
@@ -87,11 +109,21 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   public void registered(SchedulerDriver driver, FrameworkID frameworkId, MasterInfo masterInfo) {
     log.info("Registered framework frameworkId: " + frameworkId.getValue());
     state.setFrameworkId(frameworkId);
+    reconcile(driver);
   }
 
   @Override
   public void reregistered(SchedulerDriver driver, MasterInfo masterInfo) {
     log.info("Reregistered framework.");
+    reconcile(driver);
+  }
+
+  private void reconcile(SchedulerDriver driver) {
+    try {
+      reconciler.reconcile(driver, state.getTaskStatuses());
+    } catch(Exception ex) {
+      log.error("Failed to reconcile with exception: " + ex);
+    }
   }
 
   @Override
@@ -109,10 +141,15 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   @Override
   public void resourceOffers(SchedulerDriver driver, List<Offer> offers) {
     logOffers(offers);
-    OfferRequirement offerReq = offerReqProvider.getNextRequirement();
-    OfferEvaluator offerEvaluator = new OfferEvaluator(offerReq);
-    List<OfferRecommendation> recommendations = offerEvaluator.evaluate(offers);
-    List<OfferID> acceptedOffers = offerAccepter.accept(driver, recommendations);
+
+    List<OfferID> acceptedOffers = new ArrayList<OfferID>();
+
+    if (reconciler.complete()) {
+      OfferRequirement offerReq = offerReqProvider.getNextRequirement();
+      OfferEvaluator offerEvaluator = new OfferEvaluator(offerReq);
+      List<OfferRecommendation> recommendations = offerEvaluator.evaluate(offers);
+      acceptedOffers = offerAccepter.accept(driver, recommendations);
+    }
 
     declineOffers(driver, acceptedOffers, offers);
   }
@@ -131,9 +168,10 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   private FrameworkInfo getFrameworkInfo() {
     FrameworkInfo.Builder fwkInfoBuilder = FrameworkInfo.newBuilder()
       .setName(config.get("FRAMEWORK_NAME"))
-      .setFailoverTimeout(Double.MAX_VALUE)
+      .setFailoverTimeout(2 * 7 * 24 * 60 * 60) // 2 weeks
       .setUser(config.get("USER"))
       .setRole(config.get("ROLE"))
+      .setPrincipal(config.get("PRINCIPAL"))
       .setCheckpoint(true);
 
     FrameworkID fwkId = state.getFrameworkId();

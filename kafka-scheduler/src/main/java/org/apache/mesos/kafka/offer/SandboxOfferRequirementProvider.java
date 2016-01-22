@@ -22,6 +22,7 @@ import org.apache.mesos.Protos.TaskInfo;
 public class SandboxOfferRequirementProvider implements OfferRequirementProvider {
   private final Log log = LogFactory.getLog(SandboxOfferRequirementProvider.class);
   private ConfigurationService config = KafkaConfigService.getConfigService();
+  private PlacementStrategyService placementSvc = PlacementStrategy.getPlacementStrategyService();
 
   public OfferRequirement getNewOfferRequirement() {
     Integer brokerId = OfferUtils.getNextBrokerId();
@@ -30,15 +31,21 @@ public class SandboxOfferRequirementProvider implements OfferRequirementProvider
       return null;
     }
 
-    List<TaskInfo> taskInfos = getTaskInfos(brokerId);
-    return new OfferRequirement(taskInfos);
+    TaskInfo taskInfo = getTaskInfo(brokerId);
+    return new OfferRequirement(
+        Arrays.asList(taskInfo),
+        placementSvc.getAgentsToAvoid(taskInfo),
+        placementSvc.getAgentsToColocate(taskInfo));
   }
 
   public OfferRequirement getReplacementOfferRequirement(TaskInfo taskInfo) {
-    return new OfferRequirement(Arrays.asList(taskInfo));
+    return new OfferRequirement(
+        Arrays.asList(taskInfo),
+        placementSvc.getAgentsToAvoid(taskInfo),
+        placementSvc.getAgentsToColocate(taskInfo));
   }
 
-  private List<TaskInfo> getTaskInfos(int brokerId) {
+  private TaskInfo getTaskInfo(int brokerId) {
     String brokerName = "broker-" + brokerId;
     String taskId = brokerName + "__" + UUID.randomUUID();
     int port = 9092 + brokerId;
@@ -72,7 +79,7 @@ public class SandboxOfferRequirementProvider implements OfferRequirementProvider
 
     String command = Joiner.on(" && ").join(commands);
 
-    return Arrays.asList(new TaskInfoBuilder(taskId, brokerName, "" /* slaveId */)
+    return new TaskInfoBuilder(taskId, brokerName, "" /* slaveId */)
         .addResource(ResourceBuilder.cpus(1.0))
         .addResource(ResourceBuilder.mem(2048))
         .addResource(ResourceBuilder.ports(port, port))
@@ -82,6 +89,6 @@ public class SandboxOfferRequirementProvider implements OfferRequirementProvider
           .addUri(config.get("JAVA_URI"))
           .setCommand(command)
           .build())
-        .build());
+        .build();
   }
 }

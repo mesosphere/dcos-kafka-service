@@ -27,6 +27,7 @@ import org.apache.mesos.Protos.Volume;
 public class PersistentOfferRequirementProvider implements OfferRequirementProvider {
   private final Log log = LogFactory.getLog(PersistentOfferRequirementProvider.class);
   private ConfigurationService config = KafkaConfigService.getConfigService();
+  private PlacementStrategyService placementSvc = PlacementStrategy.getPlacementStrategyService();
 
   public OfferRequirement getNewOfferRequirement() {
     Integer brokerId = OfferUtils.getNextBrokerId();
@@ -35,13 +36,13 @@ public class PersistentOfferRequirementProvider implements OfferRequirementProvi
       return null;
     }
 
-    List<TaskInfo> taskInfos = getTaskInfos(brokerId);
+    TaskInfo taskInfo = getTaskInfo(brokerId);
     return new OfferRequirement(
         getRole(),
         getPrincipal(),
-        taskInfos,
-        null,
-        null,
+        Arrays.asList(taskInfo),
+        placementSvc.getAgentsToAvoid(taskInfo),
+        placementSvc.getAgentsToColocate(taskInfo),
         VolumeMode.CREATE);
   }
 
@@ -63,7 +64,7 @@ public class PersistentOfferRequirementProvider implements OfferRequirementProvi
     return config.get("PRINCIPAL");
   }
 
-  private List<TaskInfo> getTaskInfos(int brokerId) {
+  private TaskInfo getTaskInfo(int brokerId) {
     String brokerName = "broker-" + brokerId;
     String taskId = brokerName + "__" + UUID.randomUUID();
     int port = 9092 + brokerId;
@@ -105,7 +106,7 @@ public class PersistentOfferRequirementProvider implements OfferRequirementProvi
     String role = getRole();
     String principal = getPrincipal();
 
-    return Arrays.asList(new TaskInfoBuilder(taskId, brokerName, "" /* slaveId */)
+    return new TaskInfoBuilder(taskId, brokerName, "" /* slaveId */)
         .addResource(ResourceBuilder.reservedCpus(cpus, role, principal))
         .addResource(ResourceBuilder.reservedMem(mem, role, principal))
         .addResource(getVolumeResource(containerPath))
@@ -116,7 +117,7 @@ public class PersistentOfferRequirementProvider implements OfferRequirementProvi
           .addUri(config.get("JAVA_URI"))
           .setCommand(command)
           .build())
-        .build());
+        .build();
   }
 
   private Resource getVolumeResource(String containerPath) {

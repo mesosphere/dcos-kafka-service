@@ -144,7 +144,7 @@ public class KafkaStateService implements Observer {
     return taskNames;
   }
 
-  private List<TaskInfo> getTaskInfos() throws Exception {
+  public List<TaskInfo> getTaskInfos() throws Exception {
     List<TaskInfo> taskInfos = new ArrayList<TaskInfo>();
     for (String taskId : getTaskIds()) {
         taskInfos.add(getTaskInfo(taskId));

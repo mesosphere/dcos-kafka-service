@@ -10,8 +10,11 @@ import org.apache.commons.logging.LogFactory;
 
 import org.apache.mesos.kafka.config.KafkaConfigService;
 import org.apache.mesos.kafka.offer.LogOperationRecorder;
+import org.apache.mesos.kafka.offer.MasterOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.OfferRequirementProvider;
+import org.apache.mesos.kafka.offer.PersistentOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.PersistentOperationRecorder;
+import org.apache.mesos.kafka.offer.SandboxOfferRequirementProvider;
 import org.apache.mesos.kafka.state.KafkaStateService;
 
 import org.apache.mesos.config.ConfigurationService;
@@ -42,7 +45,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   private ConfigurationService config;
   private KafkaStateService state;
 
-  private OfferRequirementProvider offerReqProvider;
+  private MasterOfferRequirementProvider offerReqProvider;
   private OfferAccepter offerAccepter;
 
   private Reconciler reconciler;
@@ -55,12 +58,23 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     addObserver(state);
     addObserver(reconciler);
 
-    offerReqProvider = new OfferRequirementProvider();
+    offerReqProvider = new MasterOfferRequirementProvider(getOfferRequirementProvider());
+
     offerAccepter =
       new OfferAccepter(Arrays.asList(
             new LogOperationRecorder(),
             new PersistentOperationRecorder()));
 
+  }
+
+  private OfferRequirementProvider getOfferRequirementProvider() {
+    boolean persistentVolumesEnabled = Boolean.parseBoolean(config.get("BROKER_PV"));
+
+    if (persistentVolumesEnabled) {
+      return new PersistentOfferRequirementProvider();
+    } else {
+      return new SandboxOfferRequirementProvider();
+    }
   }
 
   @Override

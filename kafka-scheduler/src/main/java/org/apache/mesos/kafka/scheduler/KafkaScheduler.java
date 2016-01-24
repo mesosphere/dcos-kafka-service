@@ -1,5 +1,6 @@
 package org.apache.mesos.kafka.scheduler;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -16,8 +17,10 @@ import org.apache.mesos.kafka.offer.PersistentOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.PersistentOperationRecorder;
 import org.apache.mesos.kafka.offer.SandboxOfferRequirementProvider;
 import org.apache.mesos.kafka.state.KafkaStateService;
+import org.apache.mesos.kafka.web.KafkaApiServer;
 
 import org.apache.mesos.config.ConfigurationService;
+import org.apache.mesos.net.HttpRequestBuilder;
 import org.apache.mesos.offer.OfferAccepter;
 import org.apache.mesos.offer.OfferEvaluator;
 import org.apache.mesos.offer.OfferRecommendation;
@@ -65,6 +68,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
             new LogOperationRecorder(),
             new PersistentOperationRecorder()));
 
+    String port0 = config.get("PORT0");
   }
 
   private OfferRequirementProvider getOfferRequirementProvider() {
@@ -107,23 +111,17 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
 
   @Override
   public void registered(SchedulerDriver driver, FrameworkID frameworkId, MasterInfo masterInfo) {
-    log.info("Registered framework frameworkId: " + frameworkId.getValue());
+    log.info("Registered framework with frameworkId: " + frameworkId.getValue());
     state.setFrameworkId(frameworkId);
     reconcile(driver);
+
+    KafkaApiServer.start();
   }
 
   @Override
   public void reregistered(SchedulerDriver driver, MasterInfo masterInfo) {
     log.info("Reregistered framework.");
     reconcile(driver);
-  }
-
-  private void reconcile(SchedulerDriver driver) {
-    try {
-      reconciler.reconcile(driver, state.getTaskStatuses());
-    } catch(Exception ex) {
-      log.error("Failed to reconcile with exception: " + ex);
-    }
   }
 
   @Override
@@ -162,7 +160,23 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   @Override
   public void run() {
     String zkPath = "zk://" + config.get("ZOOKEEPER_ADDR") + "/mesos";
-    registerFramework(this, getFrameworkInfo(), zkPath);
+    FrameworkInfo fwkInfo = getFrameworkInfo();
+    log.info("Registering framework with: " + fwkInfo);
+    registerFramework(this, fwkInfo, zkPath);
+  }
+
+  private void reconcile(SchedulerDriver driver) {
+    try {
+      reconciler.reconcile(driver, state.getTaskStatuses());
+    } catch(Exception ex) {
+      log.error("Failed to reconcile with exception: " + ex);
+    }
+  }
+
+  private String getApiUri() {
+    String port = config.get("PORT0");
+    String host = config.get("LIBPROCESS_IP");
+    return String.format("http://%s:%s", host, port); 
   }
 
   private FrameworkInfo getFrameworkInfo() {

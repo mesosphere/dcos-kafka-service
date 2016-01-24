@@ -16,6 +16,7 @@ dependencies {
   compile "com.google.inject:guice:${guiceVer}"
   compile "org.glassfish.jersey.containers:jersey-container-grizzly2-http:${grizzlyVer}"
   compile "org.glassfish.jersey.media:jersey-media-json-jackson:${grizzlyVer}"
+  compile "org.json:json:20151123"
 }
 
 shadowJar {

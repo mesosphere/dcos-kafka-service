@@ -17,6 +17,9 @@ import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.Protos.TaskState;
 import org.apache.mesos.Protos.TaskStatus;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Observable;
@@ -31,6 +34,7 @@ public class KafkaStateService implements Observer {
   private static final Integer POLL_DELAY_MS = 1000;
   private static final Integer CURATOR_MAX_RETRIES = 3;
   private static String zkRoot;
+  private static String stateRoot;
   private static String taskPath;
   private static String fwkIdPath;
 
@@ -39,13 +43,14 @@ public class KafkaStateService implements Observer {
   private KafkaStateService() {
     zkClient = createCuratorClient();
 
-    zkRoot = "/" + config.get("FRAMEWORK_NAME") + "/state";
-    taskPath = zkRoot + "/tasks";
-    fwkIdPath = zkRoot + "/framework-id";
+    zkRoot = "/" + config.get("FRAMEWORK_NAME");
+    stateRoot = zkRoot + "/state";
+    taskPath = stateRoot + "/tasks";
+    fwkIdPath = stateRoot + "/framework-id";
 
     try {
-      initializePath(zkRoot + "/tasks");
-      initializePath(zkRoot + "/framework-id");
+      initializePath(stateRoot + "/tasks");
+      initializePath(stateRoot + "/framework-id");
     } catch(Exception ex) {
       log.fatal("Failed with exception: " + ex);
     }
@@ -151,6 +156,46 @@ public class KafkaStateService implements Observer {
     }
 
     return taskInfos;
+  }
+
+  public JSONArray getBrokerIds() throws Exception {
+    return getIds(zkRoot + "/brokers/ids");
+  }
+
+  public JSONObject getBroker(String id) throws Exception {
+    return getElement(zkRoot + "/brokers/ids/" + id);
+  }
+
+  public JSONArray getTopics() throws Exception {
+    return getIds(zkRoot + "/brokers/topics");
+  }
+
+  public JSONObject getTopic(String topicName) throws Exception {
+    String partitionsPath = zkRoot + "/brokers/topics/" + topicName + "/partitions";
+    List<String> partitionIds = zkClient.getChildren().forPath(partitionsPath);
+
+    List<JSONObject> partitions = new ArrayList<JSONObject>();
+    for (String partitionId : partitionIds) {
+      JSONObject state = getElement(partitionsPath + "/" + partitionId + "/state");
+      JSONObject partition = new JSONObject();
+      partition.put(partitionId, state);
+      partitions.add(partition);
+    }
+
+    JSONObject obj = new JSONObject();
+    obj.put("partitions", partitions);
+    return obj;
+  }
+
+  private JSONArray getIds(String path) throws Exception {
+    List<String> ids = zkClient.getChildren().forPath(path);
+    return new JSONArray(ids);
+  }
+
+  private JSONObject getElement(String path) throws Exception {
+    byte[] bytes = zkClient.getData().forPath(path);
+    String element = new String(bytes, "UTF-8");
+    return new JSONObject(element);
   }
 
   private boolean isTerminated(TaskStatus taskStatus) {

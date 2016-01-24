@@ -19,6 +19,7 @@ public class KafkaApiServer {
   public static void start() {
     ResourceConfig resourceConfig = new ResourceConfig();
     resourceConfig.registerInstances(new BrokerController());
+    resourceConfig.registerInstances(new TopicController());
 
     GrizzlyHttpServerFactory.createHttpServer(getUri(), resourceConfig);
   }

@@ -14,31 +14,31 @@ import org.apache.mesos.kafka.state.KafkaStateService;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-@Path("/brokers")
+@Path("/topics")
 @Produces("application/json")
-public class BrokerController {
-  private final Log log = LogFactory.getLog(BrokerController.class);
+public class TopicController {
+  private final Log log = LogFactory.getLog(TopicController.class);
   private KafkaStateService state = KafkaStateService.getStateService();
 
   @GET
-  public Response brokers() {
+  public Response topics() {
     try {
-      JSONArray brokerIds = state.getBrokerIds();
-      return Response.ok(brokerIds.toString(), MediaType.APPLICATION_JSON).build();
+      JSONArray topics = state.getTopics();
+      return Response.ok(topics.toString(), MediaType.APPLICATION_JSON).build();
     } catch (Exception ex) {
-      log.error("Failed to fetch broker ids with exception: " + ex);
+      log.error("Failed to fetch topics with exception: " + ex);
       return Response.serverError().build();
     }
   }
 
   @GET
-  @Path("/{id}")
-  public Response broker(@PathParam("id") String id) {
+  @Path("/{name}")
+  public Response topic(@PathParam("name") String topicName) {
     try {
-      JSONObject broker = state.getBroker(id);
-      return Response.ok(broker.toString(), MediaType.APPLICATION_JSON).build();
+      JSONObject topic = state.getTopic(topicName);
+      return Response.ok(topic.toString(), MediaType.APPLICATION_JSON).build();
     } catch (Exception ex) {
-      log.error("Failed to fetch broker: " + id + " with exception: " + ex);
+      log.error("Failed to fetch topic: " + topicName + " with exception: " + ex);
       return Response.serverError().build();
     }
   }

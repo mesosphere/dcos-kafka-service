@@ -14,6 +14,7 @@ import org.apache.mesos.config.ConfigurationService;
 import org.apache.mesos.kafka.config.KafkaConfigService;
 import org.apache.mesos.offer.OfferRequirement;
 import org.apache.mesos.offer.OfferRequirement.VolumeMode;
+import org.apache.mesos.offer.ResourceUtils;
 import org.apache.mesos.protobuf.CommandInfoBuilder;
 import org.apache.mesos.protobuf.ResourceBuilder;
 import org.apache.mesos.protobuf.TaskInfoBuilder;
@@ -30,30 +31,68 @@ public class PersistentOfferRequirementProvider implements OfferRequirementProvi
   private PlacementStrategyService placementSvc = PlacementStrategy.getPlacementStrategyService();
 
   public OfferRequirement getNewOfferRequirement() {
+    return getNewOfferRequirementInternal();
+  }
+
+  public OfferRequirement getReplacementOfferRequirement(TaskInfo taskInfo) {
+    if (hasVolume(taskInfo)) {
+      return getExistingOfferRequirement(taskInfo);
+    } else {
+      return getUpgradeOfferRequirement(taskInfo);
+    }
+  }
+
+  private OfferRequirement getNewOfferRequirementInternal() {
     Integer brokerId = OfferUtils.getNextBrokerId();
     if (brokerId == null) {
       log.error("Failed to get broker ID");
       return null;
     }
 
-    TaskInfo taskInfo = getTaskInfo(brokerId);
-    return new OfferRequirement(
-        getRole(),
-        getPrincipal(),
-        Arrays.asList(taskInfo),
-        placementSvc.getAgentsToAvoid(taskInfo),
-        placementSvc.getAgentsToColocate(taskInfo),
-        VolumeMode.CREATE);
+    String brokerName = "broker-" + brokerId;
+    String taskId = brokerName + "__" + UUID.randomUUID();
+    TaskInfo taskInfo = getTaskInfo(brokerId, brokerName, taskId);
+    return getCreateOfferRequirement(taskInfo);
   }
 
-  public OfferRequirement getReplacementOfferRequirement(TaskInfo taskInfo) {
-    return new OfferRequirement(
-        getRole(),
-        getPrincipal(),
-        Arrays.asList(taskInfo),
-        null,
-        null,
-        VolumeMode.EXISTING);
+  private OfferRequirement getCreateOfferRequirement(TaskInfo taskInfo) {
+      return new OfferRequirement(
+          getRole(),
+          getPrincipal(),
+          Arrays.asList(taskInfo),
+          placementSvc.getAgentsToAvoid(taskInfo),
+          placementSvc.getAgentsToColocate(taskInfo),
+          VolumeMode.CREATE);
+  }
+
+  private OfferRequirement getExistingOfferRequirement(TaskInfo taskInfo) {
+      return new OfferRequirement(
+          getRole(),
+          getPrincipal(),
+          Arrays.asList(taskInfo),
+          null,
+          null,
+          VolumeMode.EXISTING);
+  }
+
+  private OfferRequirement getUpgradeOfferRequirement(TaskInfo taskInfo) {
+      Integer brokerId = nameToId(taskInfo.getName());
+
+      String brokerName = taskInfo.getName();
+      String taskId = taskInfo.getTaskId().getValue();
+      TaskInfo createTaskInfo = getTaskInfo(brokerId, brokerName, taskId);
+
+      return getCreateOfferRequirement(createTaskInfo);
+  }
+
+  private Integer nameToId(String brokerName) {
+    String id = brokerName.substring(brokerName.lastIndexOf("-") + 1);
+    return Integer.parseInt(id);
+  }
+
+  private boolean hasVolume(TaskInfo taskInfo) {
+    String containerPath = ResourceUtils.getVolumeContainerPath(taskInfo.getResourcesList());
+    return containerPath != null;
   }
 
   private String getRole() {
@@ -64,9 +103,7 @@ public class PersistentOfferRequirementProvider implements OfferRequirementProvi
     return config.get("PRINCIPAL");
   }
 
-  private TaskInfo getTaskInfo(int brokerId) {
-    String brokerName = "broker-" + brokerId;
-    String taskId = brokerName + "__" + UUID.randomUUID();
+  private TaskInfo getTaskInfo(int brokerId, String brokerName, String taskId) {
     int port = 9092 + brokerId;
 
     List<String> commands = new ArrayList<>();

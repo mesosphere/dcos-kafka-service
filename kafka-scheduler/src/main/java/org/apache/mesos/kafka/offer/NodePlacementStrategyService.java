@@ -30,18 +30,29 @@ public class NodePlacementStrategyService implements PlacementStrategyService {
     return null;
   }
 
-
   private List<SlaveID> getAgentsToAvoidInternal(TaskInfo taskInfo) throws Exception {
     List<SlaveID> agentsToAvoid = new ArrayList<SlaveID>();
 
-    List<SlaveID> agentIds = getAgents(state.getTaskInfos());
-    for (SlaveID agentId : agentIds) {
-      if (!agentId.equals(taskInfo.getSlaveId())) {
-        agentsToAvoid.add(agentId);
-      }
+    List<TaskInfo> otherTaskInfos = getOtherTaskInfos(taskInfo);
+    for (TaskInfo otherInfo : otherTaskInfos) {
+      agentsToAvoid.add(otherInfo.getSlaveId());
     }
 
     return agentsToAvoid;
+  }
+
+  private List<TaskInfo> getOtherTaskInfos(TaskInfo thisTaskInfo) throws Exception {
+    List<TaskInfo> others = new ArrayList<TaskInfo>();
+
+    String thisTaskName = thisTaskInfo.getName();
+
+    for (TaskInfo taskInfo : state.getTaskInfos()) {
+      if (!taskInfo.getName().equals(thisTaskInfo.getName())) {
+        others.add(taskInfo);
+      }
+    }
+
+    return others;
   }
 
   private static List<SlaveID> getAgents(List<TaskInfo> taskInfos) {

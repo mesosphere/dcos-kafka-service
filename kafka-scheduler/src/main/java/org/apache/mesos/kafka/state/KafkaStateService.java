@@ -223,7 +223,7 @@ public class KafkaStateService implements Observer {
       taskState.equals(TaskState.TASK_ERROR);
   }
 
-  private List<String> getTaskIds() throws Exception {
+  public List<String> getTaskIds() throws Exception {
     return zkClient.getChildren().forPath(taskPath);
   }
 

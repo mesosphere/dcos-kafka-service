@@ -36,6 +36,7 @@ import org.apache.mesos.Protos.MasterInfo;
 import org.apache.mesos.Protos.Offer;
 import org.apache.mesos.Protos.OfferID;
 import org.apache.mesos.Protos.SlaveID;
+import org.apache.mesos.Protos.TaskID;
 import org.apache.mesos.Protos.TaskStatus;
 import org.apache.mesos.SchedulerDriver;
 
@@ -51,6 +52,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   private MasterOfferRequirementProvider offerReqProvider;
   private OfferAccepter offerAccepter;
 
+  private static SchedulerDriver driver;
   private Reconciler reconciler;
 
   public KafkaScheduler() {
@@ -69,6 +71,16 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
             new PersistentOperationRecorder()));
 
     String port0 = config.get("PORT0");
+  }
+
+  public static void killTasks(List<String> taskIds) {
+    for (String taskId : taskIds) {
+      killTask(taskId);
+    }
+  }
+
+  public static void killTask(String taskId) {
+    driver.killTask(TaskID.newBuilder().setValue(taskId).build());
   }
 
   private OfferRequirementProvider getOfferRequirementProvider() {
@@ -114,6 +126,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     log.info("Registered framework with frameworkId: " + frameworkId.getValue());
     state.setFrameworkId(frameworkId);
     reconcile(driver);
+    this.driver = driver;
 
     KafkaApiServer.start();
   }
@@ -122,6 +135,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   public void reregistered(SchedulerDriver driver, MasterInfo masterInfo) {
     log.info("Reregistered framework.");
     reconcile(driver);
+    this.driver = driver;
   }
 
   @Override

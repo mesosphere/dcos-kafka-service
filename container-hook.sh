@@ -29,18 +29,26 @@ if [ -d "${LIB_OVERLAY_PATH}" ]; then
     echo "--- END COPY ${LIB_OVERLAY_PATH} => ${KAFKA_DISTRIBUTION_ROOT}"
 fi
 
-
 # Export additional override flags to be sent to Kafka start command.
 
 # If the container environment variables specify a statsd endpoint, provide Kafka with a statsd configuration.
 if [ -n "${STATSD_UDP_HOST}" -a -n "${STATSD_UDP_PORT}" ]; then
     echo "Statsd endpoint found in container environment: ${STATSD_UDP_HOST}:${STATSD_UDP_PORT}..."
+
+    HOOK_FLAG_EXTRAS=""
+    # Disable tags if they're not explicitly enabled by the scheduler
+    if [ -z "${ENABLE_STATSD_TAGS}" ]; then
+        HOOK_FLAG_EXTRAS="--override external.kafka.statsd.tag.enabled=false"
+    fi
+
     export CONTAINER_HOOK_FLAGS=" \
 --override kafka.metrics.reporters=com.airbnb.kafka.KafkaStatsdMetricsReporter \
 --override external.kafka.statsd.reporter.enabled=true \
 --override external.kafka.statsd.host=${STATSD_UDP_HOST} \
 --override external.kafka.statsd.port=${STATSD_UDP_PORT} \
---override external.kafka.statsd.metrics.exclude_regex=\"\""
+--override external.kafka.statsd.tag.enabled=false \
+--override external.kafka.statsd.metrics.exclude_regex=\"\" \
+${HOOK_FLAG_EXTRAS}"
     echo "Additional exported Kafka flags:${CONTAINER_HOOK_FLAGS}"
 else
     echo "No statsd endpoint found in container environment."

@@ -9,6 +9,7 @@ import org.apache.mesos.kafka.config.KafkaConfigService;
 import org.apache.mesos.config.ConfigurationService;
 
 import org.glassfish.grizzly.http.server.HttpServer;
+import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
 

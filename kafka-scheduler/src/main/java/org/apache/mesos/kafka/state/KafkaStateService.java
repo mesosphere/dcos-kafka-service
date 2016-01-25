@@ -166,6 +166,22 @@ public class KafkaStateService implements Observer {
     return getElement(zkRoot + "/brokers/ids/" + id);
   }
 
+  public List<String> getBrokerEndpoints() throws Exception {
+    String brokerPath = zkRoot + "/brokers/ids";
+    List<String> endpoints = new ArrayList<String>();
+
+    List<String> ids = zkClient.getChildren().forPath(brokerPath);
+    for (String id : ids) {
+      byte[] bytes = zkClient.getData().forPath(brokerPath + "/" + id);
+      JSONObject broker = new JSONObject(new String(bytes, "UTF-8"));
+      String host = (String) broker.get("host");
+      Integer port = (Integer) broker.get("port");
+      endpoints.add(host + ":" + port);
+    }
+
+    return endpoints;
+  }
+
   public JSONArray getTopics() throws Exception {
     return getIds(zkRoot + "/brokers/topics");
   }
@@ -207,7 +223,7 @@ public class KafkaStateService implements Observer {
       taskState.equals(TaskState.TASK_ERROR);
   }
 
-  private List<String> getTaskIds() throws Exception {
+  public List<String> getTaskIds() throws Exception {
     return zkClient.getChildren().forPath(taskPath);
   }
 

@@ -2,6 +2,7 @@ package org.apache.mesos.kafka.web;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.Path;
@@ -35,18 +36,6 @@ public class TopicController {
     }
   }
 
-  @GET
-  @Path("/{name}")
-  public Response getTopic(@PathParam("name") String topicName) {
-    try {
-      JSONObject topic = state.getTopic(topicName);
-      return Response.ok(topic.toString(), MediaType.APPLICATION_JSON).build();
-    } catch (Exception ex) {
-      log.error("Failed to fetch topic: " + topicName + " with exception: " + ex);
-      return Response.serverError().build();
-    }
-  }
-
   @POST
   public Response createTopic(
       @QueryParam("name") String name,
@@ -63,4 +52,46 @@ public class TopicController {
       return Response.serverError().build();
     }
   }
+
+  @GET
+  @Path("/{name}")
+  public Response getTopic(@PathParam("name") String topicName) {
+    try {
+      JSONObject topic = state.getTopic(topicName);
+      return Response.ok(topic.toString(), MediaType.APPLICATION_JSON).build();
+    } catch (Exception ex) {
+      log.error("Failed to fetch topic: " + topicName + " with exception: " + ex);
+      return Response.serverError().build();
+    }
+  }
+
+  @PUT
+  @Path("/{name}")
+  public Response testTopic(
+      @PathParam("name") String name,
+      @QueryParam("test") String testType,
+      @QueryParam("messages") String messages) {
+
+    try {
+      JSONObject result = null;
+
+      switch (testType) {
+        case "producer":
+          int messageCount = Integer.parseInt(messages);
+          result = CmdExecutor.producerTest(name, messageCount);
+          break;
+        default:
+          result = new JSONObject();
+          result.put("Error", "Unrecognized test type: " + testType);
+          break;
+      }
+
+      return Response.ok(result.toString(), MediaType.APPLICATION_JSON).build();
+
+    } catch (Exception ex) {
+      log.error("Failed to run performance test: " + testType + "on Topic: " + name +  " with exception: " + ex);
+      return Response.serverError().build();
+    }
+  }
+
 }

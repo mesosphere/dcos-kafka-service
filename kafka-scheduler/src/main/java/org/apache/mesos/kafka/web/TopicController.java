@@ -94,4 +94,15 @@ public class TopicController {
     }
   }
 
+  @GET
+  @Path("/{name}/offsets")
+  public Response getOffsets(@PathParam("name") String topicName) {
+    try {
+      JSONArray offsets = CmdExecutor.getOffsets(topicName);
+      return Response.ok(offsets.toString(), MediaType.APPLICATION_JSON).build();
+    } catch (Exception ex) {
+      log.error("Failed to fetch offsets for: " + topicName + " with exception: " + ex);
+      return Response.serverError().build();
+    }
+  }
 }

@@ -14,6 +14,7 @@ import org.apache.mesos.config.FrameworkConfigurationService;
 import org.apache.mesos.kafka.state.KafkaStateService;
 import org.apache.mesos.kafka.config.KafkaConfigService;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class CmdExecutor {
@@ -61,6 +62,43 @@ public class CmdExecutor {
     cmd.add(bootstrapServers);
 
     return runCmd(cmd); 
+  }
+
+  public static JSONArray getOffsets(String topicName) throws Exception {
+    // e.g. ./kafka-run-class.sh kafka.tools.GetOffsetShell --broker-list ip-10-0-1-71.us-west-2.compute.internal:9092,ip-10-0-1-72.us-west-2.compute.internal:9093,ip-10-0-1-68.us-west-2.compute.internal:9094 --topic topic0 --time -1 --partitions 0
+
+    List<String> brokerEndpoints = state.getBrokerEndpoints();
+    String brokers = StringUtils.join(brokerEndpoints, ","); 
+
+    List<String> cmd = new ArrayList<String>();
+    cmd.add(binPath + "kafka-run-class.sh");
+    cmd.add("kafka.tools.GetOffsetShell");
+    cmd.add("--topic");
+    cmd.add(topicName);
+    cmd.add("--time");
+    cmd.add("-1");
+    cmd.add("--broker-list");
+    cmd.add(brokers);
+
+    String stdout = (String) runCmd(cmd).get("stdout");
+    return getPartitions(stdout);
+  }
+
+  private static JSONArray getPartitions(String offsets) {
+    List<JSONObject> partitions = new ArrayList<JSONObject>();
+
+    String lines[] = offsets.split("\\n");
+    for (String line : lines) {
+      // e.g. topic0:2:33334
+      String elements[] = line.trim().split(":");
+      String partition = elements[1];
+      String offset = elements[2];
+      JSONObject part = new JSONObject();
+      part.put(partition, offset);
+      partitions.add(part);
+    }
+
+    return new JSONArray(partitions);
   }
 
   private static JSONObject runCmd(List<String> cmd) throws Exception{

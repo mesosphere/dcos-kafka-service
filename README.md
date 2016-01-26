@@ -23,3 +23,26 @@ package.sources=['https://github.com/mesosphere/universe/archive/kafka.zip']
 $ dcos package update
 $ dcos package install --yes kafka
 ```
+
+## Operations
+# Topics
+Create:
+```
+http POST $DCOS_URI/service/kafka0/topics name==topic0 partitions==3 replication==3
+```
+Alter:
+```
+bin/kafka-topics.sh --zookeeper zk_host:port/chroot --alter --topic my_topic_name --partitions 40
+http POST $DCOS_URI/service/kafka0/topics/topic0 operation==partitions partitions==4
+
+bin/kafka-topics.sh --zookeeper zk_host:port/chroot --alter --topic my_topic_name --config x=y
+http POST $DCOS_URI/service/kafka0/topics/topic0 operation==config key==foo value==bar
+
+bin/kafka-topics.sh --zookeeper zk_host:port/chroot --alter --topic my_topic_name --deleteConfig x
+http POST $DCOS_URI/service/kafka0/topics/topic0 operation==deleteConfig key==foo
+```
+Delete:
+```
+bin/kafka-topics.sh --zookeeper zk_host:port/chroot --delete --topic my_topic_name
+http PUT $DCOS_URI/service/kafka0/topics/topic0 operation==delete
+```

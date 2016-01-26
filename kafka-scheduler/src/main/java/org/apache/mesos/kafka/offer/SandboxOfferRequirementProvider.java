@@ -60,21 +60,7 @@ public class SandboxOfferRequirementProvider implements OfferRequirementProvider
     commands.add("env");
 
     // Run Kafka
-    String kafkaStartCmd = String.format(
-        "$MESOS_SANDBOX/%1$s/bin/kafka-server-start.sh "
-        + "$MESOS_SANDBOX/%1$s/config/server.properties "
-        + "--override zookeeper.connect=%2$s/%3$s "
-        + "--override broker.id=%4$s "
-        + "--override log.dirs=$MESOS_SANDBOX/kafka-logs "
-        + "--override port=%5$d "
-        + "--override listeners=PLAINTEXT://:%5$d "
-        + "$CONTAINER_HOOK_FLAGS",
-        config.get("KAFKA_VER_NAME"), // #1
-        config.get("ZOOKEEPER_ADDR"), // #2
-        config.get("FRAMEWORK_NAME"), // #3
-        brokerId, // #4
-        port); // #5
-
+    String kafkaStartCmd = OfferRequirementUtils.getKafkaStartCmd(brokerId, port, "kafka-logs"); 
     commands.add(kafkaStartCmd);
 
     String command = Joiner.on(" && ").join(commands);

@@ -158,6 +158,18 @@ public class KafkaStateService implements Observer {
     return taskInfos;
   }
 
+  public String getTaskIdForBroker(Integer brokerId) throws Exception {
+    String brokerName = "broker-" + brokerId;
+
+    for (TaskInfo taskInfo : getTaskInfos()) {
+      if (taskInfo.getName().equals(brokerName)) {
+        return taskInfo.getTaskId().getValue();
+      }
+    }
+
+    return null;
+  }
+
   public JSONArray getBrokerIds() throws Exception {
     return getIds(zkRoot + "/brokers/ids");
   }

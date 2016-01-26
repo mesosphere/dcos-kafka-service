@@ -25,7 +25,7 @@ $ dcos package install --yes kafka
 ```
 
 ## Operations
-# Brokers
+### Brokers
 By default 3 Brokers are deployed.  Alternatively an override can be specified for the desired number of brokers like this:
 ```
 $ dcos package install --yes kafka --options=kafka0.json
@@ -67,39 +67,160 @@ To update this value at runtime change the environment variable BROKER_PV to tru
 
 **List**
 ```
-http $DCOS_URI/service/kafka0/brokers
+$ http $DCOS_URI/service/kafka0/brokers -p hbHB
+GET //service/kafka0/brokers HTTP/1.1
+Accept: */*
+Accept-Encoding: gzip, deflate
+Connection: keep-alive
+Host: pool-a210-elasticl-cm28sy3wpqzb-1312862935.us-west-2.elb.amazonaws.com
+User-Agent: HTTPie/0.9.2
+
+HTTP/1.1 200 OK
+Connection: keep-alive
+Content-Length: 13
+Content-Type: application/json
+Date: Tue, 26 Jan 2016 23:26:32 GMT
+Server: openresty/1.7.10.2
+
+[
+    "0",
+    "1",
+    "2"
+]
 ```
 
 **Restart**
 
 To restart all brokers:
 ```
-http PUT $DCOS_URI/service/kafka0/brokers
+$ http PUT $DCOS_URI/service/kafka0/brokers -p hbHB
+PUT //service/kafka0/brokers HTTP/1.1
+Accept: */*
+Accept-Encoding: gzip, deflate
+Connection: keep-alive
+Content-Length: 0
+Host: pool-a210-elasticl-cm28sy3wpqzb-1312862935.us-west-2.elb.amazonaws.com
+User-Agent: HTTPie/0.9.2
+
+HTTP/1.1 200 OK
+Connection: keep-alive
+Content-Length: 148
+Content-Type: application/json
+Date: Tue, 26 Jan 2016 23:28:48 GMT
+Server: openresty/1.7.10.2
+
+[
+    "broker-1__759c9fc2-3890-4921-8db8-c87532b1a033",
+    "broker-2__0b444104-e210-4b78-8d19-f8938b8761fd",
+    "broker-0__9c426c50-1087-475c-aa36-cd00d24ccebb"
+]
 ```
 
 To restart a single broker:
 ```
-http PUT $DCOS_URI/service/kafka0/brokers/0
+$ http PUT $DCOS_URI/service/kafka0/brokers/0 -p hbHB
+PUT //service/kafka0/brokers HTTP/1.1
+Accept: */*
+Accept-Encoding: gzip, deflate
+Connection: keep-alive
+Content-Length: 0
+Host: pool-a210-elasticl-cm28sy3wpqzb-1312862935.us-west-2.elb.amazonaws.com
+User-Agent: HTTPie/0.9.2
+
+HTTP/1.1 200 OK
+Connection: keep-alive
+Content-Length: 148
+Content-Type: application/json
+Date: Tue, 26 Jan 2016 23:28:48 GMT
+Server: openresty/1.7.10.2
+
+[
+    "broker-0__9c426c50-1087-475c-aa36-cd00d24ccebb"
+]
 ```
 
-# Topics
-Create:
+### Topics
+**Create**
 ```
-http POST $DCOS_URI/service/kafka0/topics name==topic0 partitions==3 replication==3
-```
-Alter:
-```
-bin/kafka-topics.sh --zookeeper zk_host:port/chroot --alter --topic my_topic_name --partitions 40
-http POST $DCOS_URI/service/kafka0/topics/topic0 operation==partitions partitions==4
+$ http POST $DCOS_URI/service/kafka0/topics name==topic1 partitions==3 replication==3 -phbHB
+POST //service/kafka0/topics?replication=3&name=topic1&partitions=3 HTTP/1.1
+Accept: */*
+Accept-Encoding: gzip, deflate
+Connection: keep-alive
+Content-Length: 0
+Host: pool-a210-elasticl-cm28sy3wpqzb-1312862935.us-west-2.elb.amazonaws.com
+User-Agent: HTTPie/0.9.2
 
-bin/kafka-topics.sh --zookeeper zk_host:port/chroot --alter --topic my_topic_name --config x=y
-http POST $DCOS_URI/service/kafka0/topics/topic0 operation==config key==foo value==bar
+HTTP/1.1 200 OK
+Connection: keep-alive
+Content-Length: 66
+Content-Type: application/json
+Date: Tue, 26 Jan 2016 23:29:45 GMT
+Server: openresty/1.7.10.2
 
-bin/kafka-topics.sh --zookeeper zk_host:port/chroot --alter --topic my_topic_name --deleteConfig x
-http POST $DCOS_URI/service/kafka0/topics/topic0 operation==deleteConfig key==foo
+{
+    "exit_code": 0,
+    "stderr": "",
+    "stdout": "Created topic \"topic1\".\n"
+}
 ```
-Delete:
+**Alter**
+
+Alter partition count:
 ```
-bin/kafka-topics.sh --zookeeper zk_host:port/chroot --delete --topic my_topic_name
-http PUT $DCOS_URI/service/kafka0/topics/topic0 operation==delete
+$ http PUT $DCOS_URI/service/kafka0/topics/topic1 operation==partitions partitions==4 -phbHB
+PUT //service/kafka0/topics/topic1?operation=partitions&partitions=4 HTTP/1.1
+Accept: */*
+Accept-Encoding: gzip, deflate
+Connection: keep-alive
+Content-Length: 0
+Host: pool-a210-elasticl-cm28sy3wpqzb-1312862935.us-west-2.elb.amazonaws.com
+User-Agent: HTTPie/0.9.2
+
+HTTP/1.1 200 OK
+Connection: keep-alive
+Content-Length: 200
+Content-Type: application/json
+Date: Tue, 26 Jan 2016 23:31:12 GMT
+Server: openresty/1.7.10.2
+
+{
+    "exit_code": 0,
+    "stderr": "",
+    "stdout": "WARNING: If partitions are increased for a topic that has a key, the partition logic or ordering of the messages will be affected\nAdding partitions succeeded!\n"
+}
+```
+
+Alter config value:
+```
+http PUT $DCOS_URI/service/kafka0/topics/topic0 operation==config key==foo value==bar
+```
+Delete config value:
+```
+http PUT $DCOS_URI/service/kafka0/topics/topic0 operation==deleteConfig key==foo
+```
+
+**Delete**
+```
+$ http PUT $DCOS_URI/service/kafka0/topics/topic0 operation==delete -p hbHB
+PUT //service/kafka0/topics/topic0?operation=delete HTTP/1.1
+Accept: */*
+Accept-Encoding: gzip, deflate
+Connection: keep-alive
+Content-Length: 0
+Host: pool-a210-elasticl-cm28sy3wpqzb-1312862935.us-west-2.elb.amazonaws.com
+User-Agent: HTTPie/0.9.2
+
+HTTP/1.1 200 OK
+Connection: keep-alive
+Content-Length: 152
+Content-Type: application/json
+Date: Tue, 26 Jan 2016 23:32:59 GMT
+Server: openresty/1.7.10.2
+
+{
+    "exit_code": 0,
+    "stderr": "",
+    "stdout": "Topic topic0 is marked for deletion.\nNote: This will have no impact if delete.topic.enable is not set to true.\n"
+}
 ```

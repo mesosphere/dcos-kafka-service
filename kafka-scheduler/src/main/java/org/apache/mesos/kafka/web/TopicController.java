@@ -69,27 +69,30 @@ public class TopicController {
   @Path("/{name}")
   public Response testTopic(
       @PathParam("name") String name,
-      @QueryParam("test") String testType,
+      @QueryParam("operation") String operation,
       @QueryParam("messages") String messages) {
 
     try {
       JSONObject result = null;
 
-      switch (testType) {
-        case "producer":
+      switch (operation) {
+        case "producer-test":
           int messageCount = Integer.parseInt(messages);
           result = CmdExecutor.producerTest(name, messageCount);
           break;
+        case "delete":
+          result = CmdExecutor.deleteTopic(name);
+          break;
         default:
           result = new JSONObject();
-          result.put("Error", "Unrecognized test type: " + testType);
+          result.put("Error", "Unrecognized operation: " + operation);
           break;
       }
 
       return Response.ok(result.toString(), MediaType.APPLICATION_JSON).build();
 
     } catch (Exception ex) {
-      log.error("Failed to run performance test: " + testType + "on Topic: " + name +  " with exception: " + ex);
+      log.error("Failed to perform operation: " + operation + "on Topic: " + name +  " with exception: " + ex);
       return Response.serverError().build();
     }
   }
@@ -102,6 +105,21 @@ public class TopicController {
       return Response.ok(offsets.toString(), MediaType.APPLICATION_JSON).build();
     } catch (Exception ex) {
       log.error("Failed to fetch offsets for: " + topicName + " with exception: " + ex);
+      return Response.serverError().build();
+    }
+  }
+
+  @POST
+  @Path("/{name}")
+  public Response getOffsets(
+      @PathParam("name") String topicName,
+      @QueryParam("partitions") String partitions) {
+
+    try {
+      JSONObject obj = CmdExecutor.alterTopic(topicName, Integer.parseInt(partitions));
+      return Response.ok(obj.toString(), MediaType.APPLICATION_JSON).build();
+    } catch (Exception ex) {
+      log.error("Failed to alter topic for: " + topicName + " with exception: " + ex);
       return Response.serverError().build();
     }
   }

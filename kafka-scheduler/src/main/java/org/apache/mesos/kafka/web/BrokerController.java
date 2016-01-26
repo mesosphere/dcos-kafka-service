@@ -1,5 +1,6 @@
 package org.apache.mesos.kafka.web;
 
+import java.util.Arrays;
 import java.util.List;
 
 import javax.ws.rs.GET;
@@ -39,15 +40,10 @@ public class BrokerController {
   }
 
   @PUT
-  public Response testTopic(@QueryParam("clean") String cleanString) {
+  public Response killBrokers() {
     try {
-      boolean clean = Boolean.parseBoolean(cleanString);
       List<String> taskIds = state.getTaskIds();
       KafkaScheduler.killTasks(taskIds);
-
-      if (clean) {
-        log.info("Cleaning ZK state for taskIds: " + taskIds);
-      }
 
       return Response.ok(new JSONArray(taskIds).toString(), MediaType.APPLICATION_JSON).build();
     } catch (Exception ex) {
@@ -64,6 +60,23 @@ public class BrokerController {
       return Response.ok(broker.toString(), MediaType.APPLICATION_JSON).build();
     } catch (Exception ex) {
       log.error("Failed to fetch broker: " + id + " with exception: " + ex);
+      return Response.serverError().build();
+    }
+  }
+
+  @PUT
+  @Path("/{id}")
+  public Response killBrokers(
+      @PathParam("id") String id) {
+
+    try {
+      List<String> taskIds = 
+        Arrays.asList(state.getTaskIdForBroker(Integer.parseInt(id)));
+      KafkaScheduler.killTasks(taskIds);
+
+      return Response.ok(new JSONArray(taskIds).toString(), MediaType.APPLICATION_JSON).build();
+    } catch (Exception ex) {
+      log.error("Failed to kill brokers with exception: " + ex);
       return Response.serverError().build();
     }
   }

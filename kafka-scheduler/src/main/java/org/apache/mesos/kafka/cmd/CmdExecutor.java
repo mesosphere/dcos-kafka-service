@@ -30,14 +30,46 @@ public class CmdExecutor {
     List<String> cmd = new ArrayList<String>();
     cmd.add(binPath + "kafka-topics.sh");
     cmd.add("--create");
+    cmd.add("--zookeeper");
+    cmd.add(zkPath);
+    cmd.add("--topic");
+    cmd.add(name);
+    cmd.add("--partitions");
+    cmd.add(Integer.toString(partitionCount));
+    cmd.add("--replication-factor");
+    cmd.add(Integer.toString(replicationFactor));
+
+    return runCmd(cmd); 
+  }
+
+  public static JSONObject deleteTopic(String name) throws Exception {
+    // e.g. ./kafka-topics.sh --delete --zookeeper master.mesos:2181/kafka0 --topic topic0
+
+    List<String> cmd = new ArrayList<String>();
+    cmd.add(binPath + "kafka-topics.sh");
+    cmd.add("--delete");
     cmd.add("--zookeeper ");
     cmd.add(zkPath);
     cmd.add("--topic ");
     cmd.add(name);
-    cmd.add("--partitions ");
-    cmd.add(Integer.toString(partitionCount));
-    cmd.add("--replication-factor");
-    cmd.add(Integer.toString(replicationFactor));
+
+    return runCmd(cmd); 
+  }
+
+  public static JSONObject alterTopic(String name, Integer partitionCount) throws Exception {
+    // e.g. ./kafka-topics.sh --zookeeper master.mesos:2181/kafka0 --alter --topic topic0 --partitions 4
+
+    String partitions = Integer.toString(partitionCount);
+
+    List<String> cmd = new ArrayList<String>();
+    cmd.add(binPath + "kafka-topics.sh");
+    cmd.add("--alter");
+    cmd.add("--zookeeper");
+    cmd.add(zkPath);
+    cmd.add("--topic");
+    cmd.add(name);
+    cmd.add("--partitions");
+    cmd.add(partitions);
 
     return runCmd(cmd); 
   }

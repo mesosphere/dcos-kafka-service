@@ -2,12 +2,17 @@ package org.apache.mesos.kafka.cmd;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+import javax.ws.rs.core.MultivaluedMap;
+
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import org.apache.mesos.config.ConfigurationService;
 import org.apache.mesos.config.FrameworkConfigurationService;
@@ -18,6 +23,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class CmdExecutor {
+  private static final Log log = LogFactory.getLog(CmdExecutor.class);
   private static KafkaConfigService config = KafkaConfigService.getConfigService();
   private static KafkaStateService state = KafkaStateService.getStateService();
 
@@ -56,10 +62,8 @@ public class CmdExecutor {
     return runCmd(cmd); 
   }
 
-  public static JSONObject alterTopic(String name, Integer partitionCount) throws Exception {
+  public static JSONObject alterTopic(String name, List<String> cmds) throws Exception {
     // e.g. ./kafka-topics.sh --zookeeper master.mesos:2181/kafka0 --alter --topic topic0 --partitions 4
-
-    String partitions = Integer.toString(partitionCount);
 
     List<String> cmd = new ArrayList<String>();
     cmd.add(binPath + "kafka-topics.sh");
@@ -68,10 +72,20 @@ public class CmdExecutor {
     cmd.add(zkPath);
     cmd.add("--topic");
     cmd.add(name);
-    cmd.add("--partitions");
-    cmd.add(partitions);
+    cmd.addAll(cmds);
 
     return runCmd(cmd); 
+  }
+
+  public static List<String> getListOverrides(MultivaluedMap<String, String> overrides) {
+    List<String> output = new ArrayList<String>();
+
+    for (Map.Entry<String,List<String>> override : overrides.entrySet()) {
+      output.add("--" + override.getKey());
+      output.add(override.getValue().get(0));
+    }
+
+    return output;
   }
 
   public static JSONObject producerTest(String topicName, int messages) throws Exception {

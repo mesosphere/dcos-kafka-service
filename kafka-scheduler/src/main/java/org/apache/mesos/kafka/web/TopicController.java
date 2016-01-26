@@ -1,16 +1,22 @@
 package org.apache.mesos.kafka.web;
 
+import java.util.Arrays;
+import java.util.List;
+
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
+import javax.ws.rs.core.MultivaluedMap;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -111,13 +117,42 @@ public class TopicController {
 
   @POST
   @Path("/{name}")
-  public Response getOffsets(
+  public Response alterTopic(
       @PathParam("name") String topicName,
-      @QueryParam("partitions") String partitions) {
+      @QueryParam("operation") String operation,
+      @QueryParam("key") String key,
+      @QueryParam("value") String value) {
 
     try {
-      JSONObject obj = CmdExecutor.alterTopic(topicName, Integer.parseInt(partitions));
-      return Response.ok(obj.toString(), MediaType.APPLICATION_JSON).build();
+      JSONObject result = null;
+      List<String> cmds = null;
+
+      if (operation == null) {
+        result.put("Error", "Must designate an 'operation'.  Possibles operations are [partitions, config, deleteConfig].");
+      } else {
+
+        switch (operation) {
+          case "partitions":
+            cmds = Arrays.asList("--partitions", value);
+            result = CmdExecutor.alterTopic(topicName, cmds);
+            break;
+          case "config":
+            cmds = Arrays.asList("--config", key + "=" + value);
+            result = CmdExecutor.alterTopic(topicName, cmds);
+            break;
+          case "deleteConfig":
+            cmds = Arrays.asList("--deleteConfig", key);
+            result = CmdExecutor.alterTopic(topicName, cmds);
+            break;
+          default:
+            result = new JSONObject();
+            result.put("Error", "Unrecognized operation: " + operation);
+            break;
+        }
+      }
+
+      return Response.ok(result.toString(), MediaType.APPLICATION_JSON).build();
+
     } catch (Exception ex) {
       log.error("Failed to alter topic for: " + topicName + " with exception: " + ex);
       return Response.serverError().build();

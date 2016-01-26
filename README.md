@@ -26,7 +26,7 @@ $ dcos package install --yes kafka
 
 ## Operations
 # Brokers
-By default 3 Brokers are deployed.  Alternatively an ovverride can be specified for the desired number of brokers like this:
+By default 3 Brokers are deployed.  Alternatively an override can be specified for the desired number of brokers like this:
 ```
 $ dcos package install --yes kafka --options=kafka0.json
 $ cat kafka0.json
@@ -35,6 +35,51 @@ $ cat kafka0.json
     "broker-count": 5
   }
 }
+```
+
+To update the number of Brokers at runtime, changing the environment variable BROKER_COUNT in Marathon and deploying the config change will produce the indicated number of brokers.
+
+**Placement Strategy**
+By default installing Kafka will place Brokers on whatever nodes have enough Resources.  To restrict deployment to one Broker per node you can deploy with either at deployment time or at runtime.  At runtime one can indicate the placement strategy like this:
+```
+$ cat kafka0.json
+{
+  "kafka": {
+    "placement-strategy": "NODE"
+  }
+}
+```
+
+To update this value at runtime change the environment variable PLACEMENT_STRATEGY to NODE in Marathon.  Then restart each Broker in a safe rolling manner.
+
+**Persistent Volumes**
+By default Kafka will use the sandbox available to Mesos Tasks for storing data.  This storage goes away on Task failure.  So if a Broker crashes the data on it is lost forever.  This is fine for dev environments.  In production environments Kafka should be deployed with the following option enabled:
+```
+$ cat kafka0.json
+{
+  "kafka": {
+    "pv": true
+  }
+}
+```
+
+To update this value at runtime change the environment variable BROKER_PV to true in Marathon.  Then restart each Broker in a safe rolling manner.
+
+**List**
+```
+http $DCOS_URI/service/kafka0/brokers
+```
+
+**Restart**
+
+To restart all brokers:
+```
+http PUT $DCOS_URI/service/kafka0/brokers
+```
+
+To restart a single broker:
+```
+http PUT $DCOS_URI/service/kafka0/brokers/0
 ```
 
 # Topics

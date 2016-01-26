@@ -25,6 +25,18 @@ $ dcos package install --yes kafka
 ```
 
 ## Operations
+# Brokers
+By default 3 Brokers are deployed.  Alternatively an ovverride can be specified for the desired number of brokers like this:
+```
+$ dcos package install --yes kafka --options=kafka0.json
+$ cat kafka0.json
+{
+  "kafka": {
+    "broker-count": 5
+  }
+}
+```
+
 # Topics
 Create:
 ```

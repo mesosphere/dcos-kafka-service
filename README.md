@@ -25,6 +25,36 @@ $ dcos package install --yes kafka
 ```
 
 ## Operations
+### Connection Information
+Kafka comes with many useful tools.  Often they require either Zookeeper connection information, or the list of Broker endpoints.  This information can be retrieved in an easily consumable formation from the /connection endpoint as below.
+
+```
+$ http $DCOS_URI/service/kafka0/connection -p hbHB
+GET //service/kafka0/connection HTTP/1.1
+Accept: */*
+Accept-Encoding: gzip, deflate
+Connection: keep-alive
+Host: gabriel-4-elasticl-zltw2lt3kmwl-647734499.us-west-2.elb.amazonaws.com
+User-Agent: HTTPie/0.9.2
+
+
+
+HTTP/1.1 200 OK
+Connection: keep-alive
+Content-Length: 196
+Content-Type: application/json
+Date: Wed, 27 Jan 2016 18:01:22 GMT
+Server: openresty/1.7.10.2
+
+{
+    "brokers": [
+        "ip-10-0-0-233.us-west-2.compute.internal:9092",
+        "ip-10-0-0-233.us-west-2.compute.internal:9093",
+        "ip-10-0-0-233.us-west-2.compute.internal:9094"
+    ],
+    "zookeeper": "master.mesos:2181/kafka0"
+}
+```
 ### Brokers
 By default 3 Brokers are deployed.  Alternatively an override can be specified for the desired number of brokers like this:
 ```

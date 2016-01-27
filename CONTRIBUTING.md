@@ -21,16 +21,36 @@ git pull --recurse-submodules # ensure mesos-commons is also updated
 
 ### Run in DCOS
 
-Prerequisite:
+Prerequisites:
 - Have a DCOS cluster somewhere
 - Install [dcos-cli](https://docs.mesosphere.com/administration/introcli/cli/)
+
+#### Deploy from local custom Universe
 
 ```bash
 git clone https://github.com/mesosphere/universe
 dcos config prepend package.sources file:///path/to/universe
-# Modify kafka-scheduler-x-uber.jar URL in /path/to/universe/repo/packages/K/kafka/N/resource.json
+# Customize URLs in /path/to/universe/repo/packages/K/kafka/N/resource.json
+dcos config show
+# [...]
+# package.sources=[
+#   'file:///path/to/universe',
+#   'https://github.com/mesosphere/universe/archive/version-1.x.zip']
 dcos package update
-dcos package install kafka
+dcos package install --yes kafka
+```
+
+#### Deploy from custom branch in Universe repo
+
+```bash
+dcos config prepend package.sources https://github.com/mesosphere/universe/archive/custom-branch.zip
+dcos config show
+# [...]
+# package.sources=[
+#   'https://github.com/mesosphere/universe/archive/custom-branch.zip',
+#   'https://github.com/mesosphere/universe/archive/version-1.x.zip']
+dcos package update
+dcos package install --yes kafka
 ```
 
 ## Working with the [mesos-commons](https://github.com/mesosphere/mesos-commons) submodule

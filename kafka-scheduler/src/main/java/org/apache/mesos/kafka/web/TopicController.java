@@ -76,29 +76,49 @@ public class TopicController {
   public Response testTopic(
       @PathParam("name") String name,
       @QueryParam("operation") String operation,
+      @QueryParam("key") String key,
+      @QueryParam("value") String value,
+      @QueryParam("partitions") String partitions,
       @QueryParam("messages") String messages) {
 
     try {
       JSONObject result = null;
+      List<String> cmds = null;
 
-      switch (operation) {
-        case "producer-test":
-          int messageCount = Integer.parseInt(messages);
-          result = CmdExecutor.producerTest(name, messageCount);
-          break;
-        case "delete":
-          result = CmdExecutor.deleteTopic(name);
-          break;
-        default:
-          result = new JSONObject();
-          result.put("Error", "Unrecognized operation: " + operation);
-          break;
+      if (operation == null) {
+        result.put("Error", "Must designate an 'operation'.  Possibles operations are [producer-test, delete, partitions, config, deleteConfig].");
+      } else {
+        switch (operation) {
+          case "producer-test":
+            int messageCount = Integer.parseInt(messages);
+            result = CmdExecutor.producerTest(name, messageCount);
+            break;
+          case "delete":
+            result = CmdExecutor.deleteTopic(name);
+            break;
+          case "partitions":
+            cmds = Arrays.asList("--partitions", partitions);
+            result = CmdExecutor.alterTopic(name, cmds);
+            break;
+          case "config":
+            cmds = Arrays.asList("--config", key + "=" + value);
+            result = CmdExecutor.alterTopic(name, cmds);
+            break;
+          case "deleteConfig":
+            cmds = Arrays.asList("--deleteConfig", key);
+            result = CmdExecutor.alterTopic(name, cmds);
+            break;
+          default:
+            result = new JSONObject();
+            result.put("Error", "Unrecognized operation: " + operation);
+            break;
+        }
       }
 
       return Response.ok(result.toString(), MediaType.APPLICATION_JSON).build();
 
     } catch (Exception ex) {
-      log.error("Failed to perform operation: " + operation + "on Topic: " + name +  " with exception: " + ex);
+      log.error("Failed to perform operation: " + operation + " on Topic: " + name +  " with exception: " + ex);
       return Response.serverError().build();
     }
   }
@@ -111,50 +131,6 @@ public class TopicController {
       return Response.ok(offsets.toString(), MediaType.APPLICATION_JSON).build();
     } catch (Exception ex) {
       log.error("Failed to fetch offsets for: " + topicName + " with exception: " + ex);
-      return Response.serverError().build();
-    }
-  }
-
-  @POST
-  @Path("/{name}")
-  public Response alterTopic(
-      @PathParam("name") String topicName,
-      @QueryParam("operation") String operation,
-      @QueryParam("key") String key,
-      @QueryParam("value") String value) {
-
-    try {
-      JSONObject result = null;
-      List<String> cmds = null;
-
-      if (operation == null) {
-        result.put("Error", "Must designate an 'operation'.  Possibles operations are [partitions, config, deleteConfig].");
-      } else {
-
-        switch (operation) {
-          case "partitions":
-            cmds = Arrays.asList("--partitions", value);
-            result = CmdExecutor.alterTopic(topicName, cmds);
-            break;
-          case "config":
-            cmds = Arrays.asList("--config", key + "=" + value);
-            result = CmdExecutor.alterTopic(topicName, cmds);
-            break;
-          case "deleteConfig":
-            cmds = Arrays.asList("--deleteConfig", key);
-            result = CmdExecutor.alterTopic(topicName, cmds);
-            break;
-          default:
-            result = new JSONObject();
-            result.put("Error", "Unrecognized operation: " + operation);
-            break;
-        }
-      }
-
-      return Response.ok(result.toString(), MediaType.APPLICATION_JSON).build();
-
-    } catch (Exception ex) {
-      log.error("Failed to alter topic for: " + topicName + " with exception: " + ex);
       return Response.serverError().build();
     }
   }

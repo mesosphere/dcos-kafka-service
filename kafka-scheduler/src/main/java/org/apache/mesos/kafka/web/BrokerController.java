@@ -40,12 +40,10 @@ public class BrokerController {
   }
 
   @PUT
-  public Response killBrokers() {
+  public Response killBrokers(@QueryParam("reschedule") String reschedule) {
     try {
       List<String> taskIds = state.getTaskIds();
-      KafkaScheduler.killTasks(taskIds);
-
-      return Response.ok(new JSONArray(taskIds).toString(), MediaType.APPLICATION_JSON).build();
+      return killBrokers(taskIds, reschedule);
     } catch (Exception ex) {
       log.error("Failed to kill brokers with exception: " + ex);
       return Response.serverError().build();
@@ -67,12 +65,30 @@ public class BrokerController {
   @PUT
   @Path("/{id}")
   public Response killBrokers(
-      @PathParam("id") String id) {
+      @PathParam("id") String id,
+      @QueryParam("reschedule") String reschedule) {
 
     try {
       List<String> taskIds = 
         Arrays.asList(state.getTaskIdForBroker(Integer.parseInt(id)));
-      KafkaScheduler.killTasks(taskIds);
+      return killBrokers(taskIds, reschedule);
+    } catch (Exception ex) {
+      log.error("Failed to kill brokers with exception: " + ex);
+      return Response.serverError().build();
+    }
+  }
+
+  private Response killBrokers(List<String> taskIds, String reschedule) {
+    try {
+      if (reschedule == null || reschedule == "false") {
+        KafkaScheduler.restartTasks(taskIds);
+      } else if (reschedule.equals("true")) {
+        KafkaScheduler.rescheduleTasks(taskIds);
+      } else {
+        JSONObject failed = new JSONObject();
+        failed.put("Failed",  "'reschedule' = " + reschedule);
+        return Response.ok(failed.toString(), MediaType.APPLICATION_JSON).build();
+      }
 
       return Response.ok(new JSONArray(taskIds).toString(), MediaType.APPLICATION_JSON).build();
     } catch (Exception ex) {
@@ -80,4 +96,5 @@ public class BrokerController {
       return Response.serverError().build();
     }
   }
+
 }

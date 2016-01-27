@@ -1,6 +1,7 @@
 {
   "kafka": {
     "framework-name": "kafka0",
-    "broker-delete-topic-enable": true
+    "broker-delete-topic-enable": true,
+    "broker-count": 5
   }
 }

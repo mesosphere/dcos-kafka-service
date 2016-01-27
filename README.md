@@ -16,11 +16,11 @@ The reader should already be fairly knowledgeable of [common Kafka terminology](
 
 Shortcuts within this guide to get you started with a dev cluster:
 
-- [Install](#-default-install-configuration)
-- [Create topic](#-create-topic)
-- [Write to topic](#-producers)
-- [Read from topic](#-consumers)
-- [Uninstall](#-uninstall)
+- [Install](#default-install-configuration)
+- [Create topic](#create-topic)
+- [Write to topic](#producers)
+- [Read from topic](#consumers)
+- [Uninstall](#uninstall)
 
 ## Installation and Customization
 
@@ -32,9 +32,9 @@ To start a basic test cluster with three brokers, run the following command with
 $ dcos package install kafka
 ```
 
-By default, this will create a new Kafka cluster named `kafka0`. Adding more clusters beyond `kafka0` requires [customizing the `framework-name` at install time](#-custom-install-configuration) for each additional instance.
+By default, this will create a new Kafka cluster named `kafka0`. Adding more clusters beyond `kafka0` requires [customizing the `framework-name` at install time](#custom-install-configuration) for each additional instance.
 
-Additional customization would be needed before this cluster will be suitable for production use, but it should be plenty for testing/development as-is. Running clusters be [re-configured in-place using Marathon](#-changing-configuration-in-flight).
+Additional customization would be needed before this cluster will be suitable for production use, but it should be plenty for testing/development as-is. Running clusters be [re-configured in-place using Marathon](#changing-configuration-in-flight).
 
 ### Custom install configuration
 
@@ -58,7 +58,7 @@ Installing with sample.json's customizations:
 $ dcos package install --options=sample-kafka.json kafka
 ```
 
-See [Configuration Options](#-configuration-options) for a list of available fields which can be customized via an options JSON file when the Kafka cluster is created.
+See [Configuration Options](#configuration-options) for a list of available fields which can be customized via an options JSON file when the Kafka cluster is created.
 
 ### Uninstall
 
@@ -77,10 +77,10 @@ Once the cluster is already up and running, it may be customized in-place. The K
 1. View your Marathon dashboard at `http://your.dcos.host/marathon`
 2. In the list of `Applications`, click the name of the Kafka framework to be updated.
 3. Within the Kafka instance details view, click the `Configuration` tab, then click the `Edit` button.
-4. In the dialog that appears, expand the `Environment Variables` section and update any field(s) to their desired value(s). For example, to [increase the number of Brokers](#-broker-count), edit the value for `BROKER_COUNT`. Do not edit the value for `FRAMEWORK_NAME`.
+4. In the dialog that appears, expand the `Environment Variables` section and update any field(s) to their desired value(s). For example, to [increase the number of Brokers](#broker-count), edit the value for `BROKER_COUNT`. Do not edit the value for `FRAMEWORK_NAME`.
 5. Click `Change and deploy configuration` to apply any changes and cleanly reload the Kafka Framework scheduler. The Kafka cluster itself will persist across the change.
 
-See [Configuration Options](#-configuration-options) for a list of available fields which can be customized via Marathon while the Kafka cluster is running.
+See [Configuration Options](#configuration-options) for a list of available fields which can be customized via Marathon while the Kafka cluster is running.
 
 ## Configuration Options
 

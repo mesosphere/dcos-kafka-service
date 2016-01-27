@@ -10,11 +10,21 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the development guide.
 
 This user guide is intended for administrators and developers who wish to run Kafka in their DCOS cluster. For working on the Kafka Framework itself, see the [development guide](CONTRIBUTING.md).
 
-The reader should already be fairly knowledgeable of [common Kafka terminology](https://kafka.apache.org/documentation.html), ie should know what things like "Brokers", "Topics", and "Partitions" are. The reader should have access to a live DCOS cluster, and should have installed the latest version of [dcos-cli](https://github.com/mesosphere/dcos-cli) to interact with it.
+The reader should already be fairly knowledgeable of [common Kafka terminology](https://kafka.apache.org/documentation.html), ie should know what things like "Brokers", "Topics", and "Partitions" are. The reader should have access to a live DCOS cluster, and should have installed the latest version of [dcos-cli](https://github.com/mesosphere/dcos-cli) to interact with it. Many of the example queries provided here use the "[HTTPie](http://httpie.org/)" commandline HTTP Client utility.
+
+## Quick Start
+
+Shortcuts within this guide to get you started with a dev cluster:
+
+- [Install](#user-content-default-install-configuration)
+- [Create topic](#user-content-create-topic)
+- [Write to topic](#user-content-producers)
+- [Read from topic](#user-content-consumers)
+- [Uninstall](#user-content-uninstall)
 
 ## Installation and Customization
 
-### Default initial configuration
+### <a id="default-install-configuration"></a> Default install configuration
 
 To start a basic test cluster with three brokers, run the following command with dcos-cli:
 
@@ -22,20 +32,20 @@ To start a basic test cluster with three brokers, run the following command with
 $ dcos package install kafka
 ```
 
-By default, this will create a new Kafka cluster named `kafka0`. Adding more clusters beyond `kafka0` requires customizing the `framework-name` at install time, as described below (TODO verify).
+By default, this will create a new Kafka cluster named `kafka0`. Adding more clusters beyond `kafka0` requires [customizing the `framework-name` at install time](#user-content-custom-install-configuration) for each additional instance.
 
 Additional customization would be needed before this cluster will be suitable for production use, but it should be plenty for testing/development as-is. Running clusters be [re-configured in-place using Marathon](#user-content-changing-configuration-in-flight).
 
-### Custom initial configuration
+### <a id="custom-install-configuration"></a> Custom install configuration
 
 The defaults may be customized by creating a JSON file, then passing it to `dcos package install` using the `--options parameter`. For example:
 
-Sample JSON options file (sample.json):
+Sample JSON options file (sample-kafka.json):
 
 ``` json
 {
   "kafka": {
-    "framework-name": "my-kafka",
+    "framework-name": "sample-kafka",
     "kafka-brokers": "10",
     "pv": "true",
     "placement-strategy": "NODE"
@@ -45,12 +55,22 @@ Sample JSON options file (sample.json):
 
 Installing with sample.json's customizations:
 ``` bash
-$ dcos package install --options=sample.json kafka
+$ dcos package install --options=sample-kafka.json kafka
 ```
 
 See [Configuration Options](#user-content-configuration-options) for a list of available fields which can be customized via an options JSON file when the Kafka cluster is created.
 
-### Changing configuration in flight <a id="changing-configuration-in-flight"></a>
+### <a id="uninstall"></a> Uninstall
+
+Uninstalling a cluster is also straightforward. Replace `kafka0` with the name of the kafka instance to be uninstalled.
+
+``` bash
+$ dcos package uninstall --app-id=kafka0 kafka
+```
+
+**TODO** extra steps for dropping persistent volumes?
+
+### <a id="changing-configuration-in-flight"></a> Changing configuration in flight
 
 Once the cluster is already up and running, it may be customized in-place. The Kafka Scheduler will be running as a Marathon process, and can be reconfigured by changing values within Marathon.
 
@@ -62,7 +82,7 @@ Once the cluster is already up and running, it may be customized in-place. The K
 
 See [Configuration Options](#user-content-configuration-options) for a list of available fields which can be customized via Marathon while the Kafka cluster is running.
 
-## Configuration Options <a id="configuration-options"></a>
+## <a id="configuration-options"></a> Configuration Options
 
 The following describes commonly used features of the Kafka framework and how to configure them. View the [default `config.json` in DCOS Universe](https://github.com/mesosphere/universe/tree/version-1.x/repo/packages/K/kafka) to see an enumeration of all possible options.
 
@@ -73,9 +93,9 @@ The name of this Kafka instance in DCOS. This is the only option that cannot be 
 **In dcos-cli options.json**: `framework-name` = string (default: `kafka0`)
 **In Marathon**: The Framework Name cannot be changed after the cluster has started.
 
-### Broker Count <a id="broker-count"></a>
+### <a id="broker-count"></a> Broker Count
 
-Configure the number of brokers running in a given Kafka cluster. On initial creation the default is three brokers.
+Configure the number of brokers running in a given Kafka cluster. The default count at installation is three brokers.
 
 **In dcos-cli options.json**: `kafka-brokers` = integer (default: `3`)
 **In Marathon**: `BROKER_COUNT` = integer
@@ -94,7 +114,56 @@ By default Kafka Brokers will use the sandbox available to Mesos Tasks for stori
 **In dcos-cli options.json**: `placement-strategy` = `ANY` or `NODE` (default: `ANY`)
 **In Marathon**: `PLACEMENT_STRATEGY` = `ANY` or `NODE`
 
-## Cluster Maintenance
+## Upgrading Software
+
+**TODO** guide for updating kafka and/or framework
+
+## Connecting Clients
+
+### <a id="producers"></a> Producers
+
+**TODO** step by step with example code or config
+
+### <a id="consumers"></a> Consumers
+
+**TODO** step by step with sample code/config
+
+## Handling Errors
+
+### Configuration Update Errors
+
+**TODO** How to handle configuration input validation errors
+**TODO** How to handle errors when applying configuration to a running service
+
+### Software Maintenance Errors
+
+**TODO** How to handle errors when updating software
+
+### Status Errors
+
+**TODO** how to handle status = error
+**TODO** how to handle status = warning
+
+### Replacing a Permanently Failed Server
+
+**TODO** How to tell the scheduler a specific Mesos Agent is dead and never coming back
+
+## Limitations
+
+### Configurations
+
+**TODO** Settings that can only be set at install time
+**TODO** Pitfalls of managing configurations outside of the framework
+
+### Brokers
+
+**TODO** Max count (if any)
+
+### Security
+
+**TODO** describe how to configure beta features in 0.9 (or specify that they're not supported?): data encryption, client authentication over SSL/SASL, broker authentication with ZK...
+
+## Cluster Maintenance APIs
 
 For ongoing maintenance of the Kafka cluster itself, the Kafka Framework exposes an HTTP API whose structure is designed to roughly match the tools provided by the Kafka distribution, such as `bin/kafka-topics.sh`.
 
@@ -129,7 +198,7 @@ Increase the `BROKER_COUNT` value via Marathon. New brokers should start automat
 
 Broker removal is currently a manual process.
 
-**TODO**: Specify steps for manually removing a broker
+**TODO**: Specify step-by-step for manually removing broker(s)
 
 #### List All Brokers
 
@@ -206,7 +275,7 @@ GET /service/kafka0/topics HTTP/1.1
 ]
 ```
 
-#### Create Topic
+#### <a id="create-topic"></a> Create Topic
 
 ``` bash
 $ http POST dcos.host/service/kafka0/topics name==topic1 partitions==3 replication==3 -pbH
@@ -345,4 +414,4 @@ DELETE /service/kafka0/topics/topic1?operation=delete HTTP/1.1
 }
 ```
 
-## TODO API for ACL changes? (kafka-acls.sh)
+## TODO [API for ACL changes](https://kafka.apache.org/documentation.html#security_authz_examples)? (kafka-acls.sh)

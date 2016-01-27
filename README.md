@@ -37,8 +37,6 @@ Connection: keep-alive
 Host: gabriel-4-elasticl-zltw2lt3kmwl-647734499.us-west-2.elb.amazonaws.com
 User-Agent: HTTPie/0.9.2
 
-
-
 HTTP/1.1 200 OK
 Connection: keep-alive
 Content-Length: 196

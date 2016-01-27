@@ -230,20 +230,20 @@ http PUT $DCOS_URI/service/kafka0/topics/topic0 operation==deleteConfig key==foo
 
 **Delete**
 ```
-$ http PUT $DCOS_URI/service/kafka0/topics/topic0 operation==delete -p hbHB
-PUT //service/kafka0/topics/topic0?operation=delete HTTP/1.1
+$ http DELETE $DCOS_URI/service/kafka0/topics/topic0 -p hbHB
+DELETE //service/kafka0/topics/topic0 HTTP/1.1
 Accept: */*
 Accept-Encoding: gzip, deflate
 Connection: keep-alive
 Content-Length: 0
-Host: pool-a210-elasticl-cm28sy3wpqzb-1312862935.us-west-2.elb.amazonaws.com
+Host: pool-3e48-elasticl-bar8829zdz02-2037389763.us-west-2.elb.amazonaws.com
 User-Agent: HTTPie/0.9.2
 
 HTTP/1.1 200 OK
 Connection: keep-alive
 Content-Length: 152
 Content-Type: application/json
-Date: Tue, 26 Jan 2016 23:32:59 GMT
+Date: Wed, 27 Jan 2016 21:17:22 GMT
 Server: openresty/1.7.10.2
 
 {
@@ -251,4 +251,5 @@ Server: openresty/1.7.10.2
     "stderr": "",
     "stdout": "Topic topic0 is marked for deletion.\nNote: This will have no impact if delete.topic.enable is not set to true.\n"
 }
+]
 ```

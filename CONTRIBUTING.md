@@ -4,7 +4,7 @@
 
 ### Build
 
-```bash
+``` bash
 git clone --recursive https://github.com/mesosphere/kafka-private # include mesos-commons in pull
 cd kafka-private
 ./build-container-hook.sh # creates package/container-hook-0.1.0.tgz
@@ -15,7 +15,7 @@ git pull --recurse-submodules # ensure mesos-commons is also updated
 
 ### Unit Test
 
-```bash
+``` bash
 ./gradlew test
 ```
 
@@ -27,7 +27,7 @@ Prerequisites:
 
 #### Deploy from local custom Universe
 
-```bash
+``` bash
 git clone https://github.com/mesosphere/universe
 dcos config prepend package.sources file:///path/to/universe
 # Customize URLs in /path/to/universe/repo/packages/K/kafka/N/resource.json
@@ -42,7 +42,7 @@ dcos package install --yes kafka
 
 #### Deploy from custom branch in Universe repo
 
-```bash
+``` bash
 dcos config prepend package.sources https://github.com/mesosphere/universe/archive/custom-branch.zip
 dcos config show
 # [...]
@@ -62,7 +62,7 @@ Similarly, any changes you make inside `mesos-commons` must be committed and pus
 
 If you used a standard clone (without `--recursive`), the submodule can also be manually brought up by following these steps:
 
-```bash
+``` bash
 rm -rf mesos-commons # if mesos-commons exists in the parent project
 git submodule init
 git submodule update --remote

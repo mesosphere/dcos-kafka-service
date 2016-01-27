@@ -239,12 +239,16 @@ public class KafkaStateService implements Observer {
     return zkClient.getChildren().forPath(taskPath);
   }
 
+  private String getTaskRootPath(String taskId) {
+    return taskPath + "/" + taskId;
+  }
+
   private String getTaskInfoPath(String taskId) {
-    return taskPath + "/" + taskId + "/info";
+    return getTaskRootPath(taskId) + "/info";
   }
 
   private String getTaskStatusPath(String taskId) {
-    return taskPath + "/" + taskId + "/status";
+    return getTaskRootPath(taskId) + "/status";
   }
 
   private void record(String path, byte[] bytes) throws Exception {
@@ -260,7 +264,6 @@ public class KafkaStateService implements Observer {
     record(infoPath, taskInfo.toByteArray());
   }
 
-
   private void recordTaskInfos(List<TaskInfo> taskInfos) throws Exception {
     for (TaskInfo taskInfo : taskInfos) {
       recordTaskInfo(taskInfo);
@@ -269,7 +272,22 @@ public class KafkaStateService implements Observer {
 
   private void recordTaskStatus(TaskStatus taskStatus) throws Exception {
     String statusPath = getTaskStatusPath(taskStatus.getTaskId().getValue());
-    record(statusPath, taskStatus.toByteArray());
+    if (zkClient.checkExists().forPath(statusPath) == null &&
+        isTerminated(taskStatus)) {
+          log.warn("Dropping status update because the ZK path doesn't exist and it's a termianl Status: " + taskStatus);
+    } else {
+      record(statusPath, taskStatus.toByteArray());
+    }
+  }
+
+  public void deleteTask(String taskId) {
+    try {
+      String pathToDelete = getTaskRootPath(taskId);
+      log.info("Deleting path: " + pathToDelete);
+      zkClient.delete().deletingChildrenIfNeeded().forPath(pathToDelete);
+    } catch(Exception ex) {
+      log.error("Failed to delete Task: " + taskId + " with exception: " + ex);
+    }
   }
 
   private void recordTaskStatuses(List<TaskStatus> taskStatuses) throws Exception {

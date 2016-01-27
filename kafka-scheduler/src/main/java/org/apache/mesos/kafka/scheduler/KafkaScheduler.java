@@ -52,8 +52,9 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   private MasterOfferRequirementProvider offerReqProvider;
   private OfferAccepter offerAccepter;
 
-  private static SchedulerDriver driver;
   private Reconciler reconciler;
+  private static List<String> tasksToRestart = new ArrayList<String>();
+  private static List<String> tasksToReschedule = new ArrayList<String>();
 
   public KafkaScheduler() {
     config = KafkaConfigService.getConfigService();
@@ -73,14 +74,16 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     String port0 = config.get("PORT0");
   }
 
-  public static void killTasks(List<String> taskIds) {
-    for (String taskId : taskIds) {
-      killTask(taskId);
+  public static void restartTasks(List<String> taskIds) {
+    synchronized (tasksToRestart) {
+      tasksToRestart.addAll(taskIds);
     }
   }
 
-  public static void killTask(String taskId) {
-    driver.killTask(TaskID.newBuilder().setValue(taskId).build());
+  public static void rescheduleTasks(List<String> taskIds) {
+    synchronized (tasksToRestart) {
+      tasksToReschedule.addAll(taskIds);
+    }
   }
 
   private OfferRequirementProvider getOfferRequirementProvider() {
@@ -126,7 +129,6 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     log.info("Registered framework with frameworkId: " + frameworkId.getValue());
     state.setFrameworkId(frameworkId);
     reconcile(driver);
-    this.driver = driver;
 
     KafkaApiServer.start();
   }
@@ -135,7 +137,6 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   public void reregistered(SchedulerDriver driver, MasterInfo masterInfo) {
     log.info("Reregistered framework.");
     reconcile(driver);
-    this.driver = driver;
   }
 
   @Override
@@ -153,6 +154,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   @Override
   public void resourceOffers(SchedulerDriver driver, List<Offer> offers) {
     logOffers(offers);
+    processTaskOperations(driver);
 
     List<OfferID> acceptedOffers = new ArrayList<OfferID>();
 
@@ -164,6 +166,36 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     }
 
     declineOffers(driver, acceptedOffers, offers);
+  }
+
+  private void processTaskOperations(SchedulerDriver driver) {
+    processTasksToRestart(driver);
+    processTasksToReschedule(driver);
+  }
+
+  private void processTasksToRestart(SchedulerDriver driver) {
+    List<String> localTasksToRestart = null;
+    synchronized (tasksToRestart) {
+      localTasksToRestart = new ArrayList<String>(tasksToRestart);
+      tasksToRestart = new ArrayList<String>();
+    }
+
+    for (String taskId : localTasksToRestart) {
+      driver.killTask(TaskID.newBuilder().setValue(taskId).build());
+    }
+  }
+
+  private void processTasksToReschedule(SchedulerDriver driver) {
+    List<String> localTasksToReschedule= null;
+    synchronized (tasksToReschedule) {
+      localTasksToReschedule = new ArrayList<String>(tasksToReschedule);
+      tasksToReschedule = new ArrayList<String>();
+    }
+
+    for (String taskId : localTasksToReschedule) {
+      state.deleteTask(taskId);
+      driver.killTask(TaskID.newBuilder().setValue(taskId).build());
+    }
   }
 
   @Override

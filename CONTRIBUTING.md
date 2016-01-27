@@ -33,7 +33,7 @@ dcos package update
 dcos package install kafka
 ```
 
-## Working with the `mesos-commons` submodule
+## Working with the [mesos-commons](https://github.com/mesosphere/mesos-commons) submodule
 
 The `mesos-commons` directory holds a git submodule for common Java libraries for interacting with Mesos. Working with git submodules is a special kind of fun. This submodule is why the initial `git clone` **must** use the `--recursive` flag. Similarly, you should use `git pull --recurse-submodules` to pull the latest from both `kafka-private` AND `mesos-commons` whenever you update.
 

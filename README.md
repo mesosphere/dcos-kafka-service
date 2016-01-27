@@ -32,7 +32,7 @@ To start a basic test cluster with three brokers, run the following command with
 $ dcos package install kafka
 ```
 
-By default, this will create a new Kafka cluster named `kafka0`. Adding more clusters beyond `kafka0` requires [customizing the `framework-name` at install time](#custom-install-configuration) for each additional instance.
+By default, this will create a new Kafka cluster named `kafka0`. Two clusters cannot share the same name, so installing additional clusters beyond the default cluster would require [customizing the `framework-name` at install time](#custom-install-configuration) for each additional instance.
 
 Additional customization would be needed before this cluster will be suitable for production use, but it should be plenty for testing/development as-is. Running clusters be [re-configured in-place using Marathon](#changing-configuration-in-flight).
 

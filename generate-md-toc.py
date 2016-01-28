@@ -63,7 +63,9 @@ def insert_toc(parser, filepath):
     for line in open(filepath).readlines():
         if line.find(TOC_MARKER_START) >= 0:
             new_lines.append(line)
+            new_lines.append("\n")
             new_lines.append(parsed_toc.get())
+            new_lines.append("\n")
             inside_toc = True
         if line.find(TOC_MARKER_END) >= 0:
             inside_toc = False

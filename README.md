@@ -63,31 +63,31 @@ The reader should already be fairly knowledgeable of [common Kafka terminology](
 
 ## Quick Start
 
-0. Install [dcos-cli](https://github.com/mesosphere/dcos-cli) and [HTTPie](http://httpie.org/)
+- Install [dcos-cli](https://github.com/mesosphere/dcos-cli) and [HTTPie](http://httpie.org/)
 
-1. Launch a basic three-broker Kafka instance, named `kafka0` by default:
+- Launch a basic three-broker Kafka instance, named `kafka0` by default:
 
 ``` bash
 $ dcos package install kafka
 ```
 
-2. Create a new topic named `topic0` within `kafka0`:
+- Create a new topic named `topic0` within `kafka0`:
 
 ``` bash
 $ http POST yourdcos.host/service/kafka0/topics name==topic0 partitions==3 replication==3 -pbH
 ```
 
-3. Read and write data to `topic0`:
+- Read and write data to `topic0`:
 
 **TODO** a couple one-liners using eg `bin/kafka-console-[producer|consumer].sh` to send/get data. see also [Connecting clients](#connecting-clients)
 
-4. Mark `topic0` for deletion:
+- Mark `topic0` for deletion:
 
 ``` bash
 $ http DELETE dcos.host/service/kafka0/topics/topic1 -pbH
 ```
 
-5. Destroy `kafka0`:
+- Destroy `kafka0`:
 
 ``` bash
 $ dcos package uninstall --app-id=kafka0 kafka

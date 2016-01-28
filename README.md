@@ -34,14 +34,13 @@ $ dcos package install kafka
 
 By default, this will create a new Kafka cluster named `kafka0`. Two clusters cannot share the same name, so installing additional clusters beyond the default cluster would require [customizing the `framework-name` at install time](#custom-install-configuration) for each additional instance.
 
-Additional customization would be needed before this cluster will be suitable for production use, but it should be plenty for testing/development as-is. Running clusters be [re-configured in-place using Marathon](#changing-configuration-in-flight).
+Additional customization would be needed before this cluster would be suitable for production use, but it should be plenty for testing/development as-is. Running clusters may be [re-configured in-place using Marathon](#changing-configuration-in-flight).
 
 ### Custom install configuration
 
 The defaults may be customized by creating a JSON file, then passing it to `dcos package install` using the `--options parameter`. For example:
 
-Sample JSON options file (sample-kafka.json):
-
+Sample JSON options file named `sample-kafka.json`:
 ``` json
 {
   "kafka": {
@@ -53,7 +52,7 @@ Sample JSON options file (sample-kafka.json):
 }
 ```
 
-Installing with sample.json's customizations:
+Creating a cluster using `sample-kafka.json`:
 ``` bash
 $ dcos package install --options=sample-kafka.json kafka
 ```
@@ -68,7 +67,9 @@ Uninstalling a cluster is also straightforward. Replace `kafka0` with the name o
 $ dcos package uninstall --app-id=kafka0 kafka
 ```
 
-**TODO** extra steps for dropping persistent volumes?
+**TODO** are extra steps needed for dropping any persistent volumes?
+
+**TODO** is the instance cleared from zookeeper? if not, what extra steps are needed to do that?
 
 ### Changing configuration in flight
 
@@ -90,29 +91,29 @@ The following describes commonly used features of the Kafka framework and how to
 
 The name of this Kafka instance in DCOS. This is the only option that cannot be changed once the Kafka cluster is started; it can only be configured via the `dcos-cli --options` flag when first creating the Kafka instance.
 
-**In dcos-cli options.json**: `framework-name` = string (default: `kafka0`)
-**In Marathon**: The Framework Name cannot be changed after the cluster has started.
+- **In dcos-cli options.json**: `framework-name` = string (default: `kafka0`)
+- **In Marathon**: The Framework Name cannot be changed after the cluster has started.
 
 ### Broker Count
 
 Configure the number of brokers running in a given Kafka cluster. The default count at installation is three brokers.
 
-**In dcos-cli options.json**: `kafka-brokers` = integer (default: `3`)
-**In Marathon**: `BROKER_COUNT` = integer
+- **In dcos-cli options.json**: `kafka-brokers` = integer (default: `3`)
+- **In Marathon**: `BROKER_COUNT` = integer
 
 ### Enable Persistent Volumes
 
 By default Kafka Brokers will use the sandbox available to Mesos Tasks for storing data. This storage goes away on Task failure. So if a Broker crashes the data on it is lost forever. This is fine for dev environments. In production environments Kafka should be deployed with the following option enabled:
 
-**In dcos-cli options.json**: `pv` = `true` or `false` (default: `false`)
-**In Marathon**: `BROKER_PV` = `TRUE` or `FALSE`
+- **In dcos-cli options.json**: `pv` = `true` or `false` (default: `false`)
+- **In Marathon**: `BROKER_PV` = `TRUE` or `FALSE`
 
 ### Configure Broker Placement Strategy
 
 `ANY` will allow brokers to be placed on any node with sufficient resources, while `NODE` will ensure that all brokers within a given Kafka cluster are never colocated on the same node. In the future, this may also prevent brokers across multiple Kafka clusters from colocating, but this isn't yet the case.
 
-**In dcos-cli options.json**: `placement-strategy` = `ANY` or `NODE` (default: `ANY`)
-**In Marathon**: `PLACEMENT_STRATEGY` = `ANY` or `NODE`
+- **In dcos-cli options.json**: `placement-strategy` = `ANY` or `NODE` (default: `ANY`)
+- **In Marathon**: `PLACEMENT_STRATEGY` = `ANY` or `NODE`
 
 ## Upgrading Software
 
@@ -133,6 +134,7 @@ By default Kafka Brokers will use the sandbox available to Mesos Tasks for stori
 ### Configuration Update Errors
 
 **TODO** How to handle configuration input validation errors
+
 **TODO** How to handle errors when applying configuration to a running service
 
 ### Software Maintenance Errors
@@ -142,6 +144,7 @@ By default Kafka Brokers will use the sandbox available to Mesos Tasks for stori
 ### Status Errors
 
 **TODO** how to handle status = error
+
 **TODO** how to handle status = warning
 
 ### Replacing a Permanently Failed Server
@@ -153,6 +156,7 @@ By default Kafka Brokers will use the sandbox available to Mesos Tasks for stori
 ### Configurations
 
 **TODO** Settings that can only be set at install time
+
 **TODO** Pitfalls of managing configurations outside of the framework
 
 ### Brokers
@@ -161,7 +165,7 @@ By default Kafka Brokers will use the sandbox available to Mesos Tasks for stori
 
 ### Security
 
-**TODO** describe how to configure beta features in 0.9 (or specify that they're not supported?): data encryption, client authentication over SSL/SASL, broker authentication with ZK...
+**TODO** describe how someone could configure Kafka 0.9's beta security features (or specify that they're not supported?): data encryption, client authentication over SSL/SASL, broker authentication with ZK...
 
 ## Cluster Maintenance APIs
 
@@ -171,9 +175,9 @@ The examples provided here use the "[HTTPie](http://httpie.org/)" commandline HT
 
 ### Connection Information
 
-Kafka comes with many useful tools of its own. They often require either Zookeeper connection information, or the list of Broker endpoints. This information can be retrieved in an easily consumable formation from the /connection endpoint as below.
+Kafka comes with many useful tools of its own. They often require either Zookeeper connection information, or the list of Broker endpoints. This information can be retrieved in an easily consumable formation from the `/connection` endpoint as below.
 
-```
+``` bash
 $ http dcos.host/service/kafka0/connection -pbH
 GET /service/kafka0/connection HTTP/1.1
 [...]
@@ -232,6 +236,18 @@ GET /service/kafka0/brokers/0 HTTP/1.1
 }
 ```
 
+#### Restart Single Broker
+
+``` bash
+$ http PUT dcos.host/service/kafka0/brokers/0 -pbH
+PUT /service/kafka0/brokers HTTP/1.1
+[...]
+
+[
+    "broker-0__9c426c50-1087-475c-aa36-cd00d24ccebb"
+]
+```
+
 #### Restart All Brokers
 
 ``` bash
@@ -242,18 +258,6 @@ PUT /service/kafka0/brokers HTTP/1.1
 [
     "broker-1__759c9fc2-3890-4921-8db8-c87532b1a033",
     "broker-2__0b444104-e210-4b78-8d19-f8938b8761fd",
-    "broker-0__9c426c50-1087-475c-aa36-cd00d24ccebb"
-]
-```
-
-#### Restart Single Broker
-
-``` bash
-$ http PUT dcos.host/service/kafka0/brokers/0 -pbH
-PUT /service/kafka0/brokers HTTP/1.1
-[...]
-
-[
     "broker-0__9c426c50-1087-475c-aa36-cd00d24ccebb"
 ]
 ```

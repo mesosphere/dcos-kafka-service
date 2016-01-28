@@ -51,11 +51,23 @@ def print_toc(parser, filepath):
     parser.main([sys.argv[0], filepath])
 
 def insert_toc(parser, filepath):
+    # Create temp file which only contains content following the TOC
+    after_toc = False
+    tmpfilepath = tempfile.mkstemp()[1]
+    with codecs.open(tmpfilepath, 'w', "utf-8-sig") as tmpfile:
+        for line in open(filepath).readlines():
+            if line.find(TOC_MARKER_END) >= 0:
+                after_toc = True
+                continue
+            if after_toc:
+                tmpfile.write(line + "\n")
+        tmpfile.close()
+
     # Hack: Intercept stdout produced by the parser
     original_stdout = sys.stdout
     parsed_toc = Writer()
     sys.stdout = parsed_toc
-    print_toc(parser, filepath)
+    print_toc(parser, tmpfilepath)
     sys.stdout = original_stdout
 
     new_lines = []

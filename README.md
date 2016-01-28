@@ -84,7 +84,7 @@ $ http POST yourdcos.host/service/kafka0/topics name==topic0 partitions==3 repli
 - Mark `topic0` for deletion:
 
 ``` bash
-$ http DELETE dcos.host/service/kafka0/topics/topic1 -pbH
+$ http DELETE dcos.host/service/kafka0/topics/topic0 -pbH
 ```
 
 - Destroy `kafka0`:

@@ -121,13 +121,7 @@ By default Kafka Brokers will use the sandbox available to Mesos Tasks for stori
 
 ## Connecting Clients
 
-### Producers
-
-**TODO** step by step with example code or config
-
-### Consumers
-
-**TODO** step by step with sample code/config
+**TODO** step by step for talking to a DCOS-hosted Kafka instance using `bin/kafka-console-producer.sh` and `bin/kafka-console-consumer.sh` as an example
 
 ## Handling Errors
 

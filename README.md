@@ -63,12 +63,35 @@ The reader should already be fairly knowledgeable of [common Kafka terminology](
 
 ## Quick Start
 
-Shortcuts within this guide to get you started with a dev cluster:
+0. Install [dcos-cli](https://github.com/mesosphere/dcos-cli) and [HTTPie](http://httpie.org/)
 
-- [Install](#default-install-configuration)
-- [Create topic](#create-topic)
-- [Write/Read data](#connecting-clients)
-- [Uninstall](#uninstall)
+1. Launch a basic three-broker Kafka instance, named `kafka0` by default:
+
+``` bash
+$ dcos package install kafka
+```
+
+2. Create a new topic named `topic0` within `kafka0`:
+
+``` bash
+$ http POST yourdcos.host/service/kafka0/topics name==topic0 partitions==3 replication==3 -pbH
+```
+
+3. Read and write data to `topic0`:
+
+**TODO** a couple one-liners using eg `bin/kafka-console-[producer|consumer].sh` to send/get data. see also [Connecting clients](#connecting-clients)
+
+4. Mark `topic0` for deletion:
+
+``` bash
+$ http DELETE dcos.host/service/kafka0/topics/topic1 -pbH
+```
+
+5. Destroy `kafka0`:
+
+``` bash
+$ dcos package uninstall --app-id=kafka0 kafka
+```
 
 ## Installation and Customization
 
@@ -123,7 +146,7 @@ $ dcos package uninstall --app-id=kafka0 kafka
 
 Once the cluster is already up and running, it may be customized in-place. The Kafka Scheduler will be running as a Marathon process, and can be reconfigured by changing values within Marathon.
 
-1. View your Marathon dashboard at `http://your.dcos.host/marathon`
+1. View your Marathon dashboard at `http://yourdcos.host/marathon`
 2. In the list of `Applications`, click the name of the Kafka framework to be updated.
 3. Within the Kafka instance details view, click the `Configuration` tab, then click the `Edit` button.
 4. In the dialog that appears, expand the `Environment Variables` section and update any field(s) to their desired value(s). For example, to [increase the number of Brokers](#broker-count), edit the value for `BROKER_COUNT`. Do not edit the value for `FRAMEWORK_NAME`.
@@ -213,14 +236,14 @@ By default Kafka Brokers will use the sandbox available to Mesos Tasks for stori
 
 For ongoing maintenance of the Kafka cluster itself, the Kafka Framework exposes an HTTP API whose structure is designed to roughly match the tools provided by the Kafka distribution, such as `bin/kafka-topics.sh`.
 
-The examples provided here use the "[HTTPie](http://httpie.org/)" commandline HTTP Client utility. These examples assume a DCOS host of `dcos.host` and a Kafka framework named `kafka0` (the default initial framework name). Replace these with appropriate values as needed.
+The examples provided here use the "[HTTPie](http://httpie.org/)" commandline HTTP Client utility. These examples assume a DCOS host of `yourdcos.host` and a Kafka framework named `kafka0` (the default initial framework name). Replace these with appropriate values as needed.
 
 ### Connection Information
 
 Kafka comes with many useful tools of its own. They often require either Zookeeper connection information, or the list of Broker endpoints. This information can be retrieved in an easily consumable formation from the `/connection` endpoint as below.
 
 ``` bash
-$ http dcos.host/service/kafka0/connection -pbH
+$ http yourdcos.host/service/kafka0/connection -pbH
 GET /service/kafka0/connection HTTP/1.1
 [...]
 
@@ -249,7 +272,7 @@ Broker removal is currently a manual process.
 #### List All Brokers
 
 ``` bash
-$ http dcos.host/service/kafka0/brokers -pbH
+$ http yourdcos.host/service/kafka0/brokers -pbH
 GET /service/kafka0/brokers HTTP/1.1
 [...]
 
@@ -262,15 +285,15 @@ GET /service/kafka0/brokers HTTP/1.1
 #### View Broker Details
 
 ``` bash
-$ http dcos.host/service/kafka0/brokers/0 -pbH
+$ http yourdcos.host/service/kafka0/brokers/0 -pbH
 GET /service/kafka0/brokers/0 HTTP/1.1
 [...]
 
 {
     "endpoints": [
-        "PLAINTEXT://worker12398.dcos.host:9092"
+        "PLAINTEXT://worker12398.yourdcos.host:9092"
     ],
-    "host": "worker12398.dcos.host",
+    "host": "worker12398.yourdcos.host",
     "jmx_port": -1,
     "port": 9092,
     "timestamp": "1453854226816",
@@ -281,7 +304,7 @@ GET /service/kafka0/brokers/0 HTTP/1.1
 #### Restart Single Broker
 
 ``` bash
-$ http PUT dcos.host/service/kafka0/brokers/0 -pbH
+$ http PUT yourdcos.host/service/kafka0/brokers/0 -pbH
 PUT /service/kafka0/brokers HTTP/1.1
 [...]
 
@@ -293,7 +316,7 @@ PUT /service/kafka0/brokers HTTP/1.1
 #### Restart All Brokers
 
 ``` bash
-$ http PUT dcos.host/service/kafka0/brokers -pbH
+$ http PUT yourdcos.host/service/kafka0/brokers -pbH
 PUT /service/kafka0/brokers HTTP/1.1
 [...]
 
@@ -311,7 +334,7 @@ These operations mirror what's available using `bin/kafka-topics.sh`.
 #### List Topics
 
 ``` bash
-$ http dcos.host/service/kafka0/topics -pbH
+$ http yourdcos.host/service/kafka0/topics -pbH
 GET /service/kafka0/topics HTTP/1.1
 [...]
 
@@ -324,7 +347,7 @@ GET /service/kafka0/topics HTTP/1.1
 #### Create Topic
 
 ``` bash
-$ http POST dcos.host/service/kafka0/topics name==topic1 partitions==3 replication==3 -pbH
+$ http POST yourdcos.host/service/kafka0/topics name==topic1 partitions==3 replication==3 -pbH
 POST /service/kafka0/topics?replication=3&name=topic1&partitions=3 HTTP/1.1
 [...]
 
@@ -338,7 +361,7 @@ POST /service/kafka0/topics?replication=3&name=topic1&partitions=3 HTTP/1.1
 #### View Topic Details
 
 ``` bash
-$ http dcos.host/service/kafka0/topics/topic1 -pbH
+$ http yourdcos.host/service/kafka0/topics/topic1 -pbH
 GET /service/kafka0/topics/topic1 HTTP/1.1
 [...]
 
@@ -390,7 +413,7 @@ GET /service/kafka0/topics/topic1 HTTP/1.1
 #### View Topic Offsets
 
 ``` bash
-$ http dcos.host/service/kafka0/topics/topic1/offsets -pbH
+$ http yourdcos.host/service/kafka0/topics/topic1/offsets -pbH
 GET /service/kafka0/topics/topic1/offsets HTTP/1.1
 [...]
 
@@ -410,7 +433,7 @@ GET /service/kafka0/topics/topic1/offsets HTTP/1.1
 #### Alter Topic Partition Count
 
 ``` bash
-$ http PUT dcos.host/service/kafka0/topics/topic1 operation==partitions partitions==4 -pbH
+$ http PUT yourdcos.host/service/kafka0/topics/topic1 operation==partitions partitions==4 -pbH
 PUT /service/kafka0/topics/topic1?operation=partitions&partitions=4 HTTP/1.1
 [...]
 
@@ -424,19 +447,19 @@ PUT /service/kafka0/topics/topic1?operation=partitions&partitions=4 HTTP/1.1
 #### Alter Topic Config Value
 
 ``` bash
-$ http PUT dcos.host/service/kafka0/topics/topic1 operation==config key==foo value==bar
+$ http PUT yourdcos.host/service/kafka0/topics/topic1 operation==config key==foo value==bar
 ```
 
 #### Delete/Unset Topic Config Value
 
 ``` bash
-$ http PUT dcos.host/service/kafka0/topics/topic1 operation==deleteConfig key==foo
+$ http PUT yourdcos.host/service/kafka0/topics/topic1 operation==deleteConfig key==foo
 ```
 
 #### Run Producer Test on Topic
 
 ``` bash
-$ http PUT dcos.host/service/kafka0/topics/topic1 operation==producer-test messages==10 -pbH
+$ http PUT yourdcos.host/service/kafka0/topics/topic1 operation==producer-test messages==10 -pbH
 PUT /service/kafka0/topics/topic1?operation=producer-test&messages=10 HTTP/1.1
 [...]
 
@@ -450,7 +473,7 @@ PUT /service/kafka0/topics/topic1?operation=producer-test&messages=10 HTTP/1.1
 #### Delete Topic
 
 ``` bash
-$ http DELETE dcos.host/service/kafka0/topics/topic1 -pbH
+$ http DELETE yourdcos.host/service/kafka0/topics/topic1 -pbH
 DELETE /service/kafka0/topics/topic1?operation=delete HTTP/1.1
 [...]
 

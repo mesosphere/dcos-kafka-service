@@ -283,7 +283,8 @@ GET /service/kafka0/topics HTTP/1.1
 
 ``` bash
 $ http POST dcos.host/service/kafka0/topics name==topic1 partitions==3 replication==3 -pbH
-POST /service/kafka0/topics?replication=3&name=topic1&partitions=3 [...]
+POST /service/kafka0/topics?replication=3&name=topic1&partitions=3 HTTP/1.1
+[...]
 
 {
     "exit_code": 0,
@@ -368,7 +369,7 @@ GET /service/kafka0/topics/topic1/offsets HTTP/1.1
 
 ``` bash
 $ http PUT dcos.host/service/kafka0/topics/topic1 operation==partitions partitions==4 -pbH
-PUT /service/kafka0/topics/topic1?operation=partitions&partitions=4
+PUT /service/kafka0/topics/topic1?operation=partitions&partitions=4 HTTP/1.1
 [...]
 
 {
@@ -394,7 +395,7 @@ $ http PUT dcos.host/service/kafka0/topics/topic1 operation==deleteConfig key==f
 
 ``` bash
 $ http PUT dcos.host/service/kafka0/topics/topic1 operation==producer-test messages==10 -pbH
-PUT /service/kafka0/topics/topic1?operation=producer-test&messages=10
+PUT /service/kafka0/topics/topic1?operation=producer-test&messages=10 HTTP/1.1
 [...]
 
 {

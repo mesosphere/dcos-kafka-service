@@ -22,7 +22,7 @@ import org.apache.mesos.kafka.state.KafkaStateService;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-@Path("/brokers")
+@Path("/v1/brokers")
 @Produces("application/json")
 public class BrokerController {
   private final Log log = LogFactory.getLog(BrokerController.class);

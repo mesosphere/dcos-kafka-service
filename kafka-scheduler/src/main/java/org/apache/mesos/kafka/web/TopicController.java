@@ -28,7 +28,7 @@ import org.apache.mesos.kafka.state.KafkaStateService;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-@Path("/topics")
+@Path("/v1/topics")
 public class TopicController {
   private final Log log = LogFactory.getLog(TopicController.class);
   private KafkaStateService state = KafkaStateService.getStateService();

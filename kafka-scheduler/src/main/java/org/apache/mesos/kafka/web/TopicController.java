@@ -3,6 +3,7 @@ package org.apache.mesos.kafka.web;
 import java.util.Arrays;
 import java.util.List;
 
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -27,7 +28,7 @@ import org.apache.mesos.kafka.state.KafkaStateService;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-@Path("/topics")
+@Path("/v1/topics")
 public class TopicController {
   private final Log log = LogFactory.getLog(TopicController.class);
   private KafkaStateService state = KafkaStateService.getStateService();
@@ -74,7 +75,7 @@ public class TopicController {
 
   @PUT
   @Path("/{name}")
-  public Response testTopic(
+  public Response operationOnTopic(
       @PathParam("name") String name,
       @QueryParam("operation") String operation,
       @QueryParam("key") String key,
@@ -93,9 +94,6 @@ public class TopicController {
           case "producer-test":
             int messageCount = Integer.parseInt(messages);
             result = CmdExecutor.producerTest(name, messageCount);
-            break;
-          case "delete":
-            result = CmdExecutor.deleteTopic(name);
             break;
           case "partitions":
             cmds = Arrays.asList("--partitions", partitions);
@@ -120,6 +118,21 @@ public class TopicController {
 
     } catch (Exception ex) {
       log.error("Failed to perform operation: " + operation + " on Topic: " + name +  " with exception: " + ex);
+      return Response.serverError().build();
+    }
+  }
+
+  @DELETE
+  @Path("/{name}")
+  public Response deleteTopic(
+      @PathParam("name") String name) {
+
+    try {
+      JSONObject result = CmdExecutor.deleteTopic(name);
+      return Response.ok(result.toString(), MediaType.APPLICATION_JSON).build();
+
+    } catch (Exception ex) {
+      log.error("Failed to delete Topic: " + name + " with exception: " + ex);
       return Response.serverError().build();
     }
   }

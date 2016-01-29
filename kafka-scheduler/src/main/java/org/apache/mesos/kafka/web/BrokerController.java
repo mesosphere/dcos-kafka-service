@@ -22,17 +22,19 @@ import org.apache.mesos.kafka.state.KafkaStateService;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-@Path("/brokers")
+@Path("/v1/brokers")
 @Produces("application/json")
 public class BrokerController {
   private final Log log = LogFactory.getLog(BrokerController.class);
   private KafkaStateService state = KafkaStateService.getStateService();
 
   @GET
-  public Response brokers() {
+  public Response listBrokers() {
     try {
       JSONArray brokerIds = state.getBrokerIds();
-      return Response.ok(brokerIds.toString(), MediaType.APPLICATION_JSON).build();
+      JSONObject obj = new JSONObject();
+      obj.put("brokers", brokerIds);
+      return Response.ok(obj.toString(), MediaType.APPLICATION_JSON).build();
     } catch (Exception ex) {
       log.error("Failed to fetch broker ids with exception: " + ex);
       return Response.serverError().build();

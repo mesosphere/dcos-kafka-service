@@ -24,7 +24,8 @@ KAFKA_STATSD_FILENAME="kafka-statsd-metrics2-${KAFKA_STATSD_VERSION}.jar"
 KAFKA_STATSD_DOWNLOAD_URL="https://bintray.com/artifact/download/airbnb/jars/com/airbnb/kafka-statsd-metrics2/0.4.1/${KAFKA_STATSD_FILENAME}"
 
 PROJ_ROOT_PATH="$(dirname $0)"
-PACKAGE_PATH="${PROJ_ROOT_PATH}/package"
+PACKAGE_PATH="${PROJ_ROOT_PATH}/build/package"
+OUTPUT_PATH="${PROJ_ROOT_PATH}/build"
 DOWNLOAD_CACHE_PATH="${PACKAGE_PATH}/download_cache"
 STAGING_PATH="${PACKAGE_PATH}/${CONTAINER_HOOK_BASE_DIR}"
 
@@ -60,10 +61,14 @@ download_copy ${KAFKA_STATSD_DOWNLOAD_URL} ${KAFKA_LIBS_PATH}
 cp ${PROJ_ROOT_PATH}/${CONTAINER_HOOK_SCRIPT} ${STAGING_PATH} || exit 1
 
 # build executor package of /*
+PREV_DIR=$(pwd)
 cd ${PACKAGE_PATH}
 tar cf "${CONTAINER_HOOK_PACKAGE_FILENAME}" "${CONTAINER_HOOK_BASE_DIR}" || exit 1
+cd ${PREV_DIR}
+mkdir -p ${OUTPUT_PATH}
+mv ${PACKAGE_PATH}/${CONTAINER_HOOK_PACKAGE_FILENAME} ${OUTPUT_PATH}
 
 echo "---"
-echo "Built Container Environment Hook package: ${CONTAINER_HOOK_PACKAGE_FILENAME}"
-tar tf "${CONTAINER_HOOK_PACKAGE_FILENAME}"
+echo "Built Container Environment Hook package: ${OUTPUT_PATH}/${CONTAINER_HOOK_PACKAGE_FILENAME}"
+tar tf "${OUTPUT_PATH}/${CONTAINER_HOOK_PACKAGE_FILENAME}"
 echo "---"

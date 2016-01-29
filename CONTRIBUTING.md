@@ -19,7 +19,7 @@
 ``` bash
 git clone --recursive https://github.com/mesosphere/kafka-private # include mesos-commons in pull
 cd kafka-private
-./build-container-hook.sh # creates package/container-hook-0.1.0.tgz
+./build-container-hook.sh # creates build/container-hook-0.1.0.tgz
 ./gradlew shadowjar # creates kafka-scheduler/build/libs/kafka-scheduler-0.1.0-uber.jar
 [... hack hack hack ...]
 git pull --recurse-submodules # ensure mesos-commons is also updated

@@ -1,8 +1,7 @@
-build
-package
+build/
 
 md-to-toc.py*
-__pycache__
+__pycache__/
 .gradle
 .DS_Store
 *.swp

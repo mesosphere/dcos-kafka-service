@@ -62,6 +62,31 @@ public class TopicController {
   }
 
   @GET
+  @Path("/unavailable_partitions")
+  public Response unavailablePartitions() {
+    try {
+      JSONObject obj = CmdExecutor.unavailablePartitions();
+      return Response.ok(obj.toString(), MediaType.APPLICATION_JSON).build();
+    } catch (Exception ex) {
+      log.error("Failed to fetch topics with exception: " + ex);
+      return Response.serverError().build();
+    }
+  }
+
+
+  @GET
+  @Path("/under_replicated_partitions")
+  public Response underReplicatedPartitions() {
+    try {
+      JSONObject obj = CmdExecutor.underReplicatedPartitions();
+      return Response.ok(obj.toString(), MediaType.APPLICATION_JSON).build();
+    } catch (Exception ex) {
+      log.error("Failed to fetch topics with exception: " + ex);
+      return Response.serverError().build();
+    }
+  }
+
+  @GET
   @Path("/{name}")
   public Response getTopic(@PathParam("name") String topicName) {
     try {

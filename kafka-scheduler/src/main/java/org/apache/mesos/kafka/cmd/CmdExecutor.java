@@ -130,6 +130,32 @@ public class CmdExecutor {
     return getPartitions(stdout);
   }
 
+  public static JSONObject unavailablePartitions() throws Exception {
+    // e.g. ./kafka-topics.sh --zookeeper master.mesos:2181/kafka0 --describe --unavailable-partitions
+
+    List<String> cmd = new ArrayList<String>();
+    cmd.add(binPath + "kafka-topics.sh");
+    cmd.add("--describe");
+    cmd.add("--zookeeper");
+    cmd.add(zkPath);
+    cmd.add("--unavailable-partitions");
+
+    return runCmd(cmd);
+  }
+
+  public static JSONObject underReplicatedPartitions() throws Exception {
+    // e.g. ./kafka-topics.sh --zookeeper master.mesos:2181/kafka0 --describe --under-replicate-partitions
+
+    List<String> cmd = new ArrayList<String>();
+    cmd.add(binPath + "kafka-topics.sh");
+    cmd.add("--describe");
+    cmd.add("--zookeeper");
+    cmd.add(zkPath);
+    cmd.add("--under-replicated-partitions");
+
+    return runCmd(cmd);
+  }
+
   private static JSONArray getPartitions(String offsets) {
     List<JSONObject> partitions = new ArrayList<JSONObject>();
 

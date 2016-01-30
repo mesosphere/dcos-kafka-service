@@ -91,8 +91,6 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-cd ${OLD_PWD}
-
 echo "---"
 echo "Built Stub Universe package: ${OUTPUT_ZIP}"
 echo "---"

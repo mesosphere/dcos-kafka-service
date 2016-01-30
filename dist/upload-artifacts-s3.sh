@@ -19,6 +19,12 @@ $1 \
 s3://${S3_BUCKET}/${S3_PATH}/$(basename $1)"
 echo "AWS: ${CMD}"
 ${CMD}
+if [ $? -ne 0 ]; then
+    echo "Failed to upload $1. AWS settings and contents of project dir:"
+    aws configure
+    find ${DIST_PATH}/..
+    exit 1
+fi
 }
 
 # Generate container hook and stub universe
@@ -37,23 +43,6 @@ if [ "${JAR_PATH}" = "" ]; then
     exit 1
 fi
 
-upload_to_aws $JAR_PATH
-if [ $? -ne 0 ]; then
-    echo "Failed to upload scheduler jar. Contents of kafka-scheduler/build/:"
-    find ${DIST_PATH}/../kafka-scheduler/build
-    exit 1
-fi
-
+upload_to_aws ${JAR_PATH}
 upload_to_aws $(ls ${DIST_PATH}/build/container-hook-*.tgz)
-if [ $? -ne 0 ]; then
-    echo "Failed to upload container hook. Contents of dist/:"
-    find ${DIST_PATH}
-    exit 1
-fi
-
 upload_to_aws ${DIST_PATH}/build/stub-universe.zip
-if [ $? -ne 0 ]; then
-    echo "Failed to upload stub universe. Contents of dist/:"
-    find ${DIST_PATH}
-    exit 1
-fi

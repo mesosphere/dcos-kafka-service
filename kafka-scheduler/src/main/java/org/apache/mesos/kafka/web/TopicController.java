@@ -73,7 +73,6 @@ public class TopicController {
     }
   }
 
-
   @GET
   @Path("/under_replicated_partitions")
   public Response underReplicatedPartitions() {

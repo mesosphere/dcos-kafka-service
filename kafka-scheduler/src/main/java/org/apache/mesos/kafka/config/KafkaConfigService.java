@@ -12,10 +12,16 @@ import org.apache.mesos.config.FrameworkConfigurationService;
 public class KafkaConfigService extends FrameworkConfigurationService {
   private final Log log = LogFactory.getLog(KafkaConfigService.class);
 
-  private static KafkaConfigService config = new KafkaConfigService();
+  private static KafkaConfigService configService = null;
 
   public static KafkaConfigService getConfigService() {
-    return config;
+    if (null == configService) {
+      configService = new KafkaConfigService();
+      KafkaEnvConfigurator envConfigurator = new KafkaEnvConfigurator();
+      envConfigurator.configure(configService);
+    }
+
+    return configService;
   }
 
   public String getZkRoot() {
@@ -24,14 +30,5 @@ public class KafkaConfigService extends FrameworkConfigurationService {
 
   public String getKafkaZkUri() {
     return "master.mesos:2181" + getZkRoot();
-  }
-
-  private KafkaConfigService() {
-    Map<String, String> env = System.getenv();
-    for (Entry<String, String> entry : env.entrySet()) {
-      String key = entry.getKey();
-      String value = entry.getValue();
-      setValue(key, value);
-    }
   }
 }

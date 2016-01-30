@@ -5,3 +5,4 @@ __pycache__/
 .gradle
 .DS_Store
 *.swp
+package

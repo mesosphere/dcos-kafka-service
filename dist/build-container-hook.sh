@@ -23,9 +23,9 @@ KAFKA_STATSD_VERSION="0.4.1"
 KAFKA_STATSD_FILENAME="kafka-statsd-metrics2-${KAFKA_STATSD_VERSION}.jar"
 KAFKA_STATSD_DOWNLOAD_URL="https://bintray.com/artifact/download/airbnb/jars/com/airbnb/kafka-statsd-metrics2/0.4.1/${KAFKA_STATSD_FILENAME}"
 
-PROJ_ROOT_PATH="$(dirname $0)"
-PACKAGE_PATH="${PROJ_ROOT_PATH}/build/package"
-OUTPUT_PATH="${PROJ_ROOT_PATH}/build"
+DIST_PATH="$(dirname $0)"
+PACKAGE_PATH="${DIST_PATH}/build/package"
+OUTPUT_PATH="${DIST_PATH}/build"
 DOWNLOAD_CACHE_PATH="${PACKAGE_PATH}/download_cache"
 STAGING_PATH="${PACKAGE_PATH}/${CONTAINER_HOOK_BASE_DIR}"
 
@@ -58,7 +58,7 @@ download_copy ${DOGSTATSD_CLIENT_DOWNLOAD_URL} ${KAFKA_LIBS_PATH}
 download_copy ${KAFKA_STATSD_DOWNLOAD_URL} ${KAFKA_LIBS_PATH}
 
 # copy executor script to /
-cp ${PROJ_ROOT_PATH}/${CONTAINER_HOOK_SCRIPT} ${STAGING_PATH} || exit 1
+cp ${DIST_PATH}/${CONTAINER_HOOK_SCRIPT} ${STAGING_PATH} || exit 1
 
 # build executor package of /*
 PREV_DIR=$(pwd)

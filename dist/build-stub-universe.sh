@@ -7,9 +7,9 @@
 # For example, if the packages were stored in https://aws-hello-2.com/path/to/kafka, then that should be the arg.
 #
 
-PROJ_ROOT_PATH="$(dirname $0)"
-INPUT_DIR="${PROJ_ROOT_PATH}/stub-universe"
-OUTPUT_DIR="${PROJ_ROOT_PATH}/build"
+DIST_PATH="$(dirname $0)"
+INPUT_DIR="${DIST_PATH}/stub-universe"
+OUTPUT_DIR="${DIST_PATH}/build"
 OUTPUT_DIR_CONTENT="${OUTPUT_DIR}/stub-universe"
 OUTPUT_RESOURCE_JSON="${OUTPUT_DIR_CONTENT}/repo/packages/K/kafka/2/resource.json"
 RESOURCE_JSON_SEARCH="{{artifact-dir}}"
@@ -92,5 +92,5 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "---"
-echo "Built Stub Universe package: ${OUTPUT_ZIP}"
+echo "Built Stub Universe package: ${OUTPUT_DIR}/${OUTPUT_ZIP}"
 echo "---"

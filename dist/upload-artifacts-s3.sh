@@ -10,6 +10,22 @@ UUID=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 16 | head -n 1)
 S3_PATH="autodelete7d/kafka/${DATE}-${UUID}"
 S3_PATH_URL="https://s3-${AWS_REGION}.amazonaws.com/${S3_BUCKET}/${S3_PATH}"
 
+# Generate container hook and stub universe
+
+echo "Using S3 path: ${S3_PATH_URL}"
+
+sh ${DIST_PATH}/build-container-hook.sh
+sh ${DIST_PATH}/build-stub-universe.sh ${S3_PATH_URL}
+
+# Upload jar, container hook package, and stub universe
+
+JAR_PATH=$(ls ${DIST_PATH}/../kafka-scheduler/build/libs/kafka-scheduler-*-uber.jar)
+if [ "${JAR_PATH}" = "" ]; then
+    echo "Scheduler jar not found. Contents of kafka-scheduler/build/:"
+    find ${DIST_PATH}/../kafka-scheduler/build
+    exit 1
+fi
+
 upload_to_aws() {
 CMD="aws s3 \
 --region=${AWS_REGION} \
@@ -27,22 +43,9 @@ if [ $? -ne 0 ]; then
 fi
 }
 
-# Generate container hook and stub universe
-
-echo "Using S3 path: ${S3_PATH_URL}"
-
-sh ${DIST_PATH}/build-container-hook.sh
-sh ${DIST_PATH}/build-stub-universe.sh ${S3_PATH_URL}
-
-# Upload jar, container hook package, and stub universe
-
-JAR_PATH=$(ls ${DIST_PATH}/../kafka-scheduler/build/libs/kafka-scheduler-*-uber.jar)
-if [ "${JAR_PATH}" = "" ]; then
-    echo "Scheduler jar not found. Contents of kafka-scheduler/build/:"
-    find ${DIST_PATH}/../kafka-scheduler/build
-    exit 1
-fi
-
 upload_to_aws ${JAR_PATH}
 upload_to_aws $(ls ${DIST_PATH}/build/container-hook-*.tgz)
 upload_to_aws ${DIST_PATH}/build/stub-universe.zip
+
+# Output the Universe URL to a file so that it can be used as a build artifact.
+echo "${S3_PATH_URL}/stub-universe.zip" > ${DIST_PATH}/build/universe-url.txt

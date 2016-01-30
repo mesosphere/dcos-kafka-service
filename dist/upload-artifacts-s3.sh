@@ -48,4 +48,6 @@ upload_to_aws $(ls ${DIST_PATH}/build/container-hook-*.tgz)
 upload_to_aws ${DIST_PATH}/build/stub-universe.zip
 
 # Output the Universe URL to a file so that it can be used as a build artifact.
-echo "${S3_PATH_URL}/stub-universe.zip" > ${DIST_PATH}/build/universe-url.txt
+UNIVERSE_ZIP_URL="${S3_PATH_URL}/stub-universe.zip"
+echo ${UNIVERSE_ZIP_URL} > ${DIST_PATH}/build/universe-url.txt
+echo "Stub Universe for this build: ${UNIVERSE_ZIP_URL}"

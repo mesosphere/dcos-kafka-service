@@ -85,7 +85,20 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-zip -r ${OUTPUT_ZIP} $(basename ${OUTPUT_DIR_CONTENT})
+ZIPCMD=$(which zipaa)
+if [ "${ZIPCMD}" = "" ]; then
+    echo "'zip' command not available, falling back to python hack..."
+    python -c "import os, os.path, zipfile
+
+zipout = zipfile.ZipFile(\"${OUTPUT_ZIP}\", 'w', zipfile.ZIP_DEFLATED)
+for root, dirs, files in os.walk(\"$(basename ${OUTPUT_DIR_CONTENT})\"):
+  for f in files:
+    path = os.path.join(root, f)
+    print(\"adding: %s\" % path)
+    zipout.write(path)"
+else
+    ${ZIPCMD} -r ${OUTPUT_ZIP} $(basename ${OUTPUT_DIR_CONTENT})
+fi
 if [ $? -ne 0 ]; then
     echo "zip ${OUTPUT_DIR_CONTENT} -> ${OUTPUT_ZIP} failed, exiting"
     exit 1

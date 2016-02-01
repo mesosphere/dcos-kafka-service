@@ -14,7 +14,6 @@ import org.apache.mesos.Protos.TaskInfo;
 
 public class OfferUtils {
   private static final Log log = LogFactory.getLog(OfferUtils.class);
-  private static ConfigurationService config = KafkaConfigService.getConfigService();
   private static KafkaStateService state = KafkaStateService.getStateService();
 
   public static Integer getNextBrokerId() {
@@ -39,6 +38,7 @@ public class OfferUtils {
   }
 
   public static boolean belowTargetBrokerCount() {
+    ConfigurationService config = KafkaConfigService.getTargetConfig();
     int targetBrokerCount = Integer.parseInt(config.get("BROKER_COUNT"));
     int currentBrokerCount = Integer.MAX_VALUE;
 

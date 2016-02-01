@@ -15,7 +15,7 @@ import org.glassfish.jersey.server.ResourceConfig;
 
 public class KafkaApiServer {
   private static final Log log = LogFactory.getLog(KafkaApiServer.class);
-  private static ConfigurationService config = KafkaConfigService.getConfigService();
+  private static ConfigurationService config = KafkaConfigService.getTargetConfig();
 
   public static void start() {
     ResourceConfig resourceConfig = new ResourceConfig();

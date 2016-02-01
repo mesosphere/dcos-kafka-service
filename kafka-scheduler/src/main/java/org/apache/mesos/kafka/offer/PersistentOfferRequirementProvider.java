@@ -27,22 +27,20 @@ import org.apache.mesos.Protos.Volume;
 
 public class PersistentOfferRequirementProvider implements OfferRequirementProvider {
   private final Log log = LogFactory.getLog(PersistentOfferRequirementProvider.class);
-  private ConfigurationService config = KafkaConfigService.getConfigService();
-  private PlacementStrategyService placementSvc = PlacementStrategy.getPlacementStrategyService();
 
-  public OfferRequirement getNewOfferRequirement() {
-    return getNewOfferRequirementInternal();
+  public OfferRequirement getNewOfferRequirement(ConfigurationService config) {
+    return getNewOfferRequirementInternal(config);
   }
 
-  public OfferRequirement getReplacementOfferRequirement(TaskInfo taskInfo) {
+  public OfferRequirement getReplacementOfferRequirement(ConfigurationService config, TaskInfo taskInfo) {
     if (hasVolume(taskInfo)) {
-      return getExistingOfferRequirement(taskInfo);
+      return getExistingOfferRequirement(config, taskInfo);
     } else {
-      return getUpgradeOfferRequirement(taskInfo);
+      return getUpgradeOfferRequirement(config, taskInfo);
     }
   }
 
-  private OfferRequirement getNewOfferRequirementInternal() {
+  private OfferRequirement getNewOfferRequirementInternal(ConfigurationService config) {
     Integer brokerId = OfferUtils.getNextBrokerId();
     if (brokerId == null) {
       log.error("Failed to get broker ID");
@@ -51,38 +49,40 @@ public class PersistentOfferRequirementProvider implements OfferRequirementProvi
 
     String brokerName = "broker-" + brokerId;
     String taskId = brokerName + "__" + UUID.randomUUID();
-    TaskInfo taskInfo = getTaskInfo(brokerId, brokerName, taskId);
-    return getCreateOfferRequirement(taskInfo);
+    TaskInfo taskInfo = getTaskInfo(config, brokerId, brokerName, taskId);
+    return getCreateOfferRequirement(config, taskInfo);
   }
 
-  private OfferRequirement getCreateOfferRequirement(TaskInfo taskInfo) {
-      return new OfferRequirement(
-          getRole(),
-          getPrincipal(),
-          Arrays.asList(taskInfo),
-          placementSvc.getAgentsToAvoid(taskInfo),
-          placementSvc.getAgentsToColocate(taskInfo),
-          VolumeMode.CREATE);
+  private OfferRequirement getCreateOfferRequirement(ConfigurationService config, TaskInfo taskInfo) {
+    PlacementStrategyService placementSvc = PlacementStrategy.getPlacementStrategyService(config);
+
+    return new OfferRequirement(
+        getRole(config),
+        getPrincipal(config),
+        Arrays.asList(taskInfo),
+        placementSvc.getAgentsToAvoid(taskInfo),
+        placementSvc.getAgentsToColocate(taskInfo),
+        VolumeMode.CREATE);
   }
 
-  private OfferRequirement getExistingOfferRequirement(TaskInfo taskInfo) {
-      return new OfferRequirement(
-          getRole(),
-          getPrincipal(),
-          Arrays.asList(taskInfo),
-          null,
-          null,
-          VolumeMode.EXISTING);
+  private OfferRequirement getExistingOfferRequirement(ConfigurationService config, TaskInfo taskInfo) {
+    return new OfferRequirement(
+        getRole(config),
+        getPrincipal(config),
+        Arrays.asList(taskInfo),
+        null,
+        null,
+        VolumeMode.EXISTING);
   }
 
-  private OfferRequirement getUpgradeOfferRequirement(TaskInfo taskInfo) {
+  private OfferRequirement getUpgradeOfferRequirement(ConfigurationService config, TaskInfo taskInfo) {
       Integer brokerId = nameToId(taskInfo.getName());
 
       String brokerName = taskInfo.getName();
       String taskId = taskInfo.getTaskId().getValue();
-      TaskInfo createTaskInfo = getTaskInfo(brokerId, brokerName, taskId);
+      TaskInfo createTaskInfo = getTaskInfo(config, brokerId, brokerName, taskId);
 
-      return getCreateOfferRequirement(createTaskInfo);
+      return getCreateOfferRequirement(config, createTaskInfo);
   }
 
   private Integer nameToId(String brokerName) {
@@ -95,15 +95,15 @@ public class PersistentOfferRequirementProvider implements OfferRequirementProvi
     return containerPath != null;
   }
 
-  private String getRole() {
+  private String getRole(ConfigurationService config) {
     return config.get("ROLE");
   }
 
-  private String getPrincipal() {
+  private String getPrincipal(ConfigurationService config) {
     return config.get("PRINCIPAL");
   }
 
-  private TaskInfo getTaskInfo(int brokerId, String brokerName, String taskId) {
+  private TaskInfo getTaskInfo(ConfigurationService config, int brokerId, String brokerName, String taskId) {
     int port = 9092 + brokerId;
 
     List<String> commands = new ArrayList<>();
@@ -118,20 +118,21 @@ public class PersistentOfferRequirementProvider implements OfferRequirementProvi
     String containerPath = "kafka-volume-" + UUID.randomUUID();
 
     // Run Kafka
-    String kafkaStartCmd = OfferRequirementUtils.getKafkaStartCmd(brokerId, port, containerPath); 
+    String kafkaStartCmd = OfferRequirementUtils.getKafkaStartCmd(config, brokerId, port, containerPath); 
     commands.add(kafkaStartCmd);
 
     String command = Joiner.on(" && ").join(commands);
 
     double cpus = Double.parseDouble(config.get("BROKER_CPUS"));
     double mem = Double.parseDouble(config.get("BROKER_MEM"));
-    String role = getRole();
-    String principal = getPrincipal();
+    double disk = Double.parseDouble(config.get("BROKER_DISK"));
+    String role = getRole(config);
+    String principal = getPrincipal(config);
 
     return new TaskInfoBuilder(taskId, brokerName, "" /* slaveId */)
         .addResource(ResourceBuilder.reservedCpus(cpus, role, principal))
         .addResource(ResourceBuilder.reservedMem(mem, role, principal))
-        .addResource(getVolumeResource(containerPath))
+        .addResource(getVolumeResource(disk, role, principal, containerPath))
         .addResource(ResourceBuilder.ports(port, port))
         .setCommand(new CommandInfoBuilder()
           .addUri(config.get("KAFKA_URI"))
@@ -142,12 +143,11 @@ public class PersistentOfferRequirementProvider implements OfferRequirementProvi
         .build();
   }
 
-  private Resource getVolumeResource(String containerPath) {
+  private Resource getVolumeResource(double disk, String role, String principal, String containerPath) {
     String persistenceId = UUID.randomUUID().toString();
     DiskInfo diskInfo = createDiskInfo(persistenceId, containerPath);
 
-    double disk = Double.parseDouble(config.get("BROKER_DISK"));
-    Resource resource = ResourceBuilder.reservedDisk(disk, getRole(), getPrincipal());
+    Resource resource = ResourceBuilder.reservedDisk(disk, role, principal);
     Resource.Builder builder = Resource.newBuilder(resource);
     builder.setDisk(diskInfo);
 

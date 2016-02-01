@@ -12,16 +12,21 @@ import org.apache.mesos.config.FrameworkConfigurationService;
 public class KafkaConfigService extends FrameworkConfigurationService {
   private final Log log = LogFactory.getLog(KafkaConfigService.class);
 
-  private static KafkaConfigService configService = null;
+  private static KafkaConfigService targetConfig = null;
+  private static KafkaConfigService persistedConfig = null;
 
-  public static KafkaConfigService getConfigService() {
-    if (null == configService) {
-      configService = new KafkaConfigService();
+  public static KafkaConfigService getTargetConfig() {
+    if (null == targetConfig) {
+      targetConfig = new KafkaConfigService();
       KafkaEnvConfigurator envConfigurator = new KafkaEnvConfigurator();
-      envConfigurator.configure(configService);
+      envConfigurator.configure(targetConfig);
     }
 
-    return configService;
+    return targetConfig;
+  }
+
+  public static KafkaConfigService getPersistedConfig() {
+    return getTargetConfig();
   }
 
   public String getZkRoot() {

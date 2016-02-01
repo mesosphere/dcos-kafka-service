@@ -1,12 +1,10 @@
 package org.apache.mesos.kafka.offer;
 
 import org.apache.mesos.config.ConfigurationService;
-import org.apache.mesos.kafka.config.KafkaConfigService;
 
 public class OfferRequirementUtils {
-  private static ConfigurationService config = KafkaConfigService.getConfigService();
 
-  public static String getKafkaStartCmd(Integer brokerId, Integer port, String containerPath) {
+  public static String getKafkaStartCmd(ConfigurationService config, Integer brokerId, Integer port, String containerPath) {
     return String.format(
         "$MESOS_SANDBOX/%1$s/bin/kafka-server-start.sh "
         + "$MESOS_SANDBOX/%1$s/config/server.properties "

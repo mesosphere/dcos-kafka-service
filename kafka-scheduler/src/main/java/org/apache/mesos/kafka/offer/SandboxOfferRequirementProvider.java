@@ -21,31 +21,33 @@ import org.apache.mesos.Protos.TaskInfo;
 
 public class SandboxOfferRequirementProvider implements OfferRequirementProvider {
   private final Log log = LogFactory.getLog(SandboxOfferRequirementProvider.class);
-  private ConfigurationService config = KafkaConfigService.getConfigService();
-  private PlacementStrategyService placementSvc = PlacementStrategy.getPlacementStrategyService();
 
-  public OfferRequirement getNewOfferRequirement() {
+  public OfferRequirement getNewOfferRequirement(ConfigurationService config) {
     Integer brokerId = OfferUtils.getNextBrokerId();
     if (brokerId == null) {
       log.error("Failed to get broker ID");
       return null;
     }
 
-    TaskInfo taskInfo = getTaskInfo(brokerId);
+    PlacementStrategyService placementSvc = PlacementStrategy.getPlacementStrategyService(config);
+    TaskInfo taskInfo = getTaskInfo(config, brokerId);
+
     return new OfferRequirement(
         Arrays.asList(taskInfo),
         placementSvc.getAgentsToAvoid(taskInfo),
         placementSvc.getAgentsToColocate(taskInfo));
   }
 
-  public OfferRequirement getReplacementOfferRequirement(TaskInfo taskInfo) {
+  public OfferRequirement getReplacementOfferRequirement(ConfigurationService config, TaskInfo taskInfo) {
+    PlacementStrategyService placementSvc = PlacementStrategy.getPlacementStrategyService(config);
+
     return new OfferRequirement(
         Arrays.asList(taskInfo),
         placementSvc.getAgentsToAvoid(taskInfo),
         placementSvc.getAgentsToColocate(taskInfo));
   }
 
-  private TaskInfo getTaskInfo(int brokerId) {
+  private TaskInfo getTaskInfo(ConfigurationService config, int brokerId) {
     String brokerName = "broker-" + brokerId;
     String taskId = brokerName + "__" + UUID.randomUUID();
     int port = 9092 + brokerId;
@@ -60,7 +62,7 @@ public class SandboxOfferRequirementProvider implements OfferRequirementProvider
     commands.add("env");
 
     // Run Kafka
-    String kafkaStartCmd = OfferRequirementUtils.getKafkaStartCmd(brokerId, port, "kafka-logs"); 
+    String kafkaStartCmd = OfferRequirementUtils.getKafkaStartCmd(config, brokerId, port, "kafka-logs"); 
     commands.add(kafkaStartCmd);
 
     String command = Joiner.on(" && ").join(commands);

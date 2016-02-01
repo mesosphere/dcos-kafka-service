@@ -29,7 +29,7 @@ public class KafkaStateService implements Observer {
   private final Log log = LogFactory.getLog(KafkaStateService.class);
   private final CuratorFramework zkClient;
   
-  private static ConfigurationService config = KafkaConfigService.getConfigService();
+  private static ConfigurationService config = KafkaConfigService.getPersistedConfig();
 
   private static final Integer POLL_DELAY_MS = 1000;
   private static final Integer CURATOR_MAX_RETRIES = 3;

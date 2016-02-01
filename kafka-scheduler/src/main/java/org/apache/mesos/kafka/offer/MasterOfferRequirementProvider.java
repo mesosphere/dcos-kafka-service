@@ -7,6 +7,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.apache.mesos.offer.OfferRequirement;
+import org.apache.mesos.kafka.config.KafkaConfigService;
 import org.apache.mesos.kafka.offer.OfferUtils;
 import org.apache.mesos.kafka.state.KafkaStateService;
 
@@ -26,9 +27,10 @@ public class MasterOfferRequirementProvider {
 
     if (terminatedTasks != null && terminatedTasks.size() > 0) {
       TaskInfo terminatedTask = terminatedTasks.get(new Random().nextInt(terminatedTasks.size()));
-      return provider.getReplacementOfferRequirement(terminatedTask);
+      KafkaConfigService config = KafkaConfigService.getPersistedConfig();
+      return provider.getReplacementOfferRequirement(config, terminatedTask);
     } else if (OfferUtils.belowTargetBrokerCount()) {
-      return provider.getNewOfferRequirement();
+      return provider.getNewOfferRequirement(KafkaConfigService.getTargetConfig());
     } else {
       return null;
     }

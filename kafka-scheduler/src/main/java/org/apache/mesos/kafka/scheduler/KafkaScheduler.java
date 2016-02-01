@@ -57,7 +57,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   private static List<String> tasksToReschedule = new ArrayList<String>();
 
   public KafkaScheduler() {
-    config = KafkaConfigService.getConfigService();
+    config = KafkaConfigService.getTargetConfig();
     state = KafkaStateService.getStateService();
     reconciler = new Reconciler();
 
@@ -129,7 +129,6 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     log.info("Registered framework with frameworkId: " + frameworkId.getValue());
     state.setFrameworkId(frameworkId);
     reconcile(driver);
-
     KafkaApiServer.start();
   }
 

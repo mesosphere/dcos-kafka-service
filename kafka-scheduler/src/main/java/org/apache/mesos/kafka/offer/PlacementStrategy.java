@@ -1,12 +1,9 @@
 package org.apache.mesos.kafka.offer;
 
 import org.apache.mesos.config.ConfigurationService;
-import org.apache.mesos.kafka.config.KafkaConfigService;
 
 public class PlacementStrategy {
-  private static ConfigurationService config = KafkaConfigService.getConfigService();
-
-  public static PlacementStrategyService getPlacementStrategyService() {
+  public static PlacementStrategyService getPlacementStrategyService(ConfigurationService config) {
     String placementStrategy = config.get("PLACEMENT_STRATEGY");
 
     switch (placementStrategy) {

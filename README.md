@@ -484,4 +484,32 @@ DELETE /service/kafka0/topics/topic1?operation=delete HTTP/1.1
 }
 ```
 
+#### List Under Replicated Partitions
+
+``` bash
+$ http $DCOS_URI/service/kafka0/v1/topics/under_replicated_partitions -pbH
+GET /service/kafka0/v1/topics/under_replicated_partitions HTTP/1.1
+[...]
+
+{
+    "exit_code": 0,
+    "stderr": "",
+    "stdout": ""
+}
+```
+
+#### List Unavailable Partitions
+
+``` bash
+$ http $DCOS_URI/service/kafka0/v1/topics/unavailable_partitions -pbH
+GET /service/kafka0/v1/topics/unavailable_partitions HTTP/1.1
+[...]
+
+{
+    "exit_code": 0,
+    "stderr": "",
+    "stdout": ""
+}
+```
+
 ## TODO [API for ACL changes](https://kafka.apache.org/documentation.html#security_authz_examples)? (kafka-acls.sh)

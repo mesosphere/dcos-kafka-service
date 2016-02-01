@@ -36,4 +36,8 @@ public class KafkaConfigService extends FrameworkConfigurationService {
   public String getKafkaZkUri() {
     return "master.mesos:2181" + getZkRoot();
   }
+
+  public int getBrokerCount() {
+    return Integer.parseInt(get("BROKER_COUNT"));
+  }
 }

@@ -1,10 +1,25 @@
 package org.apache.mesos.kafka.plan;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.mesos.kafka.config.KafkaConfigService;
+
 public class KafkaPhase implements Phase {
+  private KafkaConfigService config = null;
+
+  public KafkaPhase(KafkaConfigService config) {
+    this.config = config;
+  }
+
   public List<Block> getBlocks() {
-    return null;
+    List<Block> blocks = new ArrayList<Block>();
+
+    for (int i=0; i<config.getBrokerCount(); i++) {
+      blocks.add(new KafkaBlock(config));
+    }
+
+    return blocks;
   }
 
   public Block getCurrentBlock() {

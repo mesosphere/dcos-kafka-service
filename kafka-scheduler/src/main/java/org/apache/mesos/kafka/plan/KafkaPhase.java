@@ -16,7 +16,7 @@ public class KafkaPhase implements Phase {
     List<Block> blocks = new ArrayList<Block>();
 
     for (int i=0; i<config.getBrokerCount(); i++) {
-      blocks.add(new KafkaBlock(config));
+      blocks.add(new KafkaBlock(config, i));
     }
 
     return blocks;

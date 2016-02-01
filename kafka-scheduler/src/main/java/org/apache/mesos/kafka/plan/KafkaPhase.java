@@ -6,13 +6,17 @@ import java.util.List;
 import org.apache.mesos.kafka.config.KafkaConfigService;
 
 public class KafkaPhase implements Phase {
-  private KafkaConfigService config = null;
+  private List<Block> blocks = null;
 
   public KafkaPhase(KafkaConfigService config) {
-    this.config = config;
+    this.blocks = createBlocks(config);
   }
 
   public List<Block> getBlocks() {
+    return blocks;
+  }
+
+  private List<Block> createBlocks(KafkaConfigService config) {
     List<Block> blocks = new ArrayList<Block>();
 
     for (int i=0; i<config.getBrokerCount(); i++) {
@@ -23,11 +27,27 @@ public class KafkaPhase implements Phase {
   }
 
   public Block getCurrentBlock() {
+    if (blocks.size() == 0) {
+      return null;
+    }
+
+    for (Block block : blocks) {
+      if (!block.isComplete()) {
+        return block;
+      }
+    }
+    
     return null;
   }
 
   public boolean isComplete() {
-    return false;
+    for (Block block : blocks) {
+      if (!block.isComplete()) {
+        return false;
+      }
+    }
+
+    return true;
   }
 }
 

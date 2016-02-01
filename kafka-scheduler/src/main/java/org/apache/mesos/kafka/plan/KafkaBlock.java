@@ -32,7 +32,7 @@ public class KafkaBlock implements Block {
     }
   }
 
-  private boolean hasBeenTerminated() throws Exception {
+  public boolean hasBeenTerminated() throws Exception {
     List<TaskInfo> terminatedTasks = state.getTerminatedTaskInfos();
 
     for (TaskInfo taskInfo : terminatedTasks) {
@@ -44,7 +44,7 @@ public class KafkaBlock implements Block {
     return false;
   }
 
-  private boolean hasNeverBeenLaunched() throws Exception {
+  public boolean hasNeverBeenLaunched() throws Exception {
     List<TaskInfo> allTasks = state.getTaskInfos();
 
     for (TaskInfo taskInfo : allTasks) {

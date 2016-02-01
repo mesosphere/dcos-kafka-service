@@ -1,6 +1,7 @@
 package org.apache.mesos.kafka.scheduler;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
@@ -47,37 +48,48 @@ public class KafkaPlanScheduler {
 
   public List<OfferID> resourceOffers(SchedulerDriver driver, List<Offer> offers) {
     List<OfferID> acceptedOffers = new ArrayList<OfferID>();
+    KafkaBlock currBlock = getCurrentBlock();
 
-    if (getCurrentBlock().isInProgress()) {
-      TaskInfo taskInfo = getTaskInfo();
+    if (currBlock.isInProgress()) {
 
       OfferRequirement offerReq = null;
-      if (null == taskInfo) {
-        offerReq = offerReqProvider.getNewOfferRequirement(targetConfig);
-      } else {
-        offerReq = offerReqProvider.getReplacementOfferRequirement(targetConfig, taskInfo);
+
+      try {
+        if (currBlock.hasBeenTerminated()) {
+          TaskInfo taskInfo = getTaskInfo(currBlock);
+          offerReq = offerReqProvider.getReplacementOfferRequirement(targetConfig, taskInfo);
+        } else if(currBlock.hasNeverBeenLaunched()) {
+          offerReq = offerReqProvider.getNewOfferRequirement(targetConfig);
+        } else {
+          log.error("Unexpected block state.");
+          return acceptedOffers;
+        }
+      } catch (Exception ex) {
+        log.error("Failed to generate OfferRequirement with exception: " + ex);
+        return acceptedOffers;
       }
 
       OfferEvaluator offerEvaluator = new OfferEvaluator(offerReq);
       List<OfferRecommendation> recommendations = offerEvaluator.evaluate(offers);
       acceptedOffers = offerAccepter.accept(driver, recommendations);
     } else {
-      startBlock();
+      startBlock(currBlock);
     }
 
     return acceptedOffers;
   }
 
-  private void startBlock() {
+  private void startBlock(KafkaBlock block) {
+    TaskInfo taskInfo = getTaskInfo(block);
+    KafkaScheduler.restartTasks(Arrays.asList(taskInfo.getTaskId().getValue()));
   }
 
   private KafkaBlock getCurrentBlock() {
     return (KafkaBlock) plan.getCurrentPhase().getCurrentBlock();
   }
 
-  private TaskInfo getTaskInfo() {
-    KafkaBlock currBlock = getCurrentBlock();
-    int brokerId = currBlock.getBrokerId();
+  private TaskInfo getTaskInfo(KafkaBlock block) {
+    int brokerId = block.getBrokerId();
 
     try {
       for (TaskInfo taskInfo : state.getTaskInfos()) {

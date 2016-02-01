@@ -1,5 +1,6 @@
 package org.apache.mesos.kafka.plan;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.mesos.kafka.config.KafkaConfigService;
@@ -14,14 +15,14 @@ public class KafkaUpdatePlan implements Plan {
   }
 
   public List<Phase> getPhases() {
-    return null;
+    return Arrays.asList(phase);
   }
 
   public Phase getCurrentPhase() {
-    return null;
+    return phase;
   }
 
   public boolean isComplete() {
-    return false;
+    return phase.isComplete();
   }
 }

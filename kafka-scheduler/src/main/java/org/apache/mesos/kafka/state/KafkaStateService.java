@@ -4,9 +4,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.CuratorFrameworkFactory;
-import org.apache.curator.RetryPolicy;
-import org.apache.curator.retry.ExponentialBackoffRetry;
 
 import org.apache.mesos.config.ConfigurationService;
 import org.apache.mesos.kafka.config.KafkaConfigService;
@@ -31,8 +28,6 @@ public class KafkaStateService implements Observer {
   
   private static ConfigurationService config = KafkaConfigService.getPersistedConfig();
 
-  private static final Integer POLL_DELAY_MS = 1000;
-  private static final Integer CURATOR_MAX_RETRIES = 3;
   private static String zkRoot;
   private static String stateRoot;
   private static String taskPath;
@@ -41,7 +36,7 @@ public class KafkaStateService implements Observer {
   private static KafkaStateService stateService = null;
 
   private KafkaStateService() {
-    zkClient = createCuratorClient();
+    zkClient = KafkaStateUtils.createZkClient(config.get("ZOOKEEPER_ADDR"));
 
     zkRoot = "/" + config.get("FRAMEWORK_NAME");
     stateRoot = zkRoot + "/state";
@@ -319,15 +314,5 @@ public class KafkaStateService implements Observer {
     if (zkClient.checkExists().forPath(path) == null) {
       zkClient.create().creatingParentsIfNeeded().forPath(path, new byte[0]);
     }
-  }
-
-  private CuratorFramework createCuratorClient() {
-    String hosts = config.get("ZOOKEEPER_ADDR");
-    RetryPolicy retryPolicy = new ExponentialBackoffRetry(POLL_DELAY_MS, CURATOR_MAX_RETRIES);
-
-    CuratorFramework client = CuratorFrameworkFactory.newClient(hosts, retryPolicy);
-    client.start();
-
-    return client;
   }
 } 

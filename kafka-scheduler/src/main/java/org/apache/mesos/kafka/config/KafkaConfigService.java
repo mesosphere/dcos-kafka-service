@@ -40,4 +40,8 @@ public class KafkaConfigService extends FrameworkConfigurationService {
   public int getBrokerCount() {
     return Integer.parseInt(get("BROKER_COUNT"));
   }
+
+  public String getFrameworkName() {
+    return get("FRAMEWORK_NAME");
+  }
 }

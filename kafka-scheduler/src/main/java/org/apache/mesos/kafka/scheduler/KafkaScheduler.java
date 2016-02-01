@@ -5,11 +5,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Observable;
+import java.util.UUID;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.apache.mesos.kafka.config.KafkaConfigService;
+import org.apache.mesos.kafka.config.KafkaConfigState;
 import org.apache.mesos.kafka.offer.LogOperationRecorder;
 import org.apache.mesos.kafka.offer.MasterOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.OfferRequirementProvider;
@@ -46,8 +48,9 @@ import org.apache.mesos.SchedulerDriver;
 public class KafkaScheduler extends Observable implements org.apache.mesos.Scheduler, Runnable {
   private final Log log = LogFactory.getLog(KafkaScheduler.class);
 
-  private ConfigurationService config;
+  private KafkaConfigService config;
   private KafkaStateService state;
+  private KafkaConfigState configState;
 
   private MasterOfferRequirementProvider offerReqProvider;
   private OfferAccepter offerAccepter;
@@ -59,6 +62,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   public KafkaScheduler() {
     config = KafkaConfigService.getTargetConfig();
     state = KafkaStateService.getStateService();
+    configState = new KafkaConfigState(config.getFrameworkName(), config.get("ZOOKEEPER_ADDR"), "/");
     reconciler = new Reconciler();
 
     addObserver(state);
@@ -72,6 +76,8 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
             new PersistentOperationRecorder()));
 
     String port0 = config.get("PORT0");
+
+    configState.store(config, UUID.randomUUID().toString());
   }
 
   public static void restartTasks(List<String> taskIds) {

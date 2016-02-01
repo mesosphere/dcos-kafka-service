@@ -3,9 +3,6 @@ package org.apache.mesos.kafka.offer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.CuratorFrameworkFactory;
-
 import org.apache.mesos.kafka.state.KafkaStateService;
 import org.apache.mesos.offer.OperationRecorder;
 

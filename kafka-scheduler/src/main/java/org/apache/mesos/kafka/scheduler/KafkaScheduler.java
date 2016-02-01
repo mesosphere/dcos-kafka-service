@@ -77,7 +77,11 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
 
     String port0 = config.get("PORT0");
 
-    configState.store(config, UUID.randomUUID().toString());
+    if (!configState.hasTarget()) {
+      String targetConfigName = UUID.randomUUID().toString();
+      configState.store(config, targetConfigName);
+      configState.setTarget(targetConfigName);
+    }
   }
 
   public static void restartTasks(List<String> taskIds) {

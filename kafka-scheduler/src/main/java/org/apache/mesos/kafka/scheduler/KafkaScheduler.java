@@ -1,5 +1,6 @@
 package org.apache.mesos.kafka.scheduler;
 
+
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,6 +19,8 @@ import org.apache.mesos.kafka.offer.OfferRequirementProvider;
 import org.apache.mesos.kafka.offer.PersistentOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.PersistentOperationRecorder;
 import org.apache.mesos.kafka.offer.SandboxOfferRequirementProvider;
+import org.apache.mesos.kafka.plan.KafkaUpdatePlan;
+import org.apache.mesos.kafka.plan.PlanFactory;
 import org.apache.mesos.kafka.state.KafkaStateService;
 import org.apache.mesos.kafka.web.KafkaApiServer;
 
@@ -50,7 +53,9 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
 
   private KafkaConfigService config;
   private KafkaStateService state;
-  private KafkaConfigState configState;
+  private KafkaUpdatePlan plan = null; 
+  private KafkaPlanScheduler planScheduler = null;
+
 
   private MasterOfferRequirementProvider offerReqProvider;
   private OfferAccepter offerAccepter;
@@ -58,6 +63,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   private Reconciler reconciler;
   private static List<String> tasksToRestart = new ArrayList<String>();
   private static List<String> tasksToReschedule = new ArrayList<String>();
+  private static KafkaConfigState configState;
 
   public KafkaScheduler() {
     config = KafkaConfigService.getEnvConfig();
@@ -75,13 +81,14 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
             new LogOperationRecorder(),
             new PersistentOperationRecorder()));
 
-    String port0 = config.get("PORT0");
-
     if (!configState.hasTarget()) {
       String targetConfigName = UUID.randomUUID().toString();
       configState.store(config, targetConfigName);
       configState.setTargetName(targetConfigName);
     }
+
+    plan = PlanFactory.getPlan(configState.getTargetName());
+    planScheduler = new KafkaPlanScheduler(plan, configState, getOfferRequirementProvider(), offerAccepter);
   }
 
   public static void restartTasks(List<String> taskIds) {
@@ -94,6 +101,10 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     synchronized (tasksToRestart) {
       tasksToReschedule.addAll(taskIds);
     }
+  }
+
+  public static KafkaConfigState getConfigState() {
+    return configState;
   }
 
   private OfferRequirementProvider getOfferRequirementProvider() {
@@ -168,10 +179,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     List<OfferID> acceptedOffers = new ArrayList<OfferID>();
 
     if (reconciler.complete()) {
-      OfferRequirement offerReq = offerReqProvider.getNextRequirement();
-      OfferEvaluator offerEvaluator = new OfferEvaluator(offerReq);
-      List<OfferRecommendation> recommendations = offerEvaluator.evaluate(offers);
-      acceptedOffers = offerAccepter.accept(driver, recommendations);
+      acceptedOffers = planScheduler.resourceOffers(driver, offers);
     }
 
     declineOffers(driver, acceptedOffers, offers);

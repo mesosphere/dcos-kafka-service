@@ -6,12 +6,10 @@ import java.util.List;
 import org.apache.mesos.kafka.config.KafkaConfigService;
 
 public class KafkaUpdatePlan implements Plan {
-  private KafkaConfigService targetConfig;
   private KafkaPhase phase;
 
-  public KafkaUpdatePlan(KafkaConfigService targetConfig) {
-    this.targetConfig = targetConfig;
-    phase = new KafkaPhase(targetConfig);
+  public KafkaUpdatePlan(String configName) {
+    phase = new KafkaPhase(configName);
   }
 
   public List<Phase> getPhases() {

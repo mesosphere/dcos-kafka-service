@@ -12,6 +12,9 @@ import org.apache.mesos.offer.OfferEvaluator;
 import org.apache.mesos.offer.OfferRecommendation;
 import org.apache.mesos.offer.OfferRequirement;
 
+import org.apache.mesos.protobuf.LabelBuilder;
+
+import org.apache.mesos.Protos.Labels;
 import org.apache.mesos.Protos.Offer;
 import org.apache.mesos.Protos.OfferID;
 import org.apache.mesos.Protos.TaskInfo;
@@ -49,17 +52,30 @@ public class KafkaPlanScheduler {
 
   public List<OfferID> resourceOffers(SchedulerDriver driver, List<Offer> offers) {
     List<OfferID> acceptedOffers = new ArrayList<OfferID>();
+
+    if (plan.isComplete()) {
+      log.info("Plan complete.");
+      return acceptedOffers;
+    }
+
     KafkaBlock currBlock = getCurrentBlock();
+    String currBlockName = currBlock.getBrokerName();
+
+    if (currBlock.isStaging() || currBlock.isComplete()) {
+      return acceptedOffers;
+    }
 
     if (currBlock.isInProgress()) {
-
       OfferRequirement offerReq = null;
+      log.info("Processing Block: " + currBlockName);
 
       try {
         if (currBlock.hasBeenTerminated()) {
+          log.info("Block: " + currBlockName + " is terminated.");
           TaskInfo taskInfo = getTaskInfo(currBlock);
           offerReq = offerReqProvider.getReplacementOfferRequirement(taskInfo);
         } else if(currBlock.hasNeverBeenLaunched()) {
+          log.info("Block: " + currBlockName + " has never been launched.");
           offerReq = offerReqProvider.getNewOfferRequirement(configState.getTargetName());
         } else {
           log.error("Unexpected block state.");
@@ -74,8 +90,9 @@ public class KafkaPlanScheduler {
       List<OfferRecommendation> recommendations = offerEvaluator.evaluate(offers);
       acceptedOffers = offerAccepter.accept(driver, recommendations);
     } else {
+      log.info("Starting Block: " + currBlockName + " with status: " + currBlock.getTaskStatus());
       startBlock(currBlock);
-    }
+    } 
 
     return acceptedOffers;
   }
@@ -96,7 +113,13 @@ public class KafkaPlanScheduler {
       for (TaskInfo taskInfo : state.getTaskInfos()) {
         String brokerName = taskInfo.getName();
         if (brokerName.equals("broker-" + brokerId)) {
-          return taskInfo;
+          Labels labels = new LabelBuilder()
+            .addLabel("config_target", configState.getTargetName())
+            .build();
+
+          return TaskInfo.newBuilder(taskInfo)
+            .setLabels(labels)
+            .build();
         }
       } 
     } catch(Exception ex) {

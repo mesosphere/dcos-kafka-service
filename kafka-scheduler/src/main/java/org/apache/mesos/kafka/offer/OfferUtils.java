@@ -10,6 +10,7 @@ import org.apache.mesos.kafka.config.KafkaConfigService;
 import org.apache.mesos.kafka.state.KafkaStateService;
 import org.apache.mesos.offer.OfferRequirement;
 
+import org.apache.mesos.Protos.Label;
 import org.apache.mesos.Protos.TaskInfo;
 
 public class OfferUtils {
@@ -52,6 +53,12 @@ public class OfferUtils {
   }
 
   public static String getConfigName(TaskInfo taskInfo) {
-    return "DUMMY_CONFIG_NAME";
+    for (Label label : taskInfo.getLabels().getLabelsList()) {
+      if (label.getKey().equals("config_target")) {
+        return label.getValue();
+      }
+    }
+
+    return null;
   }
 }

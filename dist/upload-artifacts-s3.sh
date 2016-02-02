@@ -5,9 +5,9 @@ DIST_PATH="$(dirname $0)"
 # AWS settings:
 AWS_REGION="us-west-2"
 S3_BUCKET="infinity-artifacts"
-DATE=$(date +"%Y%m%d")
+DATETIME=$(date +"%Y%m%d-%H%M%S")
 UUID=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 16 | head -n 1)
-S3_PATH="autodelete7d/kafka/${DATE}-${UUID}"
+S3_PATH="autodelete7d/kafka/${DATETIME}-${UUID}"
 S3_PATH_URL="https://s3-${AWS_REGION}.amazonaws.com/${S3_BUCKET}/${S3_PATH}"
 
 # Generate container hook and stub universe

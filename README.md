@@ -88,7 +88,7 @@ DCOS Kafka Service provides the following features:
 
 ## Quick Start
 
-- Step 1. Install [dcos-cli](https://github.com/mesosphere/dcos-cli) and [HTTPie](http://httpie.org/).
+- Step 1. Install [dcos-cli](https://github.com/mesosphere/dcos-cli).
 
 - Step 2. Install a Kafka cluster.
 
@@ -99,7 +99,7 @@ $ dcos package install kafka
 - Step 3. Create a new topic.
 
 ``` bash
-$ http POST $DCOS_URI/service/kafka0/topics name==topic0 partitions==3 replication==3 -pbH
+$ curl -vX POST $DCOS_URI/service/kafka0/topics?name=topic0&partitions=3&replication=3 -pbH
 ```
 
 - Step 4. Read and write data to a topic.
@@ -109,7 +109,7 @@ $ http POST $DCOS_URI/service/kafka0/topics name==topic0 partitions==3 replicati
 - Step 5. Mark a topic for deletion.
 
 ``` bash
-$ http DELETE $DCOS_URI/service/kafka0/v1/topics/topic0 -pbH
+$ curl -vX DELETE $DCOS_URI/service/kafka0/v1/topics/topic0 -pbH
 ```
 
 - Step 6. Uninstall the cluster.
@@ -261,14 +261,14 @@ By default Kafka Brokers will use the sandbox available to Mesos Tasks for stori
 
 For ongoing maintenance of the Kafka cluster itself, the Kafka Framework exposes an HTTP API whose structure is designed to roughly match the tools provided by the Kafka distribution, such as `bin/kafka-topics.sh`.
 
-The examples provided here use the "[HTTPie](http://httpie.org/)" commandline HTTP Client utility. These examples assume a DCOS host of `$DCOS_URI` and a Kafka framework named `kafka0` (the default initial framework name). Replace these with appropriate values as needed.
+The examples provided here use the `curl` utility to query the Kafka service over HTTP. These examples assume a DCOS host of `$DCOS_URI` and a Kafka framework named `kafka0` (the default initial framework name). Replace these with appropriate values as needed.
 
 ### Connection Information
 
 Kafka comes with many useful tools of its own. They often require either Zookeeper connection information, or the list of Broker endpoints. This information can be retrieved in an easily consumable formation from the `/connection` endpoint as below.
 
 ``` bash
-$ http $DCOS_URI/service/kafka0/connection -pbH
+$ curl -v $DCOS_URI/service/kafka0/connection -pbH
 GET /service/kafka0/connection HTTP/1.1
 [...]
 
@@ -297,7 +297,7 @@ Broker removal is currently a manual process.
 #### List All Brokers
 
 ``` bash
-$ http $DCOS_URI/service/kafka0/brokers -pbH
+$ curl -v $DCOS_URI/service/kafka0/brokers -pbH
 GET /service/kafka0/brokers HTTP/1.1
 [...]
 
@@ -310,7 +310,7 @@ GET /service/kafka0/brokers HTTP/1.1
 #### View Broker Details
 
 ``` bash
-$ http $DCOS_URI/service/kafka0/brokers/0 -pbH
+$ curl -v $DCOS_URI/service/kafka0/brokers/0 -pbH
 GET /service/kafka0/brokers/0 HTTP/1.1
 [...]
 
@@ -329,7 +329,7 @@ GET /service/kafka0/brokers/0 HTTP/1.1
 #### Restart Single Broker
 
 ``` bash
-$ http PUT $DCOS_URI/service/kafka0/brokers/0 -pbH
+$ curl -vX PUT $DCOS_URI/service/kafka0/brokers/0 -pbH
 PUT /service/kafka0/brokers/0 HTTP/1.1
 [...]
 
@@ -341,7 +341,7 @@ PUT /service/kafka0/brokers/0 HTTP/1.1
 #### Restart All Brokers
 
 ``` bash
-$ http PUT $DCOS_URI/service/kafka0/brokers -pbH
+$ curl -vX PUT $DCOS_URI/service/kafka0/brokers -pbH
 PUT /service/kafka0/brokers HTTP/1.1
 [...]
 
@@ -359,7 +359,7 @@ These operations mirror what's available using `bin/kafka-topics.sh`.
 #### List Topics
 
 ``` bash
-$ http $DCOS_URI/service/kafka0/topics -pbH
+$ curl -v $DCOS_URI/service/kafka0/topics -pbH
 GET /service/kafka0/topics HTTP/1.1
 [...]
 
@@ -372,7 +372,7 @@ GET /service/kafka0/topics HTTP/1.1
 #### Create Topic
 
 ``` bash
-$ http POST $DCOS_URI/service/kafka0/topics name==topic1 partitions==3 replication==3 -pbH
+$ curl -vX POST $DCOS_URI/service/kafka0/topics?name=topic1&partitions=3&replication=3 -pbH
 POST /service/kafka0/topics?replication=3&name=topic1&partitions=3 HTTP/1.1
 [...]
 
@@ -386,7 +386,7 @@ POST /service/kafka0/topics?replication=3&name=topic1&partitions=3 HTTP/1.1
 #### View Topic Details
 
 ``` bash
-$ http $DCOS_URI/service/kafka0/topics/topic1 -pbH
+$ curl -v $DCOS_URI/service/kafka0/topics/topic1 -pbH
 GET /service/kafka0/topics/topic1 HTTP/1.1
 [...]
 
@@ -438,7 +438,7 @@ GET /service/kafka0/topics/topic1 HTTP/1.1
 #### View Topic Offsets
 
 ``` bash
-$ http $DCOS_URI/service/kafka0/topics/topic1/offsets -pbH
+$ curl -v $DCOS_URI/service/kafka0/topics/topic1/offsets -pbH
 GET /service/kafka0/topics/topic1/offsets HTTP/1.1
 [...]
 
@@ -458,8 +458,8 @@ GET /service/kafka0/topics/topic1/offsets HTTP/1.1
 #### Alter Topic Partition Count
 
 ``` bash
-$ http PUT $DCOS_URI/service/kafka0/topics/topic1 operation==partitions partitions==4 -pbH
-PUT /service/kafka0/topics/topic1?operation=partitions&partitions=4 HTTP/1.1
+$ curl -vX PUT $DCOS_URI/service/kafka0/topics/topic1?operation=partitions&partitions=2 -pbH
+PUT /service/kafka0/topics/topic1?operation=partitions&partitions=2 HTTP/1.1
 [...]
 
 {
@@ -472,7 +472,7 @@ PUT /service/kafka0/topics/topic1?operation=partitions&partitions=4 HTTP/1.1
 #### Alter Topic Config Value
 
 ``` bash
-$ http PUT $DCOS_URI/service/kafka0/topics/topic1 operation==config key==foo value==bar
+$ curl -vX PUT $DCOS_URI/service/kafka0/topics/topic1?operation=config&key=foo&value=bar
 PUT /service/kafka0/topics/topic1?operation=config&key=foo&value=bar HTTP/1.1
 [...]
 
@@ -486,13 +486,13 @@ PUT /service/kafka0/topics/topic1?operation=config&key=foo&value=bar HTTP/1.1
 #### Delete/Unset Topic Config Value
 
 ``` bash
-$ http PUT $DCOS_URI/service/kafka0/topics/topic1 operation==deleteConfig key==foo
+$ curl -vX PUT $DCOS_URI/service/kafka0/topics/topic1?operation=deleteConfig&key=foo
 ```
 
 #### Run Producer Test on Topic
 
 ``` bash
-$ http PUT $DCOS_URI/service/kafka0/topics/topic1 operation==producer-test messages==10 -pbH
+$ curl -vX PUT $DCOS_URI/service/kafka0/topics/topic1?operation=producer-test&messages=10 -pbH
 PUT /service/kafka0/topics/topic1?operation=producer-test&messages=10 HTTP/1.1
 [...]
 
@@ -506,7 +506,7 @@ PUT /service/kafka0/topics/topic1?operation=producer-test&messages=10 HTTP/1.1
 #### Delete Topic
 
 ``` bash
-$ http DELETE $DCOS_URI/service/kafka0/topics/topic1 -pbH
+$ curl -X DELETE $DCOS_URI/service/kafka0/topics/topic1 -pbH
 DELETE /service/kafka0/topics/topic1?operation=delete HTTP/1.1
 [...]
 
@@ -520,7 +520,7 @@ DELETE /service/kafka0/topics/topic1?operation=delete HTTP/1.1
 #### List Under Replicated Partitions
 
 ``` bash
-$ http $DCOS_URI/service/kafka0/topics/under_replicated_partitions -pbH
+$ curl -v $DCOS_URI/service/kafka0/topics/under_replicated_partitions -pbH
 GET /service/kafka0/topics/under_replicated_partitions HTTP/1.1
 [...]
 
@@ -534,7 +534,7 @@ GET /service/kafka0/topics/under_replicated_partitions HTTP/1.1
 #### List Unavailable Partitions
 
 ``` bash
-$ http $DCOS_URI/service/kafka0/topics/unavailable_partitions -pbH
+$ curl -v $DCOS_URI/service/kafka0/topics/unavailable_partitions -pbH
 GET /service/kafka0/topics/unavailable_partitions HTTP/1.1
 [...]
 

@@ -1,6 +1,5 @@
 package org.apache.mesos.kafka.scheduler;
 
-
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,6 +23,9 @@ import org.apache.mesos.kafka.plan.PlanFactory;
 import org.apache.mesos.kafka.state.KafkaStateService;
 import org.apache.mesos.kafka.web.KafkaApiServer;
 
+import org.apache.mesos.config.ChangedProperty;
+import org.apache.mesos.config.ConfigurationChangeDetector;
+import org.apache.mesos.config.ConfigurationChangeNamespaces;
 import org.apache.mesos.config.ConfigurationService;
 import org.apache.mesos.net.HttpRequestBuilder;
 import org.apache.mesos.offer.OfferAccepter;
@@ -55,7 +57,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   private KafkaStateService state;
   private KafkaUpdatePlan plan = null; 
   private KafkaPlanScheduler planScheduler = null;
-
+  private KafkaRepairScheduler repairScheduler = null;
 
   private MasterOfferRequirementProvider offerReqProvider;
   private OfferAccepter offerAccepter;
@@ -81,14 +83,38 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
             new LogOperationRecorder(),
             new PersistentOperationRecorder()));
 
+    handleConfigChange();
+
+    plan = PlanFactory.getPlan(configState.getTargetName());
+    planScheduler = new KafkaPlanScheduler(plan, configState, getOfferRequirementProvider(), offerAccepter);
+    repairScheduler = new KafkaRepairScheduler(plan, configState, getOfferRequirementProvider(), offerAccepter);
+  }
+
+  private void handleConfigChange() {
     if (!configState.hasTarget()) {
       String targetConfigName = UUID.randomUUID().toString();
       configState.store(config, targetConfigName);
       configState.setTargetName(targetConfigName);
-    }
+    } else {
+      KafkaConfigService currTarget = configState.getTargetConfig();
+      KafkaConfigService newTarget = config;
 
-    plan = PlanFactory.getPlan(configState.getTargetName());
-    planScheduler = new KafkaPlanScheduler(plan, configState, getOfferRequirementProvider(), offerAccepter);
+      configState.store(newTarget, "new_target");
+
+      ConfigurationChangeDetector changeDetector = new ConfigurationChangeDetector(
+          currTarget.getNsPropertyMap(),
+          newTarget.getNsPropertyMap(),
+          new ConfigurationChangeNamespaces("*", "*"));
+
+      if (changeDetector.isChangeDetected()) {
+        log.info("Detected changed properties.");
+        for (ChangedProperty prop : changeDetector.getChangedProperties()) {
+          log.info(prop);
+        }
+      } else {
+        log.info("No change detected.");
+      }
+    }
   }
 
   public static void restartTasks(List<String> taskIds) {
@@ -180,9 +206,33 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
 
     if (reconciler.complete()) {
       acceptedOffers = planScheduler.resourceOffers(driver, offers);
+      List<Offer> unacceptedOffers = filterAcceptedOffers(offers, acceptedOffers);
+      acceptedOffers.addAll(repairScheduler.resourceOffers(driver, unacceptedOffers));
     }
 
     declineOffers(driver, acceptedOffers, offers);
+  }
+
+  private List<Offer> filterAcceptedOffers(List<Offer> offers, List<OfferID> acceptedOfferIds) {
+    List<Offer> filteredOffers = new ArrayList<Offer>();
+
+    for (Offer offer : offers) {
+      if (!offerAccepted(offer, acceptedOfferIds)) {
+        filteredOffers.add(offer);
+      } 
+    }
+
+    return filteredOffers;
+  }
+
+  private boolean offerAccepted(Offer offer, List<OfferID> acceptedOfferIds) {
+    for (OfferID acceptedOfferId: acceptedOfferIds) {
+      if(acceptedOfferId.equals(offer.getId())) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   private void processTaskOperations(SchedulerDriver driver) {

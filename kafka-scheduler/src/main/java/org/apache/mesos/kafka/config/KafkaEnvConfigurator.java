@@ -1,13 +1,15 @@
 package org.apache.mesos.kafka.config;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.mesos.config.ConfigUtil;
 import org.apache.mesos.config.FrameworkConfigurationService;
 import org.apache.mesos.config.configurator.Configurator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Map;
 
 /**
  * Takes system env variables adds them to the configuration.
@@ -22,7 +24,30 @@ public class KafkaEnvConfigurator implements Configurator {
 
     Map<String, String> map = System.getenv();
     for (Map.Entry<String, String> entry : map.entrySet()) {
-      frameworkConfigurationService.setValue((entry.getKey()), entry.getValue());
+      frameworkConfigurationService.setValue(entry.getKey(), entry.getValue());
     }
+
+    for (String ignoredKey : ignoredKeys()) {
+      frameworkConfigurationService.setValue(
+          FrameworkConfigurationService.IGNORED_NAMESPACE,
+          ignoredKey,
+          "");
+    }
+  }
+
+  private List<String> ignoredKeys() {
+    return Arrays.asList(
+        "PORT0",
+        "_",
+        "MESOS_TASK_ID",
+        "MARATHON_APP_VERSION",
+        "PATH",
+        "MESOS_EXECUTOR_ID",
+        "PORT",
+        "MESOS_SANDBOX",
+        "PORT_10000",
+        "MESOS_DIRECTORY",
+        "PWD",
+        "PORTS");
   }
 }

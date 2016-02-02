@@ -70,4 +70,8 @@ public class KafkaConfigState {
       return null;
     }
   }
+
+  public KafkaConfigService getTargetConfig() {
+    return fetch(getTargetName());
+  }
 }

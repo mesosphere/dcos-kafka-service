@@ -18,7 +18,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 
-@Path("/")
+@Path("/v1")
 public class ClusterController {
   private final Log log = LogFactory.getLog(ClusterController.class);
   private KafkaStateService state = KafkaStateService.getStateService();

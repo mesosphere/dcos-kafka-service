@@ -88,31 +88,31 @@ DCOS Kafka Service provides the following features:
 
 ## Quick Start
 
-- Install [dcos-cli](https://github.com/mesosphere/dcos-cli) and [HTTPie](http://httpie.org/)
+- Step 1. Install [dcos-cli](https://github.com/mesosphere/dcos-cli) and [HTTPie](http://httpie.org/).
 
-- Launch a basic three-broker Kafka instance, named `kafka0` by default:
+- Step 2. Install a Kafka cluster.
 
 ``` bash
 $ dcos package install kafka
 ```
 
-- Create a new topic named `topic0` within `kafka0`:
+- Step 3. Create a new topic.
 
 ``` bash
 $ http POST $DCOS_URI/service/kafka0/v1/topics name==topic0 partitions==3 replication==3 -pbH
 ```
 
-- Read and write data to `topic0`:
+- Step 4. Read and write data to a topic.
 
 **TODO** a couple one-liners using eg `bin/kafka-console-[producer|consumer].sh` to send/get data. see also [Connecting clients](#connecting-clients)
 
-- Mark `topic0` for deletion:
+- Step 5. Mark a topic for deletion.
 
 ``` bash
 $ http DELETE $DCOS_URI/service/kafka0/v1/topics/topic0 -pbH
 ```
 
-- Destroy `kafka0`:
+- Step 6. Uninstall the cluster.
 
 ``` bash
 $ dcos package uninstall --app-id=kafka0 kafka

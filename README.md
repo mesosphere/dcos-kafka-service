@@ -58,7 +58,7 @@ Management of Kafka clusters in DCOS
 
 ## Overview
 
-DCOS Kafka Service is an automated service framework that make it easy to deploy and manage Apache Kafka on Mesosphere DCOS. Apache Kafka is a distributed high throughput publish-subscribe messaging system with strong durability with ordering guarantees. For more information on Apache Kafka, see the Apache Kafka documentation. With DCOS Kafka Service, you get direct access to the Kafka API so that existing can interoperate. You can configure and install Kafka in less than minutes. Multiple Kafka clusters can be installed to DCOS and managed independently, enabling IT to offer Kafka as a managed service to the organization. Kafka clusters are highly available, e, fault tolerant, and highly durable. DCOS Kafka Service eliminates nearly all of the complexity traditionally associated with managing an Kafka cluster.
+DCOS Kafka Service is an automated service framework that make it easy to deploy and manage Apache Kafka on Mesosphere DCOS. Apache Kafka is a distributed high throughput publish-subscribe messaging system with strong durability with ordering guarantees. For more information on Apache Kafka, see the Apache Kafka [documentation](http://kafka.apache.org/documentation.html). With DCOS Kafka Service, you get direct access to the Kafka API so that existing can interoperate. You can configure and install Kafka in less than minutes. Multiple Kafka clusters can be installed to DCOS and managed independently, enabling IT to offer Kafka as a managed service to the organization. Kafka clusters are highly available, e, fault tolerant, and highly durable. DCOS Kafka Service eliminates nearly all of the complexity traditionally associated with managing an Kafka cluster.
 
 ### Benefits
 

@@ -1,6 +1,21 @@
 allprojects {
+  apply plugin: 'idea'
   group = "com.apache.mesos.kafka"
   version = "0.1.0"
+}
+
+idea {
+  project {
+    jdkName = '1.8'
+    languageLevel = '1.7'
+    ipr {
+      withXml { provider ->
+        provider.node.component
+          .find { it.@name == 'VcsDirectoryMappings' }
+          .mapping.@vcs = 'Git'
+      }
+    }
+  }
 }
 
 subprojects {

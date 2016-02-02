@@ -5,6 +5,6 @@ import org.apache.mesos.offer.OfferRequirement;
 import org.apache.mesos.Protos.TaskInfo;
 
 public interface OfferRequirementProvider {
-  OfferRequirement getNewOfferRequirement(ConfigurationService config);
-  OfferRequirement getReplacementOfferRequirement(ConfigurationService config, TaskInfo taskInfo);
+  OfferRequirement getNewOfferRequirement(String configName);
+  OfferRequirement getReplacementOfferRequirement(TaskInfo taskInfo);
 }

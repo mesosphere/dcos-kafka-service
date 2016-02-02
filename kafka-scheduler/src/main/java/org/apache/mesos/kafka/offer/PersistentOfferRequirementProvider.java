@@ -12,13 +12,16 @@ import org.apache.commons.logging.LogFactory;
 
 import org.apache.mesos.config.ConfigurationService;
 import org.apache.mesos.kafka.config.KafkaConfigService;
+import org.apache.mesos.kafka.config.KafkaConfigState;
 import org.apache.mesos.offer.OfferRequirement;
 import org.apache.mesos.offer.OfferRequirement.VolumeMode;
 import org.apache.mesos.offer.ResourceUtils;
 import org.apache.mesos.protobuf.CommandInfoBuilder;
+import org.apache.mesos.protobuf.LabelBuilder;
 import org.apache.mesos.protobuf.ResourceBuilder;
 import org.apache.mesos.protobuf.TaskInfoBuilder;
 
+import org.apache.mesos.Protos.Labels;
 import org.apache.mesos.Protos.Resource;
 import org.apache.mesos.Protos.Resource.DiskInfo;
 import org.apache.mesos.Protos.Resource.DiskInfo.Persistence;
@@ -27,33 +30,41 @@ import org.apache.mesos.Protos.Volume;
 
 public class PersistentOfferRequirementProvider implements OfferRequirementProvider {
   private final Log log = LogFactory.getLog(PersistentOfferRequirementProvider.class);
+  private KafkaConfigState configState = null;
 
-  public OfferRequirement getNewOfferRequirement(ConfigurationService config) {
-    return getNewOfferRequirementInternal(config);
+  public PersistentOfferRequirementProvider(KafkaConfigState configState) {
+    this.configState = configState;
   }
 
-  public OfferRequirement getReplacementOfferRequirement(ConfigurationService config, TaskInfo taskInfo) {
+  public OfferRequirement getNewOfferRequirement(String configName) {
+    return getNewOfferRequirementInternal(configName);
+  }
+
+  public OfferRequirement getReplacementOfferRequirement(TaskInfo taskInfo) {
     if (hasVolume(taskInfo)) {
-      return getExistingOfferRequirement(config, taskInfo);
+      return getExistingOfferRequirement(taskInfo);
     } else {
-      return getUpgradeOfferRequirement(config, taskInfo);
+      return getUpgradeOfferRequirement(taskInfo);
     }
   }
 
-  private OfferRequirement getNewOfferRequirementInternal(ConfigurationService config) {
+  private OfferRequirement getNewOfferRequirementInternal(String configName) {
     Integer brokerId = OfferUtils.getNextBrokerId();
     if (brokerId == null) {
       log.error("Failed to get broker ID");
       return null;
     }
 
+    KafkaConfigService config = configState.fetch(configName);
+
     String brokerName = "broker-" + brokerId;
     String taskId = brokerName + "__" + UUID.randomUUID();
-    TaskInfo taskInfo = getTaskInfo(config, brokerId, brokerName, taskId);
-    return getCreateOfferRequirement(config, taskInfo);
+    TaskInfo taskInfo = getTaskInfo(configName, config, brokerId, brokerName, taskId);
+    return getCreateOfferRequirement(taskInfo);
   }
 
-  private OfferRequirement getCreateOfferRequirement(ConfigurationService config, TaskInfo taskInfo) {
+  private OfferRequirement getCreateOfferRequirement(TaskInfo taskInfo) {
+    KafkaConfigService config = getConfigService(taskInfo);
     PlacementStrategyService placementSvc = PlacementStrategy.getPlacementStrategyService(config);
 
     return new OfferRequirement(
@@ -65,7 +76,9 @@ public class PersistentOfferRequirementProvider implements OfferRequirementProvi
         VolumeMode.CREATE);
   }
 
-  private OfferRequirement getExistingOfferRequirement(ConfigurationService config, TaskInfo taskInfo) {
+  private OfferRequirement getExistingOfferRequirement(TaskInfo taskInfo) {
+    KafkaConfigService config = getConfigService(taskInfo);
+
     return new OfferRequirement(
         getRole(config),
         getPrincipal(config),
@@ -75,14 +88,22 @@ public class PersistentOfferRequirementProvider implements OfferRequirementProvi
         VolumeMode.EXISTING);
   }
 
-  private OfferRequirement getUpgradeOfferRequirement(ConfigurationService config, TaskInfo taskInfo) {
-      Integer brokerId = nameToId(taskInfo.getName());
+  private KafkaConfigService getConfigService(TaskInfo taskInfo) {
+    String configName = OfferUtils.getConfigName(taskInfo);
+    return configState.fetch(configName);
+  }
 
-      String brokerName = taskInfo.getName();
-      String taskId = taskInfo.getTaskId().getValue();
-      TaskInfo createTaskInfo = getTaskInfo(config, brokerId, brokerName, taskId);
+  private OfferRequirement getUpgradeOfferRequirement(TaskInfo taskInfo) {
+    Integer brokerId = nameToId(taskInfo.getName());
 
-      return getCreateOfferRequirement(config, createTaskInfo);
+    String configName = OfferUtils.getConfigName(taskInfo);
+    KafkaConfigService config = getConfigService(taskInfo);
+
+    String brokerName = taskInfo.getName();
+    String taskId = taskInfo.getTaskId().getValue();
+    TaskInfo createTaskInfo = getTaskInfo(configName, config, brokerId, brokerName, taskId);
+
+    return getCreateOfferRequirement(createTaskInfo);
   }
 
   private Integer nameToId(String brokerName) {
@@ -103,7 +124,7 @@ public class PersistentOfferRequirementProvider implements OfferRequirementProvi
     return config.get("PRINCIPAL");
   }
 
-  private TaskInfo getTaskInfo(ConfigurationService config, int brokerId, String brokerName, String taskId) {
+  private TaskInfo getTaskInfo(String configName, ConfigurationService config, int brokerId, String brokerName, String taskId) {
     int port = 9092 + brokerId;
 
     List<String> commands = new ArrayList<>();
@@ -129,6 +150,10 @@ public class PersistentOfferRequirementProvider implements OfferRequirementProvi
     String role = getRole(config);
     String principal = getPrincipal(config);
 
+    Labels labels = new LabelBuilder()
+      .addLabel("config_target", configName)
+      .build();
+
     return new TaskInfoBuilder(taskId, brokerName, "" /* slaveId */)
         .addResource(ResourceBuilder.reservedCpus(cpus, role, principal))
         .addResource(ResourceBuilder.reservedMem(mem, role, principal))
@@ -140,6 +165,7 @@ public class PersistentOfferRequirementProvider implements OfferRequirementProvi
           .addUri(config.get("JAVA_URI"))
           .setCommand(command)
           .build())
+        .setLabels(labels)
         .build();
   }
 

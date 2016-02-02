@@ -12,25 +12,34 @@ import org.apache.commons.logging.LogFactory;
 
 import org.apache.mesos.config.ConfigurationService;
 import org.apache.mesos.kafka.config.KafkaConfigService;
+import org.apache.mesos.kafka.config.KafkaConfigState;
 import org.apache.mesos.offer.OfferRequirement;
 import org.apache.mesos.protobuf.CommandInfoBuilder;
+import org.apache.mesos.protobuf.LabelBuilder;
 import org.apache.mesos.protobuf.ResourceBuilder;
 import org.apache.mesos.protobuf.TaskInfoBuilder;
 
+import org.apache.mesos.Protos.Labels;
 import org.apache.mesos.Protos.TaskInfo;
 
 public class SandboxOfferRequirementProvider implements OfferRequirementProvider {
   private final Log log = LogFactory.getLog(SandboxOfferRequirementProvider.class);
+  private KafkaConfigState configState = null;
 
-  public OfferRequirement getNewOfferRequirement(ConfigurationService config) {
+  public SandboxOfferRequirementProvider(KafkaConfigState configState) {
+    this.configState = configState;
+  }
+
+  public OfferRequirement getNewOfferRequirement(String configName) {
     Integer brokerId = OfferUtils.getNextBrokerId();
     if (brokerId == null) {
       log.error("Failed to get broker ID");
       return null;
     }
 
+    KafkaConfigService config = configState.fetch(configName);
     PlacementStrategyService placementSvc = PlacementStrategy.getPlacementStrategyService(config);
-    TaskInfo taskInfo = getTaskInfo(config, brokerId);
+    TaskInfo taskInfo = getTaskInfo(configName, config, brokerId);
 
     return new OfferRequirement(
         Arrays.asList(taskInfo),
@@ -38,7 +47,8 @@ public class SandboxOfferRequirementProvider implements OfferRequirementProvider
         placementSvc.getAgentsToColocate(taskInfo));
   }
 
-  public OfferRequirement getReplacementOfferRequirement(ConfigurationService config, TaskInfo taskInfo) {
+  public OfferRequirement getReplacementOfferRequirement(TaskInfo taskInfo) {
+    KafkaConfigService config = getConfigService(taskInfo);
     PlacementStrategyService placementSvc = PlacementStrategy.getPlacementStrategyService(config);
 
     return new OfferRequirement(
@@ -47,7 +57,12 @@ public class SandboxOfferRequirementProvider implements OfferRequirementProvider
         placementSvc.getAgentsToColocate(taskInfo));
   }
 
-  private TaskInfo getTaskInfo(ConfigurationService config, int brokerId) {
+  private KafkaConfigService getConfigService(TaskInfo taskInfo) {
+    String configName = OfferUtils.getConfigName(taskInfo);
+    return configState.fetch(configName);
+  }
+
+  private TaskInfo getTaskInfo(String configName, ConfigurationService config, int brokerId) {
     String brokerName = "broker-" + brokerId;
     String taskId = brokerName + "__" + UUID.randomUUID();
     int port = 9092 + brokerId;
@@ -67,6 +82,10 @@ public class SandboxOfferRequirementProvider implements OfferRequirementProvider
 
     String command = Joiner.on(" && ").join(commands);
 
+    Labels labels = new LabelBuilder()
+      .addLabel("config_target", configName)
+      .build();
+
     return new TaskInfoBuilder(taskId, brokerName, "" /* slaveId */)
         .addResource(ResourceBuilder.cpus(1.0))
         .addResource(ResourceBuilder.mem(2048))
@@ -77,6 +96,7 @@ public class SandboxOfferRequirementProvider implements OfferRequirementProvider
           .addUri(config.get("JAVA_URI"))
           .setCommand(command)
           .build())
+        .setLabels(labels)
         .build();
   }
 }

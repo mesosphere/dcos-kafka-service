@@ -34,8 +34,8 @@ public class KafkaConfigState {
     configState.store(configurationService, version);
   }
 
-  public Map<String, Map<String, ConfigProperty>> fetch(String version) throws StateStoreException {
-    return configState.fetch(version);
+  public KafkaConfigService fetch(String version) throws StateStoreException {
+    return KafkaConfigService.getHydratedConfig(configState.fetch(version));
   }
 
   public boolean hasTarget() {
@@ -47,7 +47,7 @@ public class KafkaConfigState {
     }
   }
 
-  public void setTarget(String targetConfigName) {
+  public void setTargetName(String targetConfigName) {
     try {
       byte[] bytes = targetConfigName.getBytes("UTF-8");
 
@@ -58,6 +58,16 @@ public class KafkaConfigState {
       }
     } catch (Exception ex) {
       log.error("Failed to set target config with exception: " + ex);
+    }
+  }
+
+  public String getTargetName() {
+    try {
+      byte[] bytes = zkClient.getData().forPath(configTargetPath);
+      return new String(bytes, "UTF-8");
+    } catch (Exception ex) {
+      log.error("Failed to retrieve config target name with exception: " + ex);
+      return null;
     }
   }
 }

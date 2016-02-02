@@ -18,6 +18,7 @@ import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.SchedulerDriver;
 
 import org.apache.mesos.kafka.config.KafkaConfigService;
+import org.apache.mesos.kafka.config.KafkaConfigState;
 import org.apache.mesos.kafka.offer.OfferRequirementProvider;
 import org.apache.mesos.kafka.plan.KafkaBlock;
 import org.apache.mesos.kafka.plan.KafkaUpdatePlan;
@@ -26,9 +27,8 @@ import org.apache.mesos.kafka.state.KafkaStateService;
 public class KafkaPlanScheduler {
   private final Log log = LogFactory.getLog(KafkaPlanScheduler.class);
 
-
   private KafkaStateService state = null;
-  private KafkaConfigService targetConfig = null;
+  private KafkaConfigState configState = null;
   private KafkaUpdatePlan plan = null;
 
   private OfferAccepter offerAccepter = null;
@@ -36,12 +36,13 @@ public class KafkaPlanScheduler {
  
   public KafkaPlanScheduler(
       KafkaUpdatePlan plan,
+      KafkaConfigState configState,
       OfferRequirementProvider offerReqProvider,
       OfferAccepter offerAccepter) {
 
-    targetConfig = KafkaConfigService.getTargetConfig(); 
     state = KafkaStateService.getStateService();
     this.plan = plan;
+    this.configState = configState;
     this.offerReqProvider = offerReqProvider;
     this.offerAccepter = offerAccepter;
   }
@@ -57,9 +58,9 @@ public class KafkaPlanScheduler {
       try {
         if (currBlock.hasBeenTerminated()) {
           TaskInfo taskInfo = getTaskInfo(currBlock);
-          offerReq = offerReqProvider.getReplacementOfferRequirement(targetConfig, taskInfo);
+          offerReq = offerReqProvider.getReplacementOfferRequirement(taskInfo);
         } else if(currBlock.hasNeverBeenLaunched()) {
-          offerReq = offerReqProvider.getNewOfferRequirement(targetConfig);
+          offerReq = offerReqProvider.getNewOfferRequirement(configState.getTargetName());
         } else {
           log.error("Unexpected block state.");
           return acceptedOffers;

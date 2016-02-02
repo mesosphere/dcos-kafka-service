@@ -7,26 +7,30 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.apache.mesos.config.ConfigurationService;
+import org.apache.mesos.config.ConfigProperty;
 import org.apache.mesos.config.FrameworkConfigurationService;
 
 public class KafkaConfigService extends FrameworkConfigurationService {
   private final Log log = LogFactory.getLog(KafkaConfigService.class);
 
-  private static KafkaConfigService targetConfig = null;
-  private static KafkaConfigService persistedConfig = null;
+  private static KafkaConfigService envConfig = null;
 
-  public static KafkaConfigService getTargetConfig() {
-    if (null == targetConfig) {
-      targetConfig = new KafkaConfigService();
+  public static KafkaConfigService getEnvConfig() {
+    if (null == envConfig) {
+      envConfig = new KafkaConfigService();
       KafkaEnvConfigurator envConfigurator = new KafkaEnvConfigurator();
-      envConfigurator.configure(targetConfig);
+      envConfigurator.configure(envConfig);
     }
 
-    return targetConfig;
+    return envConfig;
   }
 
-  public static KafkaConfigService getPersistedConfig() {
-    return getTargetConfig();
+  public static KafkaConfigService getHydratedConfig(Map<String, Map<String, ConfigProperty>> nsMap) {
+    KafkaConfigService configService = new KafkaConfigService();
+    ZkHydratorConfigurator zkConfigurator = new ZkHydratorConfigurator(nsMap);
+    zkConfigurator.configure(configService);
+
+    return configService;
   }
 
   public String getZkRoot() {

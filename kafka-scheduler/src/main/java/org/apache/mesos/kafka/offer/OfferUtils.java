@@ -38,7 +38,7 @@ public class OfferUtils {
   }
 
   public static boolean belowTargetBrokerCount() {
-    ConfigurationService config = KafkaConfigService.getTargetConfig();
+    ConfigurationService config = KafkaConfigService.getEnvConfig();
     int targetBrokerCount = Integer.parseInt(config.get("BROKER_COUNT"));
     int currentBrokerCount = Integer.MAX_VALUE;
 
@@ -49,5 +49,9 @@ public class OfferUtils {
     }
 
     return currentBrokerCount < targetBrokerCount;
+  }
+
+  public static String getConfigName(TaskInfo taskInfo) {
+    return "DUMMY_CONFIG_NAME";
   }
 }

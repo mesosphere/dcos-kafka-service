@@ -26,7 +26,7 @@ public class KafkaStateService implements Observer {
   private final Log log = LogFactory.getLog(KafkaStateService.class);
   private final CuratorFramework zkClient;
   
-  private static ConfigurationService config = KafkaConfigService.getPersistedConfig();
+  private static ConfigurationService config = KafkaConfigService.getEnvConfig();
 
   private static String zkRoot;
   private static String stateRoot;

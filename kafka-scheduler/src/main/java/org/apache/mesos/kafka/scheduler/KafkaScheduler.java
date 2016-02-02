@@ -60,7 +60,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   private static List<String> tasksToReschedule = new ArrayList<String>();
 
   public KafkaScheduler() {
-    config = KafkaConfigService.getTargetConfig();
+    config = KafkaConfigService.getEnvConfig();
     state = KafkaStateService.getStateService();
     configState = new KafkaConfigState(config.getFrameworkName(), config.get("ZOOKEEPER_ADDR"), "/");
     reconciler = new Reconciler();
@@ -68,7 +68,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     addObserver(state);
     addObserver(reconciler);
 
-    offerReqProvider = new MasterOfferRequirementProvider(getOfferRequirementProvider());
+    offerReqProvider = new MasterOfferRequirementProvider(getOfferRequirementProvider(), configState);
 
     offerAccepter =
       new OfferAccepter(Arrays.asList(
@@ -80,7 +80,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     if (!configState.hasTarget()) {
       String targetConfigName = UUID.randomUUID().toString();
       configState.store(config, targetConfigName);
-      configState.setTarget(targetConfigName);
+      configState.setTargetName(targetConfigName);
     }
   }
 
@@ -100,9 +100,9 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     boolean persistentVolumesEnabled = Boolean.parseBoolean(config.get("BROKER_PV"));
 
     if (persistentVolumesEnabled) {
-      return new PersistentOfferRequirementProvider();
+      return new PersistentOfferRequirementProvider(configState);
     } else {
-      return new SandboxOfferRequirementProvider();
+      return new SandboxOfferRequirementProvider(configState);
     }
   }
 

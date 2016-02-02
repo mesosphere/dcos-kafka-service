@@ -99,7 +99,7 @@ $ dcos package install kafka
 - Step 3. Create a new topic.
 
 ``` bash
-$ http POST $DCOS_URI/service/kafka0/v1/topics name==topic0 partitions==3 replication==3 -pbH
+$ http POST $DCOS_URI/service/kafka0/topics name==topic0 partitions==3 replication==3 -pbH
 ```
 
 - Step 4. Read and write data to a topic.
@@ -268,8 +268,8 @@ The examples provided here use the "[HTTPie](http://httpie.org/)" commandline HT
 Kafka comes with many useful tools of its own. They often require either Zookeeper connection information, or the list of Broker endpoints. This information can be retrieved in an easily consumable formation from the `/connection` endpoint as below.
 
 ``` bash
-$ http $DCOS_URI/service/kafka0/v1/connection -pbH
-GET /service/kafka0/v1/connection HTTP/1.1
+$ http $DCOS_URI/service/kafka0/connection -pbH
+GET /service/kafka0/connection HTTP/1.1
 [...]
 
 {
@@ -297,8 +297,8 @@ Broker removal is currently a manual process.
 #### List All Brokers
 
 ``` bash
-$ http $DCOS_URI/service/kafka0/v1/brokers -pbH
-GET /service/kafka0/v1/brokers HTTP/1.1
+$ http $DCOS_URI/service/kafka0/brokers -pbH
+GET /service/kafka0/brokers HTTP/1.1
 [...]
 
 [
@@ -310,8 +310,8 @@ GET /service/kafka0/v1/brokers HTTP/1.1
 #### View Broker Details
 
 ``` bash
-$ http $DCOS_URI/service/kafka0/v1/brokers/0 -pbH
-GET /service/kafka0/v1/brokers/0 HTTP/1.1
+$ http $DCOS_URI/service/kafka0/brokers/0 -pbH
+GET /service/kafka0/brokers/0 HTTP/1.1
 [...]
 
 {
@@ -329,8 +329,8 @@ GET /service/kafka0/v1/brokers/0 HTTP/1.1
 #### Restart Single Broker
 
 ``` bash
-$ http PUT $DCOS_URI/service/kafka0/v1/brokers/0 -pbH
-PUT /service/kafka0/v1/brokers/0 HTTP/1.1
+$ http PUT $DCOS_URI/service/kafka0/brokers/0 -pbH
+PUT /service/kafka0/brokers/0 HTTP/1.1
 [...]
 
 [
@@ -341,8 +341,8 @@ PUT /service/kafka0/v1/brokers/0 HTTP/1.1
 #### Restart All Brokers
 
 ``` bash
-$ http PUT $DCOS_URI/service/kafka0/v1/brokers -pbH
-PUT /service/kafka0/v1/brokers HTTP/1.1
+$ http PUT $DCOS_URI/service/kafka0/brokers -pbH
+PUT /service/kafka0/brokers HTTP/1.1
 [...]
 
 [
@@ -359,8 +359,8 @@ These operations mirror what's available using `bin/kafka-topics.sh`.
 #### List Topics
 
 ``` bash
-$ http $DCOS_URI/service/kafka0/v1/topics -pbH
-GET /service/kafka0/v1/topics HTTP/1.1
+$ http $DCOS_URI/service/kafka0/topics -pbH
+GET /service/kafka0/topics HTTP/1.1
 [...]
 
 [
@@ -372,8 +372,8 @@ GET /service/kafka0/v1/topics HTTP/1.1
 #### Create Topic
 
 ``` bash
-$ http POST $DCOS_URI/service/kafka0/v1/topics name==topic1 partitions==3 replication==3 -pbH
-POST /service/kafka0/v1/topics?replication=3&name=topic1&partitions=3 HTTP/1.1
+$ http POST $DCOS_URI/service/kafka0/topics name==topic1 partitions==3 replication==3 -pbH
+POST /service/kafka0/topics?replication=3&name=topic1&partitions=3 HTTP/1.1
 [...]
 
 {
@@ -386,8 +386,8 @@ POST /service/kafka0/v1/topics?replication=3&name=topic1&partitions=3 HTTP/1.1
 #### View Topic Details
 
 ``` bash
-$ http $DCOS_URI/service/kafka0/v1/topics/topic1 -pbH
-GET /service/kafka0/v1/topics/topic1 HTTP/1.1
+$ http $DCOS_URI/service/kafka0/topics/topic1 -pbH
+GET /service/kafka0/topics/topic1 HTTP/1.1
 [...]
 
 {
@@ -438,8 +438,8 @@ GET /service/kafka0/v1/topics/topic1 HTTP/1.1
 #### View Topic Offsets
 
 ``` bash
-$ http $DCOS_URI/service/kafka0/v1/topics/topic1/offsets -pbH
-GET /service/kafka0/v1/topics/topic1/offsets HTTP/1.1
+$ http $DCOS_URI/service/kafka0/topics/topic1/offsets -pbH
+GET /service/kafka0/topics/topic1/offsets HTTP/1.1
 [...]
 
 [
@@ -458,8 +458,8 @@ GET /service/kafka0/v1/topics/topic1/offsets HTTP/1.1
 #### Alter Topic Partition Count
 
 ``` bash
-$ http PUT $DCOS_URI/service/kafka0/v1/topics/topic1 operation==partitions partitions==4 -pbH
-PUT /service/kafka0/v1/topics/topic1?operation=partitions&partitions=4 HTTP/1.1
+$ http PUT $DCOS_URI/service/kafka0/topics/topic1 operation==partitions partitions==4 -pbH
+PUT /service/kafka0/topics/topic1?operation=partitions&partitions=4 HTTP/1.1
 [...]
 
 {
@@ -472,20 +472,28 @@ PUT /service/kafka0/v1/topics/topic1?operation=partitions&partitions=4 HTTP/1.1
 #### Alter Topic Config Value
 
 ``` bash
-$ http PUT $DCOS_URI/service/kafka0/v1/topics/topic1 operation==config key==foo value==bar
+$ http PUT $DCOS_URI/service/kafka0/topics/topic1 operation==config key==foo value==bar
+PUT /service/kafka0/topics/topic1?operation=config&key=foo&value=bar HTTP/1.1
+[...]
+
+{
+    "exit_code": 1,
+    "stderr": "[...] Unknown configuration \"foo\". [...]",
+    "stdout": "[...] Unknown configuration \"foo\". [...]"
+}
 ```
 
 #### Delete/Unset Topic Config Value
 
 ``` bash
-$ http PUT $DCOS_URI/service/kafka0/v1/topics/topic1 operation==deleteConfig key==foo
+$ http PUT $DCOS_URI/service/kafka0/topics/topic1 operation==deleteConfig key==foo
 ```
 
 #### Run Producer Test on Topic
 
 ``` bash
-$ http PUT $DCOS_URI/service/kafka0/v1/topics/topic1 operation==producer-test messages==10 -pbH
-PUT /service/kafka0/v1/topics/topic1?operation=producer-test&messages=10 HTTP/1.1
+$ http PUT $DCOS_URI/service/kafka0/topics/topic1 operation==producer-test messages==10 -pbH
+PUT /service/kafka0/topics/topic1?operation=producer-test&messages=10 HTTP/1.1
 [...]
 
 {
@@ -498,8 +506,8 @@ PUT /service/kafka0/v1/topics/topic1?operation=producer-test&messages=10 HTTP/1.
 #### Delete Topic
 
 ``` bash
-$ http DELETE $DCOS_URI/service/kafka0/v1/topics/topic1 -pbH
-DELETE /service/kafka0/v1/topics/topic1?operation=delete HTTP/1.1
+$ http DELETE $DCOS_URI/service/kafka0/topics/topic1 -pbH
+DELETE /service/kafka0/topics/topic1?operation=delete HTTP/1.1
 [...]
 
 {
@@ -512,8 +520,8 @@ DELETE /service/kafka0/v1/topics/topic1?operation=delete HTTP/1.1
 #### List Under Replicated Partitions
 
 ``` bash
-$ http $DCOS_URI/service/kafka0/v1/topics/under_replicated_partitions -pbH
-GET /service/kafka0/v1/topics/under_replicated_partitions HTTP/1.1
+$ http $DCOS_URI/service/kafka0/topics/under_replicated_partitions -pbH
+GET /service/kafka0/topics/under_replicated_partitions HTTP/1.1
 [...]
 
 {
@@ -526,8 +534,8 @@ GET /service/kafka0/v1/topics/under_replicated_partitions HTTP/1.1
 #### List Unavailable Partitions
 
 ``` bash
-$ http $DCOS_URI/service/kafka0/v1/topics/unavailable_partitions -pbH
-GET /service/kafka0/v1/topics/unavailable_partitions HTTP/1.1
+$ http $DCOS_URI/service/kafka0/topics/unavailable_partitions -pbH
+GET /service/kafka0/topics/unavailable_partitions HTTP/1.1
 [...]
 
 {

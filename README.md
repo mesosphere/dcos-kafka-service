@@ -103,7 +103,7 @@ $ dcos kafka topic create topic1 --partitions 3 --replication 3
 
 - Step 4. Read and write data to a topic.
 
-**TODO** a couple one-liners using eg `bin/kafka-console-[producer|consumer].sh` to send/get data. see also [Connecting clients](#connecting-clients)
+**TODO** a couple one-liners using e.g., `bin/kafka-console-[producer|consumer].sh` to send/get data. see also [Connecting clients](#connecting-clients)
 
 - Step 5. Mark a topic for deletion.
 
@@ -162,7 +162,7 @@ Uninstalling a cluster is also straightforward. Replace `kafka0` with the name o
 $ dcos package uninstall --app-id=kafka0 kafka
 ```
 
-The instance will still be present in zookeeper at `/[framework_name]`, eg `/kafka0`. To completely clear the configuration, the zookeeper node must be removed.
+The instance will still be present in zookeeper at `/[framework_name]`, e.g., `/kafka0`. To completely clear the configuration, the zookeeper node must be removed.
 
 ### Changing configuration in flight
 

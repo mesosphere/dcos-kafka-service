@@ -59,6 +59,33 @@ public class PlanController {
     }
   }
 
+  @PUT
+  public Response executeCmd(@QueryParam("cmd") String cmd) {
+    try {
+      JSONObject obj = new JSONObject();
+
+      switch(cmd) {
+        case "continue":
+          planManager.proceed();
+          obj.put("Result", "Recevied cmd: " + cmd);
+          break;
+        case "interrupt":
+          planManager.interrupt();
+          obj.put("Result", "Recevied cmd: " + cmd);
+          break;
+        default:
+          log.error("Unrecognized cmd: " + cmd);
+          return Response.serverError().build();
+      }
+
+      return Response.ok(obj.toString(), MediaType.APPLICATION_JSON).build();
+
+    } catch (Exception ex) {
+      log.error("Failed to execute cmd: " + cmd + "  with exception: " + ex);
+      return Response.serverError().build();
+    }
+  }
+
   private JSONArray phasesToJsonArray(List<Phase> phases) {
     List<JSONObject> phaseObjs = new ArrayList<JSONObject>();
 

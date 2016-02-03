@@ -626,7 +626,7 @@ PUT /service/kafka0/v1/topics/topic1?operation=config&key=cleanup.policy&value=c
 #### Delete/Unset Topic Config Value
 
 ``` bash
-$ dcos kafka --framework-name=kafka0 topic delete_config cleanup.policy
+$ dcos kafka --framework-name=kafka0 topic delete_config topic1 cleanup.policy
 ```
 
 ``` bash

@@ -5,6 +5,9 @@ import java.util.List;
 
 import org.apache.mesos.kafka.offer.OfferRequirementProvider;
 
+import org.apache.mesos.scheduler.plan.Plan;
+import org.apache.mesos.scheduler.plan.Phase;
+
 public class KafkaUpdatePlan implements Plan {
   private KafkaPhase phase;
 

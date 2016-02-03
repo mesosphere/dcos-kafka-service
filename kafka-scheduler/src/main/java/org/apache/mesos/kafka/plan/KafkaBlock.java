@@ -1,5 +1,6 @@
 package org.apache.mesos.kafka.plan;
 
+
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +15,7 @@ import org.apache.mesos.kafka.state.KafkaStateService;
 
 import org.apache.mesos.offer.OfferRequirement;
 import org.apache.mesos.scheduler.plan.Block;
-import org.apache.mesos.scheduler.plan.Block.Status;
+import org.apache.mesos.scheduler.plan.Status;
 
 import org.apache.mesos.Protos.TaskID;
 import org.apache.mesos.Protos.TaskInfo;
@@ -50,7 +51,7 @@ public class KafkaBlock implements Block {
   }
 
   private void initializeStatus() {
-    log.info(toString() + " setting initial status.");
+    log.info(getName() + " setting initial status.");
 
     if (taskInfo != null &&
         OfferUtils.getConfigName(taskInfo).equals(targetConfigName)) {
@@ -65,7 +66,7 @@ public class KafkaBlock implements Block {
     Status oldStatus = status;
     status = newStatus;
 
-    log.info(toString() + ": changing status from: " + oldStatus + " to: " + status);
+    log.info(getName() + ": changing status from: " + oldStatus + " to: " + status);
   }
 
   private TaskInfo getTaskInfo() {
@@ -101,7 +102,7 @@ public class KafkaBlock implements Block {
   }
 
   public OfferRequirement start() {
-    log.info("Starting block: " + toString());
+    log.info("Starting block: " + getName());
 
     if (taskIsRunning()) {
       KafkaScheduler.restartTasks(taskIdsToStrings(getUpdateIds()));
@@ -148,7 +149,7 @@ public class KafkaBlock implements Block {
       }
 
       pendingTasks = updatedPendingTasks;
-      log.info(toString() + " has pending tasks: " + pendingTasks);
+      log.info(getName() + " has pending tasks: " + pendingTasks);
 
       if (pendingTasks.size() == 0) {
         setStatus(Status.Complete);
@@ -227,8 +228,7 @@ public class KafkaBlock implements Block {
     return brokerId;
   }
 
-  @Override
-  public String toString() {
+  public String getName() {
     return getBrokerName();
   }
 }

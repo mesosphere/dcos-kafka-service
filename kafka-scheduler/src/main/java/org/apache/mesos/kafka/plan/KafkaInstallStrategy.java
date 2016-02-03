@@ -4,6 +4,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.apache.mesos.scheduler.plan.Block;
+import org.apache.mesos.scheduler.plan.Phase;
+import org.apache.mesos.scheduler.plan.Plan;
 
 public class KafkaInstallStrategy implements PlanStrategy {
   private final Log log = LogFactory.getLog(KafkaInstallStrategy.class);

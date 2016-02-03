@@ -18,10 +18,10 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.apache.mesos.kafka.plan.KafkaPlanManager;
-import org.apache.mesos.kafka.plan.Phase;
 import org.apache.mesos.kafka.scheduler.KafkaScheduler;
 
 import org.apache.mesos.scheduler.plan.Block;
+import org.apache.mesos.scheduler.plan.Phase;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -35,7 +35,7 @@ public class PlanController {
   @GET
   public Response listPhases() {
     try {
-      List<Phase> phases = planManager.getPhases();
+      List<? extends Phase> phases = planManager.getPhases();
       JSONObject obj = new JSONObject();
       obj.put("phases", phasesToJsonArray(phases));
       return Response.ok(obj.toString(), MediaType.APPLICATION_JSON).build();
@@ -86,7 +86,7 @@ public class PlanController {
     }
   }
 
-  private JSONArray phasesToJsonArray(List<Phase> phases) {
+  private JSONArray phasesToJsonArray(List<? extends Phase> phases) {
     List<JSONObject> phaseObjs = new ArrayList<JSONObject>();
 
     for (Phase phase : phases) {
@@ -98,7 +98,7 @@ public class PlanController {
     return new JSONArray(phaseObjs);
   }
 
-  private JSONArray blocksToJsonArray(List<Block> blocks) {
+  private JSONArray blocksToJsonArray(List<? extends Block> blocks) {
     List<JSONObject> blockObjs = new ArrayList<JSONObject>();
 
     for (Block block : blocks) {
@@ -116,7 +116,7 @@ public class PlanController {
   }
 
   private Phase getPhase(int id) {
-    List<Phase> phases = planManager.getPhases();
+    List<? extends Phase> phases = planManager.getPhases();
 
     for (Phase phase : phases) {
       if (phase.getId() == id) {

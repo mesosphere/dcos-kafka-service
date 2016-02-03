@@ -7,6 +7,7 @@ import org.apache.mesos.kafka.config.KafkaConfigService;
 import org.apache.mesos.kafka.offer.OfferRequirementProvider;
 import org.apache.mesos.kafka.scheduler.KafkaScheduler;
 import org.apache.mesos.scheduler.plan.Block;
+import org.apache.mesos.scheduler.plan.Phase;
 
 public class KafkaPhase implements Phase {
   private List<Block> blocks = null;
@@ -62,7 +63,7 @@ public class KafkaPhase implements Phase {
     return true;
   }
 
-  public String toString() {
+  public String getName() {
     return "Update to " + configName;
   }
 

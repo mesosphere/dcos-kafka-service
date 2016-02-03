@@ -11,6 +11,8 @@ import org.apache.mesos.kafka.config.KafkaConfigService;
 
 import org.apache.mesos.Protos.TaskStatus;
 import org.apache.mesos.scheduler.plan.Block;
+import org.apache.mesos.scheduler.plan.Phase;
+import org.apache.mesos.scheduler.plan.Plan;
 
 public class KafkaPlanManager implements Observer {
   private final Log log = LogFactory.getLog(KafkaPlanManager.class);
@@ -41,7 +43,7 @@ public class KafkaPlanManager implements Observer {
     }
   }
 
-  public List<Phase> getPhases() {
+  public List<? extends Phase> getPhases() {
     return plan.getPhases();
   }
 

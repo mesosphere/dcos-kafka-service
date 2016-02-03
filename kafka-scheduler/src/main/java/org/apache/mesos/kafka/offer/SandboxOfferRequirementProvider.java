@@ -92,9 +92,12 @@ public class SandboxOfferRequirementProvider implements OfferRequirementProvider
       .addLabel("config_target", configName)
       .build();
 
+    double cpus = Double.parseDouble(config.get("BROKER_CPUS"));
+    double mem = Double.parseDouble(config.get("BROKER_MEM"));
+
     return new TaskInfoBuilder(taskId, brokerName, "" /* slaveId */)
-        .addResource(ResourceBuilder.cpus(1.0))
-        .addResource(ResourceBuilder.mem(2048))
+        .addResource(ResourceBuilder.cpus(cpus))
+        .addResource(ResourceBuilder.mem(mem))
         .addResource(ResourceBuilder.ports(port, port))
         .setCommand(new CommandInfoBuilder()
           .addUri(config.get("KAFKA_URI"))

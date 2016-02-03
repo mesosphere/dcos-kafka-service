@@ -26,8 +26,19 @@ public class KafkaPlanManager implements Observer {
   }
 
   private void setStrategy(Plan plan) {
-    //strategy = new KafkaInstallStrategy(plan);
-    strategy = new KafkaStageStrategy(plan);
+    String strat = envConfig.get("PLAN_STRATEGY");
+
+    switch (strat) {
+      case "INSTALL":
+        strategy = new KafkaInstallStrategy(plan);
+        break;
+      case "STAGE":
+        strategy = new KafkaStageStrategy(plan);
+        break;
+      default:
+        strategy = new KafkaStageStrategy(plan);
+        break;
+    }
   }
 
   public List<Phase> getPhases() {

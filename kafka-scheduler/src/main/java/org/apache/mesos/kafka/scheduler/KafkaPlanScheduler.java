@@ -61,12 +61,17 @@ public class KafkaPlanScheduler {
 
     Block currBlock = planManager.getCurrentBlock();
 
-    if (currBlock.isPending()) {
+    log.info("Processing resource offers for block: " + currBlock.toString());
+
+    if (currBlock.isPending() && currBlock != null) {
       OfferRequirement offerReq = currBlock.start();
       if (offerReq != null) {
+        log.info(currBlock.toString() + " has requirements: " + offerReq.getTaskInfos());
         OfferEvaluator offerEvaluator = new OfferEvaluator(offerReq);
         List<OfferRecommendation> recommendations = offerEvaluator.evaluate(offers);
         acceptedOffers = offerAccepter.accept(driver, recommendations);
+      } else {
+        log.warn("No OfferRequirement for block: " + currBlock.toString());
       }
     }
 

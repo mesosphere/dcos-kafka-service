@@ -1,13 +1,21 @@
 package org.apache.mesos.kafka.plan;
 
+import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.apache.mesos.kafka.offer.OfferRequirementProvider;
 import org.apache.mesos.kafka.offer.OfferUtils;
+import org.apache.mesos.kafka.scheduler.KafkaScheduler;
 import org.apache.mesos.kafka.state.KafkaStateService;
 
+import org.apache.mesos.offer.OfferRequirement;
+import org.apache.mesos.scheduler.plan.Block;
+
+import org.apache.mesos.Protos.TaskID;
 import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.Protos.TaskState;
 import org.apache.mesos.Protos.TaskStatus;
@@ -15,57 +23,43 @@ import org.apache.mesos.Protos.TaskStatus;
 public class KafkaBlock implements Block {
   private final Log log = LogFactory.getLog(KafkaBlock.class);
 
+  private Status status = Status.Pending;
+  private OfferRequirementProvider offerReqProvider;
   private String targetConfigName = null;
   private KafkaStateService state = null;
   private int brokerId;
+  private TaskInfo taskInfo;
+  private OfferRequirement offerReq;
+  List<TaskID> pendingTasks;
 
-  public KafkaBlock(String targetConfigName, int brokerId) {
+  private enum Status {
+    Pending,
+    InProgress,
+    Complete
+  }
+
+  public KafkaBlock(
+      OfferRequirementProvider offerReqProvider,
+      String targetConfigName,
+      int brokerId) {
+
     state = KafkaStateService.getStateService();
+    this.offerReqProvider = offerReqProvider;
     this.targetConfigName = targetConfigName;
     this.brokerId = brokerId;
+    this.taskInfo = getTaskInfo();
+
+    setOfferRequirement();
+    pendingTasks = getUpdateIds();
+    initializeStatus();
   }
 
-  public boolean isInProgress() {
-    try {
-      return hasBeenTerminated() || hasNeverBeenLaunched();
-    } catch (Exception ex) {
-      log.error("Failed to determine whether the block was in progress with exception: " + ex);
-      return false;
+  private void initializeStatus() {
+    if (taskInfo != null &&
+        OfferUtils.getConfigName(taskInfo).equals(targetConfigName)) {
+
+      status = Status.Complete;
     }
-  }
-
-  public boolean hasBeenTerminated() throws Exception {
-    List<TaskInfo> terminatedTasks = state.getTerminatedTaskInfos();
-
-    for (TaskInfo taskInfo : terminatedTasks) {
-      if (taskInfo.getName().equals("broker-" + brokerId)) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  public boolean hasNeverBeenLaunched() throws Exception {
-    return null == getTaskInfo();
-  }
-
-  public boolean isStaging() {
-    return taskIsStaging();
-  }
-
-  public boolean isComplete() {
-    if (isInProgress()) {
-      return false;
-    } else {
-      String currConfigName = OfferUtils.getConfigName(getTaskInfo());
-      if (targetConfigName.equals(currConfigName) &&
-          taskIsRunning()) {
-        return true;
-      }
-    }
-
-    return false;
   }
 
   private TaskInfo getTaskInfo() {
@@ -82,6 +76,93 @@ public class KafkaBlock implements Block {
     }
 
     return null;
+  }
+
+  private void setOfferRequirement() {
+    if (taskInfo == null) {
+      offerReq = offerReqProvider.getNewOfferRequirement(targetConfigName, brokerId);
+    } else {
+      offerReq = offerReqProvider.getReplacementOfferRequirement(taskInfo);
+    }
+  }
+
+  public OfferRequirement start() {
+    if (taskIsRunning()) {
+      KafkaScheduler.restartTasks(taskIdsToStrings(getUpdateIds()));
+    }
+
+    status = Status.InProgress;
+
+    return offerReq;
+  }
+
+  private List<String> taskIdsToStrings(List<TaskID> taskIds) {
+    List<String> taskIdStrings = new ArrayList<String>();
+
+    for (TaskID taskId : taskIds) {
+      taskIdStrings.add(taskId.getValue());
+    }
+
+    return taskIdStrings;
+  }
+
+  public List<TaskID> getUpdateIds() {
+    List<TaskID> taskIds = new ArrayList<TaskID>();
+
+    for (TaskInfo taskInfo : offerReq.getTaskInfos()) {
+      taskIds.add(taskInfo.getTaskId());
+    }
+
+    return taskIds;
+  }
+
+  public void update(TaskStatus taskStatus) {
+    synchronized(pendingTasks) {
+      List<TaskID> updatedPendingTasks = new ArrayList<TaskID>();
+
+      for (TaskID pendingTaskId : pendingTasks) {
+        if (taskStatus.getTaskId().equals(pendingTaskId) &&
+            taskStatus.getState().equals(TaskState.TASK_RUNNING)) {
+          log.info("TaskID: " + pendingTaskId + " is now running.");
+        } else {
+          updatedPendingTasks.add(pendingTaskId);
+        }
+      }
+
+      pendingTasks = updatedPendingTasks;
+
+      if (pendingTasks.size() == 0) {
+        status = Status.Complete;
+      }
+    }
+  }
+
+  public boolean isPending() {
+    return status == Status.Pending;
+  }
+
+  public boolean isInProgress() {
+    return status == Status.InProgress;
+  }
+
+  public boolean isComplete() {
+    return status == Status.Complete;
+  }
+
+  public boolean hasBeenTerminated() throws Exception {
+    List<TaskInfo> terminatedTasks = state.getTerminatedTaskInfos();
+
+    for (TaskInfo taskInfo : terminatedTasks) {
+      if (taskInfo.getName().equals(getBrokerName())) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  public boolean isStaging() {
+    return taskIsStaging();
   }
 
   private boolean taskIsRunning() {
@@ -103,8 +184,6 @@ public class KafkaBlock implements Block {
   }
 
   public TaskStatus getTaskStatus() {
-    TaskInfo taskInfo = getTaskInfo();
-
     if (null != taskInfo) {
       try {
         String taskId = taskInfo.getTaskId().getValue();
@@ -125,6 +204,11 @@ public class KafkaBlock implements Block {
 
   public int getBrokerId() {
     return brokerId;
+  }
+
+  @Override
+  public String toString() {
+    return getBrokerName();
   }
 }
 

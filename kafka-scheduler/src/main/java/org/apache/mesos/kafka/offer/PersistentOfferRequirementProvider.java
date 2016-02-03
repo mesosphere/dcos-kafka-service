@@ -36,8 +36,8 @@ public class PersistentOfferRequirementProvider implements OfferRequirementProvi
     this.configState = configState;
   }
 
-  public OfferRequirement getNewOfferRequirement(String configName) {
-    return getNewOfferRequirementInternal(configName);
+  public OfferRequirement getNewOfferRequirement(String configName, int brokerId) {
+    return getNewOfferRequirementInternal(configName, brokerId);
   }
 
   public OfferRequirement getReplacementOfferRequirement(TaskInfo taskInfo) {
@@ -48,13 +48,7 @@ public class PersistentOfferRequirementProvider implements OfferRequirementProvi
     }
   }
 
-  private OfferRequirement getNewOfferRequirementInternal(String configName) {
-    Integer brokerId = OfferUtils.getNextBrokerId();
-    if (brokerId == null) {
-      log.error("Failed to get broker ID");
-      return null;
-    }
-
+  private OfferRequirement getNewOfferRequirementInternal(String configName, int brokerId) {
     KafkaConfigService config = configState.fetch(configName);
 
     String brokerName = "broker-" + brokerId;

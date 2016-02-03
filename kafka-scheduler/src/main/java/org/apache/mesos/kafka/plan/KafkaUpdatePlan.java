@@ -3,13 +3,13 @@ package org.apache.mesos.kafka.plan;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.mesos.kafka.config.KafkaConfigService;
+import org.apache.mesos.kafka.offer.OfferRequirementProvider;
 
 public class KafkaUpdatePlan implements Plan {
   private KafkaPhase phase;
 
-  public KafkaUpdatePlan(String configName) {
-    phase = new KafkaPhase(configName);
+  public KafkaUpdatePlan(String configName, OfferRequirementProvider offerReqProvider) {
+    phase = new KafkaPhase(configName, offerReqProvider);
   }
 
   public List<Phase> getPhases() {

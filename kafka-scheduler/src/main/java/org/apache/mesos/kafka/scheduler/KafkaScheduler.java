@@ -13,11 +13,11 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.kafka.config.KafkaConfigService;
 import org.apache.mesos.kafka.config.KafkaConfigState;
 import org.apache.mesos.kafka.offer.LogOperationRecorder;
-import org.apache.mesos.kafka.offer.MasterOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.OfferRequirementProvider;
 import org.apache.mesos.kafka.offer.PersistentOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.PersistentOperationRecorder;
 import org.apache.mesos.kafka.offer.SandboxOfferRequirementProvider;
+import org.apache.mesos.kafka.plan.KafkaPlanManager;
 import org.apache.mesos.kafka.plan.KafkaUpdatePlan;
 import org.apache.mesos.kafka.plan.PlanFactory;
 import org.apache.mesos.kafka.state.KafkaStateService;
@@ -59,7 +59,6 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   private KafkaPlanScheduler planScheduler = null;
   private KafkaRepairScheduler repairScheduler = null;
 
-  private MasterOfferRequirementProvider offerReqProvider;
   private OfferAccepter offerAccepter;
 
   private Reconciler reconciler;
@@ -76,8 +75,6 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     addObserver(state);
     addObserver(reconciler);
 
-    offerReqProvider = new MasterOfferRequirementProvider(getOfferRequirementProvider(), configState);
-
     offerAccepter =
       new OfferAccepter(Arrays.asList(
             new LogOperationRecorder(),
@@ -85,9 +82,12 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
 
     handleConfigChange();
 
-    plan = PlanFactory.getPlan(configState.getTargetName());
-    planScheduler = new KafkaPlanScheduler(plan, configState, getOfferRequirementProvider(), offerAccepter);
-    repairScheduler = new KafkaRepairScheduler(plan, configState, getOfferRequirementProvider(), offerAccepter);
+    plan = PlanFactory.getPlan(configState.getTargetName(), getOfferRequirementProvider());
+    KafkaPlanManager planManager = new KafkaPlanManager(plan);
+    addObserver(planManager);
+
+    planScheduler = new KafkaPlanScheduler(planManager, configState, getOfferRequirementProvider(), offerAccepter);
+    //repairScheduler = new KafkaRepairScheduler(plan, configState, getOfferRequirementProvider(), offerAccepter);
   }
 
   private void handleConfigChange() {
@@ -206,8 +206,8 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
 
     if (reconciler.complete()) {
       acceptedOffers = planScheduler.resourceOffers(driver, offers);
-      List<Offer> unacceptedOffers = filterAcceptedOffers(offers, acceptedOffers);
-      acceptedOffers.addAll(repairScheduler.resourceOffers(driver, unacceptedOffers));
+      //List<Offer> unacceptedOffers = filterAcceptedOffers(offers, acceptedOffers);
+      //acceptedOffers.addAll(repairScheduler.resourceOffers(driver, unacceptedOffers));
     }
 
     declineOffers(driver, acceptedOffers, offers);

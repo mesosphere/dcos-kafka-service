@@ -30,13 +30,7 @@ public class SandboxOfferRequirementProvider implements OfferRequirementProvider
     this.configState = configState;
   }
 
-  public OfferRequirement getNewOfferRequirement(String configName) {
-    Integer brokerId = OfferUtils.getNextBrokerId();
-    if (brokerId == null) {
-      log.error("Failed to get broker ID");
-      return null;
-    }
-
+  public OfferRequirement getNewOfferRequirement(String configName, int brokerId) {
     KafkaConfigService config = configState.fetch(configName);
     PlacementStrategyService placementSvc = PlacementStrategy.getPlacementStrategyService(config);
     TaskInfo taskInfo = getTaskInfo(configName, config, brokerId);

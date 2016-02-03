@@ -103,7 +103,7 @@ $ dcos kafka topic create topic1 --partitions 3 --replication 3
 
 - Step 4. Read and write data to a topic.
 
-**TODO** a couple one-liners using eg `bin/kafka-console-[producer|consumer].sh` to send/get data. see also [Connecting clients](#connecting-clients)
+**TODO** a couple one-liners using e.g., `bin/kafka-console-[producer|consumer].sh` to send/get data. see also [Connecting clients](#connecting-clients)
 
 - Step 5. Mark a topic for deletion.
 
@@ -168,7 +168,7 @@ Uninstalling a cluster is also straightforward. Replace `kafka0` with the name o
 $ dcos package uninstall --app-id=kafka0 kafka
 ```
 
-The instance will still be present in zookeeper at `/[framework_name]`, eg `/kafka0`. To completely clear the configuration, the zookeeper node must be removed.
+The instance will still be present in zookeeper at `/[framework_name]`, e.g., `/kafka0`. To completely clear the configuration, the zookeeper node must be removed.
 
 ### Changing configuration in flight
 
@@ -277,7 +277,7 @@ $ dcos config set kafka.framework_name new_default_name
 Kafka comes with many useful tools of its own. They often require either Zookeeper connection information, or the list of Broker endpoints. This information can be retrieved in an easily consumable formation from the `/connection` endpoint as below.
 
 ``` bash
-$ curl -v $DCOS_URI/service/kafka0/v1/connection
+$ curl -X GET "$DCOS_URI/service/kafka0/v1/connection"
 GET /service/kafka0/v1/connection HTTP/1.1
 [...]
 
@@ -317,7 +317,7 @@ $ dcos kafka --framework-name=kafka0 broker list
 ```
 
 ``` bash
-$ curl -v $DCOS_URI/service/kafka0/v1/brokers
+$ curl -X GET "$DCOS_URI/service/kafka0/v1/brokers"
 GET /service/kafka0/v1/brokers HTTP/1.1
 [...]
 
@@ -347,7 +347,7 @@ $ dcos kafka --framework-name=kafka0 broker describe 0
 ```
 
 ``` bash
-$ curl -v $DCOS_URI/service/kafka0/v1/brokers/0
+$ curl -X GET "$DCOS_URI/service/kafka0/v1/brokers/0"
 GET /service/kafka0/v1/brokers/0 HTTP/1.1
 [...]
 
@@ -373,7 +373,7 @@ $ dcos kafka --framework-name=kafka0 broker restart 0
 ```
 
 ``` bash
-$ curl -vX PUT $DCOS_URI/service/kafka0/v1/brokers/0
+$ curl -X PUT "$DCOS_URI/service/kafka0/v1/brokers/0"
 PUT /service/kafka0/v1/brokers/0 HTTP/1.1
 [...]
 
@@ -385,7 +385,7 @@ PUT /service/kafka0/v1/brokers/0 HTTP/1.1
 #### Restart All Brokers
 
 ``` bash
-$ curl -vX PUT $DCOS_URI/service/kafka0/v1/brokers
+$ curl -X PUT $DCOS_URI/service/kafka0/v1/brokers
 PUT /service/kafka0/v1/brokers HTTP/1.1
 [...]
 
@@ -411,7 +411,7 @@ $ dcos kafka --framework-name=kafka0 topic list
 ```
 
 ``` bash
-$ curl -v $DCOS_URI/service/kafka0/v1/topics
+$ curl -X GET "$DCOS_URI/service/kafka0/v1/topics"
 GET /service/kafka0/v1/topics HTTP/1.1
 [...]
 
@@ -433,7 +433,7 @@ $ dcos kafka --framework-name=kafka0 topic create topic1 --partitions=3 --replic
 ```
 
 ``` bash
-$ curl -vX POST "$DCOS_URI/service/kafka0/v1/topics?name=topic1&partitions=3&replication=3"
+$ curl -X POST "$DCOS_URI/service/kafka0/v1/topics?name=topic1&partitions=3&replication=3"
 POST /service/kafka0/v1/topics?replication=3&name=topic1&partitions=3 HTTP/1.1
 [...]
 
@@ -494,7 +494,7 @@ $ dcos kafka --framework-name=kafka0 topic describe topic1
 ```
 
 ``` bash
-$ curl -v $DCOS_URI/service/kafka0/v1/topics/topic1
+$ curl -X GET "$DCOS_URI/service/kafka0/v1/topics/topic1"
 GET /service/kafka0/v1/topics/topic1 HTTP/1.1
 [...]
 
@@ -564,7 +564,7 @@ GET /service/kafka0/v1/topics/topic1/offsets HTTP/1.1
 ```
 
 ``` bash
-$ curl -v $DCOS_URI/service/kafka0/v1/topics/topic1/offsets
+$ curl -X "$DCOS_URI/service/kafka0/v1/topics/topic1/offsets"
 GET /service/kafka0/v1/topics/topic1/offsets HTTP/1.1
 [...]
 
@@ -594,7 +594,7 @@ $ dcos kafka --framework-name=kafka0 topic partitions topic1 2
 ```
 
 ``` bash
-$ curl -vX PUT "$DCOS_URI/service/kafka0/v1/topics/topic1?operation=partitions&partitions=2"
+$ curl -X PUT "$DCOS_URI/service/kafka0/v1/topics/topic1?operation=partitions&partitions=2"
 PUT /service/kafka0/v1/topics/topic1?operation=partitions&partitions=2 HTTP/1.1
 [...]
 
@@ -629,7 +629,6 @@ PUT /service/kafka0/v1/topics/topic1?operation=config&key=cleanup.policy&value=c
 $ dcos kafka --framework-name=kafka0 topic delete_config --key=cleanup.policy
 ```
 
-
 ``` bash
 $ curl -vX PUT "$DCOS_URI/service/kafka0/v1/topics/topic1?operation=deleteConfig&key=cleanup.policy"
 ```
@@ -647,7 +646,7 @@ $ dcos kafka --framework-name=kafka0 topic producer_test topic1 10
 ```
 
 ``` bash
-$ curl -vX PUT "$DCOS_URI/service/kafka0/v1/topics/topic1?operation=producer-test&messages=10"
+$ curl -X PUT "$DCOS_URI/service/kafka0/v1/topics/topic1?operation=producer-test&messages=10"
 PUT /service/kafka0/v1/topics/topic1?operation=producer-test&messages=10 HTTP/1.1
 [...]
 
@@ -671,7 +670,7 @@ $ dcos kafka --framework-name=kafka0 topic delete topic1
 ```
 
 ``` bash
-$ curl -X DELETE $DCOS_URI/service/kafka0/v1/topics/topic1
+$ curl -X DELETE "$DCOS_URI/service/kafka0/v1/topics/topic1"
 DELETE /service/kafka0/v1/topics/topic1?operation=delete HTTP/1.1
 [...]
 
@@ -695,7 +694,7 @@ $ dcos kafka --framework-name=kafka0 topic under_replicated_partitions
 ```
 
 ``` bash
-$ curl -v $DCOS_URI/service/kafka0/v1/topics/under_replicated_partitions
+$ curl -X "$DCOS_URI/service/kafka0/v1/topics/under_replicated_partitions"
 GET /service/kafka0/v1/topics/under_replicated_partitions HTTP/1.1
 [...]
 
@@ -719,7 +718,7 @@ $ dcos kafka --framework-name=kafka0 topic unavailable_partitions
 ```
 
 ``` bash
-$ curl -v $DCOS_URI/service/kafka0/v1/topics/unavailable_partitions
+$ curl -X "$DCOS_URI/service/kafka0/v1/topics/unavailable_partitions"
 GET /service/kafka0/v1/topics/unavailable_partitions HTTP/1.1
 [...]
 

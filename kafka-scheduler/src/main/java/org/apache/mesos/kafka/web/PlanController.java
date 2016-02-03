@@ -67,11 +67,11 @@ public class PlanController {
       switch(cmd) {
         case "continue":
           planManager.proceed();
-          obj.put("Result", "Recevied cmd: " + cmd);
+          obj.put("Result", "Received cmd: " + cmd);
           break;
         case "interrupt":
           planManager.interrupt();
-          obj.put("Result", "Recevied cmd: " + cmd);
+          obj.put("Result", "Received cmd: " + cmd);
           break;
         default:
           log.error("Unrecognized cmd: " + cmd);

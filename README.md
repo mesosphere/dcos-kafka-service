@@ -129,7 +129,13 @@ $ dcos package install kafka
 
 By default, this will create a new Kafka cluster named `kafka0`. Two clusters cannot share the same name, so installing additional clusters beyond the default cluster would require [customizing the `framework-name` at install time](#custom-install-configuration) for each additional instance.
 
-Additional customization would be needed before this cluster would be suitable for production use, but it should be plenty for testing/development as-is. Running clusters may be [re-configured in-place using Marathon](#changing-configuration-in-flight).
+All `dcos kafka` CLI commands have a `--framework-name` argument allowing the user to specify which Kafka instance to query, which defaults to `kafka0`. The default value for `--framework-name` can be customized via the DCOS CLI configuration:
+
+``` bash
+$ dcos config set kafka.framework_name new_default_name
+```
+
+The default cluster is intended for testing/development. Additional customization would be needed before it can be considered suitable for production use. Running clusters may be [re-configured in-place using Marathon](#changing-configuration-in-flight).
 
 ### Custom install configuration
 
@@ -259,6 +265,12 @@ By default Kafka Brokers will use the sandbox available to Mesos Tasks for stori
 For ongoing maintenance of the Kafka cluster itself, the Kafka Framework exposes an HTTP API whose structure is designed to roughly match the tools provided by the Kafka distribution, such as `bin/kafka-topics.sh`.
 
 The examples here provide equivalent commands using both `[dcos-cli](https://github.com/mesosphere/dcos-cli)` (with the `kafka` CLI module installed) and `curl`. These examples assume a service named `kafka0` (the default), and the `curl` examples assume a DCOS host of `$DCOS_URI`. Replace these with appropriate values as needed.
+
+The `dcos kafka` CLI commands have a `--framework-name` argument allowing the user to specify which Kafka instance to query. The value defaults to `kafka0`, so it's technically redundant to specify `--framework-name=kafka0` in these examples. The default value for `--framework-name` can be customized via the DCOS CLI configuration:
+
+``` bash
+$ dcos config set kafka.framework_name new_default_name
+```
 
 ### Connection Information
 
@@ -596,30 +608,30 @@ PUT /service/kafka0/v1/topics/topic1?operation=partitions&partitions=2 HTTP/1.1
 #### Alter Topic Config Value
 
 ``` bash
-$ TODO implement in dcos-cli
+$ dcos kafka --framework-name=kafka0 topic config topic1 cleanup.policy compact
 ```
 
 ``` bash
-$ curl -vX PUT "$DCOS_URI/service/kafka0/v1/topics/topic1?operation=config&key=foo&value=bar"
-PUT /service/kafka0/v1/topics/topic1?operation=config&key=foo&value=bar HTTP/1.1
+$ curl -vX PUT "$DCOS_URI/service/kafka0/v1/topics/topic1?operation=config&key=cleanup.policy&value=compact"
+PUT /service/kafka0/v1/topics/topic1?operation=config&key=cleanup.policy&value=compact HTTP/1.1
 [...]
 
 {
-    "exit_code": 1,
-    "stderr": "[...] Unknown configuration \"foo\". [...]",
-    "stdout": "[...] Unknown configuration \"foo\". [...]"
+    "exit_code": 0,
+    "stderr": "",
+    "stdout": "Updated config for topic \"topic0\".\n"
 }
 ```
 
 #### Delete/Unset Topic Config Value
 
 ``` bash
-$ TODO implement in dcos-cli
+$ dcos kafka --framework-name=kafka0 topic delete_config --key=cleanup.policy
 ```
 
 
 ``` bash
-$ curl -vX PUT "$DCOS_URI/service/kafka0/v1/topics/topic1?operation=deleteConfig&key=foo"
+$ curl -vX PUT "$DCOS_URI/service/kafka0/v1/topics/topic1?operation=deleteConfig&key=cleanup.policy"
 ```
 
 #### Run Producer Test on Topic

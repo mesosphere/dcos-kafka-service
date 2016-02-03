@@ -87,7 +87,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     addObserver(planManager);
 
     planScheduler = new KafkaPlanScheduler(planManager, configState, getOfferRequirementProvider(), offerAccepter);
-    //repairScheduler = new KafkaRepairScheduler(plan, configState, getOfferRequirementProvider(), offerAccepter);
+    repairScheduler = new KafkaRepairScheduler(planManager, configState, getOfferRequirementProvider(), offerAccepter);
   }
 
   private void handleConfigChange() {
@@ -206,8 +206,8 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
 
     if (reconciler.complete()) {
       acceptedOffers = planScheduler.resourceOffers(driver, offers);
-      //List<Offer> unacceptedOffers = filterAcceptedOffers(offers, acceptedOffers);
-      //acceptedOffers.addAll(repairScheduler.resourceOffers(driver, unacceptedOffers));
+      List<Offer> unacceptedOffers = filterAcceptedOffers(offers, acceptedOffers);
+      acceptedOffers.addAll(repairScheduler.resourceOffers(driver, unacceptedOffers));
     }
 
     declineOffers(driver, acceptedOffers, offers);

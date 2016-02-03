@@ -16,12 +16,12 @@ import org.apache.mesos.offer.OfferAccepter;
 import org.apache.mesos.offer.OfferEvaluator;
 import org.apache.mesos.offer.OfferRecommendation;
 import org.apache.mesos.offer.OfferRequirement;
+import org.apache.mesos.scheduler.plan.Block;
 
 import org.apache.mesos.kafka.config.KafkaConfigService;
 import org.apache.mesos.kafka.config.KafkaConfigState;
 import org.apache.mesos.kafka.offer.OfferRequirementProvider;
-import org.apache.mesos.kafka.plan.KafkaUpdatePlan;
-import org.apache.mesos.kafka.plan.KafkaBlock;
+import org.apache.mesos.kafka.plan.KafkaPlanManager;
 import org.apache.mesos.kafka.state.KafkaStateService;
 
 import org.apache.mesos.offer.OfferAccepter;
@@ -31,19 +31,19 @@ public class KafkaRepairScheduler {
 
   private KafkaStateService state = null;
   private KafkaConfigState configState = null;
-  private KafkaUpdatePlan plan = null;
+  private KafkaPlanManager planManager = null;
 
   private OfferAccepter offerAccepter = null;
   private OfferRequirementProvider offerReqProvider = null;
 
   public KafkaRepairScheduler(
-      KafkaUpdatePlan plan,
+      KafkaPlanManager planManager,
       KafkaConfigState configState,
       OfferRequirementProvider offerReqProvider,
       OfferAccepter offerAccepter) {
 
     state = KafkaStateService.getStateService();
-    this.plan = plan;
+    this.planManager = planManager;
     this.configState = configState;
     this.offerReqProvider = offerReqProvider;
     this.offerAccepter = offerAccepter;
@@ -68,12 +68,12 @@ public class KafkaRepairScheduler {
     List<TaskInfo> filteredTerminatedTasks = new ArrayList<TaskInfo>();
 
     try {
-      KafkaBlock currBlock = (KafkaBlock) plan.getCurrentPhase().getCurrentBlock();
+      Block currBlock = planManager.getCurrentBlock();
       if (currBlock == null) {
         return state.getTerminatedTaskInfos();
       }
 
-      String brokerName = currBlock.getBrokerName();
+      String brokerName = currBlock.toString();
       for (TaskInfo taskInfo : state.getTerminatedTaskInfos()) {
         if (!taskInfo.getName().equals(brokerName)) {
           filteredTerminatedTasks.add(taskInfo);

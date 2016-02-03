@@ -7,4 +7,5 @@ import org.apache.mesos.Protos.TaskInfo;
 public interface OfferRequirementProvider {
   OfferRequirement getNewOfferRequirement(String configName, int brokerId);
   OfferRequirement getReplacementOfferRequirement(TaskInfo taskInfo);
+  OfferRequirement getUpdateOfferRequirement(String configName, TaskInfo info);
 }

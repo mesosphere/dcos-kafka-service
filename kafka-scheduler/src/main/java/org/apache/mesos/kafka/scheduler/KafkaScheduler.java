@@ -99,8 +99,6 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
       KafkaConfigService currTarget = configState.getTargetConfig();
       KafkaConfigService newTarget = config;
 
-      configState.store(newTarget, "new_target");
-
       ConfigurationChangeDetector changeDetector = new ConfigurationChangeDetector(
           currTarget.getNsPropertyMap(),
           newTarget.getNsPropertyMap(),
@@ -108,13 +106,18 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
 
       if (changeDetector.isChangeDetected()) {
         log.info("Detected changed properties.");
-        for (ChangedProperty prop : changeDetector.getChangedProperties()) {
-          log.info(prop);
-        }
+        setTargetConfig(newTarget);
       } else {
         log.info("No change detected.");
       }
     }
+  }
+
+  private void setTargetConfig(KafkaConfigService newTargetConfig) {
+      String targetConfigName = UUID.randomUUID().toString();
+      configState.store(newTargetConfig, targetConfigName);
+      configState.setTargetName(targetConfigName);
+      log.info("Set new target config: " + targetConfigName);
   }
 
   public static void restartTasks(List<String> taskIds) {

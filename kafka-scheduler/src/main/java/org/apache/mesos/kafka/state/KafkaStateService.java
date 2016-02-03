@@ -153,6 +153,11 @@ public class KafkaStateService implements Observer {
     return taskInfos;
   }
 
+  public TaskInfo getTaskInfoFromBrokerId(Integer brokerId) throws Exception {
+    String taskId = getTaskIdForBroker(brokerId);
+    return getTaskInfo(taskId);
+  }
+
   public String getTaskIdForBroker(Integer brokerId) throws Exception {
     String brokerName = "broker-" + brokerId;
 

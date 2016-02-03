@@ -51,9 +51,21 @@ public class SandboxOfferRequirementProvider implements OfferRequirementProvider
         placementSvc.getAgentsToColocate(taskInfo));
   }
 
+  public OfferRequirement getUpdateOfferRequirement(String configName, TaskInfo taskInfo) {
+    ConfigurationService config = configState.fetch(configName);
+    TaskInfo newTaskInfo = getTaskInfo(configName, config, nameToId(taskInfo.getName()));
+    newTaskInfo = TaskInfo.newBuilder(newTaskInfo).setTaskId(taskInfo.getTaskId()).build();
+    return getReplacementOfferRequirement(newTaskInfo);
+  }
+
   private KafkaConfigService getConfigService(TaskInfo taskInfo) {
     String configName = OfferUtils.getConfigName(taskInfo);
     return configState.fetch(configName);
+  }
+
+  private Integer nameToId(String brokerName) {
+    String id = brokerName.substring(brokerName.lastIndexOf("-") + 1);
+    return Integer.parseInt(id);
   }
 
   private TaskInfo getTaskInfo(String configName, ConfigurationService config, int brokerId) {

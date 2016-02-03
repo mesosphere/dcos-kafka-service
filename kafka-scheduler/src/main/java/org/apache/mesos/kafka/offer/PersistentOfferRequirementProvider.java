@@ -13,6 +13,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.config.ConfigurationService;
 import org.apache.mesos.kafka.config.KafkaConfigService;
 import org.apache.mesos.kafka.config.KafkaConfigState;
+import org.apache.mesos.kafka.state.KafkaStateService;
 import org.apache.mesos.offer.OfferRequirement;
 import org.apache.mesos.offer.OfferRequirement.VolumeMode;
 import org.apache.mesos.offer.ResourceUtils;
@@ -46,6 +47,17 @@ public class PersistentOfferRequirementProvider implements OfferRequirementProvi
     } else {
       return getUpgradeOfferRequirement(taskInfo);
     }
+  }
+
+  public OfferRequirement getUpdateOfferRequirement(String configName, TaskInfo taskInfo) {
+    KafkaConfigService config = configState.fetch(configName); 
+
+    String brokerName = taskInfo.getName();
+    Integer brokerId = nameToId(brokerName);
+    String taskId = taskInfo.getTaskId().getValue();
+    TaskInfo createTaskInfo = getTaskInfo(configName, config, brokerId, brokerName, taskId);
+
+    return getCreateOfferRequirement(createTaskInfo);
   }
 
   private OfferRequirement getNewOfferRequirementInternal(String configName, int brokerId) {

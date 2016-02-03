@@ -37,9 +37,13 @@ public class KafkaEnvConfigurator implements Configurator {
 
   private List<String> ignoredKeys() {
     return Arrays.asList(
+        "LIBPROCESS_IP",
         "PORT0",
         "_",
+        "HOST",
+        "MESOS_SLAVE_ID",
         "MESOS_TASK_ID",
+        "MESOS_SLAVE_PID",
         "MARATHON_APP_VERSION",
         "PATH",
         "MESOS_EXECUTOR_ID",

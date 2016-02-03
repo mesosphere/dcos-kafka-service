@@ -55,11 +55,22 @@ public class KafkaBlock implements Block {
   }
 
   private void initializeStatus() {
+    log.info(toString() + " setting initial status.");
+
     if (taskInfo != null &&
         OfferUtils.getConfigName(taskInfo).equals(targetConfigName)) {
 
-      status = Status.Complete;
+      setStatus(Status.Complete);
+    } else {
+      setStatus(Status.Pending);
     }
+  }
+
+  private void setStatus(Status newStatus) {
+    Status oldStatus = status;
+    status = newStatus;
+
+    log.info(toString() + ": changing status from: " + oldStatus + " to: " + status);
   }
 
   private TaskInfo getTaskInfo() {
@@ -82,17 +93,19 @@ public class KafkaBlock implements Block {
     if (taskInfo == null) {
       offerReq = offerReqProvider.getNewOfferRequirement(targetConfigName, brokerId);
     } else {
-      offerReq = offerReqProvider.getReplacementOfferRequirement(taskInfo);
+      offerReq = offerReqProvider.getUpdateOfferRequirement(targetConfigName, taskInfo);
     }
   }
 
   public OfferRequirement start() {
+    log.info("Starting block: " + toString());
+
     if (taskIsRunning()) {
       KafkaScheduler.restartTasks(taskIdsToStrings(getUpdateIds()));
+      return null;
     }
 
-    status = Status.InProgress;
-
+    setStatus(Status.InProgress);
     return offerReq;
   }
 
@@ -118,21 +131,26 @@ public class KafkaBlock implements Block {
 
   public void update(TaskStatus taskStatus) {
     synchronized(pendingTasks) {
+      if (!taskStatus.getState().equals(TaskState.TASK_RUNNING) ||
+          isPending()) {
+        return;
+      }
+
       List<TaskID> updatedPendingTasks = new ArrayList<TaskID>();
 
       for (TaskID pendingTaskId : pendingTasks) {
-        if (taskStatus.getTaskId().equals(pendingTaskId) &&
-            taskStatus.getState().equals(TaskState.TASK_RUNNING)) {
-          log.info("TaskID: " + pendingTaskId + " is now running.");
-        } else {
+        if (!taskStatus.getTaskId().equals(pendingTaskId)) {
           updatedPendingTasks.add(pendingTaskId);
         }
       }
 
       pendingTasks = updatedPendingTasks;
+      log.info(toString() + " has pending tasks: " + pendingTasks);
 
       if (pendingTasks.size() == 0) {
-        status = Status.Complete;
+        setStatus(Status.Complete);
+      } else {
+        setStatus(Status.Pending);
       }
     }
   }
@@ -174,10 +192,10 @@ public class KafkaBlock implements Block {
   }
 
   private boolean taskInState(TaskState state) {
-    TaskStatus status = getTaskStatus();
+    TaskStatus taskStatus = getTaskStatus();
 
-    if (null != status) {
-      return status.getState().equals(state);
+    if (null != taskStatus) {
+      return taskStatus.getState().equals(state);
     } else {
       return false;
     }

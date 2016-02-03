@@ -63,9 +63,11 @@ public class KafkaPlanScheduler {
 
     if (currBlock.isPending()) {
       OfferRequirement offerReq = currBlock.start();
-      OfferEvaluator offerEvaluator = new OfferEvaluator(offerReq);
-      List<OfferRecommendation> recommendations = offerEvaluator.evaluate(offers);
-      acceptedOffers = offerAccepter.accept(driver, recommendations);
+      if (offerReq != null) {
+        OfferEvaluator offerEvaluator = new OfferEvaluator(offerReq);
+        List<OfferRecommendation> recommendations = offerEvaluator.evaluate(offers);
+        acceptedOffers = offerAccepter.accept(driver, recommendations);
+      }
     }
 
     return acceptedOffers;

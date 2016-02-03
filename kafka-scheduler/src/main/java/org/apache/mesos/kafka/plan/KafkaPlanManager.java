@@ -10,9 +10,12 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.kafka.config.KafkaConfigService;
 
 import org.apache.mesos.Protos.TaskStatus;
+
 import org.apache.mesos.scheduler.plan.Block;
+import org.apache.mesos.scheduler.plan.DefaultStageStrategy;
 import org.apache.mesos.scheduler.plan.Phase;
 import org.apache.mesos.scheduler.plan.Plan;
+import org.apache.mesos.scheduler.plan.PlanStrategy;
 
 public class KafkaPlanManager implements Observer {
   private final Log log = LogFactory.getLog(KafkaPlanManager.class);
@@ -35,10 +38,10 @@ public class KafkaPlanManager implements Observer {
         strategy = new KafkaInstallStrategy(plan);
         break;
       case "STAGE":
-        strategy = new KafkaStageStrategy(plan);
+        strategy = new DefaultStageStrategy(plan);
         break;
       default:
-        strategy = new KafkaStageStrategy(plan);
+        strategy = new DefaultStageStrategy(plan);
         break;
     }
   }

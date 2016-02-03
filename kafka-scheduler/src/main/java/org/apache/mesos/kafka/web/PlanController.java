@@ -91,7 +91,7 @@ public class PlanController {
 
     for (Phase phase : phases) {
       JSONObject obj = new JSONObject();
-      obj.put(Integer.toString(phase.getId()), phase.toString());
+      obj.put(Integer.toString(phase.getId()), phase.getName());
       phaseObjs.add(obj);
     }
 
@@ -103,7 +103,7 @@ public class PlanController {
 
     for (Block block : blocks) {
       JSONObject descObj = new JSONObject();
-      descObj.put("name", block.toString());
+      descObj.put("name", block.getName());
       descObj.put("status", block.getStatus().name());
 
       JSONObject blockObj = new JSONObject();

@@ -14,6 +14,7 @@ import org.apache.mesos.kafka.state.KafkaStateService;
 
 import org.apache.mesos.offer.OfferRequirement;
 import org.apache.mesos.scheduler.plan.Block;
+import org.apache.mesos.scheduler.plan.Block.Status;
 
 import org.apache.mesos.Protos.TaskID;
 import org.apache.mesos.Protos.TaskInfo;
@@ -31,12 +32,6 @@ public class KafkaBlock implements Block {
   private TaskInfo taskInfo;
   private OfferRequirement offerReq;
   List<TaskID> pendingTasks;
-
-  private enum Status {
-    Pending,
-    InProgress,
-    Complete
-  }
 
   public KafkaBlock(
       OfferRequirementProvider offerReqProvider,
@@ -95,6 +90,14 @@ public class KafkaBlock implements Block {
     } else {
       offerReq = offerReqProvider.getUpdateOfferRequirement(targetConfigName, taskInfo);
     }
+  }
+
+  public int getId() {
+    return brokerId;
+  }
+
+  public Status getStatus() {
+    return status;
   }
 
   public OfferRequirement start() {

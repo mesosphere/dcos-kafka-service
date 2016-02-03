@@ -10,4 +10,9 @@ public interface Phase {
   Block getCurrentBlock();
 
   boolean isComplete();
+
+  int getId();
+
+  @Override
+  String toString();
 }

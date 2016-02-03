@@ -55,13 +55,13 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
 
   private KafkaConfigService config;
   private KafkaStateService state;
-  private KafkaUpdatePlan plan = null; 
   private KafkaPlanScheduler planScheduler = null;
   private KafkaRepairScheduler repairScheduler = null;
 
   private OfferAccepter offerAccepter;
 
   private Reconciler reconciler;
+  private static KafkaPlanManager planManager = null; 
   private static List<String> tasksToRestart = new ArrayList<String>();
   private static List<String> tasksToReschedule = new ArrayList<String>();
   private static KafkaConfigState configState;
@@ -82,8 +82,8 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
 
     handleConfigChange();
 
-    plan = PlanFactory.getPlan(configState.getTargetName(), getOfferRequirementProvider());
-    KafkaPlanManager planManager = new KafkaPlanManager(plan);
+    KafkaUpdatePlan plan = PlanFactory.getPlan(configState.getTargetName(), getOfferRequirementProvider());
+    planManager = new KafkaPlanManager(plan);
     addObserver(planManager);
 
     planScheduler = new KafkaPlanScheduler(planManager, configState, getOfferRequirementProvider(), offerAccepter);
@@ -134,6 +134,10 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
 
   public static KafkaConfigState getConfigState() {
     return configState;
+  }
+
+  public static KafkaPlanManager getPlanManager() {
+    return planManager;
   }
 
   private OfferRequirementProvider getOfferRequirementProvider() {

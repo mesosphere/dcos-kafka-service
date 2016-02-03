@@ -10,11 +10,13 @@ import org.apache.mesos.scheduler.plan.Block;
 
 public class KafkaPhase implements Phase {
   private List<Block> blocks = null;
+  private String configName = null;
 
   public KafkaPhase(
       String configName,
       OfferRequirementProvider offerReqProvider) {
 
+    this.configName = configName;
     this.blocks = createBlocks(configName, offerReqProvider);
   }
 
@@ -58,6 +60,14 @@ public class KafkaPhase implements Phase {
     }
 
     return true;
+  }
+
+  public String toString() {
+    return "Update to " + configName;
+  }
+
+  public int getId() {
+    return 0;
   }
 }
 

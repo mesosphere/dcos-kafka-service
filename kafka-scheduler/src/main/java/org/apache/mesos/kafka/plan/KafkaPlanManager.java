@@ -1,5 +1,6 @@
 package org.apache.mesos.kafka.plan;
 
+import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
 
@@ -17,6 +18,10 @@ public class KafkaPlanManager implements Observer {
 
   public KafkaPlanManager(Plan plan) {
     this.plan = plan;
+  }
+
+  public List<Phase> getPhases() {
+    return plan.getPhases();
   }
 
   public void update(Observable observable, Object obj) {

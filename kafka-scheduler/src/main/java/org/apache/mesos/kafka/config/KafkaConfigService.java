@@ -7,19 +7,28 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.apache.mesos.config.ConfigurationService;
+import org.apache.mesos.config.ConfigProperty;
 import org.apache.mesos.config.FrameworkConfigurationService;
 
 public class KafkaConfigService extends FrameworkConfigurationService {
   private final Log log = LogFactory.getLog(KafkaConfigService.class);
 
-  private static KafkaConfigService configService = null;
+  private static KafkaConfigService envConfig = null;
 
-  public static KafkaConfigService getConfigService() {
-    if (null == configService) {
-      configService = new KafkaConfigService();
+  public static KafkaConfigService getEnvConfig() {
+    if (null == envConfig) {
+      envConfig = new KafkaConfigService();
       KafkaEnvConfigurator envConfigurator = new KafkaEnvConfigurator();
-      envConfigurator.configure(configService);
+      envConfigurator.configure(envConfig);
     }
+
+    return envConfig;
+  }
+
+  public static KafkaConfigService getHydratedConfig(Map<String, Map<String, ConfigProperty>> nsMap) {
+    KafkaConfigService configService = new KafkaConfigService();
+    ZkHydratorConfigurator zkConfigurator = new ZkHydratorConfigurator(nsMap);
+    zkConfigurator.configure(configService);
 
     return configService;
   }
@@ -30,5 +39,13 @@ public class KafkaConfigService extends FrameworkConfigurationService {
 
   public String getKafkaZkUri() {
     return "master.mesos:2181" + getZkRoot();
+  }
+
+  public int getBrokerCount() {
+    return Integer.parseInt(get("BROKER_COUNT"));
+  }
+
+  public String getFrameworkName() {
+    return get("FRAMEWORK_NAME");
   }
 }

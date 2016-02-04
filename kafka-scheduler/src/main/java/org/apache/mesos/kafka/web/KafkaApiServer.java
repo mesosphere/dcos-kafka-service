@@ -15,13 +15,14 @@ import org.glassfish.jersey.server.ResourceConfig;
 
 public class KafkaApiServer {
   private static final Log log = LogFactory.getLog(KafkaApiServer.class);
-  private static ConfigurationService config = KafkaConfigService.getConfigService();
+  private static ConfigurationService config = KafkaConfigService.getEnvConfig();
 
   public static void start() {
     ResourceConfig resourceConfig = new ResourceConfig();
     resourceConfig.registerInstances(new ClusterController());
     resourceConfig.registerInstances(new BrokerController());
     resourceConfig.registerInstances(new TopicController());
+    resourceConfig.registerInstances(new PlanController());
 
     GrizzlyHttpServerFactory.createHttpServer(getUri(), resourceConfig);
   }

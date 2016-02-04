@@ -22,7 +22,7 @@ import org.json.JSONObject;
 public class ClusterController {
   private final Log log = LogFactory.getLog(ClusterController.class);
   private KafkaStateService state = KafkaStateService.getStateService();
-  private ConfigurationService config =  KafkaConfigService.getConfigService();
+  private ConfigurationService config =  KafkaConfigService.getEnvConfig();
 
   private String zkRoot = "/" + config.get("FRAMEWORK_NAME");
   private String zkAddr = config.get("ZOOKEEPER_ADDR");

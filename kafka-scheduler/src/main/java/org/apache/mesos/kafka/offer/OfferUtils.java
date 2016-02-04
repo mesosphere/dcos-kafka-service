@@ -10,11 +10,11 @@ import org.apache.mesos.kafka.config.KafkaConfigService;
 import org.apache.mesos.kafka.state.KafkaStateService;
 import org.apache.mesos.offer.OfferRequirement;
 
+import org.apache.mesos.Protos.Label;
 import org.apache.mesos.Protos.TaskInfo;
 
 public class OfferUtils {
   private static final Log log = LogFactory.getLog(OfferUtils.class);
-  private static ConfigurationService config = KafkaConfigService.getConfigService();
   private static KafkaStateService state = KafkaStateService.getStateService();
 
   public static Integer getNextBrokerId() {
@@ -38,16 +38,13 @@ public class OfferUtils {
       return "broker-" + brokerId;
   }
 
-  public static boolean belowTargetBrokerCount() {
-    int targetBrokerCount = Integer.parseInt(config.get("BROKER_COUNT"));
-    int currentBrokerCount = Integer.MAX_VALUE;
-
-    try {
-      currentBrokerCount = state.getTaskNames().size();
-    } catch(Exception ex) {
-      log.error("Failed to retrieve current broker count with exception: " + ex);
+  public static String getConfigName(TaskInfo taskInfo) {
+    for (Label label : taskInfo.getLabels().getLabelsList()) {
+      if (label.getKey().equals("config_target")) {
+        return label.getValue();
+      }
     }
 
-    return currentBrokerCount < targetBrokerCount;
+    return null;
   }
 }

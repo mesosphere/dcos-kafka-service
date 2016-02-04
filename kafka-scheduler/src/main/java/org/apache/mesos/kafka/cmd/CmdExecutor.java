@@ -24,7 +24,7 @@ import org.json.JSONObject;
 
 public class CmdExecutor {
   private static final Log log = LogFactory.getLog(CmdExecutor.class);
-  private static KafkaConfigService config = KafkaConfigService.getConfigService();
+  private static KafkaConfigService config = KafkaConfigService.getEnvConfig();
   private static KafkaStateService state = KafkaStateService.getStateService();
 
   private static String binPath = config.get("MESOS_SANDBOX") + "/" + config.get("KAFKA_BIN_PATH") + "/";

@@ -36,6 +36,7 @@ public class NodePlacementStrategyService implements PlacementStrategyService {
     List<TaskInfo> otherTaskInfos = getOtherTaskInfos(taskInfo);
     for (TaskInfo otherInfo : otherTaskInfos) {
       agentsToAvoid.add(otherInfo.getSlaveId());
+      log.info("Avoiding: " + otherInfo.getName() + " on agent: " + otherInfo.getSlaveId());
     }
 
     return agentsToAvoid;

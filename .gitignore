@@ -1,8 +1,26 @@
-build/
-
 md-to-toc.py*
 __pycache__/
-.gradle
-.DS_Store
-*.swp
 package
+
+# maven
+target/
+
+# idea
+*.i??
+.idea/
+out/
+
+# eclipse
+.classpath
+.project
+.settings/
+
+# gradle
+.gradle
+build/
+
+# vim swap files
+*.swp
+
+# OS X
+.DS_Store

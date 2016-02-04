@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.mesos.kafka.config.KafkaConfigService;
-import org.apache.mesos.kafka.offer.OfferRequirementProvider;
+import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
 import org.apache.mesos.kafka.scheduler.KafkaScheduler;
 import org.apache.mesos.scheduler.plan.Block;
 import org.apache.mesos.scheduler.plan.Phase;
@@ -15,7 +15,7 @@ public class KafkaPhase implements Phase {
 
   public KafkaPhase(
       String configName,
-      OfferRequirementProvider offerReqProvider) {
+      KafkaOfferRequirementProvider offerReqProvider) {
 
     this.configName = configName;
     this.blocks = createBlocks(configName, offerReqProvider);
@@ -27,7 +27,7 @@ public class KafkaPhase implements Phase {
 
   private List<Block> createBlocks(
       String configName,
-      OfferRequirementProvider offerReqProvider) {
+      KafkaOfferRequirementProvider offerReqProvider) {
 
     List<Block> blocks = new ArrayList<Block>();
     KafkaConfigService config = KafkaScheduler.getConfigState().fetch(configName); 
@@ -64,7 +64,7 @@ public class KafkaPhase implements Phase {
   }
 
   public String getName() {
-    return "Update to " + configName;
+    return "Update to: " + configName;
   }
 
   public int getId() {

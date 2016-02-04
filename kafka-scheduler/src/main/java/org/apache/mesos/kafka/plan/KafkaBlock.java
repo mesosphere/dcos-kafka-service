@@ -1,14 +1,12 @@
 package org.apache.mesos.kafka.plan;
 
-
-import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.apache.mesos.kafka.offer.OfferRequirementProvider;
+import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.OfferUtils;
 import org.apache.mesos.kafka.scheduler.KafkaScheduler;
 import org.apache.mesos.kafka.state.KafkaStateService;
@@ -26,16 +24,16 @@ public class KafkaBlock implements Block {
   private final Log log = LogFactory.getLog(KafkaBlock.class);
 
   private Status status = Status.Pending;
-  private OfferRequirementProvider offerReqProvider;
+  private KafkaOfferRequirementProvider offerReqProvider;
   private String targetConfigName = null;
   private KafkaStateService state = null;
   private int brokerId;
   private TaskInfo taskInfo;
-  private OfferRequirement offerReq;
-  List<TaskID> pendingTasks;
+  private final Integer taskLock = 0;
+  private List<TaskID> pendingTasks;
 
   public KafkaBlock(
-      OfferRequirementProvider offerReqProvider,
+      KafkaOfferRequirementProvider offerReqProvider,
       String targetConfigName,
       int brokerId) {
 
@@ -45,7 +43,6 @@ public class KafkaBlock implements Block {
     this.brokerId = brokerId;
     this.taskInfo = getTaskInfo();
 
-    setOfferRequirement();
     pendingTasks = getUpdateIds();
     initializeStatus();
   }
@@ -53,12 +50,14 @@ public class KafkaBlock implements Block {
   private void initializeStatus() {
     log.info(getName() + " setting initial status.");
 
-    if (taskInfo != null &&
-        OfferUtils.getConfigName(taskInfo).equals(targetConfigName)) {
+    if (taskInfo != null) {
+      String configName = OfferUtils.getConfigName(taskInfo);
 
-      setStatus(Status.Complete);
-    } else {
-      setStatus(Status.Pending);
+      if (configName.equals(targetConfigName)) {
+        setStatus(Status.Complete);
+      } else {
+        setStatus(Status.Pending);
+      }
     }
   }
 
@@ -85,11 +84,11 @@ public class KafkaBlock implements Block {
     return null;
   }
 
-  private void setOfferRequirement() {
+  private OfferRequirement getOfferRequirement() {
     if (taskInfo == null) {
-      offerReq = offerReqProvider.getNewOfferRequirement(targetConfigName, brokerId);
+      return offerReqProvider.getNewOfferRequirement(targetConfigName, brokerId);
     } else {
-      offerReq = offerReqProvider.getUpdateOfferRequirement(targetConfigName, taskInfo);
+      return offerReqProvider.getUpdateOfferRequirement(targetConfigName, taskInfo);
     }
   }
 
@@ -110,7 +109,7 @@ public class KafkaBlock implements Block {
     }
 
     setStatus(Status.InProgress);
-    return offerReq;
+    return getOfferRequirement();
   }
 
   private List<String> taskIdsToStrings(List<TaskID> taskIds) {
@@ -126,7 +125,7 @@ public class KafkaBlock implements Block {
   public List<TaskID> getUpdateIds() {
     List<TaskID> taskIds = new ArrayList<TaskID>();
 
-    for (TaskInfo taskInfo : offerReq.getTaskInfos()) {
+    if (taskInfo != null) {
       taskIds.add(taskInfo.getTaskId());
     }
 
@@ -134,7 +133,7 @@ public class KafkaBlock implements Block {
   }
 
   public void update(TaskStatus taskStatus) {
-    synchronized(pendingTasks) {
+    synchronized(taskLock) {
       if (!taskStatus.getState().equals(TaskState.TASK_RUNNING) ||
           isPending()) {
         return;
@@ -169,22 +168,6 @@ public class KafkaBlock implements Block {
 
   public boolean isComplete() {
     return status == Status.Complete;
-  }
-
-  public boolean hasBeenTerminated() throws Exception {
-    List<TaskInfo> terminatedTasks = state.getTerminatedTaskInfos();
-
-    for (TaskInfo taskInfo : terminatedTasks) {
-      if (taskInfo.getName().equals(getBrokerName())) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  public boolean isStaging() {
-    return taskIsStaging();
   }
 
   private boolean taskIsRunning() {
@@ -222,10 +205,6 @@ public class KafkaBlock implements Block {
 
   public String getBrokerName() {
     return "broker-" + brokerId;
-  }
-
-  public int getBrokerId() {
-    return brokerId;
   }
 
   public String getName() {

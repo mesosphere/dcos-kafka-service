@@ -1,13 +1,10 @@
 package org.apache.mesos.kafka.config;
 
-import java.util.Map;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.apache.curator.framework.CuratorFramework;
 
-import org.apache.mesos.config.ConfigProperty;
 import org.apache.mesos.config.FrameworkConfigurationService;
 
 import org.apache.mesos.config.state.ConfigState;
@@ -19,11 +16,9 @@ public class KafkaConfigState {
 
   private CuratorFramework zkClient = null;
   private ConfigState configState = null;
-  private String frameworkName = null;
   private String configTargetPath = null; 
 
   public KafkaConfigState(String frameworkName, String hosts, String rootZkPath) {
-    this.frameworkName = frameworkName;
     this.configTargetPath = "/" + frameworkName + "/config_target";
 
     zkClient = KafkaStateUtils.createZkClient(hosts);

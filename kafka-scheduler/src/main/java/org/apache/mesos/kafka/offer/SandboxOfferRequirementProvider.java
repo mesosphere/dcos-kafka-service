@@ -7,9 +7,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import org.apache.mesos.config.ConfigurationService;
 import org.apache.mesos.kafka.config.KafkaConfigService;
 import org.apache.mesos.kafka.config.KafkaConfigState;
@@ -22,8 +19,7 @@ import org.apache.mesos.protobuf.TaskInfoBuilder;
 import org.apache.mesos.Protos.Labels;
 import org.apache.mesos.Protos.TaskInfo;
 
-public class SandboxOfferRequirementProvider implements OfferRequirementProvider {
-  private final Log log = LogFactory.getLog(SandboxOfferRequirementProvider.class);
+public class SandboxOfferRequirementProvider implements KafkaOfferRequirementProvider {
   private KafkaConfigState configState = null;
 
   public SandboxOfferRequirementProvider(KafkaConfigState configState) {
@@ -55,6 +51,7 @@ public class SandboxOfferRequirementProvider implements OfferRequirementProvider
     ConfigurationService config = configState.fetch(configName);
     TaskInfo newTaskInfo = getTaskInfo(configName, config, nameToId(taskInfo.getName()));
     newTaskInfo = TaskInfo.newBuilder(newTaskInfo).setTaskId(taskInfo.getTaskId()).build();
+
     return getReplacementOfferRequirement(newTaskInfo);
   }
 

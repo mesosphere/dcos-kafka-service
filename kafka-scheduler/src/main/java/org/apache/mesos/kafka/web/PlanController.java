@@ -17,10 +17,10 @@ import javax.ws.rs.core.MediaType;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.apache.mesos.kafka.plan.KafkaPlanManager;
 import org.apache.mesos.kafka.scheduler.KafkaScheduler;
 
 import org.apache.mesos.scheduler.plan.Block;
+import org.apache.mesos.scheduler.plan.DefaultPlanManager;
 import org.apache.mesos.scheduler.plan.Phase;
 
 import org.json.JSONArray;
@@ -30,7 +30,7 @@ import org.json.JSONObject;
 @Produces("application/json")
 public class PlanController {
   private final Log log = LogFactory.getLog(PlanController.class);
-  private KafkaPlanManager planManager = KafkaScheduler.getPlanManager();
+  private DefaultPlanManager planManager = KafkaScheduler.getPlanManager();
 
   @GET
   public Response listPhases() {
@@ -51,8 +51,13 @@ public class PlanController {
     try {
       Phase phase = getPhase(Integer.parseInt(phaseId));
       JSONObject obj = new JSONObject();
-      obj.put("blocks", blocksToJsonArray(phase.getBlocks()));
-      return Response.ok(obj.toString(), MediaType.APPLICATION_JSON).build();
+      List<? extends Block> blocks = phase.getBlocks();
+      if (blocks != null) {
+        obj.put("blocks", blocksToJsonArray(blocks));
+        return Response.ok(obj.toString(), MediaType.APPLICATION_JSON).build();
+      } else {
+        return Response.serverError().build();
+      }
     } catch (Exception ex) {
       log.error("Failed to fetch blocks for phase: " + phaseId + " with exception: " + ex);
       return Response.serverError().build();

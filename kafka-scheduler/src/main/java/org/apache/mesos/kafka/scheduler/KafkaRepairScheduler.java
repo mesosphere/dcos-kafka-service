@@ -17,34 +17,28 @@ import org.apache.mesos.offer.OfferEvaluator;
 import org.apache.mesos.offer.OfferRecommendation;
 import org.apache.mesos.offer.OfferRequirement;
 import org.apache.mesos.scheduler.plan.Block;
+import org.apache.mesos.scheduler.plan.PlanManager;
 
-import org.apache.mesos.kafka.config.KafkaConfigService;
 import org.apache.mesos.kafka.config.KafkaConfigState;
-import org.apache.mesos.kafka.offer.OfferRequirementProvider;
-import org.apache.mesos.kafka.plan.KafkaPlanManager;
+import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
 import org.apache.mesos.kafka.state.KafkaStateService;
-
-import org.apache.mesos.offer.OfferAccepter;
 
 public class KafkaRepairScheduler {
   private final Log log = LogFactory.getLog(KafkaRepairScheduler.class);
 
   private KafkaStateService state = null;
-  private KafkaConfigState configState = null;
-  private KafkaPlanManager planManager = null;
+  private PlanManager planManager = null;
 
   private OfferAccepter offerAccepter = null;
-  private OfferRequirementProvider offerReqProvider = null;
+  private KafkaOfferRequirementProvider offerReqProvider = null;
 
   public KafkaRepairScheduler(
-      KafkaPlanManager planManager,
-      KafkaConfigState configState,
-      OfferRequirementProvider offerReqProvider,
+      PlanManager planManager,
+      KafkaOfferRequirementProvider offerReqProvider,
       OfferAccepter offerAccepter) {
 
     state = KafkaStateService.getStateService();
     this.planManager = planManager;
-    this.configState = configState;
     this.offerReqProvider = offerReqProvider;
     this.offerAccepter = offerAccepter;
   }

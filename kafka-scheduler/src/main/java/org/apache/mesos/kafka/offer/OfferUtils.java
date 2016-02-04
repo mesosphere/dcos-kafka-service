@@ -38,20 +38,6 @@ public class OfferUtils {
       return "broker-" + brokerId;
   }
 
-  public static boolean belowTargetBrokerCount() {
-    ConfigurationService config = KafkaConfigService.getEnvConfig();
-    int targetBrokerCount = Integer.parseInt(config.get("BROKER_COUNT"));
-    int currentBrokerCount = Integer.MAX_VALUE;
-
-    try {
-      currentBrokerCount = state.getTaskNames().size();
-    } catch(Exception ex) {
-      log.error("Failed to retrieve current broker count with exception: " + ex);
-    }
-
-    return currentBrokerCount < targetBrokerCount;
-  }
-
   public static String getConfigName(TaskInfo taskInfo) {
     for (Label label : taskInfo.getLabels().getLabelsList()) {
       if (label.getKey().equals("config_target")) {

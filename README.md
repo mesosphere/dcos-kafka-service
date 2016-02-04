@@ -729,6 +729,55 @@ GET /service/kafka0/v1/topics/unavailable_partitions HTTP/1.1
 }
 ```
 
+### Config Updates
+
+#### View Plan Status
+
+View phases
+``` bash
+$ http $DCOS_URI/service/kafka0/v1/plan
+HTTP/1.1 200 OK
+[...]
+
+{
+    "phases": [
+        {
+            "0": "Update to: 91e74d8e-f50b-49ca-a7cb-7d4aff463b99"
+        }
+    ]
+}
+```
+
+View blocks
+``` bash
+$ http $DCOS_URI/service/kafka0/v1/plan/0
+HTTP/1.1 200 OK
+[...]
+
+{
+    "blocks": [
+        {
+            "0": {
+                "name": "broker-0",
+                "status": "Complete"
+            }
+        },
+        {
+            "1": {
+                "name": "broker-1",
+                "status": "Complete"
+            }
+        },
+        {
+            "2": {
+                "name": "broker-2",
+                "status": "Complete"
+            }
+        }
+    ]
+}
+```
+
 ## TODO [API for ACL changes](https://kafka.apache.org/documentation.html#security_authz_examples)? (kafka-acls.sh)
 
 ## Development

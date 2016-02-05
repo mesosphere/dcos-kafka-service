@@ -126,6 +126,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
       if (changeDetector.isChangeDetected()) {
         log.info("Detected changed properties.");
         setTargetConfig(newTarget);
+        configState.syncConfigs();
       } else {
         log.info("No change detected.");
       }

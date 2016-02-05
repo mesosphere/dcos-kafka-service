@@ -254,7 +254,7 @@ public class KafkaStateService implements Observer {
     }
   }
 
-  private void recordTaskInfo(TaskInfo taskInfo) throws Exception {
+  public void recordTaskInfo(TaskInfo taskInfo) throws Exception {
     String infoPath = getTaskInfoPath(taskInfo.getTaskId().getValue());
     record(infoPath, taskInfo.toByteArray());
   }

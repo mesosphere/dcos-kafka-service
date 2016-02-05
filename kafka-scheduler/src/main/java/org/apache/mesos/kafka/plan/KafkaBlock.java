@@ -48,7 +48,7 @@ public class KafkaBlock implements Block {
   }
 
   private void initializeStatus() {
-    log.info(getName() + " setting initial status.");
+    log.info("Setting initial status for: " + getName());
 
     if (taskInfo != null) {
       String configName = OfferUtils.getConfigName(taskInfo);

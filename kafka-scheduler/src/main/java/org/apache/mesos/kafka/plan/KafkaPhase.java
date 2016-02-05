@@ -8,6 +8,7 @@ import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
 import org.apache.mesos.kafka.scheduler.KafkaScheduler;
 import org.apache.mesos.scheduler.plan.Block;
 import org.apache.mesos.scheduler.plan.Phase;
+import org.apache.mesos.scheduler.plan.Status;
 
 public class KafkaPhase implements Phase {
   private List<Block> blocks = null;
@@ -69,6 +70,10 @@ public class KafkaPhase implements Phase {
 
   public int getId() {
     return 0;
+  }
+
+  public Status getStatus() {
+    return getCurrentBlock().getStatus();
   }
 }
 

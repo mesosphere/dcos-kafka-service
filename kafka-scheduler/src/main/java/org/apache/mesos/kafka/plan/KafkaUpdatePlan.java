@@ -7,6 +7,7 @@ import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
 
 import org.apache.mesos.scheduler.plan.Plan;
 import org.apache.mesos.scheduler.plan.Phase;
+import org.apache.mesos.scheduler.plan.Status;
 
 public class KafkaUpdatePlan implements Plan {
   private KafkaPhase phase;
@@ -25,5 +26,9 @@ public class KafkaUpdatePlan implements Plan {
 
   public boolean isComplete() {
     return phase.isComplete();
+  }
+
+  public Status getStatus() {
+    return getCurrentPhase().getStatus();
   }
 }

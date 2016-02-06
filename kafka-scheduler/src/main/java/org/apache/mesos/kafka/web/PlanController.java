@@ -20,22 +20,59 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.kafka.scheduler.KafkaScheduler;
 
 import org.apache.mesos.scheduler.plan.Block;
-import org.apache.mesos.scheduler.plan.DefaultPlanManager;
+import org.apache.mesos.scheduler.plan.PlanManager;
 import org.apache.mesos.scheduler.plan.Phase;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import org.apache.mesos.scheduler.plan.Plan;
+
 @Path("/v1/plan")
 @Produces("application/json")
 public class PlanController {
   private final Log log = LogFactory.getLog(PlanController.class);
-  private DefaultPlanManager planManager = KafkaScheduler.getPlanManager();
+  private PlanManager planManager = KafkaScheduler.getPlanManager();
 
   @GET
+  @Path("/summary")
+  public Response getPlanSummary() {
+    try {
+      Plan plan = planManager.getPlan();
+      Phase phase = plan.getCurrentPhase();
+      Block block = phase.getCurrentBlock();
+
+      int phaseCount = plan.getPhases().size();
+      int blockCount = phase.getBlocks().size();
+
+      JSONObject phaseObj = new JSONObject();
+      phaseObj.put("name", phase.getName());
+      phaseObj.put("index", phase.getId());
+
+      JSONObject blockObj = new JSONObject();
+      blockObj.put("name", block.getName());
+      blockObj.put("index", block.getId());
+
+      JSONObject summaryObj = new JSONObject();
+      summaryObj.put("status", block.getStatus());
+      summaryObj.put("phase_count", phaseCount);
+      summaryObj.put("block_count", blockCount);
+      summaryObj.put("phase", phaseObj);
+      summaryObj.put("block", blockObj);
+
+      return Response.ok(summaryObj.toString(), MediaType.APPLICATION_JSON).build();
+    } catch (Exception ex) {
+      log.error("Failed to fetch plan summary with exception: " + ex);
+      return Response.serverError().build();
+    }
+  }
+
+  @GET
+  @Path("/phases")
   public Response listPhases() {
     try {
-      List<? extends Phase> phases = planManager.getPhases();
+      Plan plan = planManager.getPlan();
+      List<? extends Phase> phases = plan.getPhases();
       JSONObject obj = new JSONObject();
       obj.put("phases", phasesToJsonArray(phases));
       return Response.ok(obj.toString(), MediaType.APPLICATION_JSON).build();
@@ -46,7 +83,7 @@ public class PlanController {
   }
 
   @GET
-  @Path("/{phaseId}")
+  @Path("/phases/{phaseId}")
   public Response listBlocks(@PathParam("phaseId") String phaseId) {
     try {
       Phase phase = getPhase(Integer.parseInt(phaseId));
@@ -121,7 +158,8 @@ public class PlanController {
   }
 
   private Phase getPhase(int id) {
-    List<? extends Phase> phases = planManager.getPhases();
+    Plan plan = planManager.getPlan();
+    List<? extends Phase> phases = plan.getPhases();
 
     for (Phase phase : phases) {
       if (phase.getId() == id) {

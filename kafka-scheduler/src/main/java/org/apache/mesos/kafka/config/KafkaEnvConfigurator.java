@@ -37,21 +37,23 @@ public class KafkaEnvConfigurator implements Configurator {
 
   private List<String> ignoredKeys() {
     return Arrays.asList(
-        "LIBPROCESS_IP",
-        "PORT0",
-        "_",
+        "PATH",
         "HOST",
         "MESOS_SLAVE_ID",
-        "MESOS_TASK_ID",
-        "MESOS_SLAVE_PID",
-        "MARATHON_APP_VERSION",
-        "PATH",
-        "MESOS_EXECUTOR_ID",
-        "PORT",
         "MESOS_SANDBOX",
-        "PORT_10000",
-        "MESOS_DIRECTORY",
         "PWD",
-        "PORTS");
+        "PORT",
+        "MESOS_AGENT_ENDPOINT",
+        "LIBPROCESS_IP",
+        "MESOS_TASK_ID",
+        "MARATHON_APP_VERSION",
+        "MESOS_SLAVE_PID",
+        "PORT0",
+        "PORT_10000",
+        "MESOS_EXECUTOR_ID",
+        "_",
+        "MESOS_DIRECTORY",
+        "PORTS",
+        "PLAN_STRATEGY");
   }
 }

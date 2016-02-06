@@ -547,9 +547,6 @@ GET /service/kafka0/v1/topics/topic1 HTTP/1.1
 
 ``` bash
 $ dcos kafka --framework-name=kafka0 topic offsets topic1
-GET /service/kafka0/v1/topics/topic1/offsets HTTP/1.1
-[...]
-
 [
     {
         "2": "334"

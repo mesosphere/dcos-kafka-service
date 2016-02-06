@@ -10,6 +10,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.Protos.Offer;
 import org.apache.mesos.Protos.OfferID;
 import org.apache.mesos.Protos.TaskInfo;
+import org.apache.mesos.Protos.TaskID;
 import org.apache.mesos.SchedulerDriver;
 
 import org.apache.mesos.offer.OfferAccepter;
@@ -67,7 +68,7 @@ public class KafkaRepairScheduler {
         return state.getTerminatedTaskInfos();
       }
 
-      String brokerName = currBlock.toString();
+      String brokerName = currBlock.getName();
       for (TaskInfo taskInfo : state.getTerminatedTaskInfos()) {
         if (!taskInfo.getName().equals(brokerName)) {
           filteredTerminatedTasks.add(taskInfo);

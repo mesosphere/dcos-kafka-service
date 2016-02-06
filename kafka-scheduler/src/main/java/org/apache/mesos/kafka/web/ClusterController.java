@@ -32,8 +32,11 @@ public class ClusterController {
   public Response getConnectionInfo() {
     try {
       JSONObject connectionInfo = new JSONObject();
-      connectionInfo.put("zookeeper", zkAddr + "/" + config.get("FRAMEWORK_NAME"));
+      String zookeeperEndpoint = zkAddr + "/" + config.get("FRAMEWORK_NAME");
+      connectionInfo.put("zookeeper", zookeeperEndpoint);
       connectionInfo.put("brokers", getBrokerList());
+      connectionInfo.put("zookeeper_convenience", getConvenientZookeeper(zookeeperEndpoint));
+      connectionInfo.put("broker_list_convenience", getConvenientBrokerList());
 
       return Response.ok(connectionInfo.toString(), MediaType.APPLICATION_JSON).build();
 
@@ -45,5 +48,22 @@ public class ClusterController {
 
   private JSONArray getBrokerList() throws Exception {
     return new JSONArray(state.getBrokerEndpoints());
+  }
+
+  private String getConvenientZookeeper(String zookeeperEndpoint) {
+    return "--zookeeper " + zookeeperEndpoint;
+  }
+
+  private String getConvenientBrokerList() {
+    String brokerList = "--broker-list ";
+
+    try {
+      String brokers = String.join(", ", state.getBrokerEndpoints()); 
+      return brokerList + brokers;
+    } catch (Exception ex) {
+      log.error("Failed to fetch broker endpoints for convenience with exception : " + ex);
+    }
+
+    return brokerList;
   }
 }

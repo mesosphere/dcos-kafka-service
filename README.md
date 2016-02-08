@@ -234,7 +234,29 @@ The alternative is the `STAGE` strategy.  This strategy will cause two mandatory
 
 ### Connecting Clients
 
-**TODO** step by step for talking to a DCOS-hosted Kafka instance using `bin/kafka-console-producer.sh` and `bin/kafka-console-consumer.sh` as an example
+The following code connects to a DCOS-hosted Kafka instance using `bin/kafka-console-producer.sh` and `bin/kafka-console-consumer.sh` as an example: <!-- what role are these scripts playing here? -->
+
+``` bash
+ $ dcos kafka connection
+ {
+     "broker_list_convenience": "--broker-list ip-10-0-3-230.us-west-2.compute.internal:9092, ip-10-0-3-231.us-west-2.compute.internal:9093",
+     "brokers": [
+         "ip-10-0-3-230.us-west-2.compute.internal:9092",
+         "ip-10-0-3-231.us-west-2.compute.internal:9093"
+     ],
+     "zookeeper": "master.mesos:2181/kafka0",
+     "zookeeper_convenience": "--zookeeper master.mesos:2181/kafka0"
+ }
+ $ dcos node ssh --master-proxy --master
+ core@ip-10-0-6-153 ~ $ docker run -it mesosphere/kafka-client
+ root@7bc0e88cfa52:/kafka_2.10-0.8.2.2/bin# ./kafka-console-producer.sh --broker-list ip-10-0-3-230.us-west-2.compute.internal:9092 --topic test
+ This is a message
+ This is another message
+ 
+ root@7bc0e88cfa52:/kafka_2.10-0.8.2.2/bin# ./kafka-console-consumer.sh --zookeeper master.mesos:2181/kafka0 --topic test --from-beginning
+ This is a message
+ This is another message
+ ```
 
 ```bash
 $ dcos kafka connection
@@ -478,9 +500,24 @@ Once the cluster is already up and running, you can customize it in-place. The K
 
 See [Configuration Options](#configuration-options) for a list of fields that can be customized via Marathon while the Kafka cluster is running.
 
-### Upgrading Software
+#### Add a Broker
 
-**TODO** once implemented: guide for updating kafka process and/or framework itself
+Increase the `BROKER_COUNT` value via Marathon. New brokers should start automatically. <!-- so you wouldn't use the API to do this? If so, I will move this to Management -->
+
+#### Remove a Broker
+
+Broker removal is currently a manual process. Set the `BROKER_COUNT` environment variable to the desired target count. All Remove all replicas off the brokers that will be removed as a consequence of shrinking the cluster. Then, remove each broker by performing the reschedule operation. For example, if you are resizing a cluster from 3 brokers to 2, set the `BROKER_COUNT` to 2 and move replicas off the broker with id 2 (ids start at 0). Then, remove the broker with the reschedule command:
+
+ ``` bash
+ $ dcos kafka broker reschedule 2
+ [
+     "broker-2__b44b8d32-69e9-420b-aae2-59952dfaa8c2"
+ ]
+ ```
+
+<!-- ### Upgrading Software
+
+**TODO** once implemented: guide for updating kafka process and/or framework itself -->
 
 ### Uninstall
 
@@ -501,15 +538,7 @@ The instance will still be present in zookeeper at `/[framework_name]`, e.g., `/
 
 **TODO** How to handle errors when applying configuration to a running service
 
-### Software Maintenance Errors
-
-**TODO** How to handle errors when updating software
-
-### Status Errors
-
-**TODO** how to handle status = error
-
-**TODO** how to handle status = warning
+<!-- ### Software Maintenance Errors
 
 ### Replacing a Permanently Failed Server
 
@@ -1089,17 +1118,14 @@ HTTP/1.1 200 OK
 
 ### Configurations
 
-**TODO** Settings that can only be set at install time
+#### Persistent Volumes
+Kafka does not use the persistent volume feature of Mesos by default. Once this feature is enabled, brokers are tied to the node on which their persistent volumes lie, so changes to the "placement-strategy" configuration option will no longer have an effect. Furthermore, once a persistent volume is created for a broker, its disk size is no longer runtime configurable. You can enable persistent volumes by setting the `BROKER_PV` environment variable to `true`.
 
-**TODO** Pitfalls of managing configurations outside of the framework
+#### Pitfalls of managing configurations outside of the framework
+The Kafka framework's core responsibility is to deploy and maintain the deployment of a Kafka cluster whose configuration has been specified. In order to do this, the framework assumes that it owns the broker configuration. If an end-user makes modifications to individual brokers through out-of-band configuration operations, the framework may later override those modifications. If a broker crashes <!-- for example? -->, it will restart with the configuration known to the scheduler, not one modified out-of-band. In addition, if a configuration update is initiated, all out-of-band modifications will be overwritten during the rolling update process.
 
 ### Brokers
-
-**TODO** Max count (if any)
-
-### Security
-
-**TODO** describe how someone could configure Kafka 0.9's beta security features (or specify that they're not supported?): data encryption, client authentication over SSL/SASL, broker authentication with ZK...
+The number of deployable Brokers is constrained by two factors.  First, Brokers have specified required resources, so Brokers may not be placed if the Mesos cluster lacks the requisite resources.  Second, the specified "PLACEMENT_STRATEGY" environment variable may affect how many Brokers may be created in a Kafka cluster.  By default the value is "ANY" so Brokers are placed anywhere and are only constrained by the resources of the cluster.  A second option is "NODE".  In this case only one Broker may be placed on a given Mesos Agent.
 
 ## TODO [API for ACL changes](https://kafka.apache.org/documentation.html#security_authz_examples)? (kafka-acls.sh)
 

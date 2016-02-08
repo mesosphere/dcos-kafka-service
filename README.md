@@ -240,7 +240,27 @@ By default Kafka Brokers will use the sandbox available to Mesos Tasks for stori
 
 ## Connecting Clients
 
-**TODO** step by step for talking to a DCOS-hosted Kafka instance using `bin/kafka-console-producer.sh` and `bin/kafka-console-consumer.sh` as an example
+``` bash
+$ dcos kafka connection
+{
+    "broker_list_convenience": "--broker-list ip-10-0-3-230.us-west-2.compute.internal:9092, ip-10-0-3-231.us-west-2.compute.internal:9093",
+    "brokers": [
+        "ip-10-0-3-230.us-west-2.compute.internal:9092",
+        "ip-10-0-3-231.us-west-2.compute.internal:9093"
+    ],
+    "zookeeper": "master.mesos:2181/kafka0",
+    "zookeeper_convenience": "--zookeeper master.mesos:2181/kafka0"
+}
+$ dcos node ssh --master-proxy --master
+core@ip-10-0-6-153 ~ $ docker run -it mesosphere/kafka-client
+root@7bc0e88cfa52:/kafka_2.10-0.8.2.2/bin# ./kafka-console-producer.sh --broker-list ip-10-0-3-230.us-west-2.compute.internal:9092 --topic test
+This is a message
+This is another message
+
+root@7bc0e88cfa52:/kafka_2.10-0.8.2.2/bin# ./kafka-console-consumer.sh --zookeeper master.mesos:2181/kafka0 --topic test --from-beginning
+This is a message
+This is another message
+```
 
 ## Handling Errors
 
@@ -268,13 +288,15 @@ By default Kafka Brokers will use the sandbox available to Mesos Tasks for stori
 
 ### Configurations
 
-**TODO** Settings that can only be set at install time
+#### Persistent Volumes
+By default Kafka does not use the Persitent Volume feature of Mesos.  Once this feature is enabled (by setting the "BROKER_PV" environment variabel to "true") Brokers are tied to the node on which their persistent volumes lie so changes to the "placement-strategy" configuration option will no longer have an effect.  Furthermore once a persistent volume is created for a Broker its disks size is no longer runtime configurable.
 
-**TODO** Pitfalls of managing configurations outside of the framework
+#### Pitfalls of managing configurations outside of the framework
+The Kafka framework's core responsibility is to deploy and maintain the deployment of a Kafka cluster whose configuration has been specified.  In order to do this the framework makes the assumption that it has ownership of Broker configuration.  If an end-user makes modificiations to individual Brokers through out-of-band configuration operations the Framework will almost certainly override those modifications at a later time.  If a Broker crashes it will be restarted with the configuration known to the Scheduler, not one modified out-of-band.  If a configuration update is initiated, then during the process of the rolling update, all out-of-band modifications will be overwritten.
 
 ### Brokers
 
-**TODO** Max count (if any)
+The number of deployable Brokers is constrained by two factors.  First, Brokers have specified required resources, so Brokers may not be placed if the Mesos cluster lacks the requisite resources.  Second, the specified "PLACEMENT_STRATEGY" environment variable may affect how many Brokers may be created in a Kafka cluster.  By default the value is "ANY" so Brokers are placed anywhere and are only constrained by the resources of the cluster.  A second option is "NODE".  In this case only one Broker may be placed on a given Mesos Agent.
 
 ### Security
 
@@ -319,9 +341,14 @@ Increase the `BROKER_COUNT` value via Marathon. New brokers should start automat
 
 #### Remove Broker
 
-Broker removal is currently a manual process.
+Broker removal is currently a manual process.  The "BROKER_COUNT" environment variable should be set to the desired target count.  All Replicas should be moved off the Brokers which will be removed as a consequence of shrinking the cluster.  Then each Broker can be removed by performing the reschedule operation.  For example if resizing a cluster from 3 brokers to 2, the "BROKER_COUNT" should be set to 2 and then replicas should be moved off of the Broker with id 2 (ids start at 0).  Then the Broker should be removed with the reschedule command.
 
-**TODO**: Specify step-by-step for manually removing broker(s)
+``` bash
+$ dcos kafka broker reschedule 2
+[
+    "broker-2__b44b8d32-69e9-420b-aae2-59952dfaa8c2"
+]
+```
 
 #### List All Brokers
 

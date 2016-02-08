@@ -4,11 +4,13 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.apache.mesos.config.ConfigurationService;
+import org.apache.mesos.offer.AnyPlacementStrategy;
+import org.apache.mesos.offer.PlacementStrategy;
 
-public class PlacementStrategy {
+public class PlacementStrategyManager {
   private final static Log log = LogFactory.getLog(PlacementStrategy.class);
 
-  public static PlacementStrategyService getPlacementStrategyService(ConfigurationService config) {
+  public static PlacementStrategy getPlacementStrategy(ConfigurationService config) {
     String placementStrategy = config.get("PLACEMENT_STRATEGY");
 
     log.info("Using placement strategy: " + placementStrategy);
@@ -16,13 +18,13 @@ public class PlacementStrategy {
     switch (placementStrategy) {
       case "ANY":
         log.info("Returning ANY strategy");
-        return new AnyPlacementStrategyService();
+        return new AnyPlacementStrategy();
       case "NODE":
         log.info("Returning NODE strategy");
-        return new NodePlacementStrategyService(); 
+        return new NodePlacementStrategy(); 
       default:
         log.info("Returning DEFAULT strategy");
-        return new AnyPlacementStrategyService();
+        return new AnyPlacementStrategy();
     }
   }
 }

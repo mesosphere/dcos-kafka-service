@@ -94,7 +94,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     addObserver(planManager);
 
     planScheduler = new DefaultPlanScheduler(offerAccepter);
-    repairScheduler = new KafkaRepairScheduler(getOfferRequirementProvider(), offerAccepter);
+    repairScheduler = new KafkaRepairScheduler(configState, getOfferRequirementProvider(), offerAccepter);
   }
 
   private PlanStrategy getStrategy(Plan plan) {

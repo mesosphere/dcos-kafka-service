@@ -82,14 +82,12 @@ public class BrokerController {
 
   private Response killBrokers(List<String> taskIds, String reschedule) {
     try {
-      if (reschedule == null || reschedule == "false") {
-        KafkaScheduler.restartTasks(taskIds);
-      } else if (reschedule.equals("true")) {
+      boolean resched = Boolean.parseBoolean(reschedule);
+
+      if (resched) {
         KafkaScheduler.rescheduleTasks(taskIds);
       } else {
-        JSONObject failed = new JSONObject();
-        failed.put("Failed",  "'reschedule' = " + reschedule);
-        return Response.ok(failed.toString(), MediaType.APPLICATION_JSON).build();
+        KafkaScheduler.restartTasks(taskIds);
       }
 
       return Response.ok(new JSONArray(taskIds).toString(), MediaType.APPLICATION_JSON).build();

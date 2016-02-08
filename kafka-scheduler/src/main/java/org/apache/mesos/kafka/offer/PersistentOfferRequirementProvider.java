@@ -74,7 +74,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     KafkaConfigService config = configState.fetch(configName); 
 
     String brokerName = taskInfo.getName();
-    Integer brokerId = nameToId(brokerName);
+    Integer brokerId = OfferUtils.nameToId(brokerName);
     String taskId = taskInfo.getTaskId().getValue();
     TaskInfo newTaskInfo = getTaskInfo(configName, config, brokerId, brokerName, taskId);
     newTaskInfo = TaskInfo.newBuilder(newTaskInfo).setTaskId(taskInfo.getTaskId()).build();
@@ -91,7 +91,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
   private OfferRequirement getUpgradeOfferRequirement(TaskInfo taskInfo) {
     log.info("Getting upgrade to pv OfferRequirement");
 
-    Integer brokerId = nameToId(taskInfo.getName());
+    Integer brokerId = OfferUtils.nameToId(taskInfo.getName());
 
     String configName = OfferUtils.getConfigName(taskInfo);
     KafkaConfigService config = getConfigService(taskInfo);
@@ -141,11 +141,6 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
   private KafkaConfigService getConfigService(TaskInfo taskInfo) {
     String configName = OfferUtils.getConfigName(taskInfo);
     return configState.fetch(configName);
-  }
-
-  private Integer nameToId(String brokerName) {
-    String id = brokerName.substring(brokerName.lastIndexOf("-") + 1);
-    return Integer.parseInt(id);
   }
 
   private boolean hasVolume(TaskInfo taskInfo) {

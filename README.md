@@ -103,7 +103,27 @@ $ dcos kafka topic create topic1 --partitions 3 --replication 3
 
 - Step 4. Read and write data to a topic.
 
-**TODO** a couple one-liners using e.g., `bin/kafka-console-[producer|consumer].sh` to send/get data. see also [Connecting clients](#connecting-clients)
+``` bash
+$ dcos kafka connection
+{
+    "broker_list_convenience": "--broker-list ip-10-0-3-230.us-west-2.compute.internal:9092, ip-10-0-3-231.us-west-2.compute.internal:9093",
+    "brokers": [
+        "ip-10-0-3-230.us-west-2.compute.internal:9092",
+        "ip-10-0-3-231.us-west-2.compute.internal:9093"
+    ],
+    "zookeeper": "master.mesos:2181/kafka0",
+    "zookeeper_convenience": "--zookeeper master.mesos:2181/kafka0"
+}
+$ dcos node ssh --master-proxy --master
+core@ip-10-0-6-153 ~ $ docker run -it mesosphere/kafka-client
+root@7bc0e88cfa52:/kafka_2.10-0.8.2.2/bin# ./kafka-console-producer.sh --broker-list ip-10-0-3-230.us-west-2.compute.internal:9092 --topic test
+This is a message
+This is another message
+
+root@7bc0e88cfa52:/kafka_2.10-0.8.2.2/bin# ./kafka-console-consumer.sh --zookeeper master.mesos:2181/kafka0 --topic test --from-beginning
+This is a message
+This is another message
+```
 
 - Step 5. Mark a topic for deletion.
 

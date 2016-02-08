@@ -31,6 +31,7 @@ import org.apache.mesos.offer.OfferRecommendation;
 import org.apache.mesos.offer.OfferRequirement;
 import org.apache.mesos.offer.OperationRecorder;
 import org.apache.mesos.reconciliation.Reconciler;
+import org.apache.mesos.scheduler.plan.Block;
 import org.apache.mesos.scheduler.plan.DefaultPlanScheduler;
 import org.apache.mesos.scheduler.plan.DefaultPlanManager;
 import org.apache.mesos.scheduler.plan.Plan;
@@ -92,8 +93,8 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     planManager = new DefaultPlanManager(getStrategy(plan));
     addObserver(planManager);
 
-    planScheduler = new DefaultPlanScheduler(planManager, offerAccepter);
-    repairScheduler = new KafkaRepairScheduler(planManager, getOfferRequirementProvider(), offerAccepter);
+    planScheduler = new DefaultPlanScheduler(offerAccepter);
+    repairScheduler = new KafkaRepairScheduler(getOfferRequirementProvider(), offerAccepter);
   }
 
   private PlanStrategy getStrategy(Plan plan) {
@@ -232,9 +233,10 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     List<OfferID> acceptedOffers = new ArrayList<OfferID>();
 
     if (reconciler.complete()) {
-      acceptedOffers = planScheduler.resourceOffers(driver, offers);
+      Block block = planManager.getCurrentBlock();
+      acceptedOffers = planScheduler.resourceOffers(driver, offers, block);
       List<Offer> unacceptedOffers = filterAcceptedOffers(offers, acceptedOffers);
-      acceptedOffers.addAll(repairScheduler.resourceOffers(driver, unacceptedOffers));
+      acceptedOffers.addAll(repairScheduler.resourceOffers(driver, unacceptedOffers, block));
     }
 
     declineOffers(driver, acceptedOffers, offers);

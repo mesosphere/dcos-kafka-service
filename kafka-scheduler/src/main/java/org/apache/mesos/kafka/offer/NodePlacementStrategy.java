@@ -7,11 +7,12 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.apache.mesos.kafka.state.KafkaStateService;
+import org.apache.mesos.offer.PlacementStrategy;
 import org.apache.mesos.Protos.SlaveID;
 import org.apache.mesos.Protos.TaskInfo;
 
-public class NodePlacementStrategyService implements PlacementStrategyService {
-  private final Log log = LogFactory.getLog(NodePlacementStrategyService.class);
+public class NodePlacementStrategy implements PlacementStrategy {
+  private final Log log = LogFactory.getLog(NodePlacementStrategy.class);
   private KafkaStateService state = KafkaStateService.getStateService();
 
   public List<SlaveID> getAgentsToAvoid(TaskInfo taskInfo) {

@@ -18,7 +18,6 @@ import org.apache.mesos.offer.OfferEvaluator;
 import org.apache.mesos.offer.OfferRecommendation;
 import org.apache.mesos.offer.OfferRequirement;
 import org.apache.mesos.scheduler.plan.Block;
-import org.apache.mesos.scheduler.plan.PlanManager;
 
 import org.apache.mesos.kafka.config.KafkaConfigState;
 import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
@@ -28,25 +27,22 @@ public class KafkaRepairScheduler {
   private final Log log = LogFactory.getLog(KafkaRepairScheduler.class);
 
   private KafkaStateService state = null;
-  private PlanManager planManager = null;
 
   private OfferAccepter offerAccepter = null;
   private KafkaOfferRequirementProvider offerReqProvider = null;
 
   public KafkaRepairScheduler(
-      PlanManager planManager,
       KafkaOfferRequirementProvider offerReqProvider,
       OfferAccepter offerAccepter) {
 
     state = KafkaStateService.getStateService();
-    this.planManager = planManager;
     this.offerReqProvider = offerReqProvider;
     this.offerAccepter = offerAccepter;
   }
 
-  public List<OfferID> resourceOffers(SchedulerDriver driver, List<Offer> offers) {
+  public List<OfferID> resourceOffers(SchedulerDriver driver, List<Offer> offers, Block block) {
     List<OfferID> acceptedOffers = new ArrayList<OfferID>();
-    List<TaskInfo> terminatedTasks = getTerminatedTasks();
+    List<TaskInfo> terminatedTasks = getTerminatedTasks(block);
 
     if (terminatedTasks.size() > 0) {
       TaskInfo terminatedTask = terminatedTasks.get(new Random().nextInt(terminatedTasks.size()));
@@ -59,16 +55,15 @@ public class KafkaRepairScheduler {
     return acceptedOffers;
   }
 
-  private List<TaskInfo> getTerminatedTasks() {
+  private List<TaskInfo> getTerminatedTasks(Block block) {
     List<TaskInfo> filteredTerminatedTasks = new ArrayList<TaskInfo>();
 
     try {
-      Block currBlock = planManager.getCurrentBlock();
-      if (currBlock == null) {
+      if (block == null) {
         return state.getTerminatedTaskInfos();
       }
 
-      String brokerName = currBlock.getName();
+      String brokerName = block.getName();
       for (TaskInfo taskInfo : state.getTerminatedTaskInfos()) {
         if (!taskInfo.getName().equals(brokerName)) {
           filteredTerminatedTasks.add(taskInfo);

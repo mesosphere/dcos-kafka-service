@@ -16,6 +16,7 @@ import org.apache.mesos.kafka.config.KafkaConfigState;
 import org.apache.mesos.kafka.state.KafkaStateService;
 import org.apache.mesos.offer.OfferRequirement;
 import org.apache.mesos.offer.OfferRequirement.VolumeMode;
+import org.apache.mesos.offer.PlacementStrategy;
 import org.apache.mesos.offer.ResourceUtils;
 import org.apache.mesos.protobuf.CommandInfoBuilder;
 import org.apache.mesos.protobuf.LabelBuilder;
@@ -47,12 +48,12 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
       return getExistingOfferRequirement(taskInfo);
     } else {
       KafkaConfigService config = getConfigService(taskInfo);
-      PlacementStrategyService placementSvc = PlacementStrategy.getPlacementStrategyService(config);
+      PlacementStrategy placementStrategy = PlacementStrategyManager.getPlacementStrategy(config);
 
       return new OfferRequirement(
           Arrays.asList(taskInfo),
-          placementSvc.getAgentsToAvoid(taskInfo),
-          placementSvc.getAgentsToColocate(taskInfo));
+          placementStrategy.getAgentsToAvoid(taskInfo),
+          placementStrategy.getAgentsToColocate(taskInfo));
     }
   }
 
@@ -106,10 +107,10 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     log.info("Getting create OfferRequirement");
 
     KafkaConfigService config = getConfigService(taskInfo);
-    PlacementStrategyService placementSvc = PlacementStrategy.getPlacementStrategyService(config);
+    PlacementStrategy placementStrategy = PlacementStrategyManager.getPlacementStrategy(config);
 
-    List<SlaveID> avoidAgents = placementSvc.getAgentsToAvoid(taskInfo);
-    List<SlaveID> colocateAgents = placementSvc.getAgentsToColocate(taskInfo);
+    List<SlaveID> avoidAgents = placementStrategy.getAgentsToAvoid(taskInfo);
+    List<SlaveID> colocateAgents = placementStrategy.getAgentsToColocate(taskInfo);
 
     log.info("Avoiding agents       : " + avoidAgents);
     log.info("Colocating with agents: " + colocateAgents);

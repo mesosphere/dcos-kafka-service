@@ -11,6 +11,7 @@ import org.apache.mesos.config.ConfigurationService;
 import org.apache.mesos.kafka.config.KafkaConfigService;
 import org.apache.mesos.kafka.config.KafkaConfigState;
 import org.apache.mesos.offer.OfferRequirement;
+import org.apache.mesos.offer.PlacementStrategy;
 import org.apache.mesos.protobuf.CommandInfoBuilder;
 import org.apache.mesos.protobuf.LabelBuilder;
 import org.apache.mesos.protobuf.ResourceBuilder;
@@ -28,23 +29,23 @@ public class SandboxOfferRequirementProvider implements KafkaOfferRequirementPro
 
   public OfferRequirement getNewOfferRequirement(String configName, int brokerId) {
     KafkaConfigService config = configState.fetch(configName);
-    PlacementStrategyService placementSvc = PlacementStrategy.getPlacementStrategyService(config);
+    PlacementStrategy placementStrategy = PlacementStrategyManager.getPlacementStrategy(config);
     TaskInfo taskInfo = getTaskInfo(configName, config, brokerId);
 
     return new OfferRequirement(
         Arrays.asList(taskInfo),
-        placementSvc.getAgentsToAvoid(taskInfo),
-        placementSvc.getAgentsToColocate(taskInfo));
+        placementStrategy.getAgentsToAvoid(taskInfo),
+        placementStrategy.getAgentsToColocate(taskInfo));
   }
 
   public OfferRequirement getReplacementOfferRequirement(TaskInfo taskInfo) {
     KafkaConfigService config = getConfigService(taskInfo);
-    PlacementStrategyService placementSvc = PlacementStrategy.getPlacementStrategyService(config);
+    PlacementStrategy placementStrategy = PlacementStrategyManager.getPlacementStrategy(config);
 
     return new OfferRequirement(
         Arrays.asList(taskInfo),
-        placementSvc.getAgentsToAvoid(taskInfo),
-        placementSvc.getAgentsToColocate(taskInfo));
+        placementStrategy.getAgentsToAvoid(taskInfo),
+        placementStrategy.getAgentsToColocate(taskInfo));
   }
 
   public OfferRequirement getUpdateOfferRequirement(String configName, TaskInfo taskInfo) {

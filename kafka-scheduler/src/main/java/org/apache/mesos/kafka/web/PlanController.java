@@ -35,12 +35,19 @@ public class PlanController {
   private PlanManager planManager = KafkaScheduler.getPlanManager();
 
   @GET
-  @Path("/summary")
+  @Path("/status")
   public Response getPlanSummary() {
     try {
       Plan plan = planManager.getPlan();
       Phase phase = plan.getCurrentPhase();
       Block block = null;
+
+      log.info("Building plan obj");
+      JSONObject planObj = new JSONObject();
+      if (plan != null) {
+        planObj.put("phase_count", plan.getPhases().size());
+        planObj.put("status", plan.getStatus());
+      }
 
       log.info("Building phase obj");
       JSONObject phaseObj = new JSONObject();
@@ -48,7 +55,6 @@ public class PlanController {
         block = phase.getCurrentBlock();
         phaseObj.put("name", phase.getName());
         phaseObj.put("index", phase.getId());
-        phaseObj.put("total", plan.getPhases().size());
         phaseObj.put("status", phase.getStatus());
       }
 
@@ -57,19 +63,18 @@ public class PlanController {
       if (block != null) {
         blockObj.put("name", block.getName());
         blockObj.put("index", block.getId());
-        blockObj.put("total", phase.getBlocks().size());
         blockObj.put("status", block.getStatus());
       }
 
-      log.info("Building summary obj");
-      JSONObject summaryObj = new JSONObject();
-      summaryObj.put("plan_status", plan.getStatus());
-      summaryObj.put("phase", phaseObj);
-      summaryObj.put("block", blockObj);
+      log.info("Building status obj");
+      JSONObject statusObj = new JSONObject();
+      statusObj.put("plan", planObj);
+      statusObj.put("phase", phaseObj);
+      statusObj.put("block", blockObj);
 
-      return Response.ok(summaryObj.toString(), MediaType.APPLICATION_JSON).build();
+      return Response.ok(statusObj.toString(), MediaType.APPLICATION_JSON).build();
     } catch (Exception ex) {
-      log.error("Failed to fetch plan summary with exception: " + ex);
+      log.error("Failed to fetch plan status with exception: " + ex);
       return Response.serverError().build();
     }
   }
@@ -104,6 +109,37 @@ public class PlanController {
       }
     } catch (Exception ex) {
       log.error("Failed to fetch blocks for phase: " + phaseId + " with exception: " + ex);
+      return Response.serverError().build();
+    }
+  }
+
+  @PUT
+  @Path("/phases/{phaseId}/{blockId}")
+  public Response listBlocks(
+      @PathParam("phaseId") String phaseId,
+      @PathParam("blockId") String blockId,
+      @QueryParam("cmd") String cmd) {
+
+    try {
+      JSONObject obj = new JSONObject();
+
+      int phaseIndex = Integer.parseInt(phaseId);
+      int blockIndex = Integer.parseInt(blockId);
+
+      switch(cmd) {
+        case "restart":
+          planManager.restart(phaseIndex, blockIndex);
+          obj.put("Result", "Received cmd: " + cmd);
+          break;
+        default:
+          log.error("Unrecognized cmd: " + cmd);
+          return Response.serverError().build();
+      }
+
+      return Response.ok(obj.toString(), MediaType.APPLICATION_JSON).build();
+
+    } catch (Exception ex) {
+      log.error("Failed to handle block command with exception: " + ex);
       return Response.serverError().build();
     }
   }

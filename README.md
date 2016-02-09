@@ -1118,7 +1118,7 @@ HTTP/1.1 200 OK
 ### Configurations
 
 #### Persistent Volumes
-Kafka does not use the persistent volume feature of Mesos by default. Once this feature is enabled, brokers are tied to the node on which their persistent volumes lie, so changes to the "placement-strategy" configuration option will no longer have an effect. Furthermore, once a persistent volume is created for a broker, its disk size is no longer runtime configurable. You can enable persistent volumes by setting the `BROKER_PV` environment variable to `true`.
+Kafka does not use the persistent volume feature of Mesos by default. Once this feature is enabled, brokers are tied to the node on which their persistent volumes lie, so changes to the "placement-strategy" configuration option will no longer have an effect. Furthermore, once a persistent volume is created for a broker, its disk size is no longer runtime configurable.
 
 #### Pitfalls of managing configurations outside of the framework
 The Kafka framework's core responsibility is to deploy and maintain the deployment of a Kafka cluster whose configuration has been specified. In order to do this, the framework assumes that it owns the broker configuration. If an end-user makes modifications to individual brokers through out-of-band configuration operations, the framework may later override those modifications. If a broker crashes <!-- for example? -->, it will restart with the configuration known to the scheduler, not one modified out-of-band. In addition, if a configuration update is initiated, all out-of-band modifications will be overwritten during the rolling update process.

@@ -529,8 +529,7 @@ $ dcos package uninstall --app-id=kafka0 kafka
 
 The instance will still be present in zookeeper at `/[framework_name]`, e.g., `/kafka0`. To completely clear the configuration, remove the zookeeper node.
 
-## Troubleshooting
-<!-- I changed this from "Error Handling," but I will change it back if we're actually talking about error handling here, not troubleshooting -->
+<!--  ## Troubleshooting
 
 ### Configuration Update Errors
 
@@ -538,7 +537,7 @@ The instance will still be present in zookeeper at `/[framework_name]`, e.g., `/
 
 **TODO** How to handle errors when applying configuration to a running service
 
-<!-- ### Software Maintenance Errors
+### Software Maintenance Errors
 
 ### Replacing a Permanently Failed Server
 

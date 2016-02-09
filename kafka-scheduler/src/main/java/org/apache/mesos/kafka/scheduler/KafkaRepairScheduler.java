@@ -13,6 +13,8 @@ import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.Protos.TaskID;
 import org.apache.mesos.SchedulerDriver;
 
+import org.apache.mesos.kafka.config.KafkaConfigService;
+import org.apache.mesos.kafka.offer.OfferUtils;
 import org.apache.mesos.offer.OfferAccepter;
 import org.apache.mesos.offer.OfferEvaluator;
 import org.apache.mesos.offer.OfferRecommendation;
@@ -27,15 +29,18 @@ public class KafkaRepairScheduler {
   private final Log log = LogFactory.getLog(KafkaRepairScheduler.class);
 
   private KafkaStateService state = null;
+  private KafkaConfigState configState;
 
   private OfferAccepter offerAccepter = null;
   private KafkaOfferRequirementProvider offerReqProvider = null;
 
   public KafkaRepairScheduler(
+      KafkaConfigState configState,
       KafkaOfferRequirementProvider offerReqProvider,
       OfferAccepter offerAccepter) {
 
-    state = KafkaStateService.getStateService();
+    this.configState = configState;
+    this.state = KafkaStateService.getStateService();
     this.offerReqProvider = offerReqProvider;
     this.offerAccepter = offerAccepter;
   }
@@ -44,9 +49,22 @@ public class KafkaRepairScheduler {
     List<OfferID> acceptedOffers = new ArrayList<OfferID>();
     List<TaskInfo> terminatedTasks = getTerminatedTasks(block);
 
+    OfferRequirement offerReq = null;
+
     if (terminatedTasks.size() > 0) {
       TaskInfo terminatedTask = terminatedTasks.get(new Random().nextInt(terminatedTasks.size()));
-      OfferRequirement offerReq =  offerReqProvider.getReplacementOfferRequirement(terminatedTask);
+      offerReq = offerReqProvider.getReplacementOfferRequirement(terminatedTask);
+    } else {
+      List<Integer> missingBrokerIds = getMissingBrokerIds(block);
+      log.info("Missing brokerIds: " + missingBrokerIds);
+      if (missingBrokerIds.size() > 0) {
+        Integer brokerId = missingBrokerIds.get(new Random().nextInt(missingBrokerIds.size()));
+        String targetConfigName = configState.getTargetName();
+        offerReq = offerReqProvider.getNewOfferRequirement(targetConfigName, brokerId);
+      }
+    }
+
+    if (offerReq != null) {
       OfferEvaluator offerEvaluator = new OfferEvaluator(offerReq);
       List<OfferRecommendation> recommendations = offerEvaluator.evaluate(offers);
       acceptedOffers = offerAccepter.accept(driver, recommendations);
@@ -74,5 +92,55 @@ public class KafkaRepairScheduler {
     }
 
     return filteredTerminatedTasks;
+  }
+
+  private List<Integer> getMissingBrokerIds(Block block) {
+    List<Integer> missingBrokerIds = new ArrayList<Integer>();
+    Integer lastExpectedBrokerId = getLastExpectedBrokerId(block);
+
+    if (!(lastExpectedBrokerId >= 0)) {
+      return missingBrokerIds;
+    }
+
+    List<TaskInfo> brokerTasks = null;
+    try {
+      brokerTasks = state.getTaskInfos();
+    } catch (Exception ex) {
+      log.error("Failed to fetch TaskInfos with exception: " + ex);
+      return missingBrokerIds;
+    }
+
+    for (Integer i=0; i<= lastExpectedBrokerId; i++) {
+      if (!brokerExists(brokerTasks, i) && i != block.getId()) {
+        missingBrokerIds.add(i);
+      }
+    }
+
+    return missingBrokerIds;
+  }
+
+  private boolean brokerExists(List<TaskInfo> brokerTasks, int brokerId) {
+    String brokerName = OfferUtils.idToName(brokerId);
+
+    for (TaskInfo brokerTask : brokerTasks) {
+      if (brokerTask.getName().equals(brokerName)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  private Integer getLastExpectedBrokerId(Block block) {
+    if (block == null) {
+      try {
+        return state.getTaskInfos().size() - 1;
+      } catch (Exception ex) {
+        log.error("Failed to fetch TaskInfos with exception: " + ex);
+        return -1;
+      }
+    } else {
+      return OfferUtils.nameToId(block.getName()) - 1;
+    }
   }
 }

@@ -61,11 +61,12 @@ public class KafkaBlock implements Block {
     }
   }
 
-  private void setStatus(Status newStatus) {
+  public Status setStatus(Status newStatus) {
     Status oldStatus = status;
     status = newStatus;
 
     log.info(getName() + ": changing status from: " + oldStatus + " to: " + status);
+    return status;
   }
 
   private TaskInfo getTaskInfo() {
@@ -103,13 +104,23 @@ public class KafkaBlock implements Block {
   public OfferRequirement start() {
     log.info("Starting block: " + getName());
 
-    if (taskIsRunning()) {
+    if (taskIsRunning() || taskIsStaging()) {
       KafkaScheduler.restartTasks(taskIdsToStrings(getUpdateIds()));
       return null;
     }
 
     setStatus(Status.InProgress);
-    return getOfferRequirement();
+    OfferRequirement offerReq = getOfferRequirement();
+    setPendingTasks(offerReq);
+    return offerReq;
+  }
+
+  private void setPendingTasks(OfferRequirement offerReq) {
+    pendingTasks = new ArrayList<TaskID>();
+
+    for (TaskInfo taskInfo : offerReq.getTaskInfos()) {
+      pendingTasks.add(taskInfo.getTaskId());
+    }
   }
 
   private List<String> taskIdsToStrings(List<TaskID> taskIds) {
@@ -134,28 +145,44 @@ public class KafkaBlock implements Block {
 
   public void update(TaskStatus taskStatus) {
     synchronized(taskLock) {
-      if (!taskStatus.getState().equals(TaskState.TASK_RUNNING) ||
-          isPending()) {
+      log.info(getName() + " has pending tasks: " + pendingTasks);
+
+      if (!isRelevantStatus(taskStatus)) {
+        log.warn("Received irrelevant TaskStatus: " + taskStatus);
         return;
       }
 
-      List<TaskID> updatedPendingTasks = new ArrayList<TaskID>();
-
-      for (TaskID pendingTaskId : pendingTasks) {
-        if (!taskStatus.getTaskId().equals(pendingTaskId)) {
-          updatedPendingTasks.add(pendingTaskId);
+      if (taskStatus.getState().equals(TaskState.TASK_RUNNING)) {
+        List<TaskID> updatedPendingTasks = new ArrayList<TaskID>();
+        for (TaskID pendingTaskId : pendingTasks) {
+          if (!taskStatus.getTaskId().equals(pendingTaskId)) {
+            updatedPendingTasks.add(pendingTaskId);
+          }
         }
-      }
 
-      pendingTasks = updatedPendingTasks;
-      log.info(getName() + " has pending tasks: " + pendingTasks);
+        pendingTasks = updatedPendingTasks;
+      } else if (isInProgress() && isTerminalState(taskStatus)) {
+        log.info("Received terminal while InProgress TaskStatus: " + taskStatus);
+        setStatus(Status.Pending);
+        return;
+      } else {
+        log.warn("TaskStatus with no effect encountered: " + taskStatus);
+      }
 
       if (pendingTasks.size() == 0) {
         setStatus(Status.Complete);
-      } else {
-        setStatus(Status.Pending);
       }
     }
+  }
+
+  public boolean isRelevantStatus(TaskStatus taskStatus) {
+    for (TaskID pendingTaskId : pendingTasks) {
+      if (taskStatus.getTaskId().equals(pendingTaskId)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   public boolean isPending() {
@@ -209,6 +236,14 @@ public class KafkaBlock implements Block {
 
   public String getName() {
     return getBrokerName();
+  }
+
+  private boolean isTerminalState(TaskStatus taskStatus) {
+    return taskStatus.getState().equals(TaskState.TASK_FAILED)
+      || taskStatus.getState().equals(TaskState.TASK_FINISHED)
+      || taskStatus.getState().equals(TaskState.TASK_KILLED)
+      || taskStatus.getState().equals(TaskState.TASK_LOST)
+      || taskStatus.getState().equals(TaskState.TASK_ERROR);
   }
 }
 

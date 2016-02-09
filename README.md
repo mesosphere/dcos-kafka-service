@@ -234,7 +234,7 @@ The alternative is the `STAGE` strategy.  This strategy will cause two mandatory
 
 ### Connecting Clients
 
-The following code connects to a DCOS-hosted Kafka instance using `bin/kafka-console-producer.sh` and `bin/kafka-console-consumer.sh` as an example: <!-- what role are these scripts playing here? -->
+The following code connects to a DCOS-hosted Kafka instance using `bin/kafka-console-producer.sh` and `bin/kafka-console-consumer.sh` as an example:
 
 ``` bash
  $ dcos kafka connection
@@ -495,14 +495,14 @@ Once the cluster is already up and running, you can customize it in-place. The K
 1. View your Marathon dashboard at `http://$DCOS_URI/marathon`
 2. In the list of `Applications`, click the name of the Kafka framework to be updated.
 3. Within the Kafka instance details view, click the `Configuration` tab, then click `Edit`.
-4. In the dialog box that appears, expand the `Environment Variables` section and update any field(s) to their desired value(s). For example, to [increase the number of Brokers](#broker-count), edit the value for `BROKER_COUNT`. Do not edit the value for `FRAMEWORK_NAME`. <!-- what happens if you do that? -->
+4. In the dialog box that appears, expand the `Environment Variables` section and update any field(s) to their desired value(s). For example, to [increase the number of Brokers](#broker-count), edit the value for `BROKER_COUNT`. Do not edit the value for `FRAMEWORK_NAME`.
 5. Click `Change and deploy configuration` to apply any changes and cleanly reload the Kafka framework scheduler. The Kafka cluster itself will persist across the change.
 
 See [Configuration Options](#configuration-options) for a list of fields that can be customized via Marathon while the Kafka cluster is running.
 
 #### Add a Broker
 
-Increase the `BROKER_COUNT` value via Marathon. New brokers should start automatically. <!-- so you wouldn't use the API to do this? If so, I will move this to Management -->
+Increase the `BROKER_COUNT` value via Marathon. New brokers should start automatically.
 
 #### Remove a Broker
 
@@ -1121,7 +1121,7 @@ HTTP/1.1 200 OK
 Kafka does not use the persistent volume feature of Mesos by default. Once this feature is enabled, brokers are tied to the node on which their persistent volumes lie, so changes to the "placement-strategy" configuration option will no longer have an effect. Furthermore, once a persistent volume is created for a broker, its disk size is no longer runtime configurable.
 
 #### Pitfalls of managing configurations outside of the framework
-The Kafka framework's core responsibility is to deploy and maintain the deployment of a Kafka cluster whose configuration has been specified. In order to do this, the framework assumes that it owns the broker configuration. If an end-user makes modifications to individual brokers through out-of-band configuration operations, the framework may later override those modifications. If a broker crashes <!-- for example? -->, it will restart with the configuration known to the scheduler, not one modified out-of-band. In addition, if a configuration update is initiated, all out-of-band modifications will be overwritten during the rolling update process.
+The Kafka framework's core responsibility is to deploy and maintain the deployment of a Kafka cluster whose configuration has been specified. In order to do this, the framework assumes that it owns the broker configuration. If an end-user makes modifications to individual brokers through out-of-band configuration operations, the framework may later override those modifications. If a broker crashes, it will restart with the configuration known to the scheduler, not one modified out-of-band. In addition, if a configuration update is initiated, all out-of-band modifications will be overwritten during the rolling update process.
 
 ### Brokers
 The number of deployable Brokers is constrained by two factors.  First, Brokers have specified required resources, so Brokers may not be placed if the Mesos cluster lacks the requisite resources.  Second, the specified "PLACEMENT_STRATEGY" environment variable may affect how many Brokers may be created in a Kafka cluster.  By default the value is "ANY" so Brokers are placed anywhere and are only constrained by the resources of the cluster.  A second option is "NODE".  In this case only one Broker may be placed on a given Mesos Agent.

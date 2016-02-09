@@ -64,7 +64,8 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
 
     String brokerName = "broker-" + brokerId;
     String taskId = brokerName + "__" + UUID.randomUUID();
-    TaskInfo taskInfo = getTaskInfo(configName, config, brokerId, brokerName, taskId);
+    String persistenceId = UUID.randomUUID().toString();
+    TaskInfo taskInfo = getTaskInfo(configName, config, persistenceId, brokerId, brokerName, taskId);
     return getCreateOfferRequirement(taskInfo);
   }
 
@@ -76,8 +77,8 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     String brokerName = taskInfo.getName();
     Integer brokerId = OfferUtils.nameToId(brokerName);
     String taskId = taskInfo.getTaskId().getValue();
-    TaskInfo newTaskInfo = getTaskInfo(configName, config, brokerId, brokerName, taskId);
-    newTaskInfo = TaskInfo.newBuilder(newTaskInfo).setTaskId(taskInfo.getTaskId()).build();
+    String persistenceId = OfferUtils.getPersistenceId(taskInfo);
+    TaskInfo newTaskInfo = getTaskInfo(configName, config, persistenceId, brokerId, brokerName, taskId);
 
     log.info("newTaskInfo: " + newTaskInfo);
 
@@ -98,7 +99,8 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
 
     String brokerName = taskInfo.getName();
     String taskId = taskInfo.getTaskId().getValue();
-    TaskInfo createTaskInfo = getTaskInfo(configName, config, brokerId, brokerName, taskId);
+    String persistenceId = UUID.randomUUID().toString();
+    TaskInfo createTaskInfo = getTaskInfo(configName, config, persistenceId, brokerId, brokerName, taskId);
 
     return getCreateOfferRequirement(createTaskInfo);
   }
@@ -156,7 +158,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     return config.get("PRINCIPAL");
   }
 
-  private TaskInfo getTaskInfo(String configName, ConfigurationService config, int brokerId, String brokerName, String taskId) {
+  private TaskInfo getTaskInfo(String configName, ConfigurationService config, String persistenceId, int brokerId, String brokerName, String taskId) {
     int port = 9092 + brokerId;
 
     List<String> commands = new ArrayList<>();
@@ -189,7 +191,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     return new TaskInfoBuilder(taskId, brokerName, "" /* slaveId */)
         .addResource(ResourceBuilder.reservedCpus(cpus, role, principal))
         .addResource(ResourceBuilder.reservedMem(mem, role, principal))
-        .addResource(getVolumeResource(disk, role, principal, containerPath))
+        .addResource(getVolumeResource(disk, role, principal, containerPath, persistenceId))
         .addResource(ResourceBuilder.ports(port, port))
         .setCommand(new CommandInfoBuilder()
           .addUri(config.get("KAFKA_URI"))
@@ -201,8 +203,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
         .build();
   }
 
-  private Resource getVolumeResource(double disk, String role, String principal, String containerPath) {
-    String persistenceId = UUID.randomUUID().toString();
+  private Resource getVolumeResource(double disk, String role, String principal, String containerPath, String persistenceId) {
     DiskInfo diskInfo = createDiskInfo(persistenceId, containerPath);
 
     Resource resource = ResourceBuilder.reservedDisk(disk, role, principal);

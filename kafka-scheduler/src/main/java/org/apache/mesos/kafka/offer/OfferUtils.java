@@ -11,6 +11,9 @@ import org.apache.mesos.kafka.state.KafkaStateService;
 import org.apache.mesos.offer.OfferRequirement;
 
 import org.apache.mesos.Protos.Label;
+import org.apache.mesos.Protos.Resource;
+import org.apache.mesos.Protos.Resource.DiskInfo;
+import org.apache.mesos.Protos.Resource.DiskInfo.Persistence;
 import org.apache.mesos.Protos.TaskInfo;
 
 public class OfferUtils {
@@ -55,5 +58,19 @@ public class OfferUtils {
 
   public static String idToName(Integer brokerId) {
     return "broker-" + Integer.toString(brokerId);
+  }
+
+  public static String getPersistenceId(TaskInfo taskInfo) {
+    for (Resource resource : taskInfo.getResourcesList()) {
+      if (resource.getName().equals("disk")) {
+        DiskInfo diskInfo = resource.getDisk();
+        if (diskInfo != null) {
+          Persistence persistence = diskInfo.getPersistence();
+          return persistence.getId();
+        }
+      }
+    }
+
+    return null;
   }
 }

@@ -1,0 +1,7 @@
+{
+  "kafka": {
+    "framework-name": "kafka0",
+    "pv": true,
+    "placement-strategy": "NODE"
+  }
+}

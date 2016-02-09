@@ -111,7 +111,7 @@ public class KafkaRepairScheduler {
     }
 
     for (Integer i=0; i<= lastExpectedBrokerId; i++) {
-      if (!brokerExists(brokerTasks, i)) {
+      if (!brokerExists(brokerTasks, i) && i != block.getId()) {
         missingBrokerIds.add(i);
       }
     }
@@ -134,8 +134,7 @@ public class KafkaRepairScheduler {
   private Integer getLastExpectedBrokerId(Block block) {
     if (block == null) {
       try {
-        KafkaConfigService targetConfig = configState.getTargetConfig();
-        return targetConfig.getBrokerCount() - 1;
+        return state.getTaskInfos().size() - 1;
       } catch (Exception ex) {
         log.error("Failed to fetch TaskInfos with exception: " + ex);
         return -1;

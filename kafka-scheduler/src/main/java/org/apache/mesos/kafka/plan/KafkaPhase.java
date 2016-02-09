@@ -73,7 +73,13 @@ public class KafkaPhase implements Phase {
   }
 
   public Status getStatus() {
-    return getCurrentBlock().getStatus();
+    for (Block block : getBlocks()) {
+      if (!block.getStatus().equals(Status.Complete)) {
+        return block.getStatus();
+      }
+    }
+
+    return Status.Complete;
   }
 }
 

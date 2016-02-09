@@ -40,23 +40,30 @@ public class PlanController {
     try {
       Plan plan = planManager.getPlan();
       Phase phase = plan.getCurrentPhase();
-      Block block = phase.getCurrentBlock();
+      Block block = null;
 
-      int phaseCount = plan.getPhases().size();
-      int blockCount = phase.getBlocks().size();
-
+      log.info("Building phase obj");
       JSONObject phaseObj = new JSONObject();
-      phaseObj.put("name", phase.getName());
-      phaseObj.put("index", phase.getId());
+      if (phase != null) {
+        block = phase.getCurrentBlock();
+        phaseObj.put("name", phase.getName());
+        phaseObj.put("index", phase.getId());
+        phaseObj.put("total", plan.getPhases().size());
+        phaseObj.put("status", phase.getStatus());
+      }
 
+      log.info("Building block obj");
       JSONObject blockObj = new JSONObject();
-      blockObj.put("name", block.getName());
-      blockObj.put("index", block.getId());
+      if (block != null) {
+        blockObj.put("name", block.getName());
+        blockObj.put("index", block.getId());
+        blockObj.put("total", phase.getBlocks().size());
+        blockObj.put("status", block.getStatus());
+      }
 
+      log.info("Building summary obj");
       JSONObject summaryObj = new JSONObject();
-      summaryObj.put("status", block.getStatus());
-      summaryObj.put("phase_count", phaseCount);
-      summaryObj.put("block_count", blockCount);
+      summaryObj.put("plan_status", plan.getStatus());
       summaryObj.put("phase", phaseObj);
       summaryObj.put("block", blockObj);
 

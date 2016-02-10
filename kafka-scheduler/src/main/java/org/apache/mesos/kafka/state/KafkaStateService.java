@@ -7,6 +7,7 @@ import org.apache.curator.framework.CuratorFramework;
 
 import org.apache.mesos.config.ConfigurationService;
 import org.apache.mesos.kafka.config.KafkaConfigService;
+import org.apache.mesos.kafka.offer.OfferUtils;
 
 import org.apache.mesos.Protos.FrameworkID;
 import org.apache.mesos.Protos.TaskID;
@@ -154,7 +155,7 @@ public class KafkaStateService implements Observer {
   }
 
   public String getTaskIdForBroker(Integer brokerId) throws Exception {
-    String brokerName = "broker-" + brokerId;
+    String brokerName = OfferUtils.idToName(brokerId);
 
     for (TaskInfo taskInfo : getTaskInfos()) {
       if (taskInfo.getName().equals(brokerName)) {

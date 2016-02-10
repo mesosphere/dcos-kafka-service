@@ -16,6 +16,7 @@ import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.PersistentOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.PersistentOperationRecorder;
 import org.apache.mesos.kafka.offer.SandboxOfferRequirementProvider;
+import org.apache.mesos.kafka.plan.KafkaStageStrategy;
 import org.apache.mesos.kafka.plan.KafkaUpdatePlan;
 import org.apache.mesos.kafka.plan.PlanFactory;
 import org.apache.mesos.kafka.state.KafkaStateService;
@@ -37,7 +38,6 @@ import org.apache.mesos.scheduler.plan.DefaultPlanManager;
 import org.apache.mesos.scheduler.plan.Plan;
 import org.apache.mesos.scheduler.plan.PlanStrategy;
 import org.apache.mesos.scheduler.plan.DefaultInstallStrategy;
-import org.apache.mesos.scheduler.plan.DefaultStageStrategy;
 
 import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos.ExecutorID;
@@ -104,9 +104,9 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
       case "INSTALL":
         return new DefaultInstallStrategy(plan);
       case "STAGE":
-        return new DefaultStageStrategy(plan);
+        return new KafkaStageStrategy(plan);
       default:
-        return new DefaultStageStrategy(plan);
+        return new KafkaStageStrategy(plan);
     }
   }
 
@@ -277,6 +277,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     }
 
     for (String taskId : localTasksToRestart) {
+      log.info("Restarting task: " + taskId);
       driver.killTask(TaskID.newBuilder().setValue(taskId).build());
     }
   }
@@ -289,6 +290,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     }
 
     for (String taskId : localTasksToReschedule) {
+      log.info("Rescheduling task: " + taskId);
       state.deleteTask(taskId);
       driver.killTask(TaskID.newBuilder().setValue(taskId).build());
     }

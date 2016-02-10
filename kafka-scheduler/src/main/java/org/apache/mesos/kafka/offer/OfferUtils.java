@@ -26,7 +26,7 @@ public class OfferUtils {
 
       int brokerId = 0;
 
-      while (taskNames.contains(getBrokerName(brokerId))) {
+      while (taskNames.contains(idToName(brokerId))) {
         brokerId++;
       }
 
@@ -35,10 +35,6 @@ public class OfferUtils {
       log.error("Failed to get task names with exception: " + ex);
       return null;
     }
-  }
-
-  public static String getBrokerName(int brokerId) {
-      return "broker-" + brokerId;
   }
 
   public static String getConfigName(TaskInfo taskInfo) {

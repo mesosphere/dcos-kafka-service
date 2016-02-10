@@ -7,6 +7,7 @@ import java.util.List;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
@@ -118,7 +119,8 @@ public class PlanController {
   public Response listBlocks(
       @PathParam("phaseId") String phaseId,
       @PathParam("blockId") String blockId,
-      @QueryParam("cmd") String cmd) {
+      @QueryParam("cmd") String cmd,
+      @DefaultValue("false") @QueryParam("force") boolean force) {
 
     try {
       JSONObject obj = new JSONObject();
@@ -128,8 +130,8 @@ public class PlanController {
 
       switch(cmd) {
         case "restart":
-          planManager.restart(phaseIndex, blockIndex);
-          obj.put("Result", "Received cmd: " + cmd);
+          planManager.restart(phaseIndex, blockIndex, force);
+          obj.put("Result", "Received cmd: '" + cmd + "' with force set to: '" + force + "'");
           break;
         default:
           log.error("Unrecognized cmd: " + cmd);

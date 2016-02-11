@@ -1,14 +1,14 @@
 #!/bin/sh
 
+# This script may be used to build a new Kafka container hook package. The container hook is run
+# within DCOS containers immediately before Kafka is started. The container hook doesn't often
+# change, but it may someday need to have different variants depending on the version of Kafka.
 #
-# This script is used to build a container hook package for Kafka with the following structure:
-#
+# The container hook package uses the following structure:
 #   container-hook/container-hook.sh
 #   container-hook/libs/kafka-statsd-metrics2-0.4.1.jar
 #   container-hook/libs/java-dogstatsd-client-2.0.13.jar
-#
-# The Kafka distribution itself is provided separately from this package.
-#
+#   container-hook/libs/... any other libraries to include in Kafka's classpath ...
 
 CONTAINER_HOOK_VERSION="0.1.0"
 CONTAINER_HOOK_BASE_DIR="container-hook"

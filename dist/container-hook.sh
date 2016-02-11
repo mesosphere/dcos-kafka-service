@@ -1,8 +1,8 @@
 #!/bin/sh
 
-# This hook performs additional container-side preparation for Kafka before it's started. This file
-# should only contain logic that depends on the container environment itself; all other logic
-# belongs at the scheduler.
+# This hook is run on Kafka executor nodes. It performs additional container-side preparation
+# for Kafka before it's started. This file should only contain logic that depends on the container
+# environment itself; all other logic belongs at the scheduler.
 
 echo "### HOOK BEGIN"
 

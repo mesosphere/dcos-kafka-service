@@ -2,3 +2,4 @@ rootProject.name = 'kafka'
 
 include "mesos-commons"
 include "kafka-scheduler"
+include "kafka-config-overrider"

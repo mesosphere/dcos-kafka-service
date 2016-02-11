@@ -4,7 +4,9 @@ import com.google.common.base.Joiner;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.apache.commons.logging.Log;
@@ -65,7 +67,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     String brokerName = "broker-" + brokerId;
     String taskId = brokerName + "__" + UUID.randomUUID();
     String persistenceId = UUID.randomUUID().toString();
-    TaskInfo taskInfo = getTaskInfo(configName, config, persistenceId, brokerId, brokerName, taskId);
+    TaskInfo taskInfo = getTaskInfo(configName, config, persistenceId, brokerId, taskId);
     return getCreateOfferRequirement(taskInfo);
   }
 
@@ -78,7 +80,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     Integer brokerId = OfferUtils.nameToId(brokerName);
     String taskId = taskInfo.getTaskId().getValue();
     String persistenceId = OfferUtils.getPersistenceId(taskInfo);
-    TaskInfo newTaskInfo = getTaskInfo(configName, config, persistenceId, brokerId, brokerName, taskId);
+    TaskInfo newTaskInfo = getTaskInfo(configName, config, persistenceId, brokerId, taskId);
 
     log.info("newTaskInfo: " + newTaskInfo);
 
@@ -100,7 +102,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     String brokerName = taskInfo.getName();
     String taskId = taskInfo.getTaskId().getValue();
     String persistenceId = UUID.randomUUID().toString();
-    TaskInfo createTaskInfo = getTaskInfo(configName, config, persistenceId, brokerId, brokerName, taskId);
+    TaskInfo createTaskInfo = getTaskInfo(configName, config, persistenceId, brokerId, taskId);
 
     return getCreateOfferRequirement(createTaskInfo);
   }
@@ -158,49 +160,36 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     return config.get("PRINCIPAL");
   }
 
-  private TaskInfo getTaskInfo(String configName, ConfigurationService config, String persistenceId, int brokerId, String brokerName, String taskId) {
-    int port = 9092 + brokerId;
-
-    List<String> commands = new ArrayList<>();
-
-    // Do not use the /bin/bash-specific "source"
-    commands.add(". $MESOS_SANDBOX/container-hook/container-hook.sh");
-
-    // Export the JRE and log the environment 
-    commands.add("export PATH=$PATH:$MESOS_SANDBOX/jre/bin");
-    commands.add("env");
+  private TaskInfo getTaskInfo(
+      String configName,
+      KafkaConfigService config,
+      String persistenceId,
+      int brokerId,
+      String taskId) {
 
     String containerPath = "kafka-volume-" + UUID.randomUUID();
+    List<Resource> resources = getResources(config, persistenceId, containerPath);
+    return OfferRequirementUtils.getTaskInfo(configName, config, resources, brokerId, taskId, containerPath);
+  }
 
-    // Run Kafka
-    String kafkaStartCmd = OfferRequirementUtils.getKafkaStartCmd(config, brokerId, port, containerPath); 
-    commands.add(kafkaStartCmd);
-
-    String command = Joiner.on(" && ").join(commands);
+  private List<Resource> getResources(
+      KafkaConfigService config,
+      String persistenceId,
+      String containerPath) {
 
     double cpus = Double.parseDouble(config.get("BROKER_CPUS"));
     double mem = Double.parseDouble(config.get("BROKER_MEM"));
     double disk = Double.parseDouble(config.get("BROKER_DISK"));
+
     String role = getRole(config);
     String principal = getPrincipal(config);
 
-    Labels labels = new LabelBuilder()
-      .addLabel("config_target", configName)
-      .build();
+    List<Resource> resources = new ArrayList<>();
+    resources.add(ResourceBuilder.reservedCpus(cpus, role, principal));
+    resources.add(ResourceBuilder.reservedMem(mem, role, principal));
+    resources.add(getVolumeResource(disk, role, principal, containerPath, persistenceId));
 
-    return new TaskInfoBuilder(taskId, brokerName, "" /* slaveId */)
-        .addResource(ResourceBuilder.reservedCpus(cpus, role, principal))
-        .addResource(ResourceBuilder.reservedMem(mem, role, principal))
-        .addResource(getVolumeResource(disk, role, principal, containerPath, persistenceId))
-        .addResource(ResourceBuilder.ports(port, port))
-        .setCommand(new CommandInfoBuilder()
-          .addUri(config.get("KAFKA_URI"))
-          .addUri(config.get("CONTAINER_HOOK_URI"))
-          .addUri(config.get("JAVA_URI"))
-          .setCommand(command)
-          .build())
-        .setLabels(labels)
-        .build();
+    return resources;
   }
 
   private Resource getVolumeResource(double disk, String role, String principal, String containerPath, String persistenceId) {

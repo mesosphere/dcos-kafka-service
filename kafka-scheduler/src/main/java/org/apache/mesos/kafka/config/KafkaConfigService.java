@@ -38,7 +38,11 @@ public class KafkaConfigService extends FrameworkConfigurationService {
   }
 
   public String getKafkaZkUri() {
-    return "master.mesos:2181" + getZkRoot();
+    return getZookeeperAddress() + getZkRoot();
+  }
+
+  public String getZookeeperAddress() {
+    return "master.mesos:2181";
   }
 
   public int getBrokerCount() {
@@ -47,5 +51,13 @@ public class KafkaConfigService extends FrameworkConfigurationService {
 
   public String getFrameworkName() {
     return get("FRAMEWORK_NAME");
+  }
+
+  public String getKafkaVersionName() {
+    return get("KAFKA_VER_NAME");
+  }
+
+  public String getOverridePrefix() {
+    return "KAFKA_OVERRIDE_";
   }
 }

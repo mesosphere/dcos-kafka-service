@@ -89,7 +89,11 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
 
     handleConfigChange();
 
-    KafkaUpdatePlan plan = PlanFactory.getPlan(configState.getTargetName(), getOfferRequirementProvider());
+    KafkaUpdatePlan plan = PlanFactory.getPlan(
+        configState.getTargetName(),
+        getOfferRequirementProvider(),
+        reconciler);
+
     planManager = new DefaultPlanManager(getStrategy(plan));
     addObserver(planManager);
 
@@ -272,27 +276,25 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   private void processTasksToRestart(SchedulerDriver driver) {
     List<String> localTasksToRestart = null;
     synchronized (restartLock) {
-      localTasksToRestart = new ArrayList<String>(tasksToRestart);
-      tasksToRestart = new ArrayList<String>();
-    }
+      for (String taskId : tasksToRestart) {
+        log.info("Restarting task: " + taskId);
+        driver.killTask(TaskID.newBuilder().setValue(taskId).build());
+      }
 
-    for (String taskId : localTasksToRestart) {
-      log.info("Restarting task: " + taskId);
-      driver.killTask(TaskID.newBuilder().setValue(taskId).build());
+      tasksToRestart = new ArrayList<String>();
     }
   }
 
   private void processTasksToReschedule(SchedulerDriver driver) {
     List<String> localTasksToReschedule= null;
     synchronized (rescheduleLock) {
-      localTasksToReschedule = new ArrayList<String>(tasksToReschedule);
-      tasksToReschedule = new ArrayList<String>();
-    }
+      for (String taskId : tasksToReschedule) {
+        log.info("Rescheduling task: " + taskId);
+        state.deleteTask(taskId);
+        driver.killTask(TaskID.newBuilder().setValue(taskId).build());
+      }
 
-    for (String taskId : localTasksToReschedule) {
-      log.info("Rescheduling task: " + taskId);
-      state.deleteTask(taskId);
-      driver.killTask(TaskID.newBuilder().setValue(taskId).build());
+      tasksToReschedule = new ArrayList<String>();
     }
   }
 

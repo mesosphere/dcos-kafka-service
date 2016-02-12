@@ -10,11 +10,11 @@ import org.apache.mesos.scheduler.plan.Block;
 import org.apache.mesos.scheduler.plan.Phase;
 import org.apache.mesos.scheduler.plan.Status;
 
-public class KafkaPhase implements Phase {
+public class KafkaUpdatePhase implements Phase {
   private List<Block> blocks = null;
   private String configName = null;
 
-  public KafkaPhase(
+  public KafkaUpdatePhase(
       String configName,
       KafkaOfferRequirementProvider offerReqProvider) {
 
@@ -34,7 +34,7 @@ public class KafkaPhase implements Phase {
     KafkaConfigService config = KafkaScheduler.getConfigState().fetch(configName); 
 
     for (int i=0; i<config.getBrokerCount(); i++) {
-      blocks.add(new KafkaBlock(offerReqProvider, configName, i));
+      blocks.add(new KafkaUpdateBlock(offerReqProvider, configName, i));
     }
 
     return blocks;
@@ -69,7 +69,7 @@ public class KafkaPhase implements Phase {
   }
 
   public int getId() {
-    return 0;
+    return 1;
   }
 
   public Status getStatus() {

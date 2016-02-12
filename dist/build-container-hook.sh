@@ -70,5 +70,6 @@ mv ${PACKAGE_PATH}/${CONTAINER_HOOK_PACKAGE_FILENAME} ${OUTPUT_PATH}
 
 echo "---"
 echo "Built Container Environment Hook package: ${OUTPUT_PATH}/${CONTAINER_HOOK_PACKAGE_FILENAME}"
+echo "Upload it to AWS, then edit Universe resources.json to point to it."
 tar tf "${OUTPUT_PATH}/${CONTAINER_HOOK_PACKAGE_FILENAME}"
 echo "---"

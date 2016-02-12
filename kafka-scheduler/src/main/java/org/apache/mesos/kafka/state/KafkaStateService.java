@@ -27,7 +27,7 @@ public class KafkaStateService implements Observer {
   private final Log log = LogFactory.getLog(KafkaStateService.class);
   private final CuratorFramework zkClient;
   
-  private static ConfigurationService config = KafkaConfigService.getEnvConfig();
+  private static KafkaConfigService config = KafkaConfigService.getEnvConfig();
 
   private static String zkRoot;
   private static String stateRoot;
@@ -37,7 +37,7 @@ public class KafkaStateService implements Observer {
   private static KafkaStateService stateService = null;
 
   private KafkaStateService() {
-    zkClient = KafkaStateUtils.createZkClient(config.get("ZOOKEEPER_ADDR"));
+    zkClient = KafkaStateUtils.createZkClient(config.getZookeeperAddress());
 
     zkRoot = "/" + config.get("FRAMEWORK_NAME");
     stateRoot = zkRoot + "/state";

@@ -53,6 +53,14 @@ public class KafkaConfigService extends FrameworkConfigurationService {
     return get("FRAMEWORK_NAME");
   }
 
+  public String getRole() {
+    return getFrameworkName() + "-role";
+  }
+
+  public String getPrincipal() {
+    return getFrameworkName() + "-principal";
+  }
+
   public String getKafkaVersionName() {
     return get("KAFKA_VER_NAME");
   }

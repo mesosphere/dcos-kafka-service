@@ -76,7 +76,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   public KafkaScheduler() {
     envConfig = KafkaConfigService.getEnvConfig();
     state = KafkaStateService.getStateService();
-    configState = new KafkaConfigState(envConfig.getFrameworkName(), envConfig.get("ZOOKEEPER_ADDR"), "/");
+    configState = new KafkaConfigState(envConfig.getFrameworkName(), envConfig.getZookeeperAddress(), "/");
     reconciler = new Reconciler();
 
     addObserver(state);
@@ -305,7 +305,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
 
   @Override
   public void run() {
-    String zkPath = "zk://" + envConfig.get("ZOOKEEPER_ADDR") + "/mesos";
+    String zkPath = "zk://" + envConfig.getZookeeperAddress() + "/mesos";
     FrameworkInfo fwkInfo = getFrameworkInfo();
     log.info("Registering framework with: " + fwkInfo);
     registerFramework(this, fwkInfo, zkPath);
@@ -320,12 +320,14 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   }
 
   private FrameworkInfo getFrameworkInfo() {
+    String fwkName = envConfig.get("FRAMEWORK_NAME");
+
     FrameworkInfo.Builder fwkInfoBuilder = FrameworkInfo.newBuilder()
-      .setName(envConfig.get("FRAMEWORK_NAME"))
+      .setName(fwkName)
       .setFailoverTimeout(TWO_WEEK_SEC)
       .setUser(envConfig.get("USER"))
-      .setRole(envConfig.get("ROLE"))
-      .setPrincipal(envConfig.get("PRINCIPAL"))
+      .setRole(envConfig.getRole())
+      .setPrincipal(envConfig.getPrincipal())
       .setCheckpoint(true);
 
     FrameworkID fwkId = state.getFrameworkId();

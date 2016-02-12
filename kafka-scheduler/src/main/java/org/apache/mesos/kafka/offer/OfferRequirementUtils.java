@@ -58,7 +58,6 @@ public class OfferRequirementUtils {
 
     String overridePrefix = config.getOverridePrefix();
     Map<String, String> taskEnv = new HashMap<>();
-    taskEnv.put("ZOOKEEPER_ADDR", config.getZookeeperAddress());
     taskEnv.put("FRAMEWORK_NAME", config.getFrameworkName());
     taskEnv.put("KAFKA_VER_NAME", config.getKafkaVersionName());
     taskEnv.put(overridePrefix + "ZOOKEEPER_CONNECT", config.getZookeeperAddress() + "/" + config.getFrameworkName());

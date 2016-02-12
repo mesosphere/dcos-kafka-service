@@ -120,8 +120,8 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     log.info("Colocating with agents: " + colocateAgents);
 
     return new OfferRequirement(
-        getRole(config),
-        getPrincipal(config),
+        config.getRole(),
+        config.getPrincipal(),
         Arrays.asList(taskInfo),
         avoidAgents,
         colocateAgents,
@@ -134,8 +134,8 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     KafkaConfigService config = getConfigService(taskInfo);
 
     return new OfferRequirement(
-        getRole(config),
-        getPrincipal(config),
+        config.getRole(),
+        config.getPrincipal(),
         Arrays.asList(taskInfo),
         null,
         null,
@@ -150,14 +150,6 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
   private boolean hasVolume(TaskInfo taskInfo) {
     String containerPath = ResourceUtils.getVolumeContainerPath(taskInfo.getResourcesList());
     return containerPath != null;
-  }
-
-  private String getRole(ConfigurationService config) {
-    return config.get("ROLE");
-  }
-
-  private String getPrincipal(ConfigurationService config) {
-    return config.get("PRINCIPAL");
   }
 
   private TaskInfo getTaskInfo(
@@ -181,8 +173,8 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     double mem = Double.parseDouble(config.get("BROKER_MEM"));
     double disk = Double.parseDouble(config.get("BROKER_DISK"));
 
-    String role = getRole(config);
-    String principal = getPrincipal(config);
+    String role = config.getRole();
+    String principal = config.getPrincipal();
 
     List<Resource> resources = new ArrayList<>();
     resources.add(ResourceBuilder.reservedCpus(cpus, role, principal));

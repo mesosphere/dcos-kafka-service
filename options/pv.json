@@ -1,7 +1,8 @@
 {
   "kafka": {
-    "framework-name": "kafka0",
+    "framework-name": "kafka1",
     "pv": true,
-    "placement-strategy": "NODE"
+    "placement-strategy": "NODE",
+    "broker-count": 5
   }
 }

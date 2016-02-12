@@ -27,7 +27,7 @@ public class CmdExecutor {
   private static KafkaConfigService config = KafkaConfigService.getEnvConfig();
   private static KafkaStateService state = KafkaStateService.getStateService();
 
-  private static String binPath = config.get("MESOS_SANDBOX") + "/" + config.get("KAFKA_BIN_PATH") + "/";
+  private static String binPath = config.get("MESOS_SANDBOX") + "/" + config.get("KAFKA_VER_NAME") + "/bin/";
   private static String zkPath = config.getKafkaZkUri(); 
 
   public static JSONObject createTopic(String name, int partitionCount, int replicationFactor) throws Exception {

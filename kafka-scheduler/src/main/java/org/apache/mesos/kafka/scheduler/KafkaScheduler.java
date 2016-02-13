@@ -320,7 +320,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   }
 
   private FrameworkInfo getFrameworkInfo() {
-    String fwkName = envConfig.get("FRAMEWORK_NAME");
+    String fwkName = envConfig.getFrameworkName();
 
     FrameworkInfo.Builder fwkInfoBuilder = FrameworkInfo.newBuilder()
       .setName(fwkName)

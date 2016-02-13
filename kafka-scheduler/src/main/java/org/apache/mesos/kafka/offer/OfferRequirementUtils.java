@@ -3,6 +3,7 @@ package org.apache.mesos.kafka.offer;
 import com.google.common.base.Joiner;
 
 import java.util.ArrayList;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,7 +39,7 @@ public class OfferRequirementUtils {
       String containerPath) {
 
     String brokerName = OfferUtils.idToName(brokerId);
-    int port = 9092 + brokerId;
+    int port = 9092 + ThreadLocalRandom.current().nextInt(0, 1000);
 
     List<String> commands = new ArrayList<>();
 

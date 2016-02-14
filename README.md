@@ -382,8 +382,14 @@ By default Kafka Brokers will use the sandbox available to Mesos Tasks for stori
 
 - **In dcos-cli options.json**: `pv` = boolean (default: `false`)
 - **In Marathon**: `BROKER_PV` = `TRUE` or `FALSE`
- 
-Enabling persistent volumes has two consequences.
+
+The disk configuration option only has an effect when persistent volumes are enabled.  It may only be set at the time that persistent volumes are enabled.  It may not be changed later. 
+- **In dcos-cli options.json**: `disk` = integer (default: 5000)
+- **In Marathon**: `BROKER_DISK` = 5000
+
+An example options file for a production deployment with persistent volumes enabled can be found [here](https://github.com/mesosphere/kafka-private/blob/0_8_2_2/options/prod.json).
+
+Enabling persistent volumes has two additional consequences.
 
 1. The placement strategy specified at the time when persistent volumes are enabled is the last opportunity to affect Broker placement.  Further changes to placement strategy will be ignored as Brokers are now associated with their persistent volumes.
 2. Uninstalling the service after turning on persistent volumes will leak reserved resources.  A garbage collection scheme is under development.  Currently use of persistent volumes should be restricted to Kafka clusters which are intended for long sustained use.

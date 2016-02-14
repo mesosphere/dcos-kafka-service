@@ -1,6 +1,6 @@
 {
   "kafka": {
-    "framework-name": "kafka1",
+    "framework-name": "kafka_prod",
     "pv": true,
     "placement-strategy": "NODE",
     "broker-count": 5

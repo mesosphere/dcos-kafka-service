@@ -25,7 +25,9 @@ public class KafkaConfigService extends FrameworkConfigurationService {
     return envConfig;
   }
 
-  public static KafkaConfigService getHydratedConfig(Map<String, Map<String, ConfigProperty>> nsMap) {
+  public static KafkaConfigService getHydratedConfig(
+      Map<String, Map<String, ConfigProperty>> nsMap) {
+
     KafkaConfigService configService = new KafkaConfigService();
     ZkHydratorConfigurator zkConfigurator = new ZkHydratorConfigurator(nsMap);
     zkConfigurator.configure(configService);

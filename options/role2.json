@@ -1,6 +1,0 @@
-{
-  "kafka": {
-    "framework-name": "kafka2",
-    "framework-role": "kafka2-role"
-  }
-}

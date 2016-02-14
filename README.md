@@ -199,12 +199,164 @@ Once the cluster is already up and running, it may be customized in-place. The K
 3. Within the Kafka instance details view, click the `Configuration` tab, then click the `Edit` button.
 4. In the dialog that appears, expand the `Environment Variables` section and update any field(s) to their desired value(s). For example, to [increase the number of Brokers](#broker-count), edit the value for `BROKER_COUNT`. Do not edit the value for `FRAMEWORK_NAME`.
 5. Click `Change and deploy configuration` to apply any changes and cleanly reload the Kafka Framework scheduler. The Kafka cluster itself will persist across the change.
+ 
+#### Configuration Deployment Strategy
+
+Configuration updates are rolled out through execution of Update Plans.  The way these plans are executed is configurable.
+
+##### Configuration Update Plans
+
+In brief, Plans are composed of Phases, which are in turn composed of Blocks.  Two possible configuration update strategies specify how the Blocks are executed.  These strategies are specified by setting the `PLAN_STRATEGY` environment variable on the scheduler.  By default, the strategy is `INSTALL` which rolls changes out one Broker at a time with no pauses.
+
+The alternative is the `STAGE` strategy.  This strategy will cause two mandatory human decision points to be injected into the configuration update process.  Initially, no configuration update will take place, and the Service will be waiting on a human to confirm the update plan is what was expected.  The operator may then decide to continue the configuration update through a REST API call or rollback the configuration update by replacing the original configuration through Marathon in exactly the same way as a configuration update is specified above.  After specifying that an update should continue one Block, representing one Broker will be updated and the configuration update will again pause.  Again, an operator has an opportunity to rollback or continue.  If continuation is again the operator's decision, the rest of the Brokers will be updated one at a time until all Brokers are using the new configuration without further required human interaction.  Finally, an operator may indicate that an update should be interrupted at any point and is then able to make the same continue or rollback decisions.
 
 See [Configuration Options](#configuration-options) for a list of available fields which can be customized via Marathon while the Kafka cluster is running.
 
+##### Configuration Update REST API
+
+There are two Phases in the Update Plans for Kafka.  The first Phase is for Mesos Task reconciliation and is always executed without need for human interaction.  The more interesting phase is the Update phase.
+```bash
+GET $DCOS_URI/service/kafka0/v1/plan/phases HTTP/1.1
+Accept: */*
+Accept-Encoding: gzip, deflate
+[...]
+
+{
+    "phases": [
+        {
+            "0": "Reconciliation"
+        },
+        {
+            "1": "Update to: c3c7fd10-9697-454a-9360-595376169d1f"
+        }
+    ]
+}
+```
+
+The update phase can be viewed by making the REST request below.
+```bash 
+GET $DCOS_URI/service/kafka0/v1/plan/phases/1 HTTP/1.1
+Accept: */*
+Accept-Encoding: gzip, deflate
+[...]
+
+{
+    "blocks": [
+        {
+            "0": {
+                "name": "broker-0",
+                "status": "Complete"
+            }
+        },
+        {
+            "1": {
+                "name": "broker-1",
+                "status": "Complete"
+            }
+        },
+        {
+            "2": {
+                "name": "broker-2",
+                "status": "Complete"
+            }
+        }
+    ]
+}
+```
+
+When using the `STAGE` deployment strategy, an update plan will initially pause without doing any update to ensure the plan is as expected.  It will look like this:
+
+```bash
+GET $DCOS_URI/service/kafka0/v1/plan/phases/1 HTTP/1.1
+Accept: */*
+Accept-Encoding: gzip, deflate
+[...]
+
+{
+    "blocks": [
+        {
+            "0": {
+                "name": "broker-0",
+                "status": "Pending"
+            }
+        },
+        {
+            "1": {
+                "name": "broker-1",
+                "status": "Pending"
+            }
+        },
+        {
+            "2": {
+                "name": "broker-2",
+                "status": "Pending"
+            }
+        }
+    ]
+}
+```
+
+In order to execute the first block a continue command is required and can be executed in the following way:
+
+```bash
+PUT $DCOS_URI/service/kafka0/v1/plan?cmd=continue HTTP/1.1
+Accept: */*
+Accept-Encoding: gzip, deflate
+[...]
+
+{
+    "Result": "Received cmd: continue"
+}
+```
+
+After executing the continue operation the plan will look like this:
+
+```bash
+GET $DCOS_URI/service/kafka0/v1/plan/phases/1 HTTP/1.1
+Accept: */*
+Accept-Encoding: gzip, deflate
+[...]
+
+{
+    "blocks": [
+        {
+            "0": {
+                "name": "broker-0",
+                "status": "Complete"
+            }
+        },
+        {
+            "1": {
+                "name": "broker-1",
+                "status": "Pending"
+            }
+        },
+        {
+            "2": {
+                "name": "broker-2",
+                "status": "Pending"
+            }
+        }
+    ]
+}
+```
+
+An additional continue command will cause the rest of the plan to be executed without further interruption.  If at some point an operator would like to interrupt an in progress configuration update, this can be accomplished with the following command:
+
+```bash
+PUT $DCOS_URI/service/kafka0/v1/plan?cmd=interrupt HTTP/1.1
+Accept: */*
+Accept-Encoding: gzip, deflate
+[...]
+
+{
+    "Result": "Received cmd: interrupt"
+}
+```
+
 ## Configuration Options
 
-The following describes commonly used features of the Kafka framework and how to configure them. View the [default `config.json` in DCOS Universe](https://github.com/mesosphere/universe/tree/version-1.x/repo/packages/K/kafka) to see an enumeration of all possible options.
+The following describes commonly used features of the Kafka framework and how to configure them. View the [default `config.json` in DCOS Universe](https://github.com/mesosphere/universe/blob/kafka_8_2_2/repo/packages/K/kafka/2) to see an enumeration of all possible options.
 
 ### Framework Name
 
@@ -233,6 +385,29 @@ By default Kafka Brokers will use the sandbox available to Mesos Tasks for stori
 
 - **In dcos-cli options.json**: `placement-strategy` = `ANY` or `NODE` (default: `ANY`)
 - **In Marathon**: `PLACEMENT_STRATEGY` = `ANY` or `NODE`
+
+### Configure Kafka Broker Properties
+
+Kafka Brokers are configured through settings in a server.properties file deployed with each Broker.  The settings here can be specified at installation time or during a post-deployment configuration update.  They are set in the DCOS Universe's config.json as options such as:
+
+```
+"kafka_override_log_retention_hours": {
+  "description": "Kafka broker log retention hours.",
+  "type": "integer",
+  "default": 168
+},
+```
+
+The defaults can be overriden at install time by specifying an options.json file with a format like this:
+```
+{
+  "kafka": {
+    "kafka_override_log_retention_hours": 100
+  }
+}
+```
+
+These same values are also represented as environment variables for the Scheduler in the form `KAFKA_OVERRIDE_LOG_RETENTION_HOURS` and may be modified through Marathon and deployed during a rolling upgrade as [described here](#changing-configuration-in-flight).
 
 ## Upgrading Software
 

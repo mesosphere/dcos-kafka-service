@@ -180,6 +180,10 @@ $ dcos package install --options=sample-kafka.json kafka
 
 See [Configuration Options](#configuration-options) for a list of available fields which can be customized via an options JSON file when the Kafka cluster is created.
 
+### Multiple Kafka cluster installation
+
+Installing multiple Kafka clusters is identical to installing Kafka clusters with custom configurations as described above.  The only requirement on the operator is that a unique `framework-name` is specified for each installation. 
+
 ### Uninstall
 
 Uninstalling a cluster is also straightforward. Replace `kafka0` with the name of the kafka instance to be uninstalled.

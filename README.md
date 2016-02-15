@@ -182,7 +182,26 @@ See [Configuration Options](#configuration-options) for a list of available fiel
 
 ### Multiple Kafka cluster installation
 
-Installing multiple Kafka clusters is identical to installing Kafka clusters with custom configurations as described above.  The only requirement on the operator is that a unique `framework-name` is specified for each installation. 
+Installing multiple Kafka clusters is identical to installing Kafka clusters with custom configurations as described above.  The only requirement on the operator is that a unique `framework-name` is specified for each installation. For example:
+
+```
+$ cat kafka1.json
+{
+  "kafka": {
+    "framework-name": "kafka1"
+  }
+}
+
+$ dcos package install kafka --options=kafka1.json
+This will install Apache Kafka DCOS Service.
+Continue installing? [yes/no] yes
+Installing Marathon app for package [kafka] version [0.1.0]
+Installing CLI subcommand for package [kafka] version [0.1.0]
+New command available: dcos kafka
+The Apache Kafka DCOS Service is installed:
+  docs   - https://github.com/mesos/kafka
+  issues - https://github.com/mesos/kafka/issues
+```
 
 ### Uninstall
 
@@ -387,7 +406,19 @@ The disk configuration option only has an effect when persistent volumes are ena
 - **In dcos-cli options.json**: `disk` = integer (default: 5000)
 - **In Marathon**: `BROKER_DISK` = 5000
 
-An example options file for a production deployment with persistent volumes enabled can be found [here](https://github.com/mesosphere/kafka-private/blob/0_8_2_2/options/prod.json).
+An example options file for a production deployment with persistent volumes enabled looks like this:
+
+```
+{
+  "kafka": {
+    "framework-name": "kafkaprod",
+    "pv": true,
+    "disk": 10000,
+    "placement-strategy": "NODE",
+    "broker-count": 5
+  }
+}
+```
 
 Enabling persistent volumes has two additional consequences.
 
@@ -474,7 +505,15 @@ This is another message
 
 ### Replacing a Permanently Failed Server
 
-**TODO** How to tell the scheduler a specific Mesos Agent is dead and never coming back
+If a machine has permanently failed it is possible some manual intervention will be required to replace the Broker or Brokers which were resident on that machine.  The details are dependent upon whether Persistent Volumes were enabled.  If Persistent Volumes were not enabled and there are sufficient resources in the cluster to place Brokers according to the requirements of the current placement strategy, then the cluster will automatically heal itself.
+
+When Persistent Volumes are enabled the service continuously attempts to replace Brokers where their data has been persisted.  In the case where a machine has permanently failed, the Kafka CLI can be used to replace the Brokers.
+
+In the example below the Broker with id `0` will be rescheduled on new machine as long as cluster resources are sufficient to satisfy the services placement constraints.
+
+```bash
+$ dcos kafka broker reschedule 0
+```
 
 ## Limitations
 

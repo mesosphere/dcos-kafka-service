@@ -102,13 +102,13 @@ $ dcos package install kafka # framework name defaults to 'kafka0'
 
 - Step 3. Create a new topic.
 
-``` bash
+```bash
 $ dcos kafka topic create topic1 --partitions 3 --replication 3
 ```
 
 - Step 4. Read and write data to a topic.
 
-``` bash
+```bash
 $ dcos kafka connection
 {
     "broker_list_convenience": "--broker-list ip-10-0-3-230.us-west-2.compute.internal:9092, ip-10-0-3-231.us-west-2.compute.internal:9093",

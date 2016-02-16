@@ -1,0 +1,9 @@
+{
+  "kafka": {
+    "framework-name": "kafkaprod",
+    "pv": true,
+    "disk": 10000,
+    "placement-strategy": "NODE",
+    "broker-count": 5
+  }
+}

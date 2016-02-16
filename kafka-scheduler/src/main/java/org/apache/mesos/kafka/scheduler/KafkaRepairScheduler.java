@@ -110,8 +110,14 @@ public class KafkaRepairScheduler {
       return missingBrokerIds;
     }
 
+    int blockId = -1;
+
+    if (block != null) {
+      blockId = block.getId();
+    }
+
     for (Integer i=0; i<= lastExpectedBrokerId; i++) {
-      if (!brokerExists(brokerTasks, i) && i != block.getId()) {
+      if (!brokerExists(brokerTasks, i) && i != blockId) {
         missingBrokerIds.add(i);
       }
     }

@@ -20,8 +20,8 @@ import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.Protos.TaskState;
 import org.apache.mesos.Protos.TaskStatus;
 
-public class KafkaBlock implements Block {
-  private final Log log = LogFactory.getLog(KafkaBlock.class);
+public class KafkaUpdateBlock implements Block {
+  private final Log log = LogFactory.getLog(KafkaUpdateBlock.class);
 
   private Status status = Status.Pending;
   private KafkaOfferRequirementProvider offerReqProvider;
@@ -32,7 +32,7 @@ public class KafkaBlock implements Block {
   private final Integer taskLock = 0;
   private List<TaskID> pendingTasks;
 
-  public KafkaBlock(
+  public KafkaUpdateBlock(
       KafkaOfferRequirementProvider offerReqProvider,
       String targetConfigName,
       int brokerId) {
@@ -61,12 +61,10 @@ public class KafkaBlock implements Block {
     }
   }
 
-  public Status setStatus(Status newStatus) {
+  public void setStatus(Status newStatus) {
     Status oldStatus = status;
     status = newStatus;
-
-    log.info(getName() + ": changing status from: " + oldStatus + " to: " + status);
-    return status;
+    log.info(getName() + ": changed status from: " + oldStatus + " to: " + status);
   }
 
   private TaskInfo getTaskInfo() {
@@ -102,7 +100,11 @@ public class KafkaBlock implements Block {
   }
 
   public OfferRequirement start() {
-    log.info("Starting block: " + getName());
+    log.info("Starting block: " + getName() + " with status: " + getStatus());
+
+    if(!isPending()) {
+      return null;
+    }
 
     if (taskIsRunning() || taskIsStaging()) {
       KafkaScheduler.restartTasks(taskIdsToStrings(getUpdateIds()));
@@ -147,7 +149,7 @@ public class KafkaBlock implements Block {
     synchronized(taskLock) {
       log.info(getName() + " has pending tasks: " + pendingTasks);
 
-      if (!isRelevantStatus(taskStatus)) {
+      if (!isRelevantStatus(taskStatus) || isPending()) {
         log.warn("Received irrelevant TaskStatus: " + taskStatus);
         return;
       }
@@ -176,6 +178,10 @@ public class KafkaBlock implements Block {
   }
 
   public boolean isRelevantStatus(TaskStatus taskStatus) {
+    if (taskStatus.getReason().equals(TaskStatus.Reason.REASON_RECONCILIATION)) {
+      return false;
+    }
+
     for (TaskID pendingTaskId : pendingTasks) {
       if (taskStatus.getTaskId().equals(pendingTaskId)) {
         return true;

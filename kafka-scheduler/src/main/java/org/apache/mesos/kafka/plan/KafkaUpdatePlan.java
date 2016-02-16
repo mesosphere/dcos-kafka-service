@@ -5,27 +5,38 @@ import java.util.List;
 
 import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
 
+import org.apache.mesos.reconciliation.Reconciler;
 import org.apache.mesos.scheduler.plan.Plan;
 import org.apache.mesos.scheduler.plan.Phase;
 import org.apache.mesos.scheduler.plan.Status;
 
 public class KafkaUpdatePlan implements Plan {
-  private KafkaPhase phase;
+  private KafkaReconcilePhase reconcilePhase;
+  private KafkaUpdatePhase updatePhase;
 
-  public KafkaUpdatePlan(String configName, KafkaOfferRequirementProvider offerReqProvider) {
-    phase = new KafkaPhase(configName, offerReqProvider);
+  public KafkaUpdatePlan(
+      String configName,
+      KafkaOfferRequirementProvider offerReqProvider,
+      Reconciler reconciler) {
+
+    reconcilePhase = new KafkaReconcilePhase(reconciler);
+    updatePhase = new KafkaUpdatePhase(configName, offerReqProvider);
   }
 
   public List<? extends Phase> getPhases() {
-    return Arrays.asList(phase);
+    return Arrays.asList(reconcilePhase, updatePhase);
   }
 
   public Phase getCurrentPhase() {
-    return phase;
+    if (!reconcilePhase.isComplete()) {
+      return reconcilePhase;
+    } else {
+      return updatePhase;
+    }
   }
 
   public boolean isComplete() {
-    return phase.isComplete();
+    return updatePhase.isComplete();
   }
 
   public Status getStatus() {

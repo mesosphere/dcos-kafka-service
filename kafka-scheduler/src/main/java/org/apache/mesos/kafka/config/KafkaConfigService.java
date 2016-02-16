@@ -25,7 +25,9 @@ public class KafkaConfigService extends FrameworkConfigurationService {
     return envConfig;
   }
 
-  public static KafkaConfigService getHydratedConfig(Map<String, Map<String, ConfigProperty>> nsMap) {
+  public static KafkaConfigService getHydratedConfig(
+      Map<String, Map<String, ConfigProperty>> nsMap) {
+
     KafkaConfigService configService = new KafkaConfigService();
     ZkHydratorConfigurator zkConfigurator = new ZkHydratorConfigurator(nsMap);
     zkConfigurator.configure(configService);
@@ -38,7 +40,11 @@ public class KafkaConfigService extends FrameworkConfigurationService {
   }
 
   public String getKafkaZkUri() {
-    return "master.mesos:2181" + getZkRoot();
+    return getZookeeperAddress() + getZkRoot();
+  }
+
+  public String getZookeeperAddress() {
+    return "master.mesos:2181";
   }
 
   public int getBrokerCount() {
@@ -47,5 +53,21 @@ public class KafkaConfigService extends FrameworkConfigurationService {
 
   public String getFrameworkName() {
     return get("FRAMEWORK_NAME");
+  }
+
+  public String getRole() {
+    return getFrameworkName() + "-role";
+  }
+
+  public String getPrincipal() {
+    return getFrameworkName() + "-principal";
+  }
+
+  public String getKafkaVersionName() {
+    return get("KAFKA_VER_NAME");
+  }
+
+  public String getOverridePrefix() {
+    return "KAFKA_OVERRIDE_";
   }
 }

@@ -16,6 +16,7 @@ import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.PersistentOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.PersistentOperationRecorder;
 import org.apache.mesos.kafka.offer.SandboxOfferRequirementProvider;
+import org.apache.mesos.kafka.plan.KafkaStageStrategy;
 import org.apache.mesos.kafka.plan.KafkaUpdatePlan;
 import org.apache.mesos.kafka.plan.PlanFactory;
 import org.apache.mesos.kafka.state.KafkaStateService;
@@ -37,7 +38,6 @@ import org.apache.mesos.scheduler.plan.DefaultPlanManager;
 import org.apache.mesos.scheduler.plan.Plan;
 import org.apache.mesos.scheduler.plan.PlanStrategy;
 import org.apache.mesos.scheduler.plan.DefaultInstallStrategy;
-import org.apache.mesos.scheduler.plan.DefaultStageStrategy;
 
 import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos.ExecutorID;
@@ -76,7 +76,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   public KafkaScheduler() {
     envConfig = KafkaConfigService.getEnvConfig();
     state = KafkaStateService.getStateService();
-    configState = new KafkaConfigState(envConfig.getFrameworkName(), envConfig.get("ZOOKEEPER_ADDR"), "/");
+    configState = new KafkaConfigState(envConfig.getFrameworkName(), envConfig.getZookeeperAddress(), "/");
     reconciler = new Reconciler();
 
     addObserver(state);
@@ -89,7 +89,11 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
 
     handleConfigChange();
 
-    KafkaUpdatePlan plan = PlanFactory.getPlan(configState.getTargetName(), getOfferRequirementProvider());
+    KafkaUpdatePlan plan = PlanFactory.getPlan(
+        configState.getTargetName(),
+        getOfferRequirementProvider(),
+        reconciler);
+
     planManager = new DefaultPlanManager(getStrategy(plan));
     addObserver(planManager);
 
@@ -104,9 +108,9 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
       case "INSTALL":
         return new DefaultInstallStrategy(plan);
       case "STAGE":
-        return new DefaultStageStrategy(plan);
+        return new KafkaStageStrategy(plan);
       default:
-        return new DefaultStageStrategy(plan);
+        return new KafkaStageStrategy(plan);
     }
   }
 
@@ -272,25 +276,25 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   private void processTasksToRestart(SchedulerDriver driver) {
     List<String> localTasksToRestart = null;
     synchronized (restartLock) {
-      localTasksToRestart = new ArrayList<String>(tasksToRestart);
-      tasksToRestart = new ArrayList<String>();
-    }
+      for (String taskId : tasksToRestart) {
+        log.info("Restarting task: " + taskId);
+        driver.killTask(TaskID.newBuilder().setValue(taskId).build());
+      }
 
-    for (String taskId : localTasksToRestart) {
-      driver.killTask(TaskID.newBuilder().setValue(taskId).build());
+      tasksToRestart = new ArrayList<String>();
     }
   }
 
   private void processTasksToReschedule(SchedulerDriver driver) {
     List<String> localTasksToReschedule= null;
     synchronized (rescheduleLock) {
-      localTasksToReschedule = new ArrayList<String>(tasksToReschedule);
-      tasksToReschedule = new ArrayList<String>();
-    }
+      for (String taskId : tasksToReschedule) {
+        log.info("Rescheduling task: " + taskId);
+        state.deleteTask(taskId);
+        driver.killTask(TaskID.newBuilder().setValue(taskId).build());
+      }
 
-    for (String taskId : localTasksToReschedule) {
-      state.deleteTask(taskId);
-      driver.killTask(TaskID.newBuilder().setValue(taskId).build());
+      tasksToReschedule = new ArrayList<String>();
     }
   }
 
@@ -301,7 +305,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
 
   @Override
   public void run() {
-    String zkPath = "zk://" + envConfig.get("ZOOKEEPER_ADDR") + "/mesos";
+    String zkPath = "zk://" + envConfig.getZookeeperAddress() + "/mesos";
     FrameworkInfo fwkInfo = getFrameworkInfo();
     log.info("Registering framework with: " + fwkInfo);
     registerFramework(this, fwkInfo, zkPath);
@@ -316,12 +320,14 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   }
 
   private FrameworkInfo getFrameworkInfo() {
+    String fwkName = envConfig.getFrameworkName();
+
     FrameworkInfo.Builder fwkInfoBuilder = FrameworkInfo.newBuilder()
-      .setName(envConfig.get("FRAMEWORK_NAME"))
+      .setName(fwkName)
       .setFailoverTimeout(TWO_WEEK_SEC)
       .setUser(envConfig.get("USER"))
-      .setRole(envConfig.get("ROLE"))
-      .setPrincipal(envConfig.get("PRINCIPAL"))
+      .setRole(envConfig.getRole())
+      .setPrincipal(envConfig.getPrincipal())
       .setCheckpoint(true);
 
     FrameworkID fwkId = state.getFrameworkId();

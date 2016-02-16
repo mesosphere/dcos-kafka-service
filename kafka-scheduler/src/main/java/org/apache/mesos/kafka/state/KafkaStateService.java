@@ -7,6 +7,7 @@ import org.apache.curator.framework.CuratorFramework;
 
 import org.apache.mesos.config.ConfigurationService;
 import org.apache.mesos.kafka.config.KafkaConfigService;
+import org.apache.mesos.kafka.offer.OfferUtils;
 
 import org.apache.mesos.Protos.FrameworkID;
 import org.apache.mesos.Protos.TaskID;
@@ -26,7 +27,7 @@ public class KafkaStateService implements Observer {
   private final Log log = LogFactory.getLog(KafkaStateService.class);
   private final CuratorFramework zkClient;
   
-  private static ConfigurationService config = KafkaConfigService.getEnvConfig();
+  private static KafkaConfigService config = KafkaConfigService.getEnvConfig();
 
   private static String zkRoot;
   private static String stateRoot;
@@ -36,7 +37,7 @@ public class KafkaStateService implements Observer {
   private static KafkaStateService stateService = null;
 
   private KafkaStateService() {
-    zkClient = KafkaStateUtils.createZkClient(config.get("ZOOKEEPER_ADDR"));
+    zkClient = KafkaStateUtils.createZkClient(config.getZookeeperAddress());
 
     zkRoot = "/" + config.get("FRAMEWORK_NAME");
     stateRoot = zkRoot + "/state";
@@ -154,7 +155,7 @@ public class KafkaStateService implements Observer {
   }
 
   public String getTaskIdForBroker(Integer brokerId) throws Exception {
-    String brokerName = "broker-" + brokerId;
+    String brokerName = OfferUtils.idToName(brokerId);
 
     for (TaskInfo taskInfo : getTaskInfos()) {
       if (taskInfo.getName().equals(brokerName)) {

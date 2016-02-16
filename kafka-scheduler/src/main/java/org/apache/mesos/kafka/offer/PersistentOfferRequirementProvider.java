@@ -79,7 +79,12 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     String brokerName = taskInfo.getName();
     Integer brokerId = OfferUtils.nameToId(brokerName);
     String taskId = taskInfo.getTaskId().getValue();
+
     String persistenceId = OfferUtils.getPersistenceId(taskInfo);
+    if (persistenceId == null) {
+      persistenceId = UUID.randomUUID().toString();
+    }
+
     TaskInfo newTaskInfo = getTaskInfo(configName, config, persistenceId, brokerId, taskId);
 
     log.info("newTaskInfo: " + newTaskInfo);

@@ -1069,7 +1069,8 @@ GET /service/kafka0/v1/topics/unavailable_partitions HTTP/1.1
 
 #### View Plan Status
 
-View phases
+##### View Phases
+
 ``` bash
 $ http $DCOS_URI/service/kafka0/v1/plan
 HTTP/1.1 200 OK
@@ -1084,7 +1085,8 @@ HTTP/1.1 200 OK
 }
 ```
 
-View blocks
+##### View Blocks
+
 ``` bash
 $ http $DCOS_URI/service/kafka0/v1/plan/0
 HTTP/1.1 200 OK

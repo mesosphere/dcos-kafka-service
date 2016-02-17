@@ -507,7 +507,7 @@ Increase the `BROKER_COUNT` value via Marathon. New brokers should start automat
 
 #### Remove a Broker
 
-Broker removal is currently a manual process. Set the `BROKER_COUNT` environment variable to the desired target count. All Remove all replicas off the brokers that will be removed as a consequence of shrinking the cluster. Then, remove each broker by performing the reschedule operation. For example, if you are resizing a cluster from 3 brokers to 2, set the `BROKER_COUNT` to 2 and move replicas off the broker with id 2 (ids start at 0). Then, remove the broker with the reschedule command:
+Broker removal is currently a manual process. Set the `BROKER_COUNT` environment variable to the desired target count. Remove all replicas off the brokers that will be removed as a consequence of shrinking the cluster. Then, remove each broker by performing the reschedule operation. For example, if you are resizing a cluster from 3 brokers to 2, set the `BROKER_COUNT` to 2 and move replicas off the broker with id 2 (ids start at 0). Then, remove the broker with the reschedule command:
 
  ``` bash
  $ dcos kafka broker reschedule 2

@@ -49,7 +49,7 @@ public class OfferRequirementUtils {
     // Export the JRE and log the environment 
     commands.add("export PATH=$PATH:$MESOS_SANDBOX/jre/bin");
     commands.add("env");
-    commands.add("java -cp $MESOS_SANDBOX/kafka-config-overrider-0.1.0-uber.jar org.apache.mesos.kafka.config.Overrider " + configName);
+    commands.add("java -cp $MESOS_SANDBOX/kafka-config-overrider-0.2.0-uber.jar org.apache.mesos.kafka.config.Overrider " + configName);
 
     // Run Kafka
     String kafkaStartCmd = OfferRequirementUtils.getKafkaStartCmd(config); 

@@ -43,18 +43,19 @@ public class KafkaEnvConfigurator implements Configurator {
         "MESOS_SLAVE_ID",
         "MESOS_SANDBOX",
         "PWD",
-        "PORT",
         "MESOS_AGENT_ENDPOINT",
         "LIBPROCESS_IP",
         "MESOS_TASK_ID",
         "MARATHON_APP_VERSION",
         "MESOS_SLAVE_PID",
+        "PORT",
+        "PORTS",
         "PORT0",
         "PORT_10000",
+        "PORT_10001",
         "MESOS_EXECUTOR_ID",
         "_",
         "MESOS_DIRECTORY",
-        "PORTS",
         "PLAN_STRATEGY");
   }
 }

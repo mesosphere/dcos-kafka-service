@@ -89,19 +89,23 @@ public class CmdExecutor {
   }
 
   public static JSONObject producerTest(String topicName, int messages) throws Exception {
-    // e.g. ./bin/kafka-producer-perf-test.sh --topics topic0 --broker-list ip-10-0-3-75.us-west-2.compute.internal:9386, ip-10-0-3-76.us-west-2.compute.internal:9725, ip-10-0-3-74.us-west-2.compute.internal:9809, ip-10-0-3-77.us-west-2.compute.internal:9165 --messages 1000
+    // e.g. ./kafka-producer-perf-test.sh --topic topic0 --num-records 1000 --producer-props bootstrap.servers=ip-10-0-2-171.us-west-2.compute.internal:9092,ip-10-0-2-172.us-west-2.compute.internal:9093,ip-10-0-2-173.us-west-2.compute.internal:9094 --throughput 100000 --record-size 1024
     List<String> brokerEndpoints = state.getBrokerEndpoints();
     String brokers = StringUtils.join(brokerEndpoints, ","); 
     String bootstrapServers = "bootstrap.servers=" + brokers;
 
     List<String> cmd = new ArrayList<String>();
     cmd.add(binPath + "kafka-producer-perf-test.sh");
-    cmd.add("--topics");
+    cmd.add("--topic");
     cmd.add(topicName);
-    cmd.add("--broker-list");
-    cmd.add(brokers);
-    cmd.add("--messages");
+    cmd.add("--num-records");
     cmd.add(Integer.toString(messages));
+    cmd.add("--throughput");
+    cmd.add("100000");
+    cmd.add("--record-size");
+    cmd.add("1024");
+    cmd.add("--producer-props");
+    cmd.add(bootstrapServers);
 
     return runCmd(cmd); 
   }

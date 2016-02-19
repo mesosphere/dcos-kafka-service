@@ -10,7 +10,7 @@ ext {
 }
 
 dependencies {
-  compile project(':mesos-commons')
+  compile project(':dcos-commons-ee')
   compile "org.apache.mesos:mesos:${mesosVer}"
   compile "commons-logging:commons-logging:${loggingVer}"
   compile "com.google.inject:guice:${guiceVer}"

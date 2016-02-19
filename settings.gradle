@@ -1,5 +1,9 @@
 rootProject.name = 'kafka'
 
-include "mesos-commons"
+include "dcos-commons-ee"
 include "kafka-scheduler"
 include "kafka-config-overrider"
+
+include "dcos-commons"
+
+project(":dcos-commons").projectDir = new File("dcos-commons-ee/dcos-commons")

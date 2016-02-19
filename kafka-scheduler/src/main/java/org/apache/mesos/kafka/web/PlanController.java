@@ -37,7 +37,7 @@ public class PlanController {
 
   @GET
   @Path("/status")
-  public Response getPlanSummary() {
+  public Response getPlanStatus() {
     try {
       Plan plan = planManager.getPlan();
       Phase phase = plan.getCurrentPhase();
@@ -56,6 +56,7 @@ public class PlanController {
         block = phase.getCurrentBlock();
         phaseObj.put("name", phase.getName());
         phaseObj.put("index", phase.getId());
+        phaseObj.put("block_count", phase.getBlocks().size());
         phaseObj.put("status", phase.getStatus());
       }
 
@@ -78,6 +79,43 @@ public class PlanController {
       log.error("Failed to fetch plan status with exception: " + ex);
       return Response.serverError().build();
     }
+  }
+
+  @GET
+  @Path("/summary")
+  public Response getPlanSummary() {
+    JSONObject summaryObj = new JSONObject();
+    JSONObject planObj = new JSONObject();
+
+    Plan plan = planManager.getPlan();
+
+    if (plan != null) {
+      planObj.put("status", plan.getStatus());
+
+      List<JSONObject> phaseObjs = new ArrayList<JSONObject>();
+      for (Phase phase : plan.getPhases()) {
+        JSONObject phaseObj = new JSONObject();
+        phaseObj.put("name", phase.getName());
+        phaseObj.put("status", phase.getStatus());
+
+        List<JSONObject> blockObjs = new ArrayList<JSONObject>();
+        for (Block block : phase.getBlocks()) {
+          JSONObject blockObj = new JSONObject();
+          blockObj.put("name", block.getName());
+          blockObj.put("status", block.getStatus());
+          blockObjs.add(blockObj);
+        }
+
+        phaseObj.put("blocks", new JSONArray(blockObjs));
+        phaseObjs.add(phaseObj);
+      }
+
+      planObj.put("phases", new JSONArray(phaseObjs));
+    }
+
+    summaryObj.put("plan", planObj);
+
+    return Response.ok(summaryObj.toString(), MediaType.APPLICATION_JSON).build();
   }
 
   @GET

@@ -15,13 +15,15 @@ CONTAINER_HOOK_BASE_DIR="container-hook"
 CONTAINER_HOOK_PACKAGE_FILENAME="${CONTAINER_HOOK_BASE_DIR}-${CONTAINER_HOOK_VERSION}.tgz"
 CONTAINER_HOOK_SCRIPT="container-hook.sh"
 
+JAR_DOWNLOAD_URL_PREFIX="https://s3-us-west-2.amazonaws.com/infinity-artifacts/kafka/container-hook"
+
 DOGSTATSD_CLIENT_VERSION="2.0.13"
 DOGSTATSD_CLIENT_FILENAME="java-dogstatsd-client-${DOGSTATSD_CLIENT_VERSION}.jar"
-DOGSTATSD_CLIENT_DOWNLOAD_URL="http://repo1.maven.org/maven2/com/indeed/java-dogstatsd-client/2.0.13/${DOGSTATSD_CLIENT_FILENAME}"
+DOGSTATSD_CLIENT_DOWNLOAD_URL="${JAR_DOWNLOAD_URL_PREFIX}/${DOGSTATSD_CLIENT_FILENAME}"
 
 KAFKA_STATSD_VERSION="0.4.1"
 KAFKA_STATSD_FILENAME="kafka-statsd-metrics2-${KAFKA_STATSD_VERSION}.jar"
-KAFKA_STATSD_DOWNLOAD_URL="https://bintray.com/artifact/download/airbnb/jars/com/airbnb/kafka-statsd-metrics2/0.4.1/${KAFKA_STATSD_FILENAME}"
+KAFKA_STATSD_DOWNLOAD_URL="${JAR_DOWNLOAD_URL_PREFIX}/${KAFKA_STATSD_FILENAME}"
 
 DIST_PATH="$(dirname $0)"
 PACKAGE_PATH="${DIST_PATH}/build/package"
@@ -33,8 +35,12 @@ download_copy () {
     DOWNLOAD_FILENAME="$(basename $1)"
     DOWNLOAD_DEST="${DOWNLOAD_CACHE_PATH}/${DOWNLOAD_FILENAME}"
     if [ ! -f "${DOWNLOAD_DEST}" ]; then
-        echo "Downloading to ${DOWNLOAD_DEST}"
-        wget --progress=dot -e dotbytes=1M -O "${DOWNLOAD_DEST}" "$1" || exit 1
+        echo "Downloading $1 to ${DOWNLOAD_DEST}"
+        curl -o "${DOWNLOAD_DEST}" "$1" || exit 1
+        if [ ! -s "${DOWNLOAD_DEST}" ]; then
+           echo "Downloaded file is missing or empty. Bad host?"
+           exit 1
+        fi
     fi
     if [ ! -f "$2/${DOWNLOAD_FILENAME}" ]; then
         echo "Copying ${DOWNLOAD_FILENAME} into $2"

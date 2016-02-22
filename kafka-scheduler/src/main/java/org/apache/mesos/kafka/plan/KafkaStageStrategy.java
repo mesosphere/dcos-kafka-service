@@ -8,7 +8,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.scheduler.plan.Block;
 import org.apache.mesos.scheduler.plan.DefaultStageStrategy;
 import org.apache.mesos.scheduler.plan.Phase;
-import org.apache.mesos.scheduler.plan.Plan;
 import org.apache.mesos.scheduler.plan.Status;
 
 import org.apache.mesos.kafka.offer.OfferUtils;
@@ -19,12 +18,11 @@ public class KafkaStageStrategy extends DefaultStageStrategy {
   private final Log log = LogFactory.getLog(DefaultStageStrategy.class);
   private KafkaStateService state = KafkaStateService.getStateService();
 
-  public KafkaStageStrategy(Plan plan) {
-    super(plan);
+  public KafkaStageStrategy(Phase phase) {
+    super(phase);
   }
 
-  public void restart(int phaseIndex, int blockIndex, boolean force) throws IndexOutOfBoundsException {
-    Phase phase = getPlan().getPhases().get(phaseIndex);
+  public void restart(int blockIndex, boolean force) throws IndexOutOfBoundsException {
     Block block = phase.getBlocks().get(blockIndex);
 
     if (force) {
@@ -42,7 +40,7 @@ public class KafkaStageStrategy extends DefaultStageStrategy {
       KafkaScheduler.rescheduleTasks(Arrays.asList(taskId));
       block.setStatus(Status.Complete);
     } else {
-      super.restart(phaseIndex, blockIndex, force);
+      super.restart(blockIndex, force);
     }
   }
 }

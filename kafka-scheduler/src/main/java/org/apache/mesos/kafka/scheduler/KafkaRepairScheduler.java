@@ -146,7 +146,12 @@ public class KafkaRepairScheduler {
         return -1;
       }
     } else {
-      return OfferUtils.nameToId(block.getName()) - 1;
+      try {
+        return OfferUtils.nameToId(block.getName()) - 1;
+      } catch (Exception ex) {
+        log.warn("Failed to transform: " + block.getName() + " into broker id, with exception: " + ex);
+        return -1;
+      }
     }
   }
 }

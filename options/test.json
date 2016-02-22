@@ -1,0 +1,6 @@
+{
+  "kafka": {
+    "pv": false,
+    "broker-count": 1
+  }
+}

@@ -67,6 +67,10 @@ public class KafkaConfigService extends FrameworkConfigurationService {
     return get("KAFKA_VER_NAME");
   }
 
+  public String getStrategy() {
+    return get("PLAN_STRATEGY");
+  }
+
   public String getOverridePrefix() {
     return "KAFKA_OVERRIDE_";
   }

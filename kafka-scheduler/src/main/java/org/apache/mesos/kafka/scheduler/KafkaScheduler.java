@@ -16,7 +16,6 @@ import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.PersistentOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.PersistentOperationRecorder;
 import org.apache.mesos.kafka.offer.SandboxOfferRequirementProvider;
-import org.apache.mesos.kafka.plan.KafkaStageStrategy;
 import org.apache.mesos.kafka.plan.KafkaUpdatePlan;
 import org.apache.mesos.kafka.plan.PlanFactory;
 import org.apache.mesos.kafka.state.KafkaStateService;
@@ -36,8 +35,6 @@ import org.apache.mesos.scheduler.plan.Block;
 import org.apache.mesos.scheduler.plan.DefaultPlanScheduler;
 import org.apache.mesos.scheduler.plan.DefaultPlanManager;
 import org.apache.mesos.scheduler.plan.Plan;
-import org.apache.mesos.scheduler.plan.PlanStrategy;
-import org.apache.mesos.scheduler.plan.DefaultInstallStrategy;
 
 import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos.ExecutorID;
@@ -94,24 +91,11 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
         getOfferRequirementProvider(),
         reconciler);
 
-    planManager = new DefaultPlanManager(getStrategy(plan));
+    planManager = new DefaultPlanManager(plan);
     addObserver(planManager);
 
     planScheduler = new DefaultPlanScheduler(offerAccepter);
     repairScheduler = new KafkaRepairScheduler(configState, getOfferRequirementProvider(), offerAccepter);
-  }
-
-  private PlanStrategy getStrategy(Plan plan) {
-    String strat = envConfig.get("PLAN_STRATEGY");
-
-    switch (strat) {
-      case "INSTALL":
-        return new DefaultInstallStrategy(plan);
-      case "STAGE":
-        return new KafkaStageStrategy(plan);
-      default:
-        return new KafkaStageStrategy(plan);
-    }
   }
 
   private void handleConfigChange() {

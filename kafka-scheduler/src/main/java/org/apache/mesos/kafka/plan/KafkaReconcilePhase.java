@@ -6,6 +6,7 @@ import java.util.List;
 import org.apache.mesos.reconciliation.Reconciler;
 import org.apache.mesos.scheduler.plan.Block;
 import org.apache.mesos.scheduler.plan.Phase;
+import org.apache.mesos.scheduler.plan.PhaseStrategy;
 import org.apache.mesos.scheduler.plan.Status;
 
 public class KafkaReconcilePhase implements Phase {
@@ -41,6 +42,10 @@ public class KafkaReconcilePhase implements Phase {
 
   public Status getStatus() {
     return block.getStatus();
+  }
+
+  public PhaseStrategy getStrategy() {
+    return null;
   }
 }
 

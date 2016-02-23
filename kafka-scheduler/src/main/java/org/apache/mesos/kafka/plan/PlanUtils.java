@@ -5,24 +5,24 @@ import org.apache.commons.logging.LogFactory;
 
 import org.apache.mesos.kafka.config.KafkaConfigService;
 
-import org.apache.mesos.scheduler.plan.DefaultInstallStrategy;
-import org.apache.mesos.scheduler.plan.Phase;
-import org.apache.mesos.scheduler.plan.PhaseStrategy;
+import org.apache.mesos.scheduler.plan.PhaseStrategyFactory;
+import org.apache.mesos.scheduler.plan.InstallPhaseStrategyFactory;
+import org.apache.mesos.scheduler.plan.StagePhaseStrategyFactory;
 
 public class PlanUtils {
   private static final Log log = LogFactory.getLog(PlanUtils.class);
 
-  public static PhaseStrategy getPhaseStrategy(KafkaConfigService config, Phase phase) {
+  public static PhaseStrategyFactory getPhaseStrategyFactory(KafkaConfigService config) {
     String strategy = config.getStrategy();
 
     switch (strategy) {
       case "INSTALL":
-        return new DefaultInstallStrategy(phase);
+        return new InstallPhaseStrategyFactory();
       case "STAGE":
-        return new KafkaStageStrategy(phase);
+        return new StagePhaseStrategyFactory();
       default:
         log.warn("Unknown strategy: " + strategy);
-        return new KafkaStageStrategy(phase);
+        return new StagePhaseStrategyFactory();
     }
   }
 }

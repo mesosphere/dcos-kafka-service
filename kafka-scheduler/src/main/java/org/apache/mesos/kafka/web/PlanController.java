@@ -84,9 +84,7 @@ public class PlanController {
   @GET
   @Path("/summary")
   public Response getPlanSummary() {
-    JSONObject summaryObj = new JSONObject();
     JSONObject planObj = new JSONObject();
-
     Plan plan = planManager.getPlan();
 
     if (plan != null) {
@@ -96,12 +94,14 @@ public class PlanController {
       for (Phase phase : plan.getPhases()) {
         JSONObject phaseObj = new JSONObject();
         phaseObj.put("name", phase.getName());
+        phaseObj.put("index", phase.getId());
         phaseObj.put("status", phase.getStatus());
 
         List<JSONObject> blockObjs = new ArrayList<JSONObject>();
         for (Block block : phase.getBlocks()) {
           JSONObject blockObj = new JSONObject();
           blockObj.put("name", block.getName());
+          blockObj.put("index", block.getId());
           blockObj.put("status", block.getStatus());
           blockObjs.add(blockObj);
         }
@@ -113,9 +113,7 @@ public class PlanController {
       planObj.put("phases", new JSONArray(phaseObjs));
     }
 
-    summaryObj.put("plan", planObj);
-
-    return Response.ok(summaryObj.toString(), MediaType.APPLICATION_JSON).build();
+    return Response.ok(planObj.toString(), MediaType.APPLICATION_JSON).build();
   }
 
   @GET

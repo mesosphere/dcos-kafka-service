@@ -83,6 +83,10 @@ public class KafkaConfigState {
     return fetch(getTargetName());
   }
 
+  public List<String> getConfigNames() {
+    return configState.getVersions();
+  }
+
   public void syncConfigs() {
     try {
       String targetName = getTargetName();

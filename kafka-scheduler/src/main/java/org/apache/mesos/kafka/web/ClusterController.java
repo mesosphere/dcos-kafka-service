@@ -1,17 +1,21 @@
 package org.apache.mesos.kafka.web;
 
+import java.util.List;
+
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import javax.ws.rs.GET;
 
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.apache.mesos.config.ConfigurationService;
 import org.apache.mesos.kafka.config.KafkaConfigService;
+import org.apache.mesos.kafka.config.KafkaConfigState;
 import org.apache.mesos.kafka.state.KafkaStateService;
 
 import org.json.JSONArray;
@@ -23,6 +27,7 @@ public class ClusterController {
   private final Log log = LogFactory.getLog(ClusterController.class);
   private KafkaStateService state = KafkaStateService.getStateService();
   private KafkaConfigService config =  KafkaConfigService.getEnvConfig();
+  private KafkaConfigState configState = new KafkaConfigState(config.getFrameworkName(), config.getZookeeperAddress(), "/");
 
   private String zkRoot = "/" + config.get("FRAMEWORK_NAME");
   private String zkAddr = config.getZookeeperAddress();
@@ -42,6 +47,59 @@ public class ClusterController {
 
     } catch (Exception ex) {
       log.error("Failed to fetch topics with exception: " + ex);
+      return Response.serverError().build();
+    }
+  }
+
+  @Path("/configurations")
+  @GET
+  public Response getConfigurations() {
+    try {
+      List<String> configNames = configState.getConfigNames();
+      JSONArray configArray = new JSONArray(configNames);
+      return Response.ok(configArray.toString(), MediaType.APPLICATION_JSON).build();
+
+    } catch (Exception ex) {
+      log.error("Failed to fetch configurations with exception: " + ex);
+      return Response.serverError().build();
+    }
+  }
+
+  @Path("/configurations/{configurationName}")
+  @GET
+  public Response getConfigurations(@PathParam("configurationName") String configurationName) {
+    try {
+      log.info("Attempting to fetch config: " + configurationName);
+
+      for (String configName : configState.getConfigNames()) {
+        if (configName.equals(configurationName)) {
+          JSONObject configObj = new JSONObject(configState.fetch(configName).getNsPropertyMap());
+          return Response.ok(configObj.toString(), MediaType.APPLICATION_JSON).build();
+        } else {
+          log.warn(configName + " doesn't equal " + configurationName);
+        }
+      }
+
+      log.error("Failed to find configuration: " + configurationName);
+      return Response.serverError().build();
+
+    } catch (Exception ex) {
+      log.error("Failed to fetch configurations with exception: " + ex);
+      return Response.serverError().build();
+    }
+  }
+
+  @Path("/configurations/target")
+  @GET
+  public Response getTargetConfiguration() {
+    try {
+      log.info("Attempting to fetch config: " + configState.getTargetName());
+
+      JSONObject configObj = new JSONObject(configState.getTargetConfig().getNsPropertyMap());
+      return Response.ok(configObj.toString(), MediaType.APPLICATION_JSON).build();
+
+    } catch (Exception ex) {
+      log.error("Failed to fetch target configuration with exception: " + ex);
       return Response.serverError().build();
     }
   }

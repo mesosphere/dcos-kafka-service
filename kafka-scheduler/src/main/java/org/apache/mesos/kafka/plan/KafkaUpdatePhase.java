@@ -33,6 +33,8 @@ public class KafkaUpdatePhase implements Phase {
 
   @Override
   public int getId() {
+    // Kafka only has two Phases: Reconciliation which has an Id of 0
+    // and the Update Phase which has an Id of 1
     return 1;
   }
 

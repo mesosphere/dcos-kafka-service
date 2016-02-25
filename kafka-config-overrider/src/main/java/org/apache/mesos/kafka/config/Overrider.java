@@ -123,8 +123,16 @@ public final class Overrider {
       DefaultExecutor exec = new DefaultExecutor();
       PumpStreamHandler streamHandler = new PumpStreamHandler(outputStream);
       exec.setStreamHandler(streamHandler);
+
+      log.info("Getting ip with command: " + commandline);
       exec.execute(commandline);
-      return outputStream.toString().trim();
+
+      if (exec.isFailure(exec.execute(commandline))) {
+        log.error("Got error code when executing: " + commandline.toString());
+        return null;
+      } else {
+        return outputStream.toString().trim();
+      }
     } catch (Exception ex) {
       log.error("Failed to detect ip address with exception: " + ex);
       return null;

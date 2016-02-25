@@ -21,7 +21,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.kafka.scheduler.KafkaScheduler;
 
 import org.apache.mesos.scheduler.plan.Block;
-import org.apache.mesos.scheduler.plan.PlanManager;
+import org.apache.mesos.scheduler.plan.StrategyPlanManager;
 import org.apache.mesos.scheduler.plan.Phase;
 
 import org.json.JSONArray;
@@ -33,7 +33,7 @@ import org.apache.mesos.scheduler.plan.Plan;
 @Produces("application/json")
 public class PlanController {
   private final Log log = LogFactory.getLog(PlanController.class);
-  private PlanManager planManager = KafkaScheduler.getPlanManager();
+  private StrategyPlanManager planManager = KafkaScheduler.getPlanManager();
 
   @GET
   @Path("/status")
@@ -104,6 +104,7 @@ public class PlanController {
           blockObj.put("name", block.getName());
           blockObj.put("index", block.getId());
           blockObj.put("status", block.getStatus());
+          blockObj.put("decide", planManager.blockHasDecisionPoint(phase.getId(), block.getId()));
           blockObjs.add(blockObj);
         }
 

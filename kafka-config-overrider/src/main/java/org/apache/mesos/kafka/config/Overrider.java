@@ -101,10 +101,9 @@ public final class Overrider {
 
     if (config.advertisedHost()) {
       String ip = getIp();
-      log.info("Got ip: " + ip);
       overrides.put("advertised.host.name", ip);
     } else {
-      log.info("Advertised host not enabled.");
+      log.info("Advertise host ip is not enabled.");
     }
 
     return overrides;

@@ -7,7 +7,6 @@ import org.apache.mesos.kafka.config.KafkaConfigService;
 
 import org.apache.mesos.scheduler.plan.PhaseStrategyFactory;
 import org.apache.mesos.scheduler.plan.InstallPhaseStrategyFactory;
-import org.apache.mesos.scheduler.plan.StagePhaseStrategyFactory;
 
 public class PlanUtils {
   private static final Log log = LogFactory.getLog(PlanUtils.class);
@@ -19,10 +18,10 @@ public class PlanUtils {
       case "INSTALL":
         return new InstallPhaseStrategyFactory();
       case "STAGE":
-        return new StagePhaseStrategyFactory();
+        return new KafkaStagePhaseStrategyFactory();
       default:
         log.warn("Unknown strategy: " + strategy);
-        return new StagePhaseStrategyFactory();
+        return new KafkaStagePhaseStrategyFactory();
     }
   }
 }

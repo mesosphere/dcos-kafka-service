@@ -34,7 +34,6 @@ import org.apache.mesos.offer.OperationRecorder;
 import org.apache.mesos.reconciliation.Reconciler;
 import org.apache.mesos.scheduler.plan.Block;
 import org.apache.mesos.scheduler.plan.DefaultPlanScheduler;
-import org.apache.mesos.scheduler.plan.PlanManager;
 import org.apache.mesos.scheduler.plan.StrategyPlanManager;
 import org.apache.mesos.scheduler.plan.StagePhaseStrategyFactory;
 import org.apache.mesos.scheduler.plan.Plan;
@@ -155,7 +154,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     return configState;
   }
 
-  public static PlanManager getPlanManager() {
+  public static StrategyPlanManager getPlanManager() {
     return planManager;
   }
 

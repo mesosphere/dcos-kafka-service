@@ -1,6 +1,9 @@
 package org.apache.mesos.kafka.web;
 
 import java.net.URI;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -23,6 +26,13 @@ public class KafkaApiServer {
     resourceConfig.registerInstances(new BrokerController());
     resourceConfig.registerInstances(new TopicController());
     resourceConfig.registerInstances(new PlanController());
+
+    Logger l = Logger.getLogger("org.glassfish.grizzly.http.server.HttpHandler");
+    l.setLevel(Level.FINE);
+    l.setUseParentHandlers(false);
+    ConsoleHandler ch = new ConsoleHandler();
+    ch.setLevel(Level.ALL);
+    l.addHandler(ch);
 
     GrizzlyHttpServerFactory.createHttpServer(getUri(), resourceConfig);
   }

@@ -1,5 +1,6 @@
 package org.apache.mesos.kafka.config;
 
+import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 
@@ -9,6 +10,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecutor;
+import org.apache.commons.exec.Executor;
+import org.apache.commons.exec.PumpStreamHandler;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -58,6 +63,7 @@ public final class Overrider {
         log.info("Overriding key: " + key + " value: " + value);
         props.setProperty(key, value);
       }
+
       log.info("Saving properties file: " + props);
       props.store(out, null);
       out.close();
@@ -93,6 +99,13 @@ public final class Overrider {
       }
     }
 
+    if (config.advertisedHost()) {
+      String ip = getIp();
+      overrides.put("advertised.host.name", ip);
+    } else {
+      log.info("Advertise host ip is not enabled.");
+    }
+
     return overrides;
   }
 
@@ -101,5 +114,28 @@ public final class Overrider {
     key = key.toLowerCase();
     key = key.replace('_', '.');
     return key;
+  }
+
+  private static String getIp() {
+    try {
+      ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+      CommandLine commandline = CommandLine.parse("/opt/mesosphere/bin/detect_ip");
+      DefaultExecutor exec = new DefaultExecutor();
+      PumpStreamHandler streamHandler = new PumpStreamHandler(outputStream);
+      exec.setStreamHandler(streamHandler);
+
+      log.info("Getting ip with command: " + commandline);
+      exec.execute(commandline);
+
+      if (exec.isFailure(exec.execute(commandline))) {
+        log.error("Got error code when executing: " + commandline.toString());
+        return null;
+      } else {
+        return outputStream.toString().trim();
+      }
+    } catch (Exception ex) {
+      log.error("Failed to detect ip address with exception: " + ex);
+      return null;
+    }
   }
 } 

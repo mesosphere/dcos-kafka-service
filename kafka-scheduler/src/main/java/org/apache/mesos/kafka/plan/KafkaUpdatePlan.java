@@ -6,6 +6,8 @@ import java.util.List;
 import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
 
 import org.apache.mesos.reconciliation.Reconciler;
+
+import org.apache.mesos.scheduler.plan.Block;
 import org.apache.mesos.scheduler.plan.Plan;
 import org.apache.mesos.scheduler.plan.Phase;
 import org.apache.mesos.scheduler.plan.Status;
@@ -27,19 +29,15 @@ public class KafkaUpdatePlan implements Plan {
     return Arrays.asList(reconcilePhase, updatePhase);
   }
 
-  public Phase getCurrentPhase() {
-    if (!reconcilePhase.isComplete()) {
-      return reconcilePhase;
-    } else {
-      return updatePhase;
-    }
-  }
-
   public boolean isComplete() {
-    return updatePhase.isComplete();
-  }
+    for (Phase phase : getPhases()) {
+      for (Block block : phase.getBlocks()) {
+        if (!block.isComplete()) {
+          return false;
+        }
+      }
+    }
 
-  public Status getStatus() {
-    return getCurrentPhase().getStatus();
+    return true;
   }
 }

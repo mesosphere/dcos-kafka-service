@@ -18,6 +18,7 @@ import org.apache.mesos.kafka.offer.PersistentOperationRecorder;
 import org.apache.mesos.kafka.offer.SandboxOfferRequirementProvider;
 import org.apache.mesos.kafka.plan.KafkaUpdatePlan;
 import org.apache.mesos.kafka.plan.PlanFactory;
+import org.apache.mesos.kafka.plan.PlanUtils;
 import org.apache.mesos.kafka.state.KafkaStateService;
 import org.apache.mesos.kafka.web.KafkaApiServer;
 
@@ -33,7 +34,8 @@ import org.apache.mesos.offer.OperationRecorder;
 import org.apache.mesos.reconciliation.Reconciler;
 import org.apache.mesos.scheduler.plan.Block;
 import org.apache.mesos.scheduler.plan.DefaultPlanScheduler;
-import org.apache.mesos.scheduler.plan.DefaultPlanManager;
+import org.apache.mesos.scheduler.plan.StrategyPlanManager;
+import org.apache.mesos.scheduler.plan.StagePhaseStrategyFactory;
 import org.apache.mesos.scheduler.plan.Plan;
 
 import org.apache.mesos.MesosSchedulerDriver;
@@ -63,7 +65,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   private OfferAccepter offerAccepter;
 
   private Reconciler reconciler;
-  private static DefaultPlanManager planManager = null; 
+  private static StrategyPlanManager planManager = null; 
   private static final Integer restartLock = 0;
   private static List<String> tasksToRestart = new ArrayList<String>();
   private static final Integer rescheduleLock = 0;
@@ -91,7 +93,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
         getOfferRequirementProvider(),
         reconciler);
 
-    planManager = new DefaultPlanManager(plan);
+    planManager = new StrategyPlanManager(plan, PlanUtils.getPhaseStrategyFactory(envConfig));
     addObserver(planManager);
 
     planScheduler = new DefaultPlanScheduler(offerAccepter);
@@ -152,7 +154,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     return configState;
   }
 
-  public static DefaultPlanManager getPlanManager() {
+  public static StrategyPlanManager getPlanManager() {
     return planManager;
   }
 

@@ -71,6 +71,11 @@ public class KafkaConfigService extends FrameworkConfigurationService {
     return get("PLAN_STRATEGY");
   }
 
+  public boolean advertisedHost() {
+    String overrideStr = get("KAFKA_ADVERTISE_HOST_IP");
+    return Boolean.parseBoolean(overrideStr);
+  }
+
   public String getOverridePrefix() {
     return "KAFKA_OVERRIDE_";
   }

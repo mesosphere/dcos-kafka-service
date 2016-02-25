@@ -21,7 +21,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.kafka.scheduler.KafkaScheduler;
 
 import org.apache.mesos.scheduler.plan.Block;
-import org.apache.mesos.scheduler.plan.PlanManager;
+import org.apache.mesos.scheduler.plan.StrategyPlanManager;
 import org.apache.mesos.scheduler.plan.Phase;
 
 import org.json.JSONArray;
@@ -33,31 +33,32 @@ import org.apache.mesos.scheduler.plan.Plan;
 @Produces("application/json")
 public class PlanController {
   private final Log log = LogFactory.getLog(PlanController.class);
-  private PlanManager planManager = KafkaScheduler.getPlanManager();
+  private StrategyPlanManager planManager = KafkaScheduler.getPlanManager();
 
   @GET
   @Path("/status")
   public Response getPlanStatus() {
+    log.info("Getting status.");
+
     try {
       Plan plan = planManager.getPlan();
-      Phase phase = plan.getCurrentPhase();
-      Block block = null;
+      Phase phase = planManager.getCurrentPhase();
+      Block block = planManager.getCurrentBlock();
 
       log.info("Building plan obj");
       JSONObject planObj = new JSONObject();
       if (plan != null) {
         planObj.put("phase_count", plan.getPhases().size());
-        planObj.put("status", plan.getStatus());
+        planObj.put("status", planManager.getStatus());
       }
 
       log.info("Building phase obj");
       JSONObject phaseObj = new JSONObject();
       if (phase != null) {
-        block = phase.getCurrentBlock();
         phaseObj.put("name", phase.getName());
         phaseObj.put("index", phase.getId());
         phaseObj.put("block_count", phase.getBlocks().size());
-        phaseObj.put("status", phase.getStatus());
+        phaseObj.put("status", planManager.getPhaseStatus(phase.getId()));
       }
 
       log.info("Building block obj");
@@ -88,14 +89,14 @@ public class PlanController {
     Plan plan = planManager.getPlan();
 
     if (plan != null) {
-      planObj.put("status", plan.getStatus());
+      planObj.put("status", planManager.getStatus());
 
       List<JSONObject> phaseObjs = new ArrayList<JSONObject>();
       for (Phase phase : plan.getPhases()) {
         JSONObject phaseObj = new JSONObject();
         phaseObj.put("name", phase.getName());
         phaseObj.put("index", phase.getId());
-        phaseObj.put("status", phase.getStatus());
+        phaseObj.put("status", planManager.getPhaseStatus(phase.getId()));
 
         List<JSONObject> blockObjs = new ArrayList<JSONObject>();
         for (Block block : phase.getBlocks()) {
@@ -103,6 +104,7 @@ public class PlanController {
           blockObj.put("name", block.getName());
           blockObj.put("index", block.getId());
           blockObj.put("status", block.getStatus());
+          blockObj.put("decide", planManager.blockHasDecisionPoint(phase.getId(), block.getId()));
           blockObjs.add(blockObj);
         }
 

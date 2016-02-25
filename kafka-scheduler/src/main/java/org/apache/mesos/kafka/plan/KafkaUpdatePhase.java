@@ -16,7 +16,6 @@ public class KafkaUpdatePhase implements Phase {
   private List<Block> blocks = null;
   private String configName = null;
   private KafkaConfigService config = null;
-  private PhaseStrategy strategy = null;
 
   public KafkaUpdatePhase(
       String configName,
@@ -25,15 +24,34 @@ public class KafkaUpdatePhase implements Phase {
     this.configName = configName;
     this.config = KafkaScheduler.getConfigState().fetch(configName);
     this.blocks = createBlocks(configName, offerReqProvider);
-    strategy = PlanUtils.getPhaseStrategy(config, this);
   }
 
+  @Override
   public List<Block> getBlocks() {
     return blocks;
   }
 
-  public PhaseStrategy getStrategy() {
-    return strategy;
+  @Override
+  public int getId() {
+    // Kafka only has two Phases: Reconciliation which has an Id of 0
+    // and the Update Phase which has an Id of 1
+    return 1;
+  }
+
+  @Override
+  public String getName() {
+    return "Update to: " + configName;
+  }
+
+  @Override
+  public boolean isComplete() {
+    for (Block block : blocks) {
+      if (!block.isComplete()) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   private List<Block> createBlocks(
@@ -47,42 +65,6 @@ public class KafkaUpdatePhase implements Phase {
     }
 
     return blocks;
-  }
-
-  public Block getCurrentBlock() {
-    if (blocks.size() == 0) {
-      return null;
-    } else {
-      return strategy.getCurrentBlock();
-    }
-  }
-
-  public boolean isComplete() {
-    for (Block block : blocks) {
-      if (!block.isComplete()) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  public String getName() {
-    return "Update to: " + configName;
-  }
-
-  public int getId() {
-    return 1;
-  }
-
-  public Status getStatus() {
-    for (Block block : getBlocks()) {
-      if (!block.getStatus().equals(Status.Complete)) {
-        return block.getStatus();
-      }
-    }
-
-    return Status.Complete;
   }
 }
 

@@ -5,10 +5,12 @@ plugins {
 ext {
   mesosVer = "0.24.1"
   loggingVer = "1.1.1"
+  apacheCommonsVer = "1.3"
 }
 
 dependencies {
   compile project(':kafka-scheduler')
+  compile "org.apache.commons:commons-exec:${apacheCommonsVer}"
   compile "org.apache.mesos:mesos:${mesosVer}"
   compile "commons-logging:commons-logging:${loggingVer}"
 }

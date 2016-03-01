@@ -5,11 +5,7 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.apache.mesos.config.ConfigurationService;
-import org.apache.mesos.kafka.config.KafkaConfigService;
 import org.apache.mesos.kafka.state.KafkaStateService;
-import org.apache.mesos.offer.OfferRequirement;
-
 import org.apache.mesos.Protos.Label;
 import org.apache.mesos.Protos.Resource;
 import org.apache.mesos.Protos.Resource.DiskInfo;

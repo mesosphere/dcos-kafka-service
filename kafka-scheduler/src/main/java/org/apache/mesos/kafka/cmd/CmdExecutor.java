@@ -11,11 +11,7 @@ import java.io.InputStreamReader;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
-import org.apache.mesos.config.ConfigurationService;
-import org.apache.mesos.config.FrameworkConfigurationService;
 import org.apache.mesos.kafka.state.KafkaStateService;
 import org.apache.mesos.kafka.config.KafkaConfigService;
 
@@ -23,12 +19,11 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class CmdExecutor {
-  private static final Log log = LogFactory.getLog(CmdExecutor.class);
   private static KafkaConfigService config = KafkaConfigService.getEnvConfig();
   private static KafkaStateService state = KafkaStateService.getStateService();
 
   private static String binPath = config.get("MESOS_SANDBOX") + "/" + config.get("KAFKA_VER_NAME") + "/bin/";
-  private static String zkPath = config.getKafkaZkUri(); 
+  private static String zkPath = config.getKafkaZkUri();
 
   public static JSONObject createTopic(String name, int partitionCount, int replicationFactor) throws Exception {
     // e.g. ./kafka-topics.sh --create --zookeeper master.mesos:2181/kafka-0 --topic topic0 --partitions 3 --replication-factor 3
@@ -45,7 +40,7 @@ public class CmdExecutor {
     cmd.add("--replication-factor");
     cmd.add(Integer.toString(replicationFactor));
 
-    return runCmd(cmd); 
+    return runCmd(cmd);
   }
 
   public static JSONObject deleteTopic(String name) throws Exception {
@@ -59,7 +54,7 @@ public class CmdExecutor {
     cmd.add("--topic ");
     cmd.add(name);
 
-    return runCmd(cmd); 
+    return runCmd(cmd);
   }
 
   public static JSONObject alterTopic(String name, List<String> cmds) throws Exception {
@@ -74,7 +69,7 @@ public class CmdExecutor {
     cmd.add(name);
     cmd.addAll(cmds);
 
-    return runCmd(cmd); 
+    return runCmd(cmd);
   }
 
   public static List<String> getListOverrides(MultivaluedMap<String, String> overrides) {
@@ -91,7 +86,7 @@ public class CmdExecutor {
   public static JSONObject producerTest(String topicName, int messages) throws Exception {
     // e.g. ./kafka-producer-perf-test.sh --topic topic0 --num-records 1000 --producer-props bootstrap.servers=ip-10-0-2-171.us-west-2.compute.internal:9092,ip-10-0-2-172.us-west-2.compute.internal:9093,ip-10-0-2-173.us-west-2.compute.internal:9094 --throughput 100000 --record-size 1024
     List<String> brokerEndpoints = state.getBrokerEndpoints();
-    String brokers = StringUtils.join(brokerEndpoints, ","); 
+    String brokers = StringUtils.join(brokerEndpoints, ",");
     String bootstrapServers = "bootstrap.servers=" + brokers;
 
     List<String> cmd = new ArrayList<String>();
@@ -107,14 +102,14 @@ public class CmdExecutor {
     cmd.add("--producer-props");
     cmd.add(bootstrapServers);
 
-    return runCmd(cmd); 
+    return runCmd(cmd);
   }
 
   public static JSONArray getOffsets(String topicName) throws Exception {
     // e.g. ./kafka-run-class.sh kafka.tools.GetOffsetShell --broker-list ip-10-0-1-71.us-west-2.compute.internal:9092,ip-10-0-1-72.us-west-2.compute.internal:9093,ip-10-0-1-68.us-west-2.compute.internal:9094 --topic topic0 --time -1 --partitions 0
 
     List<String> brokerEndpoints = state.getBrokerEndpoints();
-    String brokers = StringUtils.join(brokerEndpoints, ","); 
+    String brokers = StringUtils.join(brokerEndpoints, ",");
 
     List<String> cmd = new ArrayList<String>();
     cmd.add(binPath + "kafka-run-class.sh");

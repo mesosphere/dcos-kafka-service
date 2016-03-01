@@ -4,7 +4,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.mesos.config.ConfigUtil;
 import org.apache.mesos.config.FrameworkConfigurationService;
 import org.apache.mesos.config.configurator.Configurator;
 

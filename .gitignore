@@ -14,6 +14,7 @@ out/
 .classpath
 .project
 .settings/
+bin/
 
 # gradle
 .gradle

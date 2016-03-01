@@ -1,28 +1,18 @@
 package org.apache.mesos.kafka.offer;
 
-import com.google.common.base.Joiner;
-
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.apache.mesos.config.ConfigurationService;
 import org.apache.mesos.kafka.config.KafkaConfigService;
 import org.apache.mesos.kafka.config.KafkaConfigState;
 import org.apache.mesos.offer.OfferRequirement;
 import org.apache.mesos.offer.PlacementStrategy;
-import org.apache.mesos.protobuf.CommandInfoBuilder;
-import org.apache.mesos.protobuf.LabelBuilder;
 import org.apache.mesos.protobuf.ResourceBuilder;
-import org.apache.mesos.protobuf.TaskInfoBuilder;
-
-import org.apache.mesos.Protos.Labels;
 import org.apache.mesos.Protos.Resource;
 import org.apache.mesos.Protos.TaskInfo;
 

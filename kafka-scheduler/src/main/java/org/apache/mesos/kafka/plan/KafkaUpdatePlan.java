@@ -10,7 +10,6 @@ import org.apache.mesos.reconciliation.Reconciler;
 import org.apache.mesos.scheduler.plan.Block;
 import org.apache.mesos.scheduler.plan.Plan;
 import org.apache.mesos.scheduler.plan.Phase;
-import org.apache.mesos.scheduler.plan.Status;
 
 public class KafkaUpdatePlan implements Plan {
   private KafkaReconcilePhase reconcilePhase;

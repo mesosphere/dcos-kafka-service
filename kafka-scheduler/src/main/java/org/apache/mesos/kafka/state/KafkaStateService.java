@@ -5,7 +5,6 @@ import org.apache.commons.logging.LogFactory;
 
 import org.apache.curator.framework.CuratorFramework;
 
-import org.apache.mesos.config.ConfigurationService;
 import org.apache.mesos.kafka.config.KafkaConfigService;
 import org.apache.mesos.kafka.offer.OfferUtils;
 
@@ -26,7 +25,7 @@ import java.util.Observer;
 public class KafkaStateService implements Observer {
   private final Log log = LogFactory.getLog(KafkaStateService.class);
   private final CuratorFramework zkClient;
-  
+
   private static KafkaConfigService config = KafkaConfigService.getEnvConfig();
 
   private static String zkRoot;
@@ -61,7 +60,6 @@ public class KafkaStateService implements Observer {
   }
 
   public FrameworkID getFrameworkId() {
-    FrameworkID fwkId = null;
     try {
       byte[] bytes = zkClient.getData().forPath(fwkIdPath);
       if (bytes.length > 0) {
@@ -84,7 +82,7 @@ public class KafkaStateService implements Observer {
 
   public void recordTasks(List<TaskInfo> taskInfos) throws Exception {
     recordTaskInfos(taskInfos);
-    List<TaskStatus> taskStatuses = taskInfosToTaskStatuses(taskInfos); 
+    List<TaskStatus> taskStatuses = taskInfosToTaskStatuses(taskInfos);
     recordTaskStatuses(taskStatuses);
   }
 
@@ -120,7 +118,7 @@ public class KafkaStateService implements Observer {
   public List<TaskStatus> getTaskStatuses() throws Exception {
     List<TaskStatus> taskStatuses = new ArrayList<TaskStatus>();
 
-    List<String> taskIds = getTaskIds(); 
+    List<String> taskIds = getTaskIds();
     for (String taskId : taskIds) {
       taskStatuses.add(getTaskStatus(taskId));
     }
@@ -306,7 +304,7 @@ public class KafkaStateService implements Observer {
 
     for (TaskInfo taskInfo : taskInfos) {
       taskStatuses.add(taskInfoToTaskStatus(taskInfo));
-    } 
+    }
 
     return taskStatuses;
   }
@@ -316,4 +314,4 @@ public class KafkaStateService implements Observer {
       zkClient.create().creatingParentsIfNeeded().forPath(path, new byte[0]);
     }
   }
-} 
+}

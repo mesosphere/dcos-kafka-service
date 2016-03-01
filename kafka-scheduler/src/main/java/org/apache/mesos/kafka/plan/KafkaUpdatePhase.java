@@ -7,10 +7,7 @@ import org.apache.mesos.kafka.config.KafkaConfigService;
 import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
 import org.apache.mesos.kafka.scheduler.KafkaScheduler;
 import org.apache.mesos.scheduler.plan.Block;
-import org.apache.mesos.scheduler.plan.DefaultStageStrategy;
 import org.apache.mesos.scheduler.plan.Phase;
-import org.apache.mesos.scheduler.plan.PhaseStrategy;
-import org.apache.mesos.scheduler.plan.Status;
 
 public class KafkaUpdatePhase implements Phase {
   private List<Block> blocks = null;

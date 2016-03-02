@@ -8,7 +8,7 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.mesos.config.ConfigurationService;
 import org.apache.mesos.kafka.config.KafkaConfigService;
 import org.apache.mesos.kafka.offer.OfferUtils;
-
+import org.apache.zookeeper.KeeperException.NoNodeException;
 import org.apache.mesos.Protos.FrameworkID;
 import org.apache.mesos.Protos.TaskID;
 import org.apache.mesos.Protos.TaskInfo;
@@ -212,8 +212,12 @@ public class KafkaStateService implements Observer {
   }
 
   private JSONArray getIds(String path) throws Exception {
-    List<String> ids = zkClient.getChildren().forPath(path);
-    return new JSONArray(ids);
+    try {
+      return new JSONArray(zkClient.getChildren().forPath(path));
+    } catch (NoNodeException e) {
+      log.info("List path " + path + " doesn't exist, returning empty list. Kafka not running yet?", e);
+      return new JSONArray();
+    }
   }
 
   private JSONObject getElement(String path) throws Exception {

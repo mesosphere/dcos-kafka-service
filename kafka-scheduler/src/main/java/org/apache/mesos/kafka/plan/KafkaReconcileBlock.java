@@ -25,12 +25,10 @@ public class KafkaReconcileBlock implements Block {
   private final Log log = LogFactory.getLog(KafkaReconcileBlock.class);
 
   private Status status = Status.Pending;
-  private KafkaStateService state = null;
   private Reconciler reconciler = null;
 
   public KafkaReconcileBlock(Reconciler reconciler) {
     setStatus(Status.Pending);
-    state = KafkaStateService.getStateService();
     this.reconciler = reconciler;
   }
 

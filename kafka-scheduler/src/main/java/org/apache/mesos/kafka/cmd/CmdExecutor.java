@@ -11,6 +11,9 @@ import java.io.InputStreamReader;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.StopWatch;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import org.apache.mesos.kafka.state.KafkaStateService;
 import org.apache.mesos.kafka.config.KafkaConfigService;
@@ -19,6 +22,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class CmdExecutor {
+  private static final Log log = LogFactory.getLog(CmdExecutor.class);
   private static KafkaConfigService config = KafkaConfigService.getEnvConfig();
   private static KafkaStateService state = KafkaStateService.getStateService();
 
@@ -49,9 +53,9 @@ public class CmdExecutor {
     List<String> cmd = new ArrayList<String>();
     cmd.add(binPath + "kafka-topics.sh");
     cmd.add("--delete");
-    cmd.add("--zookeeper ");
+    cmd.add("--zookeeper");
     cmd.add(zkPath);
-    cmd.add("--topic ");
+    cmd.add("--topic");
     cmd.add(name);
 
     return runCmd(cmd);
@@ -168,13 +172,29 @@ public class CmdExecutor {
     return new JSONArray(partitions);
   }
 
-  private static JSONObject runCmd(List<String> cmd) throws Exception{
+  private static JSONObject runCmd(List<String> cmd) throws Exception {
     ProcessBuilder builder = new ProcessBuilder(cmd);
+
+    StopWatch stopWatch = new StopWatch();
+    stopWatch.start();
     Process process = builder.start();
     int exitCode = process.waitFor();
+    stopWatch.stop();
 
     String stdout = streamToString(process.getInputStream());
     String stderr = streamToString(process.getErrorStream());
+
+    if (exitCode == 0) {
+      log.info(String.format(
+          "Command succeeded in %dms: %s",
+          stopWatch.getTime(), StringUtils.join(cmd, " ")));
+    } else {
+      log.warn(String.format(
+          "Command failed with code=%d in %dms: %s",
+          exitCode, stopWatch.getTime(), StringUtils.join(cmd, " ")));
+      log.warn(String.format("stdout:\n%s", stdout));
+      log.warn(String.format("stderr:\n%s", stderr));
+    }
 
     JSONObject obj = new JSONObject();
     obj.put("stdout", stdout);

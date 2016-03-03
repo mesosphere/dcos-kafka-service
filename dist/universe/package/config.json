@@ -63,7 +63,7 @@
                 "version_name": {
                   "description": "Kafka version name",
                   "type": "string",
-                  "default": "kafka_2.10-0.9.0.0"
+                  "default": "kafka_2.10-0.9.0.1"
                 },
                 "cpus": {
                   "description": "Broker cpu requirements",
@@ -94,6 +94,11 @@
                   "description": "Broker placement strategy. See documentation. [INSTALL, STAGE]",
                   "type": "string",
                   "default": "INSTALL"
+                },
+                "kafka_advertise_host_ip": {
+                  "description": "Override the advertised.host.name Kafka configuration value with the IP address detected in /opt/mesosphere/detect_ip",
+                  "type": "boolean",
+                  "default": false
                 },
                 "kafka_override_socket_request_max_bytes": {
                   "description": "Kafka broker socket request max bytes.",

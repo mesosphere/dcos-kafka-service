@@ -12,7 +12,6 @@ import java.util.Properties;
 
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
-import org.apache.commons.exec.Executor;
 import org.apache.commons.exec.PumpStreamHandler;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -44,7 +43,7 @@ public final class Overrider {
 
   private static void UpdateProperties(Map<String, String> overrides) {
     String serverPropertiesFileName =
-      envConfig.get("MESOS_SANDBOX") + "/" + envConfig.getKafkaVersionName() + "/config/server.properties"; 
+      envConfig.get("MESOS_SANDBOX") + "/" + envConfig.getKafkaVersionName() + "/config/server.properties";
 
     log.info("Updating config file: " + serverPropertiesFileName);
 
@@ -125,17 +124,17 @@ public final class Overrider {
       exec.setStreamHandler(streamHandler);
 
       log.info("Getting ip with command: " + commandline);
-      exec.execute(commandline);
-
       if (exec.isFailure(exec.execute(commandline))) {
         log.error("Got error code when executing: " + commandline.toString());
         return null;
       } else {
-        return outputStream.toString().trim();
+        String ip = outputStream.toString().trim();
+        log.info("Got ip: " + ip);
+        return ip;
       }
     } catch (Exception ex) {
       log.error("Failed to detect ip address with exception: " + ex);
       return null;
     }
   }
-} 
+}

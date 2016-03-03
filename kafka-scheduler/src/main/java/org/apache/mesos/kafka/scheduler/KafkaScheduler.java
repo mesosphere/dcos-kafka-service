@@ -24,20 +24,11 @@ import org.apache.mesos.kafka.web.KafkaApiServer;
 
 import org.apache.mesos.config.ConfigurationChangeDetector;
 import org.apache.mesos.config.ConfigurationChangeNamespaces;
-import org.apache.mesos.config.ConfigurationService;
-import org.apache.mesos.net.HttpRequestBuilder;
 import org.apache.mesos.offer.OfferAccepter;
-import org.apache.mesos.offer.OfferEvaluator;
-import org.apache.mesos.offer.OfferRecommendation;
-import org.apache.mesos.offer.OfferRequirement;
-import org.apache.mesos.offer.OperationRecorder;
 import org.apache.mesos.reconciliation.Reconciler;
 import org.apache.mesos.scheduler.plan.Block;
 import org.apache.mesos.scheduler.plan.DefaultPlanScheduler;
 import org.apache.mesos.scheduler.plan.StrategyPlanManager;
-import org.apache.mesos.scheduler.plan.StagePhaseStrategyFactory;
-import org.apache.mesos.scheduler.plan.Plan;
-
 import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos.ExecutorID;
 import org.apache.mesos.Protos.FrameworkID;
@@ -65,7 +56,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   private OfferAccepter offerAccepter;
 
   private Reconciler reconciler;
-  private static StrategyPlanManager planManager = null; 
+  private static StrategyPlanManager planManager = null;
   private static final Integer restartLock = 0;
   private static List<String> tasksToRestart = new ArrayList<String>();
   private static final Integer rescheduleLock = 0;
@@ -245,7 +236,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     for (Offer offer : offers) {
       if (!offerAccepted(offer, acceptedOfferIds)) {
         filteredOffers.add(offer);
-      } 
+      }
     }
 
     return filteredOffers;
@@ -267,7 +258,6 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   }
 
   private void processTasksToRestart(SchedulerDriver driver) {
-    List<String> localTasksToRestart = null;
     synchronized (restartLock) {
       for (String taskId : tasksToRestart) {
         log.info("Restarting task: " + taskId);
@@ -279,7 +269,6 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   }
 
   private void processTasksToReschedule(SchedulerDriver driver) {
-    List<String> localTasksToReschedule= null;
     synchronized (rescheduleLock) {
       for (String taskId : tasksToReschedule) {
         log.info("Rescheduling task: " + taskId);

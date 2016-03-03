@@ -13,7 +13,6 @@ import javax.ws.rs.PathParam;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.apache.mesos.config.ConfigurationService;
 import org.apache.mesos.kafka.config.KafkaConfigService;
 import org.apache.mesos.kafka.config.KafkaConfigState;
 import org.apache.mesos.kafka.state.KafkaStateService;
@@ -29,7 +28,6 @@ public class ClusterController {
   private KafkaConfigService config =  KafkaConfigService.getEnvConfig();
   private KafkaConfigState configState = new KafkaConfigState(config.getFrameworkName(), config.getZookeeperAddress(), "/");
 
-  private String zkRoot = "/" + config.get("FRAMEWORK_NAME");
   private String zkAddr = config.getZookeeperAddress();
 
   @Path("/connection")
@@ -116,7 +114,7 @@ public class ClusterController {
     String brokerList = "--broker-list ";
 
     try {
-      String brokers = String.join(", ", state.getBrokerEndpoints()); 
+      String brokers = String.join(", ", state.getBrokerEndpoints());
       return brokerList + brokers;
     } catch (Exception ex) {
       log.error("Failed to fetch broker endpoints for convenience with exception : " + ex);

@@ -15,8 +15,6 @@ import org.apache.commons.lang3.time.StopWatch;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.apache.mesos.config.ConfigurationService;
-import org.apache.mesos.config.FrameworkConfigurationService;
 import org.apache.mesos.kafka.state.KafkaStateService;
 import org.apache.mesos.kafka.config.KafkaConfigService;
 

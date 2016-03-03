@@ -1,31 +1,20 @@
 package org.apache.mesos.kafka.offer;
 
-import com.google.common.base.Joiner;
-
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.apache.mesos.config.ConfigurationService;
 import org.apache.mesos.kafka.config.KafkaConfigService;
 import org.apache.mesos.kafka.config.KafkaConfigState;
-import org.apache.mesos.kafka.state.KafkaStateService;
 import org.apache.mesos.offer.OfferRequirement;
 import org.apache.mesos.offer.OfferRequirement.VolumeMode;
 import org.apache.mesos.offer.PlacementStrategy;
 import org.apache.mesos.offer.ResourceUtils;
-import org.apache.mesos.protobuf.CommandInfoBuilder;
-import org.apache.mesos.protobuf.LabelBuilder;
 import org.apache.mesos.protobuf.ResourceBuilder;
-import org.apache.mesos.protobuf.TaskInfoBuilder;
-
-import org.apache.mesos.Protos.Labels;
 import org.apache.mesos.Protos.Resource;
 import org.apache.mesos.Protos.Resource.DiskInfo;
 import org.apache.mesos.Protos.Resource.DiskInfo.Persistence;
@@ -74,7 +63,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
   public OfferRequirement getUpdateOfferRequirement(String configName, TaskInfo taskInfo) {
     log.info("Getting update OfferRequirement for: " + configName);
 
-    KafkaConfigService config = configState.fetch(configName); 
+    KafkaConfigService config = configState.fetch(configName);
 
     String brokerName = taskInfo.getName();
     Integer brokerId = OfferUtils.nameToId(brokerName);
@@ -94,22 +83,6 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     } else {
       return getCreateOfferRequirement(newTaskInfo);
     }
-  }
-
-  private OfferRequirement getUpgradeOfferRequirement(TaskInfo taskInfo) {
-    log.info("Getting upgrade to pv OfferRequirement");
-
-    Integer brokerId = OfferUtils.nameToId(taskInfo.getName());
-
-    String configName = OfferUtils.getConfigName(taskInfo);
-    KafkaConfigService config = getConfigService(taskInfo);
-
-    String brokerName = taskInfo.getName();
-    String taskId = taskInfo.getTaskId().getValue();
-    String persistenceId = UUID.randomUUID().toString();
-    TaskInfo createTaskInfo = getTaskInfo(configName, config, persistenceId, brokerId, taskId);
-
-    return getCreateOfferRequirement(createTaskInfo);
   }
 
   private OfferRequirement getCreateOfferRequirement(TaskInfo taskInfo) {

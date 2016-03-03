@@ -10,10 +10,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.Protos.Offer;
 import org.apache.mesos.Protos.OfferID;
 import org.apache.mesos.Protos.TaskInfo;
-import org.apache.mesos.Protos.TaskID;
 import org.apache.mesos.SchedulerDriver;
 
-import org.apache.mesos.kafka.config.KafkaConfigService;
 import org.apache.mesos.kafka.offer.OfferUtils;
 import org.apache.mesos.offer.OfferAccepter;
 import org.apache.mesos.offer.OfferEvaluator;

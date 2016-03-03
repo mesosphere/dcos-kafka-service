@@ -16,7 +16,7 @@ public class NodePlacementStrategy implements PlacementStrategy {
   private KafkaStateService state = KafkaStateService.getStateService();
 
   public List<SlaveID> getAgentsToAvoid(TaskInfo taskInfo) {
-    List<SlaveID> agents = null; 
+    List<SlaveID> agents = null;
 
     try {
       agents = getAgentsToAvoidInternal(taskInfo);
@@ -46,8 +46,6 @@ public class NodePlacementStrategy implements PlacementStrategy {
   private List<TaskInfo> getOtherTaskInfos(TaskInfo thisTaskInfo) throws Exception {
     List<TaskInfo> others = new ArrayList<TaskInfo>();
 
-    String thisTaskName = thisTaskInfo.getName();
-
     for (TaskInfo taskInfo : state.getTaskInfos()) {
       if (!taskInfo.getName().equals(thisTaskInfo.getName())) {
         others.add(taskInfo);
@@ -55,15 +53,5 @@ public class NodePlacementStrategy implements PlacementStrategy {
     }
 
     return others;
-  }
-
-  private static List<SlaveID> getAgents(List<TaskInfo> taskInfos) {
-    List<SlaveID> slaveIds = new ArrayList<SlaveID>();
-
-    for (TaskInfo taskInfo : taskInfos) {
-      slaveIds.add(taskInfo.getSlaveId());
-    }
-
-    return slaveIds;
   }
 }

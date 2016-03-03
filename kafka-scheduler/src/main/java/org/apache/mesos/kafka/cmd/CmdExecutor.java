@@ -57,7 +57,7 @@ public class CmdExecutor {
     cmd.add("--delete");
     cmd.add("--zookeeper");
     cmd.add(zkPath);
-    cmd.add("--topic ");
+    cmd.add("--topic");
     cmd.add(name);
 
     return runCmd(cmd);

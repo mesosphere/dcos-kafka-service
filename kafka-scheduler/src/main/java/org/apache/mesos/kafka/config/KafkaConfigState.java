@@ -32,17 +32,15 @@ public class KafkaConfigState {
   private final CuratorFramework zkClient;
   private final ConfigState configState;
   private final String configTargetPath;
-  private final KafkaStateService state;
 
   public KafkaConfigState(String frameworkName, String hosts, String rootZkPath) {
     configTargetPath = rootZkPath + frameworkName + "/config_target";
     zkClient = KafkaStateUtils.createZkClient(hosts);
     configState = new ConfigState(frameworkName, rootZkPath, zkClient);
-    state = KafkaStateService.getStateService();
   }
 
-  public void store(FrameworkConfigurationService configurationService, String version) throws StateStoreException {
-    configState.store(configurationService, version);
+  public void store(KafkaConfigService configurationService, String version) throws StateStoreException {
+    configState.store(configurationService.getConfigService(), version);
   }
 
   public KafkaConfigService fetch(String version) throws StateStoreException {
@@ -99,21 +97,21 @@ public class KafkaConfigState {
     return configState.getVersions();
   }
 
-  public void syncConfigs() {
+  public void syncConfigs(KafkaStateService state) {
     try {
       String targetName = getTargetName();
       List<String> duplicateConfigs = getDuplicateConfigs();
 
       List<TaskInfo> taskInfos = state.getTaskInfos();
       for (TaskInfo taskInfo : taskInfos) {
-        replaceDuplicateConfig(taskInfo, duplicateConfigs, targetName);
+        replaceDuplicateConfig(state, taskInfo, duplicateConfigs, targetName);
       }
     } catch (Exception ex) {
       log.error("Failed to synchronized configurations with exception: " + ex);
     }
   }
 
-  private void replaceDuplicateConfig(TaskInfo taskInfo, List<String> duplicateConfigs, String targetName) {
+  private void replaceDuplicateConfig(KafkaStateService state, TaskInfo taskInfo, List<String> duplicateConfigs, String targetName) {
     try {
       String taskConfig = OfferUtils.getConfigName(taskInfo);
 

@@ -23,11 +23,9 @@ import java.util.Observable;
 import java.util.Observer;
 
 public class KafkaStateService implements Observer {
-  private final Log log = LogFactory.getLog(KafkaStateService.class);
+  private static final Log log = LogFactory.getLog(KafkaStateService.class);
+
   private final CuratorFramework zkClient;
-
-  private static KafkaConfigService config = KafkaConfigService.getEnvConfig();
-
   private final String zkRoot;
   private final String stateRoot;
   private final String taskPath;
@@ -35,10 +33,9 @@ public class KafkaStateService implements Observer {
 
   private static KafkaStateService stateService = null;
 
-  private KafkaStateService() {
+  private KafkaStateService(KafkaConfigService config) {
     zkClient = KafkaStateUtils.createZkClient(config.getZookeeperAddress());
-
-    zkRoot = "/" + config.get("FRAMEWORK_NAME");
+    zkRoot = config.getZkRoot();
     stateRoot = zkRoot + "/state";
     taskPath = stateRoot + "/tasks";
     fwkIdPath = stateRoot + "/framework-id";
@@ -52,9 +49,9 @@ public class KafkaStateService implements Observer {
     }
   }
 
-  public static KafkaStateService getStateService() {
+  public static KafkaStateService getStateService(KafkaConfigService config) {
     if (stateService == null) {
-      stateService = new KafkaStateService();
+      stateService = new KafkaStateService(config);
     }
 
     return stateService;

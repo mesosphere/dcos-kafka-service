@@ -1,30 +1,39 @@
 package org.apache.mesos.kafka.web;
 
-import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
+import org.apache.mesos.kafka.cmd.CmdExecutor;
 import org.apache.mesos.kafka.config.KafkaConfigService;
-import org.apache.mesos.config.ConfigurationService;
+import org.apache.mesos.kafka.config.KafkaConfigState;
+import org.apache.mesos.kafka.state.KafkaStateService;
+import org.apache.mesos.scheduler.plan.StrategyPlanManager;
 
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
 
 public class KafkaApiServer {
   private static final Log log = LogFactory.getLog(KafkaApiServer.class);
-  private static ConfigurationService config = KafkaConfigService.getEnvConfig();
 
-  public static void start() {
-    ResourceConfig resourceConfig = new ResourceConfig();
-    resourceConfig.registerInstances(new ClusterController());
-    resourceConfig.registerInstances(new BrokerController());
-    resourceConfig.registerInstances(new TopicController());
-    resourceConfig.registerInstances(new PlanController());
+  public KafkaApiServer() {
+  }
 
+  public void start(
+      KafkaConfigState kafkaConfigState,
+      KafkaConfigService kafkaConfigService,
+      KafkaStateService kafkaStateService,
+      StrategyPlanManager strategyPlanManager) {
+    ResourceConfig resourceConfig = new ResourceConfig()
+        .registerInstances(new ClusterController(kafkaConfigService.getKafkaZkUri(), kafkaConfigState, kafkaStateService))
+        .registerInstances(new BrokerController(kafkaStateService))
+        .registerInstances(new TopicController(new CmdExecutor(kafkaConfigService, kafkaStateService), kafkaStateService))
+        .registerInstances(new PlanController(strategyPlanManager));
+
+    // Manually enable verbose HTTP logging
     Logger l = Logger.getLogger("org.glassfish.grizzly.http.server.HttpHandler");
     l.setLevel(Level.FINE);
     l.setUseParentHandlers(false);
@@ -32,18 +41,10 @@ public class KafkaApiServer {
     ch.setLevel(Level.ALL);
     l.addHandler(ch);
 
-    GrizzlyHttpServerFactory.createHttpServer(getUri(), resourceConfig);
-  }
-
-  private static URI getUri() {
-    String port0 = config.get("PORT0");
-    String host = config.get("LIBPROCESS_IP");
-
     try {
-      return new URI("http://" + host + ":" + port0);
-    } catch(Exception ex) {
-      log.error("Failed to generate URI with exception: " + ex);
-      return null;
+      GrizzlyHttpServerFactory.createHttpServer(kafkaConfigService.getApiUri(), resourceConfig);
+    } catch (URISyntaxException e) {
+      log.fatal("Unable to start API HTTP server", e);
     }
   }
 }

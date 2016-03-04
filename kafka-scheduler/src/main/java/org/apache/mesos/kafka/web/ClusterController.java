@@ -13,7 +13,6 @@ import javax.ws.rs.PathParam;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.apache.mesos.kafka.config.KafkaConfigService;
 import org.apache.mesos.kafka.config.KafkaConfigState;
 import org.apache.mesos.kafka.state.KafkaStateService;
 
@@ -24,18 +23,24 @@ import org.json.JSONObject;
 @Path("/v1")
 public class ClusterController {
   private final Log log = LogFactory.getLog(ClusterController.class);
-  private KafkaStateService state = KafkaStateService.getStateService();
-  private KafkaConfigService config =  KafkaConfigService.getEnvConfig();
-  private KafkaConfigState configState = new KafkaConfigState(config.getFrameworkName(), config.getZookeeperAddress(), "/");
+  private final String zookeeperEndpoint;
+  private final KafkaStateService state;
+  private final KafkaConfigState configState;// = new KafkaConfigState(config.getFrameworkName(), config.getZookeeperAddress(), "/");
 
-  private String zkAddr = config.getZookeeperAddress();
+  public ClusterController(
+      String zookeeperEndpoint,
+      KafkaConfigState configState,
+      KafkaStateService state) {
+    this.zookeeperEndpoint = zookeeperEndpoint;
+    this.configState = configState;
+    this.state = state;
+  }
 
   @Path("/connection")
   @GET
   public Response getConnectionInfo() {
     try {
       JSONObject connectionInfo = new JSONObject();
-      String zookeeperEndpoint = zkAddr + "/" + config.get("FRAMEWORK_NAME");
       connectionInfo.put("zookeeper", zookeeperEndpoint);
       connectionInfo.put("brokers", getBrokerList());
       connectionInfo.put("zookeeper_convenience", getConvenientZookeeper(zookeeperEndpoint));

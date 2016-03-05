@@ -22,6 +22,9 @@ import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
 
+/**
+ * Read/write interface for storing and retrieving information about Kafka tasks.
+ */
 public class KafkaStateService implements Observer {
   private static final Log log = LogFactory.getLog(KafkaStateService.class);
 

@@ -30,7 +30,7 @@ public class CmdExecutor {
 
   public CmdExecutor(KafkaConfigService config, KafkaStateService state) {
     this.state = state;
-    this.binPath = config.getKafkaBinPath();
+    this.binPath = config.getKafkaSandboxPath() + "/bin/";
     this.zkPath = config.getKafkaZkUri();
   }
 

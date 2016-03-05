@@ -25,7 +25,7 @@ public class ClusterController {
   private final Log log = LogFactory.getLog(ClusterController.class);
   private final String zookeeperEndpoint;
   private final KafkaStateService state;
-  private final KafkaConfigState configState;// = new KafkaConfigState(config.getFrameworkName(), config.getZookeeperAddress(), "/");
+  private final KafkaConfigState configState;
 
   public ClusterController(
       String zookeeperEndpoint,

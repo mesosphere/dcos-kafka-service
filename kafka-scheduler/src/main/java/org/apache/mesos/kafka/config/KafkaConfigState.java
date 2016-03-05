@@ -8,8 +8,6 @@ import org.apache.commons.logging.LogFactory;
 
 import org.apache.curator.framework.CuratorFramework;
 
-import org.apache.mesos.config.FrameworkConfigurationService;
-
 import org.apache.mesos.config.ConfigurationChangeDetector;
 import org.apache.mesos.config.ConfigurationChangeNamespaces;
 import org.apache.mesos.config.state.ConfigState;
@@ -33,10 +31,10 @@ public class KafkaConfigState {
   private final ConfigState configState;
   private final String configTargetPath;
 
-  public KafkaConfigState(String frameworkName, String hosts, String rootZkPath) {
-    configTargetPath = rootZkPath + frameworkName + "/config_target";
-    zkClient = KafkaStateUtils.createZkClient(hosts);
-    configState = new ConfigState(frameworkName, rootZkPath, zkClient);
+  public KafkaConfigState(String zkHost, String zkPath) {
+    configTargetPath = zkPath + "/config_target";
+    zkClient = KafkaStateUtils.createZkClient(zkHost);
+    configState = new ConfigState(zkPath, zkClient);
   }
 
   public void store(KafkaConfigService configurationService, String version) throws StateStoreException {

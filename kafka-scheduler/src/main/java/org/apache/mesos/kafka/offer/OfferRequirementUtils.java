@@ -60,7 +60,7 @@ public class OfferRequirementUtils {
     Map<String, String> taskEnv = new HashMap<>();
     taskEnv.put("FRAMEWORK_NAME", config.getFrameworkName());
     taskEnv.put("KAFKA_VER_NAME", config.getKafkaVersionName());
-    taskEnv.put(overridePrefix + "ZOOKEEPER_CONNECT", config.getZookeeperAddress() + "/" + config.getFrameworkName());
+    taskEnv.put(overridePrefix + "ZOOKEEPER_CONNECT", config.getZookeeperAddress() + config.getZkRoot());
     taskEnv.put(overridePrefix + "BROKER_ID", Integer.toString(brokerId));
     taskEnv.put(overridePrefix + "LOG_DIRS", containerPath);
     taskEnv.put(overridePrefix + "PORT", Integer.toString(port));

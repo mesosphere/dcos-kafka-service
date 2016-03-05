@@ -24,9 +24,9 @@ import org.apache.mesos.kafka.web.KafkaApiServer;
 import org.apache.mesos.offer.OfferAccepter;
 import org.apache.mesos.reconciliation.Reconciler;
 import org.apache.mesos.scheduler.plan.Block;
+import org.apache.mesos.scheduler.plan.DefaultPlan;
 import org.apache.mesos.scheduler.plan.DefaultPlanScheduler;
 import org.apache.mesos.scheduler.plan.InstallPhaseStrategyFactory;
-import org.apache.mesos.scheduler.plan.DefaultPlan;
 import org.apache.mesos.scheduler.plan.PhaseStrategyFactory;
 import org.apache.mesos.scheduler.plan.Plan;
 import org.apache.mesos.scheduler.plan.StrategyPlanManager;
@@ -58,7 +58,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
 
   private final OfferAccepter offerAccepter;
 
-  private Reconciler reconciler;
+  private final Reconciler reconciler;
   private final StrategyPlanManager planManager;
   private static final Integer restartLock = 0;
   private static List<String> tasksToRestart = new ArrayList<String>();
@@ -75,15 +75,13 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     kafkaState = updater.getKafkaState();
     addObserver(kafkaState);
 
-    offerAccepter =
-      new OfferAccepter(Arrays.asList(
-            new LogOperationRecorder(),
-            new PersistentOperationRecorder(kafkaState)));
+    offerAccepter = new OfferAccepter(Arrays.asList(
+        new LogOperationRecorder(),
+        new PersistentOperationRecorder(kafkaState)));
 
     Plan plan = DefaultPlan.fromArgs(
         new KafkaReconcilePhase(reconciler),
         new KafkaUpdatePhase(configState.getTargetName(), targetConfig, kafkaState, getOfferRequirementProvider()));
-
     planManager = new StrategyPlanManager(plan, getPhaseStrategyFactory(targetConfig));
     addObserver(planManager);
 

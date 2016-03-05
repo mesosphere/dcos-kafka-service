@@ -10,8 +10,15 @@ import org.apache.mesos.config.FrameworkConfigurationService;
 
 import com.google.common.collect.Lists;
 
+/**
+ * Read-only retrieval service for a given framework configuration.
+ * All access is via helper functions which retrieve the requested values from the underlying data.
+ */
 public class KafkaConfigService {
 
+  /**
+   * Simple structure for returning the values of per-broker resources to be reserved.
+   */
   public static class BrokerResources {
     private BrokerResources(
         String cpus, String mem, String disk) {
@@ -59,8 +66,8 @@ public class KafkaConfigService {
     return getZookeeperAddress() + getZkRoot();
   }
 
-  public String getKafkaBinPath() {
-    return configService.get("MESOS_SANDBOX") + "/" + getKafkaVersionName() + "/bin/";
+  public String getKafkaPath() {
+    return configService.get("MESOS_SANDBOX") + "/" + getKafkaVersionName();
   }
 
   public String getZookeeperAddress() {
@@ -137,6 +144,9 @@ public class KafkaConfigService {
     return configService;
   }
 
+  /**
+   * Returns a copy of the underlying data in this form: map[namespace][name] = value
+   */
   public Map<String, Map<String, ConfigProperty>> getNsPropertyMap() {
     return configService.getNsPropertyMap();
   }

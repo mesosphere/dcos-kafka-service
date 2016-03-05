@@ -6,7 +6,6 @@ import java.io.FileOutputStream;
 
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -20,7 +19,7 @@ import org.apache.mesos.config.ConfigProperty;
 
 /**
  * Overrides Kafka properties files.
- * Fetches values it will ovverride from the configuration indicated stored in ZK.
+ * Fetches values it will override from the configuration indicated stored in ZK.
  * Produces a non-zero exit code if it fails to fetch.
  */
 public final class Overrider {
@@ -43,7 +42,7 @@ public final class Overrider {
 
   private static void UpdateProperties(Map<String, String> overrides) {
     String serverPropertiesFileName =
-      envConfig.get("MESOS_SANDBOX") + "/" + envConfig.getKafkaVersionName() + "/config/server.properties";
+      envConfig.getKafkaPath() + "/config/server.properties";
 
     log.info("Updating config file: " + serverPropertiesFileName);
 
@@ -78,14 +77,14 @@ public final class Overrider {
 
   private static Map<String, String> getOverrides(KafkaConfigService config) {
     Map<String, String> overrides = new HashMap<>();
-    List<ConfigProperty> configProperties = config.getProperties("*");
-
-    for (ConfigProperty configProperty : configProperties) {
-      String key = configProperty.getName();
-      if (key.startsWith(overridePrefix)) {
-        key = convertKey(key);
-        String value = configProperty.getValue();
-        overrides.put(key, value);
+    for (Map<String, ConfigProperty> configNamespace : config.getNsPropertyMap().values()) {
+      for (ConfigProperty configProperty : configNamespace.values()) {
+        String key = configProperty.getName();
+        if (key.startsWith(overridePrefix)) {
+          key = convertKey(key);
+          String value = configProperty.getValue();
+          overrides.put(key, value);
+        }
       }
     }
 

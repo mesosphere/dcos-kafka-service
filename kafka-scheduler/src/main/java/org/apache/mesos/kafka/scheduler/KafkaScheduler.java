@@ -16,8 +16,8 @@ import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.PersistentOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.PersistentOperationRecorder;
 import org.apache.mesos.kafka.offer.SandboxOfferRequirementProvider;
-import org.apache.mesos.kafka.plan.KafkaUpdatePlan;
-import org.apache.mesos.kafka.plan.PlanFactory;
+import org.apache.mesos.kafka.plan.KafkaReconcilePhase;
+import org.apache.mesos.kafka.plan.KafkaUpdatePhase;
 import org.apache.mesos.kafka.plan.PlanUtils;
 import org.apache.mesos.kafka.state.KafkaStateService;
 import org.apache.mesos.kafka.web.KafkaApiServer;
@@ -27,7 +27,9 @@ import org.apache.mesos.config.ConfigurationChangeNamespaces;
 import org.apache.mesos.offer.OfferAccepter;
 import org.apache.mesos.reconciliation.Reconciler;
 import org.apache.mesos.scheduler.plan.Block;
+import org.apache.mesos.scheduler.plan.DefaultPlan;
 import org.apache.mesos.scheduler.plan.DefaultPlanScheduler;
+import org.apache.mesos.scheduler.plan.Plan;
 import org.apache.mesos.scheduler.plan.StrategyPlanManager;
 import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos.ExecutorID;
@@ -79,11 +81,9 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
 
     handleConfigChange();
 
-    KafkaUpdatePlan plan = PlanFactory.getPlan(
-        configState.getTargetName(),
-        getOfferRequirementProvider(),
-        reconciler);
-
+    Plan plan = DefaultPlan.fromArgs(
+        new KafkaReconcilePhase(reconciler),
+        new KafkaUpdatePhase(configState.getTargetName(), getOfferRequirementProvider()));
     planManager = new StrategyPlanManager(plan, PlanUtils.getPhaseStrategyFactory(envConfig));
     addObserver(planManager);
 

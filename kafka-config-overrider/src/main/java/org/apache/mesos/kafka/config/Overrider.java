@@ -28,7 +28,7 @@ public final class Overrider {
   private static String overridePrefix = envConfig.getOverridePrefix();
 
   private static KafkaConfigState configState = new KafkaConfigState(
-      envConfig.getZookeeperAddress(), envConfig.getZkRootPrefix(), envConfig.getFrameworkName());
+      envConfig.getFrameworkName(), envConfig.getZookeeperAddress(), envConfig.getZkRootPrefix());
 
   public static void main(String[] args) {
     if (args.length != 1) {

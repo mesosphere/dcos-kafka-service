@@ -54,7 +54,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   private final KafkaConfigState configState;
   private final DefaultPlanScheduler planScheduler;
   private final KafkaRepairScheduler repairScheduler;
-  private final KafkaApiServer kafkaApiServer;
+  private final KafkaApiServer apiServer;
 
   private final OfferAccepter offerAccepter;
 
@@ -87,7 +87,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
 
     planScheduler = new DefaultPlanScheduler(offerAccepter);
     repairScheduler = new KafkaRepairScheduler(configState.getTargetName(), kafkaState, getOfferRequirementProvider(), offerAccepter);
-    kafkaApiServer = new KafkaApiServer();
+    apiServer = new KafkaApiServer();
   }
 
   private static PhaseStrategyFactory getPhaseStrategyFactory(KafkaConfigService config) {
@@ -158,7 +158,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     kafkaState.setFrameworkId(frameworkId);
     reconcile(driver);
     //TODO: how about starting this server as a stub in the constructor, then only adding handlers to that server after registration happens?
-    kafkaApiServer.start(configState, targetConfig, kafkaState, planManager);
+    apiServer.start(configState, targetConfig, kafkaState, planManager);
   }
 
   @Override

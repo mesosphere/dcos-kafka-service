@@ -31,7 +31,10 @@ public class KafkaConfigState {
   private final ConfigState configState;
   private final String configTargetPath;
 
-  public KafkaConfigState(String zkHost, String zkPathPrefix, String frameworkName) {
+  /**
+   * Creates a new Kafka config state manager based on the provided bootstrap information.
+   */
+  public KafkaConfigState(String frameworkName, String zkHost, String zkPathPrefix) {
     configTargetPath = zkPathPrefix + frameworkName + "/config_target";
     zkClient = KafkaStateUtils.createZkClient(zkHost);
     //TODO(nick): Just pass full ZK path (ie KafkaConfigService.getZkRoot()) to ConfigState?

@@ -61,7 +61,7 @@ public class KafkaConfigService extends FrameworkConfigurationService {
     return get("KAFKA_VER_NAME");
   }
 
-  public String getStrategy() {
+  public String getPlanStrategy() {
     return get("PLAN_STRATEGY");
   }
 

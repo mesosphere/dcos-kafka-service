@@ -48,14 +48,14 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   private final Log log = LogFactory.getLog(KafkaScheduler.class);
 
   private static final int TWO_WEEK_SEC = 2 * 7 * 24 * 60 * 60;
-  private KafkaConfigService envConfig;
-  private KafkaStateService state;
-  private DefaultPlanScheduler planScheduler = null;
-  private KafkaRepairScheduler repairScheduler = null;
+  private final KafkaConfigService envConfig;
+  private final KafkaStateService state;
+  private final DefaultPlanScheduler planScheduler;
+  private final KafkaRepairScheduler repairScheduler;
+  private final KafkaApiServer apiServer;
+  private final OfferAccepter offerAccepter;
+  private final Reconciler reconciler;
 
-  private OfferAccepter offerAccepter;
-
-  private Reconciler reconciler;
   private static StrategyPlanManager planManager = null;
   private static final Integer restartLock = 0;
   private static List<String> tasksToRestart = new ArrayList<String>();
@@ -67,6 +67,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     envConfig = KafkaConfigService.getEnvConfig();
     state = KafkaStateService.getStateService();
     configState = new KafkaConfigState(envConfig.getFrameworkName(), envConfig.getZookeeperAddress(), "/");
+    apiServer = new KafkaApiServer();
     reconciler = new Reconciler();
 
     addObserver(state);
@@ -192,7 +193,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     log.info("Registered framework with frameworkId: " + frameworkId.getValue());
     state.setFrameworkId(frameworkId);
     reconcile(driver);
-    KafkaApiServer.start();
+    apiServer.start(configState, envConfig, state, planManager);
   }
 
   @Override

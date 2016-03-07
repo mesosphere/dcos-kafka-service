@@ -1,5 +1,7 @@
 package org.apache.mesos.kafka.config;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Map;
 
 import org.apache.mesos.config.ConfigProperty;
@@ -37,6 +39,13 @@ public class KafkaConfigService extends FrameworkConfigurationService {
     return getZookeeperAddress() + getZkRoot();
   }
 
+  /**
+   * Returns to the on-disk path to the unzipped Kafka runtime.
+   */
+  public String getKafkaSandboxPath() {
+    return get("MESOS_SANDBOX") + "/" + getKafkaVersionName();
+  }
+
   public String getZookeeperAddress() {
     return "master.mesos:2181";
   }
@@ -47,6 +56,13 @@ public class KafkaConfigService extends FrameworkConfigurationService {
 
   public String getFrameworkName() {
     return get("FRAMEWORK_NAME");
+  }
+
+  /**
+   * Returns the HTTP url for reaching the scheduler's REST API.
+   */
+  public URI getApiUri() throws URISyntaxException {
+    return new URI("http://" + get("LIBPROCESS_IP") + ":" + get("PORT0"));
   }
 
   public String getRole() {

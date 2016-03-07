@@ -17,8 +17,6 @@ import javax.ws.rs.core.MediaType;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.apache.mesos.kafka.scheduler.KafkaScheduler;
-
 import org.apache.mesos.scheduler.plan.Block;
 import org.apache.mesos.scheduler.plan.StrategyPlanManager;
 import org.apache.mesos.scheduler.plan.Phase;
@@ -31,8 +29,13 @@ import org.apache.mesos.scheduler.plan.Plan;
 @Path("/v1/plan")
 @Produces("application/json")
 public class PlanController {
-  private final Log log = LogFactory.getLog(PlanController.class);
-  private StrategyPlanManager planManager = KafkaScheduler.getPlanManager();
+  private static final Log log = LogFactory.getLog(PlanController.class);
+
+  private final StrategyPlanManager planManager;
+
+  public PlanController(StrategyPlanManager planManager) {
+    this.planManager = planManager;
+  }
 
   @GET
   @Path("/status")

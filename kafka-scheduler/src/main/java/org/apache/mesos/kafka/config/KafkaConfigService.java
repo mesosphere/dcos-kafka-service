@@ -61,6 +61,9 @@ public class KafkaConfigService extends FrameworkConfigurationService {
     return get("KAFKA_VER_NAME");
   }
 
+  /**
+   * Returns the name of the configured Plan strategy, eg "INSTALL".
+   */
   public String getPlanStrategy() {
     return get("PLAN_STRATEGY");
   }

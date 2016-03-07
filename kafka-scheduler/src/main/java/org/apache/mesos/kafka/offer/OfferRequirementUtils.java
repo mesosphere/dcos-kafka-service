@@ -73,7 +73,7 @@ public class OfferRequirementUtils {
     CommandInfoBuilder commandInfoBuilder = new CommandInfoBuilder()
         .addEnvironmentMap(taskEnv)
         .setCommand(command);
-    for (String resourceUri : config.getMesosResourceUris()) {
+    for (String resourceUri : config.getBrokerResourceUris()) {
       commandInfoBuilder.addUri(resourceUri);
     }
 

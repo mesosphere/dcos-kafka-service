@@ -121,7 +121,7 @@ public class KafkaConfigService {
   /**
    * Returns the list of mesos resource URLs to be downloaded/unpacked before starting Kafka brokers.
    */
-  public List<String> getMesosResourceUris() {
+  public List<String> getBrokerResourceUris() {
     return Lists.newArrayList(
         configService.get("KAFKA_URI"),
         configService.get("CONTAINER_HOOK_URI"),

@@ -7,7 +7,11 @@ import org.apache.mesos.Protos.Offer;
 import org.apache.mesos.Protos.Offer.Operation;
 
 public class PersistentOperationRecorder implements OperationRecorder {
-  private static KafkaStateService state = KafkaStateService.getStateService();
+  private final KafkaStateService state;
+
+  public PersistentOperationRecorder(KafkaStateService state) {
+    this.state = state;
+  }
 
   public void record(Operation operation, Offer offer) throws Exception {
     if (operation.getType() == Operation.Type.LAUNCH) {

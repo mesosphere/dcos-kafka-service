@@ -12,8 +12,13 @@ import org.apache.mesos.Protos.SlaveID;
 import org.apache.mesos.Protos.TaskInfo;
 
 public class NodePlacementStrategy implements PlacementStrategy {
-  private final Log log = LogFactory.getLog(NodePlacementStrategy.class);
-  private KafkaStateService state = KafkaStateService.getStateService();
+  private static final Log log = LogFactory.getLog(NodePlacementStrategy.class);
+
+  private final KafkaStateService state;
+
+  public NodePlacementStrategy(KafkaStateService state) {
+    this.state = state;
+  }
 
   public List<SlaveID> getAgentsToAvoid(TaskInfo taskInfo) {
     List<SlaveID> agents = null;

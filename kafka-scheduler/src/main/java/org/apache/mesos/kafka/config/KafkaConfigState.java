@@ -31,10 +31,11 @@ public class KafkaConfigState {
   private final ConfigState configState;
   private final String configTargetPath;
 
-  public KafkaConfigState(String zkHost, String zkPath) {
-    configTargetPath = zkPath + "/config_target";
+  public KafkaConfigState(String zkHost, String zkPathPrefix, String frameworkName) {
+    configTargetPath = zkPathPrefix + frameworkName + "/config_target";
     zkClient = KafkaStateUtils.createZkClient(zkHost);
-    configState = new ConfigState(zkPath, zkClient);
+    //TODO(nick): Just pass full ZK path (ie KafkaConfigService.getZkRoot()) to ConfigState?
+    configState = new ConfigState(frameworkName, zkPathPrefix, zkClient);
   }
 
   public void store(KafkaConfigService configurationService, String version) throws StateStoreException {

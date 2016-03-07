@@ -19,7 +19,8 @@ public class ConfigUpdater {
 
   public ConfigUpdater() {
     this.newTargetConfig = KafkaConfigService.getEnvConfig();
-    this.kafkaConfigState = new KafkaConfigState(newTargetConfig.getZookeeperAddress(), newTargetConfig.getZkRoot());
+    this.kafkaConfigState = new KafkaConfigState(
+        newTargetConfig.getZookeeperAddress(), newTargetConfig.getZkRootPrefix(), newTargetConfig.getZkRoot());
     this.kafkaStateService = KafkaStateService.getStateService(newTargetConfig);
   }
 

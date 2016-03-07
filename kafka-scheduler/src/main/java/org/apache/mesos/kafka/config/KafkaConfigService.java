@@ -63,11 +63,19 @@ public class KafkaConfigService {
   }
 
   /**
+   * Returns the prefix for the Kafka ZK node path.
+   * Eg "/prefix/"
+   */
+  public String getZkRootPrefix() {
+    return "/";
+  }
+
+  /**
    * Returns the path for the Kafka ZK node.
-   * Eg "/path"
+   * Eg "/prefix/path"
    */
   public String getZkRoot() {
-    return "/" + getFrameworkName();
+    return getZkRootPrefix() + getFrameworkName();
   }
 
   /**

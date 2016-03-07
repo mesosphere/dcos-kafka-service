@@ -41,6 +41,7 @@ public class KafkaConfigService extends FrameworkConfigurationService {
 
   /**
    * Returns to the on-disk path to the unzipped Kafka runtime.
+   * Eg: "/path/to/sandbox/kafka-0.1.2.3"
    */
   public String getKafkaSandboxPath() {
     return get("MESOS_SANDBOX") + "/" + getKafkaVersionName();

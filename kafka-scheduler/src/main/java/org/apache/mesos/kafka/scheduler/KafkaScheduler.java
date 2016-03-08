@@ -58,6 +58,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   private final KafkaStateService kafkaState;
   private final DefaultPlanScheduler planScheduler;
   private final KafkaRepairScheduler repairScheduler;
+  private final KafkaApiServer apiServer;
   private final OfferAccepter offerAccepter;
   private final Reconciler reconciler;
   private static StrategyPlanManager planManager; //TODO(nick): make non-static once PlanController isn't using it (fixed in other PR)
@@ -71,6 +72,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     envConfig = KafkaConfigService.getEnvConfig();
     kafkaState = KafkaStateService.getStateService();
     configState = new KafkaConfigState(envConfig.getFrameworkName(), envConfig.getZookeeperAddress(), "/");
+    apiServer = new KafkaApiServer();
     reconciler = new Reconciler();
 
     addObserver(kafkaState);
@@ -205,7 +207,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     log.info("Registered framework with frameworkId: " + frameworkId.getValue());
     kafkaState.setFrameworkId(frameworkId);
     reconcile(driver);
-    KafkaApiServer.start();
+    apiServer.start(configState, envConfig, kafkaState, planManager);
   }
 
   @Override

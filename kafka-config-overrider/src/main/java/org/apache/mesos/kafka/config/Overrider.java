@@ -43,7 +43,7 @@ public final class Overrider {
 
   private static void UpdateProperties(Map<String, String> overrides) {
     String serverPropertiesFileName =
-      envConfig.get("MESOS_SANDBOX") + "/" + envConfig.getKafkaVersionName() + "/config/server.properties";
+        envConfig.getKafkaSandboxPath() + "/config/server.properties";
 
     log.info("Updating config file: " + serverPropertiesFileName);
 

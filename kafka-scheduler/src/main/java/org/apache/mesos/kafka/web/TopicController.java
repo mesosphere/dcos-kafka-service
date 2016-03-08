@@ -23,8 +23,15 @@ import org.json.JSONObject;
 
 @Path("/v1/topics")
 public class TopicController {
-  private final Log log = LogFactory.getLog(TopicController.class);
-  private KafkaStateService state = KafkaStateService.getStateService();
+  private static final Log log = LogFactory.getLog(TopicController.class);
+
+  private final CmdExecutor cmdExecutor;
+  private final KafkaStateService state;
+
+  public TopicController(CmdExecutor cmdExecutor, KafkaStateService state) {
+    this.cmdExecutor = cmdExecutor;
+    this.state = state;
+  }
 
   @GET
   public Response topics() {
@@ -46,7 +53,7 @@ public class TopicController {
     try {
       int partCount = Integer.parseInt(partitionCount);
       int replFactor = Integer.parseInt(replicationFactor);
-      JSONObject result = CmdExecutor.createTopic(name, partCount, replFactor);
+      JSONObject result = cmdExecutor.createTopic(name, partCount, replFactor);
       return Response.ok(result.toString(), MediaType.APPLICATION_JSON).build();
     } catch (Exception ex) {
       log.error("Failed to create topic: " + name + " with exception: " + ex);
@@ -58,7 +65,7 @@ public class TopicController {
   @Path("/unavailable_partitions")
   public Response unavailablePartitions() {
     try {
-      JSONObject obj = CmdExecutor.unavailablePartitions();
+      JSONObject obj = cmdExecutor.unavailablePartitions();
       return Response.ok(obj.toString(), MediaType.APPLICATION_JSON).build();
     } catch (Exception ex) {
       log.error("Failed to fetch topics with exception: " + ex);
@@ -70,7 +77,7 @@ public class TopicController {
   @Path("/under_replicated_partitions")
   public Response underReplicatedPartitions() {
     try {
-      JSONObject obj = CmdExecutor.underReplicatedPartitions();
+      JSONObject obj = cmdExecutor.underReplicatedPartitions();
       return Response.ok(obj.toString(), MediaType.APPLICATION_JSON).build();
     } catch (Exception ex) {
       log.error("Failed to fetch topics with exception: " + ex);
@@ -111,19 +118,19 @@ public class TopicController {
         switch (operation) {
           case "producer-test":
             int messageCount = Integer.parseInt(messages);
-            result = CmdExecutor.producerTest(name, messageCount);
+            result = cmdExecutor.producerTest(name, messageCount);
             break;
           case "partitions":
             cmds = Arrays.asList("--partitions", partitions);
-            result = CmdExecutor.alterTopic(name, cmds);
+            result = cmdExecutor.alterTopic(name, cmds);
             break;
           case "config":
             cmds = Arrays.asList("--config", key + "=" + value);
-            result = CmdExecutor.alterTopic(name, cmds);
+            result = cmdExecutor.alterTopic(name, cmds);
             break;
           case "deleteConfig":
             cmds = Arrays.asList("--deleteConfig", key);
-            result = CmdExecutor.alterTopic(name, cmds);
+            result = cmdExecutor.alterTopic(name, cmds);
             break;
           default:
             result = new JSONObject();
@@ -146,7 +153,7 @@ public class TopicController {
       @PathParam("name") String name) {
 
     try {
-      JSONObject result = CmdExecutor.deleteTopic(name);
+      JSONObject result = cmdExecutor.deleteTopic(name);
       return Response.ok(result.toString(), MediaType.APPLICATION_JSON).build();
 
     } catch (Exception ex) {
@@ -159,7 +166,7 @@ public class TopicController {
   @Path("/{name}/offsets")
   public Response getOffsets(@PathParam("name") String topicName) {
     try {
-      JSONArray offsets = CmdExecutor.getOffsets(topicName);
+      JSONArray offsets = cmdExecutor.getOffsets(topicName);
       return Response.ok(offsets.toString(), MediaType.APPLICATION_JSON).build();
     } catch (Exception ex) {
       log.error("Failed to fetch offsets for: " + topicName + " with exception: " + ex);

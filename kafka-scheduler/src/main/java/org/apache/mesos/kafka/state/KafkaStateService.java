@@ -5,7 +5,6 @@ import org.apache.commons.logging.LogFactory;
 
 import org.apache.curator.framework.CuratorFramework;
 
-import org.apache.mesos.kafka.config.KafkaConfigService;
 import org.apache.mesos.kafka.offer.OfferUtils;
 import org.apache.zookeeper.KeeperException.NoNodeException;
 import org.apache.mesos.Protos.FrameworkID;
@@ -34,11 +33,9 @@ public class KafkaStateService implements Observer {
   private final String taskPath;
   private final String fwkIdPath;
 
-  private static KafkaStateService stateService = null;
-
-  private KafkaStateService(KafkaConfigService config) {
-    zkClient = KafkaStateUtils.createZkClient(config.getZookeeperAddress());
-    zkRoot = config.getZkRoot();
+  public KafkaStateService(String zkHost, String zkRoot) {
+    zkClient = KafkaStateUtils.createZkClient(zkHost);
+    this.zkRoot = zkRoot;
     stateRoot = zkRoot + "/state";
     taskPath = stateRoot + "/tasks";
     fwkIdPath = stateRoot + "/framework-id";
@@ -50,14 +47,6 @@ public class KafkaStateService implements Observer {
     } catch(Exception ex) {
       log.fatal("Failed with exception: " + ex);
     }
-  }
-
-  public static KafkaStateService getStateService(KafkaConfigService config) {
-    if (stateService == null) {
-      stateService = new KafkaStateService(config);
-    }
-
-    return stateService;
   }
 
   public FrameworkID getFrameworkId() {

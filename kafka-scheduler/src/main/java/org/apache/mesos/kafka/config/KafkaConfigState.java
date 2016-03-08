@@ -41,10 +41,6 @@ public class KafkaConfigState {
     configState = new ConfigState(frameworkName, zkPathPrefix, zkClient);
   }
 
-  public void store(KafkaConfigService configurationService, String version) throws StateStoreException {
-    configState.store(configurationService.getConfigService(), version);
-  }
-
   public KafkaConfigService fetch(String version) throws StateStoreException {
     return KafkaConfigService.getHydratedConfig(configState.fetch(version));
   }
@@ -55,23 +51,6 @@ public class KafkaConfigState {
     } catch (Exception ex) {
       log.error("Failed to determine existence of target config with exception: " + ex);
       return false;
-    }
-  }
-
-  /**
-   * Sets the name of the target configuration to be used in the future.
-   */
-  public void setTargetName(String targetConfigName) {
-    try {
-      byte[] bytes = targetConfigName.getBytes("UTF-8");
-
-      if (!hasTarget()) {
-        zkClient.create().creatingParentsIfNeeded().forPath(configTargetPath, bytes);
-      } else {
-        zkClient.setData().forPath(configTargetPath, bytes);
-      }
-    } catch (Exception ex) {
-      log.error("Failed to set target config with exception: " + ex);
     }
   }
 
@@ -99,7 +78,35 @@ public class KafkaConfigState {
     return configState.getVersions();
   }
 
-  public void syncConfigs(KafkaStateService state) {
+  /**
+   * Stores the provided configuration against the provided version label.
+   * The configuration may then be marked as the target configuration with {@link #setTargetName(String)}.
+   *
+   * @throws StateStoreException if the underlying storage failed to write
+   */
+  void store(KafkaConfigService configurationService, String version) throws StateStoreException {
+    configState.store(configurationService.getConfigService(), version);
+  }
+
+  /**
+   * Sets the name of the target configuration to be used in the future.
+   * The name must match a 'version' previously passed to {@link #store(KafkaConfigService, String)}.
+   */
+  void setTargetName(String targetConfigName) {
+    try {
+      byte[] bytes = targetConfigName.getBytes("UTF-8");
+
+      if (!hasTarget()) {
+        zkClient.create().creatingParentsIfNeeded().forPath(configTargetPath, bytes);
+      } else {
+        zkClient.setData().forPath(configTargetPath, bytes);
+      }
+    } catch (Exception ex) {
+      log.error("Failed to set target config with exception: " + ex);
+    }
+  }
+
+  void syncConfigs(KafkaStateService state) {
     try {
       String targetName = getTargetName();
       List<String> duplicateConfigs = getDuplicateConfigs();

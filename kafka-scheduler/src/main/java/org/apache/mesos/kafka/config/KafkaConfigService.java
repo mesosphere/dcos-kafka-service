@@ -1,6 +1,8 @@
 package org.apache.mesos.kafka.config;
 
 import java.util.List;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Map;
 
 import org.apache.mesos.config.ConfigProperty;
@@ -9,7 +11,7 @@ import org.apache.mesos.config.FrameworkConfigurationService;
 import com.google.common.collect.Lists;
 
 /**
- * Read-only retrieval service for a given Kafka framework configuration.
+ * Read-only retrieval service for a single configuration of the Kafka framework.
  * All access is via helper functions which retrieve the requested values from the underlying data.
  */
 public class KafkaConfigService extends FrameworkConfigurationService {
@@ -37,17 +39,14 @@ public class KafkaConfigService extends FrameworkConfigurationService {
       KafkaEnvConfigurator envConfigurator = new KafkaEnvConfigurator();
       envConfigurator.configure(envConfig);
     }
-
     return envConfig;
   }
 
   public static KafkaConfigService getHydratedConfig(
       Map<String, Map<String, ConfigProperty>> nsMap) {
-
     KafkaConfigService configService = new KafkaConfigService();
-    ZkHydratorConfigurator zkConfigurator = new ZkHydratorConfigurator(nsMap);
-    zkConfigurator.configure(configService);
-
+    // Translate nsMap to configService
+    new ZkHydratorConfigurator(nsMap).configure(configService);
     return configService;
   }
 
@@ -57,6 +56,14 @@ public class KafkaConfigService extends FrameworkConfigurationService {
 
   public String getKafkaZkUri() {
     return getZookeeperAddress() + getZkRoot();
+  }
+
+  /**
+   * Returns to the on-disk path to the unzipped Kafka runtime.
+   * Eg: "/path/to/sandbox/kafka-0.1.2.3"
+   */
+  public String getKafkaSandboxPath() {
+    return get("MESOS_SANDBOX") + "/" + getKafkaVersionName();
   }
 
   public String getZookeeperAddress() {
@@ -88,6 +95,13 @@ public class KafkaConfigService extends FrameworkConfigurationService {
 
   public String getFrameworkName() {
     return get("FRAMEWORK_NAME");
+  }
+
+  /**
+   * Returns the HTTP url for reaching the scheduler's REST API.
+   */
+  public URI getApiUri() throws URISyntaxException {
+    return new URI("http://" + get("LIBPROCESS_IP") + ":" + get("PORT0"));
   }
 
   public String getRole() {

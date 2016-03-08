@@ -16,8 +16,8 @@ import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.PersistentOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.PersistentOperationRecorder;
 import org.apache.mesos.kafka.offer.SandboxOfferRequirementProvider;
-import org.apache.mesos.kafka.plan.KafkaUpdatePlan;
-import org.apache.mesos.kafka.plan.PlanFactory;
+import org.apache.mesos.kafka.plan.KafkaReconcilePhase;
+import org.apache.mesos.kafka.plan.KafkaUpdatePhase;
 import org.apache.mesos.kafka.plan.PlanUtils;
 import org.apache.mesos.kafka.state.KafkaStateService;
 import org.apache.mesos.kafka.web.KafkaApiServer;
@@ -27,7 +27,9 @@ import org.apache.mesos.config.ConfigurationChangeNamespaces;
 import org.apache.mesos.offer.OfferAccepter;
 import org.apache.mesos.reconciliation.Reconciler;
 import org.apache.mesos.scheduler.plan.Block;
+import org.apache.mesos.scheduler.plan.DefaultPlan;
 import org.apache.mesos.scheduler.plan.DefaultPlanScheduler;
+import org.apache.mesos.scheduler.plan.Plan;
 import org.apache.mesos.scheduler.plan.StrategyPlanManager;
 import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos.ExecutorID;
@@ -48,14 +50,14 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   private final Log log = LogFactory.getLog(KafkaScheduler.class);
 
   private static final int TWO_WEEK_SEC = 2 * 7 * 24 * 60 * 60;
-  private KafkaConfigService envConfig;
-  private KafkaStateService state;
-  private DefaultPlanScheduler planScheduler = null;
-  private KafkaRepairScheduler repairScheduler = null;
+  private final KafkaConfigService envConfig;
+  private final KafkaStateService state;
+  private final DefaultPlanScheduler planScheduler;
+  private final KafkaRepairScheduler repairScheduler;
+  private final KafkaApiServer apiServer;
+  private final OfferAccepter offerAccepter;
+  private final Reconciler reconciler;
 
-  private OfferAccepter offerAccepter;
-
-  private Reconciler reconciler;
   private static StrategyPlanManager planManager = null;
   private static final Integer restartLock = 0;
   private static List<String> tasksToRestart = new ArrayList<String>();
@@ -67,6 +69,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     envConfig = KafkaConfigService.getEnvConfig();
     state = KafkaStateService.getStateService();
     configState = new KafkaConfigState(envConfig.getFrameworkName(), envConfig.getZookeeperAddress(), "/");
+    apiServer = new KafkaApiServer();
     reconciler = new Reconciler();
 
     addObserver(state);
@@ -79,11 +82,9 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
 
     handleConfigChange();
 
-    KafkaUpdatePlan plan = PlanFactory.getPlan(
-        configState.getTargetName(),
-        getOfferRequirementProvider(),
-        reconciler);
-
+    Plan plan = DefaultPlan.fromArgs(
+        new KafkaReconcilePhase(reconciler),
+        new KafkaUpdatePhase(configState.getTargetName(), getOfferRequirementProvider()));
     planManager = new StrategyPlanManager(plan, PlanUtils.getPhaseStrategyFactory(envConfig));
     addObserver(planManager);
 
@@ -192,7 +193,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     log.info("Registered framework with frameworkId: " + frameworkId.getValue());
     state.setFrameworkId(frameworkId);
     reconcile(driver);
-    KafkaApiServer.start();
+    apiServer.start(configState, envConfig, state, planManager);
   }
 
   @Override

@@ -22,17 +22,20 @@ import org.apache.mesos.state.StateStoreException;
 import org.apache.mesos.Protos.Labels;
 import org.apache.mesos.Protos.TaskInfo;
 
+/**
+ * Stores and manages multiple Kafka framework configurations in persistent storage.
+ * Each configuration is in the form of a {@link KafkaConfigService}.
+ */
 public class KafkaConfigState {
   private final Log log = LogFactory.getLog(KafkaConfigState.class);
 
-  private CuratorFramework zkClient = null;
-  private ConfigState configState = null;
-  private String configTargetPath = null; 
-  private KafkaStateService state = null;
+  private final CuratorFramework zkClient;
+  private final ConfigState configState;
+  private final String configTargetPath;
+  private final KafkaStateService state;
 
   public KafkaConfigState(String frameworkName, String hosts, String rootZkPath) {
-    this.configTargetPath = "/" + frameworkName + "/config_target";
-
+    configTargetPath = rootZkPath + frameworkName + "/config_target";
     zkClient = KafkaStateUtils.createZkClient(hosts);
     configState = new ConfigState(frameworkName, rootZkPath, zkClient);
     state = KafkaStateService.getStateService();
@@ -48,13 +51,16 @@ public class KafkaConfigState {
 
   public boolean hasTarget() {
     try {
-      return null != zkClient.checkExists().forPath(configTargetPath); 
+      return null != zkClient.checkExists().forPath(configTargetPath);
     } catch (Exception ex) {
       log.error("Failed to determine existence of target config with exception: " + ex);
       return false;
     }
   }
 
+  /**
+   * Sets the name of the target configuration to be used in the future.
+   */
   public void setTargetName(String targetConfigName) {
     try {
       byte[] bytes = targetConfigName.getBytes("UTF-8");
@@ -69,6 +75,9 @@ public class KafkaConfigState {
     }
   }
 
+  /**
+   * Returns the name of the current target configuration.
+   */
   public String getTargetName() {
     try {
       byte[] bytes = zkClient.getData().forPath(configTargetPath);
@@ -83,6 +92,9 @@ public class KafkaConfigState {
     return fetch(getTargetName());
   }
 
+  /**
+   * Returns a list of all available configuration names.
+   */
   public List<String> getConfigNames() {
     return configState.getVersions();
   }
@@ -103,24 +115,27 @@ public class KafkaConfigState {
 
   private void replaceDuplicateConfig(TaskInfo taskInfo, List<String> duplicateConfigs, String targetName) {
     try {
-    String taskConfig = OfferUtils.getConfigName(taskInfo);
+      String taskConfig = OfferUtils.getConfigName(taskInfo);
 
-    for (String duplicateConfig : duplicateConfigs) {
-      if (taskConfig.equals(duplicateConfig)) {
-        Labels labels = new LabelBuilder()
-          .addLabel("config_target", targetName)
-          .build();
+      for (String duplicateConfig : duplicateConfigs) {
+        if (taskConfig.equals(duplicateConfig)) {
+          Labels labels = new LabelBuilder()
+            .addLabel("config_target", targetName)
+            .build();
 
-        TaskInfo newTaskInfo = TaskInfo.newBuilder(taskInfo).setLabels(labels).build();
-        state.recordTaskInfo(newTaskInfo);
-        return;
+          TaskInfo newTaskInfo = TaskInfo.newBuilder(taskInfo).setLabels(labels).build();
+          state.recordTaskInfo(newTaskInfo);
+          return;
+        }
       }
-    }
     } catch (Exception ex) {
       log.error("Failed to replace duplicate configuration for taskInfo: " + taskInfo + " with exception: " + ex);
     }
   }
 
+  /**
+   * Returns the list of configs which are duplicates of the current Target config.
+   */
   private List<String> getDuplicateConfigs() {
     KafkaConfigService targetConfig = getTargetConfig();
 

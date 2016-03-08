@@ -26,7 +26,12 @@ import org.json.JSONObject;
 @Produces("application/json")
 public class BrokerController {
   private final Log log = LogFactory.getLog(BrokerController.class);
-  private KafkaStateService state = KafkaStateService.getStateService();
+
+  private final KafkaStateService state;
+
+  public BrokerController(KafkaStateService state) {
+    this.state = state;
+  }
 
   @GET
   public Response listBrokers() {
@@ -71,7 +76,7 @@ public class BrokerController {
       @QueryParam("reschedule") String reschedule) {
 
     try {
-      List<String> taskIds = 
+      List<String> taskIds =
         Arrays.asList(state.getTaskIdForBroker(Integer.parseInt(id)));
       return killBrokers(taskIds, reschedule);
     } catch (Exception ex) {

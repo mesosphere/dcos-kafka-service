@@ -28,10 +28,10 @@ public class KafkaStateService implements Observer {
 
   private static KafkaConfigService config = KafkaConfigService.getEnvConfig();
 
-  private static String zkRoot;
-  private static String stateRoot;
-  private static String taskPath;
-  private static String fwkIdPath;
+  private final String zkRoot;
+  private final String stateRoot;
+  private final String taskPath;
+  private final String fwkIdPath;
 
   private static KafkaStateService stateService = null;
 
@@ -43,9 +43,10 @@ public class KafkaStateService implements Observer {
     taskPath = stateRoot + "/tasks";
     fwkIdPath = stateRoot + "/framework-id";
 
+    // Create framework-owned paths, if needed
     try {
-      initializePath(stateRoot + "/tasks");
-      initializePath(stateRoot + "/framework-id");
+      initializePath(taskPath);
+      initializePath(fwkIdPath);
     } catch(Exception ex) {
       log.fatal("Failed with exception: " + ex);
     }
@@ -272,7 +273,7 @@ public class KafkaStateService implements Observer {
     String statusPath = getTaskStatusPath(taskStatus.getTaskId().getValue());
     if (zkClient.checkExists().forPath(statusPath) == null &&
         isTerminated(taskStatus)) {
-          log.warn("Dropping status update because the ZK path doesn't exist and it's a termianl Status: " + taskStatus);
+          log.warn("Dropping status update because the ZK path doesn't exist and it's a terminal Status: " + taskStatus);
     } else {
       record(statusPath, taskStatus.toByteArray());
     }

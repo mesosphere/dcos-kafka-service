@@ -5,6 +5,9 @@ import java.util.Map;
 import org.apache.mesos.config.ConfigProperty;
 import org.apache.mesos.config.FrameworkConfigurationService;
 
+/**
+ * Represents a single Kafka configuration instance.
+ */
 public class KafkaConfigService extends FrameworkConfigurationService {
 
   private static KafkaConfigService envConfig = null;
@@ -15,17 +18,14 @@ public class KafkaConfigService extends FrameworkConfigurationService {
       KafkaEnvConfigurator envConfigurator = new KafkaEnvConfigurator();
       envConfigurator.configure(envConfig);
     }
-
     return envConfig;
   }
 
   public static KafkaConfigService getHydratedConfig(
       Map<String, Map<String, ConfigProperty>> nsMap) {
-
     KafkaConfigService configService = new KafkaConfigService();
-    ZkHydratorConfigurator zkConfigurator = new ZkHydratorConfigurator(nsMap);
-    zkConfigurator.configure(configService);
-
+    // Translate nsMap to configService
+    new ZkHydratorConfigurator(nsMap).configure(configService);
     return configService;
   }
 

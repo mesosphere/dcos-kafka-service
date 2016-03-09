@@ -2,6 +2,7 @@ package org.apache.mesos.kafka.web;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
@@ -18,23 +19,23 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.apache.mesos.scheduler.plan.Block;
-import org.apache.mesos.scheduler.plan.StrategyPlanManager;
+import org.apache.mesos.scheduler.plan.StrategyStageManager;
 import org.apache.mesos.scheduler.plan.Phase;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import org.apache.mesos.scheduler.plan.Plan;
+import org.apache.mesos.scheduler.plan.Stage;
 
 @Path("/v1/plan")
 @Produces("application/json")
 public class PlanController {
   private static final Log log = LogFactory.getLog(PlanController.class);
 
-  private final StrategyPlanManager planManager;
+  private final StrategyStageManager stageManager;
 
-  public PlanController(StrategyPlanManager planManager) {
-    this.planManager = planManager;
+  public PlanController(StrategyStageManager stageManager) {
+    this.stageManager = stageManager;
   }
 
   @GET
@@ -43,31 +44,31 @@ public class PlanController {
     log.info("Getting status.");
 
     try {
-      Plan plan = planManager.getPlan();
-      Phase phase = planManager.getCurrentPhase();
-      Block block = planManager.getCurrentBlock();
+      Stage plan = stageManager.getStage();
+      Phase phase = stageManager.getCurrentPhase();
+      Block block = stageManager.getCurrentBlock();
 
       log.info("Building plan obj");
       JSONObject planObj = new JSONObject();
       if (plan != null) {
         planObj.put("phase_count", plan.getPhases().size());
-        planObj.put("status", planManager.getStatus());
+        planObj.put("status", stageManager.getStatus());
       }
 
       log.info("Building phase obj");
       JSONObject phaseObj = new JSONObject();
       if (phase != null) {
         phaseObj.put("name", phase.getName());
-        phaseObj.put("index", phase.getId());
+        phaseObj.put("id", phase.getId());
         phaseObj.put("block_count", phase.getBlocks().size());
-        phaseObj.put("status", planManager.getPhaseStatus(phase.getId()));
+        phaseObj.put("status", stageManager.getPhaseStatus(phase.getId()));
       }
 
       log.info("Building block obj");
       JSONObject blockObj = new JSONObject();
       if (block != null) {
         blockObj.put("name", block.getName());
-        blockObj.put("index", block.getId());
+        blockObj.put("id", block.getId());
         blockObj.put("status", block.getStatus());
       }
 
@@ -88,25 +89,25 @@ public class PlanController {
   @Path("/summary")
   public Response getPlanSummary() {
     JSONObject planObj = new JSONObject();
-    Plan plan = planManager.getPlan();
+    Stage plan = stageManager.getStage();
 
     if (plan != null) {
-      planObj.put("status", planManager.getStatus());
+      planObj.put("status", stageManager.getStatus());
 
       List<JSONObject> phaseObjs = new ArrayList<JSONObject>();
       for (Phase phase : plan.getPhases()) {
         JSONObject phaseObj = new JSONObject();
         phaseObj.put("name", phase.getName());
-        phaseObj.put("index", phase.getId());
-        phaseObj.put("status", planManager.getPhaseStatus(phase.getId()));
+        phaseObj.put("id", phase.getId());
+        phaseObj.put("status", stageManager.getPhaseStatus(phase.getId()));
 
         List<JSONObject> blockObjs = new ArrayList<JSONObject>();
         for (Block block : phase.getBlocks()) {
           JSONObject blockObj = new JSONObject();
           blockObj.put("name", block.getName());
-          blockObj.put("index", block.getId());
+          blockObj.put("id", block.getId());
           blockObj.put("status", block.getStatus());
-          blockObj.put("decide", planManager.blockHasDecisionPoint(phase.getId(), block.getId()));
+          blockObj.put("decide", stageManager.hasDecisionPoint(block));
           blockObjs.add(blockObj);
         }
 
@@ -124,7 +125,7 @@ public class PlanController {
   @Path("/phases")
   public Response listPhases() {
     try {
-      Plan plan = planManager.getPlan();
+      Stage plan = stageManager.getStage();
       List<? extends Phase> phases = plan.getPhases();
       JSONObject obj = new JSONObject();
       obj.put("phases", phasesToJsonArray(phases));
@@ -139,7 +140,7 @@ public class PlanController {
   @Path("/phases/{phaseId}")
   public Response listBlocks(@PathParam("phaseId") String phaseId) {
     try {
-      Phase phase = getPhase(Integer.parseInt(phaseId));
+      Phase phase = getPhase(UUID.fromString(phaseId));
       JSONObject obj = new JSONObject();
       List<? extends Block> blocks = phase.getBlocks();
       if (blocks != null) {
@@ -165,12 +166,9 @@ public class PlanController {
     try {
       JSONObject obj = new JSONObject();
 
-      int phaseIndex = Integer.parseInt(phaseId);
-      int blockIndex = Integer.parseInt(blockId);
-
       switch(cmd) {
         case "restart":
-          planManager.restart(phaseIndex, blockIndex, force);
+          stageManager.restart(UUID.fromString(phaseId), UUID.fromString(blockId));
           obj.put("Result", "Received cmd: '" + cmd + "' with force set to: '" + force + "'");
           break;
         default:
@@ -193,11 +191,11 @@ public class PlanController {
 
       switch(cmd) {
         case "continue":
-          planManager.proceed();
+          stageManager.proceed();
           obj.put("Result", "Received cmd: " + cmd);
           break;
         case "interrupt":
-          planManager.interrupt();
+          stageManager.interrupt();
           obj.put("Result", "Received cmd: " + cmd);
           break;
         default:
@@ -218,7 +216,7 @@ public class PlanController {
 
     for (Phase phase : phases) {
       JSONObject obj = new JSONObject();
-      obj.put(Integer.toString(phase.getId()), phase.getName());
+      obj.put(phase.getId().toString(), phase.getName());
       phaseObjs.add(obj);
     }
 
@@ -234,7 +232,7 @@ public class PlanController {
       descObj.put("status", block.getStatus().name());
 
       JSONObject blockObj = new JSONObject();
-      blockObj.put(Integer.toString(block.getId()), descObj);
+      blockObj.put(block.getId().toString(), descObj);
 
       blockObjs.add(blockObj);
     }
@@ -242,12 +240,12 @@ public class PlanController {
     return new JSONArray(blockObjs);
   }
 
-  private Phase getPhase(int id) {
-    Plan plan = planManager.getPlan();
+  private Phase getPhase(UUID id) {
+    Stage plan = stageManager.getStage();
     List<? extends Phase> phases = plan.getPhases();
 
     for (Phase phase : phases) {
-      if (phase.getId() == id) {
+      if (phase.getId().equals(id)) {
         return phase;
       }
     }

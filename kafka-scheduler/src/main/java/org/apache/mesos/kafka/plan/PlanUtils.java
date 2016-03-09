@@ -14,7 +14,7 @@ public class PlanUtils {
   private static final Log log = LogFactory.getLog(PlanUtils.class);
 
   public static PhaseStrategyFactory getPhaseStrategyFactory(KafkaConfigService config) {
-    String strategy = config.getStrategy();
+    String strategy = config.getPlanStrategy();
 
     switch (strategy) {
       case "INSTALL":

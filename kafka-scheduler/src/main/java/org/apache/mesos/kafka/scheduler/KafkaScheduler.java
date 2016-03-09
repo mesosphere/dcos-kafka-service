@@ -78,7 +78,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     offerAccepter =
       new OfferAccepter(Arrays.asList(
             new LogOperationRecorder(),
-            new PersistentOperationRecorder()));
+            new PersistentOperationRecorder(state)));
 
     handleConfigChange();
 
@@ -154,9 +154,9 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     boolean persistentVolumesEnabled = Boolean.parseBoolean(envConfig.get("BROKER_PV"));
 
     if (persistentVolumesEnabled) {
-      return new PersistentOfferRequirementProvider(configState);
+      return new PersistentOfferRequirementProvider(state, configState);
     } else {
-      return new SandboxOfferRequirementProvider(configState);
+      return new SandboxOfferRequirementProvider(state, configState);
     }
   }
 

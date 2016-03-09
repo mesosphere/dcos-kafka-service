@@ -10,6 +10,7 @@ import org.apache.commons.logging.LogFactory;
 
 import org.apache.mesos.kafka.config.KafkaConfigService;
 import org.apache.mesos.kafka.config.KafkaConfigState;
+import org.apache.mesos.kafka.state.KafkaStateService;
 import org.apache.mesos.offer.OfferRequirement;
 import org.apache.mesos.offer.PlacementStrategy;
 import org.apache.mesos.protobuf.ResourceBuilder;
@@ -17,16 +18,20 @@ import org.apache.mesos.Protos.Resource;
 import org.apache.mesos.Protos.TaskInfo;
 
 public class SandboxOfferRequirementProvider implements KafkaOfferRequirementProvider {
-  private final Log log = LogFactory.getLog(SandboxOfferRequirementProvider.class);
-  private KafkaConfigState configState = null;
+  private static final Log log = LogFactory.getLog(SandboxOfferRequirementProvider.class);
 
-  public SandboxOfferRequirementProvider(KafkaConfigState configState) {
+  private final KafkaConfigState configState;
+  private final PlacementStrategyManager placementStrategyManager;
+
+  public SandboxOfferRequirementProvider(
+      KafkaStateService kafkaStateService, KafkaConfigState configState) {
     this.configState = configState;
+    this.placementStrategyManager = new PlacementStrategyManager(kafkaStateService);
   }
 
   public OfferRequirement getNewOfferRequirement(String configName, int brokerId) {
     KafkaConfigService config = configState.fetch(configName);
-    PlacementStrategy placementStrategy = PlacementStrategyManager.getPlacementStrategy(config);
+    PlacementStrategy placementStrategy = placementStrategyManager.getPlacementStrategy(config);
     TaskInfo taskInfo = getTaskInfo(configName, config, brokerId);
 
     return new OfferRequirement(
@@ -37,7 +42,7 @@ public class SandboxOfferRequirementProvider implements KafkaOfferRequirementPro
 
   public OfferRequirement getReplacementOfferRequirement(TaskInfo taskInfo) {
     KafkaConfigService config = getConfigService(taskInfo);
-    PlacementStrategy placementStrategy = PlacementStrategyManager.getPlacementStrategy(config);
+    PlacementStrategy placementStrategy = placementStrategyManager.getPlacementStrategy(config);
 
     return new OfferRequirement(
         Arrays.asList(taskInfo),
@@ -68,14 +73,11 @@ public class SandboxOfferRequirementProvider implements KafkaOfferRequirementPro
   }
 
   private List<Resource> getResources(KafkaConfigService config) {
-
-    double cpus = Double.parseDouble(config.get("BROKER_CPUS"));
-    double mem = Double.parseDouble(config.get("BROKER_MEM"));
-
+    KafkaConfigService.BrokerResources brokerResources = config.getBrokerResources();
     List<Resource> resources = new ArrayList<>();
-    resources.add(ResourceBuilder.cpus(cpus));
-    resources.add(ResourceBuilder.mem(mem));
-
+    resources.add(ResourceBuilder.cpus(brokerResources.cpus));
+    resources.add(ResourceBuilder.mem(brokerResources.mem));
+    //TODO disk?
     return resources;
   }
 }

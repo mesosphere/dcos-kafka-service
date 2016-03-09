@@ -14,9 +14,8 @@ import org.apache.mesos.Protos.TaskInfo;
 
 public class OfferUtils {
   private static final Log log = LogFactory.getLog(OfferUtils.class);
-  private static KafkaStateService state = KafkaStateService.getStateService();
 
-  public static Integer getNextBrokerId() {
+  public static Integer getNextBrokerId(KafkaStateService state) {
     try {
       List<String> taskNames = state.getTaskNames();
 

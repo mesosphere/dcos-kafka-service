@@ -60,7 +60,7 @@ public class KafkaConfigService extends FrameworkConfigurationService {
 
   /**
    * Returns to the on-disk path to the unzipped Kafka runtime.
-   * Eg: "/path/to/sandbox/kafka-0.1.2.3"
+   * e.g.: "/path/to/sandbox/kafka-0.1.2.3"
    */
   public String getKafkaSandboxPath() {
     return get("MESOS_SANDBOX") + "/" + getKafkaVersionName();
@@ -117,14 +117,14 @@ public class KafkaConfigService extends FrameworkConfigurationService {
   }
 
   /**
-   * Returns the name of the configured Plan strategy, eg "INSTALL".
+   * Returns the name of the configured Plan strategy, e.g. "INSTALL".
    */
   public String getPlanStrategy() {
     return get("PLAN_STRATEGY");
   }
 
   /**
-   * Returns the name of the configured placement strategy, eg "NODE".
+   * Returns the name of the configured placement strategy, e.g. "NODE".
    */
   public String getPlacementStrategy() {
     return get("PLACEMENT_STRATEGY");

@@ -35,11 +35,12 @@ public class KafkaUpdateBlock implements Block {
   private List<TaskID> pendingTasks;
 
   public KafkaUpdateBlock(
+      KafkaStateService state,
       KafkaOfferRequirementProvider offerReqProvider,
       String targetConfigName,
       int brokerId) {
 
-    state = KafkaStateService.getStateService();
+    this.state = state;
     this.offerReqProvider = offerReqProvider;
     this.targetConfigName = targetConfigName;
     this.brokerId = brokerId;
@@ -134,7 +135,7 @@ public class KafkaUpdateBlock implements Block {
     return blockId;
   }
 
-  @Override 
+  @Override
   public String getMessage() {
     return "Broker-" + getBrokerId() + " is " + getStatus();
   }
@@ -247,7 +248,7 @@ public class KafkaUpdateBlock implements Block {
     }
   }
 
-  public TaskStatus getTaskStatus() {
+  private TaskStatus getTaskStatus() {
     if (null != taskInfo) {
       try {
         String taskId = taskInfo.getTaskId().getValue();
@@ -274,4 +275,3 @@ public class KafkaUpdateBlock implements Block {
       || taskStatus.getState().equals(TaskState.TASK_ERROR);
   }
 }
-

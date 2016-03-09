@@ -18,7 +18,6 @@ import org.apache.mesos.kafka.offer.PersistentOperationRecorder;
 import org.apache.mesos.kafka.offer.SandboxOfferRequirementProvider;
 import org.apache.mesos.kafka.plan.KafkaStageManager;
 import org.apache.mesos.kafka.plan.KafkaUpdatePhase;
-import org.apache.mesos.kafka.plan.PlanUtils;
 import org.apache.mesos.kafka.state.KafkaStateService;
 import org.apache.mesos.kafka.web.KafkaApiServer;
 
@@ -30,8 +29,11 @@ import org.apache.mesos.reconciliation.Reconciler;
 import org.apache.mesos.scheduler.plan.Block;
 import org.apache.mesos.scheduler.plan.DefaultStage;
 import org.apache.mesos.scheduler.plan.DefaultStageScheduler;
+import org.apache.mesos.scheduler.plan.DefaultStrategyFactory;
+import org.apache.mesos.scheduler.plan.PhaseStrategyFactory;
 import org.apache.mesos.scheduler.plan.ReconciliationPhase;
 import org.apache.mesos.scheduler.plan.Stage;
+import org.apache.mesos.scheduler.plan.StageStrategyFactory;
 import org.apache.mesos.scheduler.plan.StrategyStageManager;
 import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos.ExecutorID;
@@ -49,48 +51,51 @@ import org.apache.mesos.SchedulerDriver;
  * Kafka Framework Scheduler.
  */
 public class KafkaScheduler extends Observable implements org.apache.mesos.Scheduler, Runnable {
-  private final Log log = LogFactory.getLog(KafkaScheduler.class);
+  private static final Log log = LogFactory.getLog(KafkaScheduler.class);
 
   private static final int TWO_WEEK_SEC = 2 * 7 * 24 * 60 * 60;
+
+  private final KafkaConfigState configState;
   private final KafkaConfigService envConfig;
-  private final KafkaStateService state;
+  private final KafkaStateService kafkaState;
   private final DefaultStageScheduler stageScheduler;
   private final KafkaRepairScheduler repairScheduler;
   private final KafkaApiServer apiServer;
   private final OfferAccepter offerAccepter;
   private final Reconciler reconciler;
+  private static KafkaStageManager stageManager; //TODO(nick): make non-static once PlanController isn't using it (fixed in other PR)
 
-  private static KafkaStageManager stageManager = null;
   private static final Integer restartLock = 0;
   private static List<String> tasksToRestart = new ArrayList<String>();
   private static final Integer rescheduleLock = 0;
   private static List<String> tasksToReschedule = new ArrayList<String>();
-  private static KafkaConfigState configState;
 
   public KafkaScheduler() {
     envConfig = KafkaConfigService.getEnvConfig();
-    state = KafkaStateService.getStateService();
+    kafkaState = KafkaStateService.getStateService();
     configState = new KafkaConfigState(envConfig.getFrameworkName(), envConfig.getZookeeperAddress(), "/");
     apiServer = new KafkaApiServer();
     reconciler = new DefaultReconciler();
 
-    addObserver(state);
+    addObserver(kafkaState);
 
     offerAccepter =
       new OfferAccepter(Arrays.asList(
             new LogOperationRecorder(),
-            new PersistentOperationRecorder(state)));
+            new PersistentOperationRecorder(kafkaState)));
 
     handleConfigChange();
 
     Stage stage = DefaultStage.fromArgs(
         new ReconciliationPhase(reconciler),
-        new KafkaUpdatePhase(configState.getTargetName(), getOfferRequirementProvider()));
-    stageManager = new KafkaStageManager(stage, PlanUtils.getPhaseStrategyFactory(envConfig), state);
+        new KafkaUpdatePhase(configState.getTargetName(), envConfig, kafkaState, getOfferRequirementProvider()));
+
+    stageManager = new KafkaStageManager(stage, getPhaseStrategyFactory(envConfig), kafkaState);
+
     addObserver(stageManager);
 
     stageScheduler = new DefaultStageScheduler(offerAccepter);
-    repairScheduler = new KafkaRepairScheduler(configState, getOfferRequirementProvider(), offerAccepter);
+    repairScheduler = new KafkaRepairScheduler(configState.getTargetName(), kafkaState, getOfferRequirementProvider(), offerAccepter);
   }
 
   private void handleConfigChange() {
@@ -115,6 +120,20 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
       } else {
         log.info("No change detected.");
       }
+    }
+  }
+
+  private static PhaseStrategyFactory getPhaseStrategyFactory(KafkaConfigService config) {
+    String strategy = config.getPlanStrategy();
+
+    switch (strategy) {
+      case "INSTALL":
+        return new DefaultStrategyFactory();
+      case "STAGE":
+        return new StageStrategyFactory();
+      default:
+        log.warn("Unknown strategy: " + strategy);
+        return new StageStrategyFactory();
     }
   }
 
@@ -143,10 +162,6 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     }
   }
 
-  public static KafkaConfigState getConfigState() {
-    return configState;
-  }
-
   public static StrategyStageManager getPlanManager() {
     return stageManager;
   }
@@ -155,9 +170,9 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     boolean persistentVolumesEnabled = Boolean.parseBoolean(envConfig.get("BROKER_PV"));
 
     if (persistentVolumesEnabled) {
-      return new PersistentOfferRequirementProvider(state, configState);
+      return new PersistentOfferRequirementProvider(kafkaState, configState);
     } else {
-      return new SandboxOfferRequirementProvider(state, configState);
+      return new SandboxOfferRequirementProvider(kafkaState, configState);
     }
   }
 
@@ -192,15 +207,15 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   @Override
   public void registered(SchedulerDriver driver, FrameworkID frameworkId, MasterInfo masterInfo) {
     log.info("Registered framework with frameworkId: " + frameworkId.getValue());
-    state.setFrameworkId(frameworkId);
-    reconcile(driver);
-    apiServer.start(configState, envConfig, state, stageManager);
+    kafkaState.setFrameworkId(frameworkId);
+    reconcile();
+    apiServer.start(configState, envConfig, kafkaState, stageManager);
   }
 
   @Override
   public void reregistered(SchedulerDriver driver, MasterInfo masterInfo) {
     log.info("Reregistered framework.");
-    reconcile(driver);
+    reconcile();
   }
 
   @Override
@@ -275,7 +290,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     synchronized (rescheduleLock) {
       for (String taskId : tasksToReschedule) {
         log.info("Rescheduling task: " + taskId);
-        state.deleteTask(taskId);
+        kafkaState.deleteTask(taskId);
         driver.killTask(TaskID.newBuilder().setValue(taskId).build());
       }
 
@@ -296,9 +311,9 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     registerFramework(this, fwkInfo, zkPath);
   }
 
-  private void reconcile(SchedulerDriver driver) {
+  private void reconcile() {
     try {
-      reconciler.start(state.getTaskStatuses());
+      reconciler.start(kafkaState.getTaskStatuses());
     } catch(Exception ex) {
       log.error("Failed to reconcile with exception: " + ex);
     }
@@ -315,7 +330,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
       .setPrincipal(envConfig.getPrincipal())
       .setCheckpoint(true);
 
-    FrameworkID fwkId = state.getFrameworkId();
+    FrameworkID fwkId = kafkaState.getFrameworkId();
     if (fwkId != null) {
       fwkInfoBuilder.setId(fwkId);
     }

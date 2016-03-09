@@ -26,12 +26,12 @@ public class KafkaApiServer {
       KafkaConfigState kafkaConfigState,
       KafkaConfigService kafkaConfigService,
       KafkaStateService kafkaStateService,
-      StrategyStageManager strategyPlanManager) {
+      StrategyStageManager strategyStageManager) {
     ResourceConfig resourceConfig = new ResourceConfig()
         .registerInstances(new ClusterController(kafkaConfigService.getKafkaZkUri(), kafkaConfigState, kafkaStateService))
         .registerInstances(new BrokerController(kafkaStateService))
         .registerInstances(new TopicController(new CmdExecutor(kafkaConfigService, kafkaStateService), kafkaStateService))
-        .registerInstances(new PlanController(strategyPlanManager));
+        .registerInstances(new PlanController(strategyStageManager));
 
     // Manually enable verbose HTTP logging
     Logger l = Logger.getLogger("org.glassfish.grizzly.http.server.HttpHandler");

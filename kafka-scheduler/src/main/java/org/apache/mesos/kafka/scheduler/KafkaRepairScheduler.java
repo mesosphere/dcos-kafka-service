@@ -19,26 +19,24 @@ import org.apache.mesos.offer.OfferRecommendation;
 import org.apache.mesos.offer.OfferRequirement;
 import org.apache.mesos.scheduler.plan.Block;
 
-import org.apache.mesos.kafka.config.KafkaConfigState;
 import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
 import org.apache.mesos.kafka.state.KafkaStateService;
 
 public class KafkaRepairScheduler {
   private final Log log = LogFactory.getLog(KafkaRepairScheduler.class);
 
-  private KafkaStateService state = null;
-  private KafkaConfigState configState;
-
-  private OfferAccepter offerAccepter = null;
-  private KafkaOfferRequirementProvider offerReqProvider = null;
+  private final String targetConfigName;
+  private final KafkaStateService state;
+  private final OfferAccepter offerAccepter;
+  private final KafkaOfferRequirementProvider offerReqProvider;
 
   public KafkaRepairScheduler(
-      KafkaConfigState configState,
+      String targetConfigName,
+      KafkaStateService kafkaStateService,
       KafkaOfferRequirementProvider offerReqProvider,
       OfferAccepter offerAccepter) {
-
-    this.configState = configState;
-    this.state = KafkaStateService.getStateService();
+    this.targetConfigName = targetConfigName;
+    this.state = kafkaStateService;
     this.offerReqProvider = offerReqProvider;
     this.offerAccepter = offerAccepter;
   }
@@ -57,7 +55,6 @@ public class KafkaRepairScheduler {
       log.info("Missing brokerIds: " + missingBrokerIds);
       if (missingBrokerIds.size() > 0) {
         Integer brokerId = missingBrokerIds.get(new Random().nextInt(missingBrokerIds.size()));
-        String targetConfigName = configState.getTargetName();
         offerReq = offerReqProvider.getNewOfferRequirement(targetConfigName, brokerId);
       }
     }

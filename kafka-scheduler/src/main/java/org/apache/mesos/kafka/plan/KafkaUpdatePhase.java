@@ -2,6 +2,7 @@ package org.apache.mesos.kafka.plan;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import org.apache.mesos.kafka.config.KafkaConfigService;
 import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
@@ -10,9 +11,10 @@ import org.apache.mesos.scheduler.plan.Block;
 import org.apache.mesos.scheduler.plan.Phase;
 
 public class KafkaUpdatePhase implements Phase {
-  private List<Block> blocks = null;
-  private String configName = null;
-  private KafkaConfigService config = null;
+  private List<Block> blocks;
+  private String configName;
+  private KafkaConfigService config;
+  private UUID id;
 
   public KafkaUpdatePhase(
       String configName,
@@ -21,6 +23,7 @@ public class KafkaUpdatePhase implements Phase {
     this.configName = configName;
     this.config = KafkaScheduler.getConfigState().fetch(configName);
     this.blocks = createBlocks(configName, offerReqProvider);
+    this.id = UUID.randomUUID();
   }
 
   @Override
@@ -29,10 +32,25 @@ public class KafkaUpdatePhase implements Phase {
   }
 
   @Override
-  public int getId() {
-    // Kafka only has two Phases: Reconciliation which has an Id of 0
-    // and the Update Phase which has an Id of 1
-    return 1;
+  public Block getBlock(UUID id) {
+    for (Block block : getBlocks()) {
+      if (block.getId().equals(id)) {
+        return block;
+      }
+    }
+
+    return null;
+  }
+
+  @Override
+  public Block getBlock(int index){
+    return getBlocks().get(index);
+  }
+
+
+  @Override
+  public UUID getId() {
+    return id;
   }
 
   @Override

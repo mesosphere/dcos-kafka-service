@@ -16,7 +16,6 @@ import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.PersistentOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.PersistentOperationRecorder;
 import org.apache.mesos.kafka.offer.SandboxOfferRequirementProvider;
-import org.apache.mesos.kafka.plan.KafkaReconcilePhase;
 import org.apache.mesos.kafka.plan.KafkaUpdatePhase;
 import org.apache.mesos.kafka.plan.PlanUtils;
 import org.apache.mesos.kafka.state.KafkaStateService;
@@ -25,12 +24,14 @@ import org.apache.mesos.kafka.web.KafkaApiServer;
 import org.apache.mesos.config.ConfigurationChangeDetector;
 import org.apache.mesos.config.ConfigurationChangeNamespaces;
 import org.apache.mesos.offer.OfferAccepter;
+import org.apache.mesos.reconciliation.DefaultReconciler;
 import org.apache.mesos.reconciliation.Reconciler;
 import org.apache.mesos.scheduler.plan.Block;
-import org.apache.mesos.scheduler.plan.DefaultPlan;
-import org.apache.mesos.scheduler.plan.DefaultPlanScheduler;
-import org.apache.mesos.scheduler.plan.Plan;
-import org.apache.mesos.scheduler.plan.StrategyPlanManager;
+import org.apache.mesos.scheduler.plan.DefaultStage;
+import org.apache.mesos.scheduler.plan.DefaultStageScheduler;
+import org.apache.mesos.scheduler.plan.ReconciliationPhase;
+import org.apache.mesos.scheduler.plan.Stage;
+import org.apache.mesos.scheduler.plan.StrategyStageManager;
 import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos.ExecutorID;
 import org.apache.mesos.Protos.FrameworkID;
@@ -52,13 +53,13 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   private static final int TWO_WEEK_SEC = 2 * 7 * 24 * 60 * 60;
   private final KafkaConfigService envConfig;
   private final KafkaStateService state;
-  private final DefaultPlanScheduler planScheduler;
+  private final DefaultStageScheduler stageScheduler;
   private final KafkaRepairScheduler repairScheduler;
   private final KafkaApiServer apiServer;
   private final OfferAccepter offerAccepter;
   private final Reconciler reconciler;
 
-  private static StrategyPlanManager planManager = null;
+  private static StrategyStageManager stageManager = null;
   private static final Integer restartLock = 0;
   private static List<String> tasksToRestart = new ArrayList<String>();
   private static final Integer rescheduleLock = 0;
@@ -70,10 +71,9 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     state = KafkaStateService.getStateService();
     configState = new KafkaConfigState(envConfig.getFrameworkName(), envConfig.getZookeeperAddress(), "/");
     apiServer = new KafkaApiServer();
-    reconciler = new Reconciler();
+    reconciler = new DefaultReconciler();
 
     addObserver(state);
-    addObserver(reconciler);
 
     offerAccepter =
       new OfferAccepter(Arrays.asList(
@@ -82,13 +82,13 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
 
     handleConfigChange();
 
-    Plan plan = DefaultPlan.fromArgs(
-        new KafkaReconcilePhase(reconciler),
+    Stage stage = DefaultStage.fromArgs(
+        new ReconciliationPhase(reconciler),
         new KafkaUpdatePhase(configState.getTargetName(), getOfferRequirementProvider()));
-    planManager = new StrategyPlanManager(plan, PlanUtils.getPhaseStrategyFactory(envConfig));
-    addObserver(planManager);
+    stageManager = new StrategyStageManager(stage, PlanUtils.getPhaseStrategyFactory(envConfig));
+    addObserver(stageManager);
 
-    planScheduler = new DefaultPlanScheduler(offerAccepter);
+    stageScheduler = new DefaultStageScheduler(offerAccepter);
     repairScheduler = new KafkaRepairScheduler(configState, getOfferRequirementProvider(), offerAccepter);
   }
 
@@ -146,8 +146,8 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     return configState;
   }
 
-  public static StrategyPlanManager getPlanManager() {
-    return planManager;
+  public static StrategyStageManager getPlanManager() {
+    return stageManager;
   }
 
   private KafkaOfferRequirementProvider getOfferRequirementProvider() {
@@ -193,7 +193,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     log.info("Registered framework with frameworkId: " + frameworkId.getValue());
     state.setFrameworkId(frameworkId);
     reconcile(driver);
-    apiServer.start(configState, envConfig, state, planManager);
+    apiServer.start(configState, envConfig, state, stageManager);
   }
 
   @Override
@@ -217,13 +217,14 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   @Override
   public void resourceOffers(SchedulerDriver driver, List<Offer> offers) {
     logOffers(offers);
+    reconciler.reconcile(driver);
     processTaskOperations(driver);
 
     List<OfferID> acceptedOffers = new ArrayList<OfferID>();
 
-    if (reconciler.complete()) {
-      Block block = planManager.getCurrentBlock();
-      acceptedOffers = planScheduler.resourceOffers(driver, offers, block);
+    if (reconciler.isReconciled()) {
+      Block block = stageManager.getCurrentBlock();
+      acceptedOffers = stageScheduler.resourceOffers(driver, offers, block);
       List<Offer> unacceptedOffers = filterAcceptedOffers(offers, acceptedOffers);
       acceptedOffers.addAll(repairScheduler.resourceOffers(driver, unacceptedOffers, block));
     }
@@ -296,7 +297,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
 
   private void reconcile(SchedulerDriver driver) {
     try {
-      reconciler.reconcile(driver, state.getTaskStatuses());
+      reconciler.start(state.getTaskStatuses());
     } catch(Exception ex) {
       log.error("Failed to reconcile with exception: " + ex);
     }

@@ -11,7 +11,7 @@ import org.apache.mesos.kafka.cmd.CmdExecutor;
 import org.apache.mesos.kafka.config.KafkaConfigService;
 import org.apache.mesos.kafka.config.KafkaConfigState;
 import org.apache.mesos.kafka.state.KafkaStateService;
-import org.apache.mesos.scheduler.plan.StrategyPlanManager;
+import org.apache.mesos.scheduler.plan.StrategyStageManager;
 
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
@@ -26,7 +26,7 @@ public class KafkaApiServer {
       KafkaConfigState kafkaConfigState,
       KafkaConfigService kafkaConfigService,
       KafkaStateService kafkaStateService,
-      StrategyPlanManager strategyPlanManager) {
+      StrategyStageManager strategyPlanManager) {
     ResourceConfig resourceConfig = new ResourceConfig()
         .registerInstances(new ClusterController(kafkaConfigService.getKafkaZkUri(), kafkaConfigState, kafkaStateService))
         .registerInstances(new BrokerController(kafkaStateService))

@@ -160,8 +160,7 @@ public class PlanController {
   public Response listBlocks(
       @PathParam("phaseId") String phaseId,
       @PathParam("blockId") String blockId,
-      @QueryParam("cmd") String cmd,
-      @DefaultValue("false") @QueryParam("force") boolean force) {
+      @QueryParam("cmd") String cmd) {
 
     try {
       JSONObject obj = new JSONObject();
@@ -169,7 +168,11 @@ public class PlanController {
       switch(cmd) {
         case "restart":
           stageManager.restart(UUID.fromString(phaseId), UUID.fromString(blockId));
-          obj.put("Result", "Received cmd: '" + cmd + "' with force set to: '" + force + "'");
+          obj.put("Result", "Received cmd: '" + cmd + "'");
+          break;
+        case "forceComplete":
+          stageManager.forceComplete(UUID.fromString(phaseId), UUID.fromString(blockId));
+          obj.put("Result", "Received cmd: '" + cmd + "'");
           break;
         default:
           log.error("Unrecognized cmd: " + cmd);

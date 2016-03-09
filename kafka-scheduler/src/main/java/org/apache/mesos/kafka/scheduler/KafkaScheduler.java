@@ -16,6 +16,7 @@ import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.PersistentOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.PersistentOperationRecorder;
 import org.apache.mesos.kafka.offer.SandboxOfferRequirementProvider;
+import org.apache.mesos.kafka.plan.KafkaStageManager;
 import org.apache.mesos.kafka.plan.KafkaUpdatePhase;
 import org.apache.mesos.kafka.state.KafkaStateService;
 import org.apache.mesos.kafka.web.KafkaApiServer;
@@ -62,7 +63,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   private final KafkaApiServer apiServer;
   private final OfferAccepter offerAccepter;
   private final Reconciler reconciler;
-  private static StrategyStageManager stageManager; //TODO(nick): make non-static once PlanController isn't using it (fixed in other PR)
+  private static KafkaStageManager stageManager; //TODO(nick): make non-static once PlanController isn't using it (fixed in other PR)
 
   private static final Integer restartLock = 0;
   private static List<String> tasksToRestart = new ArrayList<String>();
@@ -81,7 +82,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     offerAccepter =
       new OfferAccepter(Arrays.asList(
             new LogOperationRecorder(),
-            new PersistentOperationRecorder(state)));
+            new PersistentOperationRecorder(kafkaState)));
 
     handleConfigChange();
 
@@ -89,7 +90,8 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
         new ReconciliationPhase(reconciler),
         new KafkaUpdatePhase(configState.getTargetName(), envConfig, kafkaState, getOfferRequirementProvider()));
 
-    stageManager = new StrategyStageManager(stage, getPhaseStrategyFactory(envConfig));
+    stageManager = new KafkaStageManager(stage, getPhaseStrategyFactory(envConfig), kafkaState);
+
     addObserver(stageManager);
 
     stageScheduler = new DefaultStageScheduler(offerAccepter);
@@ -168,9 +170,9 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     boolean persistentVolumesEnabled = Boolean.parseBoolean(envConfig.get("BROKER_PV"));
 
     if (persistentVolumesEnabled) {
-      return new PersistentOfferRequirementProvider(state, configState);
+      return new PersistentOfferRequirementProvider(kafkaState, configState);
     } else {
-      return new SandboxOfferRequirementProvider(state, configState);
+      return new SandboxOfferRequirementProvider(kafkaState, configState);
     }
   }
 

@@ -91,6 +91,7 @@ public class KafkaRepairScheduler {
 
   private List<Integer> getMissingBrokerIds(Block block) {
     List<Integer> missingBrokerIds = new ArrayList<Integer>();
+
     Integer lastExpectedBrokerId = getLastExpectedBrokerId(block);
 
     if (!(lastExpectedBrokerId >= 0)) {
@@ -105,15 +106,12 @@ public class KafkaRepairScheduler {
       return missingBrokerIds;
     }
 
-    int blockId = -1;
-
-    if (block != null) {
-      blockId = block.getId();
-    }
-
     for (Integer i=0; i<= lastExpectedBrokerId; i++) {
-      if (!brokerExists(brokerTasks, i) && i != blockId) {
-        missingBrokerIds.add(i);
+      if (!brokerExists(brokerTasks, i)) {
+        String brokerName = OfferUtils.idToName(i);
+        if (!brokerName.equals(block.getName())) {
+          missingBrokerIds.add(i);
+        }
       }
     }
 

@@ -79,7 +79,7 @@ public class KafkaConfigService extends FrameworkConfigurationService {
   }
 
   /**
-   * Returns the name of the configured Plan strategy, eg "INSTALL".
+   * Returns the name of the configured Plan strategy, e.g. "INSTALL".
    */
   public String getPlanStrategy() {
     return get("PLAN_STRATEGY");

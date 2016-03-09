@@ -16,6 +16,7 @@ import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.PersistentOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.PersistentOperationRecorder;
 import org.apache.mesos.kafka.offer.SandboxOfferRequirementProvider;
+import org.apache.mesos.kafka.plan.KafkaStageManager;
 import org.apache.mesos.kafka.plan.KafkaUpdatePhase;
 import org.apache.mesos.kafka.plan.PlanUtils;
 import org.apache.mesos.kafka.state.KafkaStateService;
@@ -59,7 +60,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   private final OfferAccepter offerAccepter;
   private final Reconciler reconciler;
 
-  private static StrategyStageManager stageManager = null;
+  private static KafkaStageManager stageManager = null;
   private static final Integer restartLock = 0;
   private static List<String> tasksToRestart = new ArrayList<String>();
   private static final Integer rescheduleLock = 0;
@@ -85,7 +86,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     Stage stage = DefaultStage.fromArgs(
         new ReconciliationPhase(reconciler),
         new KafkaUpdatePhase(configState.getTargetName(), getOfferRequirementProvider()));
-    stageManager = new StrategyStageManager(stage, PlanUtils.getPhaseStrategyFactory(envConfig));
+    stageManager = new KafkaStageManager(stage, PlanUtils.getPhaseStrategyFactory(envConfig), state);
     addObserver(stageManager);
 
     stageScheduler = new DefaultStageScheduler(offerAccepter);

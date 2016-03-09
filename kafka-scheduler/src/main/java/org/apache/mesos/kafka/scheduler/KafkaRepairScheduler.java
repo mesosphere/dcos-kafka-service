@@ -112,7 +112,7 @@ public class KafkaRepairScheduler {
     for (Integer i=0; i<= lastExpectedBrokerId; i++) {
       if (!brokerExists(brokerTasks, i)) {
         String brokerName = OfferUtils.idToName(i);
-        if (!brokerName.equals(block.getName())) {
+        if (block == null || !brokerName.equals(block.getName())) {
           missingBrokerIds.add(i);
         }
       }

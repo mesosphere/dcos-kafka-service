@@ -10,6 +10,7 @@ import org.apache.commons.logging.LogFactory;
 
 import org.apache.mesos.kafka.config.KafkaConfigService;
 import org.apache.mesos.kafka.config.KafkaConfigState;
+import org.apache.mesos.kafka.state.KafkaStateService;
 import org.apache.mesos.offer.OfferRequirement;
 import org.apache.mesos.offer.OfferRequirement.VolumeMode;
 import org.apache.mesos.offer.PlacementStrategy;
@@ -24,10 +25,14 @@ import org.apache.mesos.Protos.Volume;
 
 public class PersistentOfferRequirementProvider implements KafkaOfferRequirementProvider {
   private final Log log = LogFactory.getLog(PersistentOfferRequirementProvider.class);
-  private KafkaConfigState configState = null;
 
-  public PersistentOfferRequirementProvider(KafkaConfigState configState) {
+  private final KafkaConfigState configState;
+  private final PlacementStrategyManager placementStrategyManager;
+
+  public PersistentOfferRequirementProvider(
+      KafkaStateService kafkaStateService, KafkaConfigState configState) {
     this.configState = configState;
+    this.placementStrategyManager = new PlacementStrategyManager(kafkaStateService);
   }
 
   public OfferRequirement getNewOfferRequirement(String configName, int brokerId) {
@@ -39,7 +44,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
       return getExistingOfferRequirement(taskInfo);
     } else {
       KafkaConfigService config = getConfigService(taskInfo);
-      PlacementStrategy placementStrategy = PlacementStrategyManager.getPlacementStrategy(config);
+      PlacementStrategy placementStrategy = placementStrategyManager.getPlacementStrategy(config);
 
       return new OfferRequirement(
           Arrays.asList(taskInfo),
@@ -89,7 +94,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     log.info("Getting create OfferRequirement");
 
     KafkaConfigService config = getConfigService(taskInfo);
-    PlacementStrategy placementStrategy = PlacementStrategyManager.getPlacementStrategy(config);
+    PlacementStrategy placementStrategy = placementStrategyManager.getPlacementStrategy(config);
 
     List<SlaveID> avoidAgents = placementStrategy.getAgentsToAvoid(taskInfo);
     List<SlaveID> colocateAgents = placementStrategy.getAgentsToColocate(taskInfo);
@@ -147,17 +152,14 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
       String persistenceId,
       String containerPath) {
 
-    double cpus = Double.parseDouble(config.get("BROKER_CPUS"));
-    double mem = Double.parseDouble(config.get("BROKER_MEM"));
-    double disk = Double.parseDouble(config.get("BROKER_DISK"));
-
+    KafkaConfigService.BrokerResources brokerResources = config.getBrokerResources();
     String role = config.getRole();
     String principal = config.getPrincipal();
 
     List<Resource> resources = new ArrayList<>();
-    resources.add(ResourceBuilder.reservedCpus(cpus, role, principal));
-    resources.add(ResourceBuilder.reservedMem(mem, role, principal));
-    resources.add(getVolumeResource(disk, role, principal, containerPath, persistenceId));
+    resources.add(ResourceBuilder.reservedCpus(brokerResources.cpus, role, principal));
+    resources.add(ResourceBuilder.reservedMem(brokerResources.mem, role, principal));
+    resources.add(getVolumeResource(brokerResources.disk, role, principal, containerPath, persistenceId));
 
     return resources;
   }

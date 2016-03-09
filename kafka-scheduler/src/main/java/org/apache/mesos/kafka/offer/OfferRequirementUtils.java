@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.mesos.config.ConfigurationService;
 import org.apache.mesos.kafka.config.KafkaConfigService;
 
 import org.apache.mesos.protobuf.CommandInfoBuilder;
@@ -22,12 +21,12 @@ import org.apache.mesos.Protos.TaskInfo;
 
 public class OfferRequirementUtils {
 
-  public static String getKafkaStartCmd(ConfigurationService config) {
+  public static String getKafkaStartCmd(KafkaConfigService config) {
     return String.format(
         "$MESOS_SANDBOX/%1$s/bin/kafka-server-start.sh " +
         "$MESOS_SANDBOX/%1$s/config/server.properties " +
         "$CONTAINER_HOOK_FLAGS",
-        config.get("KAFKA_VER_NAME"));
+        config.getKafkaVersionName());
   }
 
   public static TaskInfo getTaskInfo(
@@ -46,13 +45,13 @@ public class OfferRequirementUtils {
     // Do not use the /bin/bash-specific "source"
     commands.add(". $MESOS_SANDBOX/container-hook/container-hook.sh");
 
-    // Export the JRE and log the environment 
+    // Export the JRE and log the environment
     commands.add("export PATH=$PATH:$MESOS_SANDBOX/jre/bin");
     commands.add("env");
     commands.add("java -cp $MESOS_SANDBOX/kafka-config-overrider-0.2.0-uber.jar org.apache.mesos.kafka.config.Overrider " + configName);
 
     // Run Kafka
-    String kafkaStartCmd = OfferRequirementUtils.getKafkaStartCmd(config); 
+    String kafkaStartCmd = OfferRequirementUtils.getKafkaStartCmd(config);
     commands.add(kafkaStartCmd);
 
     String command = Joiner.on(" && ").join(commands);
@@ -61,7 +60,7 @@ public class OfferRequirementUtils {
     Map<String, String> taskEnv = new HashMap<>();
     taskEnv.put("FRAMEWORK_NAME", config.getFrameworkName());
     taskEnv.put("KAFKA_VER_NAME", config.getKafkaVersionName());
-    taskEnv.put(overridePrefix + "ZOOKEEPER_CONNECT", config.getZookeeperAddress() + "/" + config.getFrameworkName());
+    taskEnv.put(overridePrefix + "ZOOKEEPER_CONNECT", config.getZookeeperAddress() + config.getZkRoot());
     taskEnv.put(overridePrefix + "BROKER_ID", Integer.toString(brokerId));
     taskEnv.put(overridePrefix + "LOG_DIRS", containerPath);
     taskEnv.put(overridePrefix + "PORT", Integer.toString(port));
@@ -71,18 +70,18 @@ public class OfferRequirementUtils {
       .addLabel("config_target", configName)
       .build();
 
+    CommandInfoBuilder commandInfoBuilder = new CommandInfoBuilder()
+        .addEnvironmentMap(taskEnv)
+        .setCommand(command);
+    for (String resourceUri : config.getBrokerResourceUris()) {
+      commandInfoBuilder.addUri(resourceUri);
+    }
+
     return new TaskInfoBuilder(taskId, brokerName, "" /* slaveId */)
-        .addAllResources(resources)
-        .addResource(ResourceBuilder.ports(port, port))
-        .setCommand(new CommandInfoBuilder()
-          .addUri(config.get("KAFKA_URI"))
-          .addUri(config.get("CONTAINER_HOOK_URI"))
-          .addUri(config.get("JAVA_URI"))
-          .addUri(config.get("OVERRIDER_URI"))
-          .addEnvironmentMap(taskEnv)
-          .setCommand(command)
-          .build())
-        .setLabels(labels)
-        .build();
+      .addAllResources(resources)
+      .addResource(ResourceBuilder.ports(port, port))
+      .setCommand(commandInfoBuilder.build())
+      .setLabels(labels)
+      .build();
   }
 }

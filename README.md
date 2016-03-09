@@ -277,10 +277,10 @@ Accept-Encoding: gzip, deflate
 {
     "phases": [
         {
-            "0": "Reconciliation"
+            "44a85d93-deb9-4811-b2ef-ebc52e85f8c8": "Reconciliation"
         },
         {
-            "1": "Update to: c3c7fd10-9697-454a-9360-595376169d1f"
+            "9d0079d6-861b-45aa-9c3b-e670531b6c10": "Update to: c3c7fd10-9697-454a-9360-595376169d1f"
         }
     ]
 }
@@ -288,7 +288,7 @@ Accept-Encoding: gzip, deflate
 
 The update phase can be viewed by making the REST request below.
 ```bash 
-GET $DCOS_URI/service/kafka0/v1/plan/phases/1 HTTP/1.1
+GET $DCOS_URI/service/kafka0/v1/plan/phases/9d0079d6-861b-45aa-9c3b-e670531b6c10 HTTP/1.1
 Accept: */*
 Accept-Encoding: gzip, deflate
 [...]
@@ -296,19 +296,19 @@ Accept-Encoding: gzip, deflate
 {
     "blocks": [
         {
-            "0": {
+            "d73aeb45-0a97-4103-bbc6-7cdc16df6e6b": {
                 "name": "broker-0",
                 "status": "Complete"
             }
         },
         {
-            "1": {
+            "26c0a61b-899b-4304-aadd-f867782f58a9": {
                 "name": "broker-1",
                 "status": "Complete"
             }
         },
         {
-            "2": {
+            "541704a5-774e-4267-b8ab-0216f37cfc23": {
                 "name": "broker-2",
                 "status": "Complete"
             }
@@ -320,7 +320,7 @@ Accept-Encoding: gzip, deflate
 When using the `STAGE` deployment strategy, an update plan will initially pause without doing any update to ensure the plan is as expected.  It will look like this:
 
 ```bash
-GET $DCOS_URI/service/kafka0/v1/plan/phases/1 HTTP/1.1
+GET $DCOS_URI/service/kafka0/v1/plan/phases/9d0079d6-861b-45aa-9c3b-e670531b6c10 HTTP/1.1
 Accept: */*
 Accept-Encoding: gzip, deflate
 [...]
@@ -328,19 +328,19 @@ Accept-Encoding: gzip, deflate
 {
     "blocks": [
         {
-            "0": {
+            "d73aeb45-0a97-4103-bbc6-7cdc16df6e6b": {
                 "name": "broker-0",
                 "status": "Pending"
             }
         },
         {
-            "1": {
+            "26c0a61b-899b-4304-aadd-f867782f58a9": {
                 "name": "broker-1",
                 "status": "Pending"
             }
         },
         {
-            "2": {
+            "541704a5-774e-4267-b8ab-0216f37cfc23": {
                 "name": "broker-2",
                 "status": "Pending"
             }
@@ -365,7 +365,7 @@ Accept-Encoding: gzip, deflate
 After executing the continue operation the plan will look like this:
 
 ```bash
-GET $DCOS_URI/service/kafka0/v1/plan/phases/1 HTTP/1.1
+GET $DCOS_URI/service/kafka0/v1/plan/phases/9d0079d6-861b-45aa-9c3b-e670531b6c10 HTTP/1.1
 Accept: */*
 Accept-Encoding: gzip, deflate
 [...]
@@ -373,19 +373,19 @@ Accept-Encoding: gzip, deflate
 {
     "blocks": [
         {
-            "0": {
+            "d73aeb45-0a97-4103-bbc6-7cdc16df6e6b": {
                 "name": "broker-0",
                 "status": "Complete"
             }
         },
         {
-            "1": {
+            "26c0a61b-899b-4304-aadd-f867782f58a9": {
                 "name": "broker-1",
                 "status": "Pending"
             }
         },
         {
-            "2": {
+            "541704a5-774e-4267-b8ab-0216f37cfc23": {
                 "name": "broker-2",
                 "status": "Pending"
             }

@@ -45,7 +45,7 @@ public class KafkaStageManager extends StrategyStageManager {
           Arrays.asList(state.getTaskIdForBroker(brokerId));
         KafkaScheduler.rescheduleTasks(taskIds);
       } catch (Exception ex) {
-        log.error("Failed to force completin of Block: " + block.getId() + "with exception: " + ex);
+        log.error("Failed to force completion of Block: " + block.getId() + "with exception: " + ex);
         return;
       }
     }

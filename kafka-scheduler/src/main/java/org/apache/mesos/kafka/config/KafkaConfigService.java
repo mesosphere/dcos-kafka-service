@@ -34,7 +34,7 @@ public class KafkaConfigService {
   private static KafkaConfigService envConfig = null;
 
   /**
-   * Returns a new Kafka Config containing the system environment.
+   * Returns a new unverified Kafka Config containing the system environment.
    */
   static KafkaConfigService getEnvConfig() {
     if (null == envConfig) {

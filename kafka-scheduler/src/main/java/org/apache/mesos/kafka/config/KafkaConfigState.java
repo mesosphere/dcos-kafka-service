@@ -45,6 +45,9 @@ public class KafkaConfigState {
     return KafkaConfigService.getHydratedConfig(configState.fetch(version));
   }
 
+  /**
+   * Returns whether a current target configuration exists.
+   */
   public boolean hasTarget() {
     try {
       return null != zkClient.checkExists().forPath(configTargetPath);
@@ -67,6 +70,9 @@ public class KafkaConfigState {
     }
   }
 
+  /**
+   * Returns the content of the current target configuration.
+   */
   public KafkaConfigService getTargetConfig() {
     return fetch(getTargetName());
   }

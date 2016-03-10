@@ -28,6 +28,9 @@ public class ConfigStateUpdater {
       this.msg = msg;
     }
 
+    /**
+     * Returns a user-visible explanation of the validation error.
+     */
     public String toString() {
       return String.format("Validation error on field \"%s\": %s", fieldName, msg);
     }
@@ -48,6 +51,9 @@ public class ConfigStateUpdater {
       this.validationErrors = validationErrors;
     }
 
+    /**
+     * Returns the list of validation errors encountered when processing the config.
+     */
     public Collection<ValidationError> getValidationErrors() {
       return validationErrors;
     }
@@ -106,12 +112,16 @@ public class ConfigStateUpdater {
   }
 
   /**
-   * Returns the underlying config state storage.
+   * Returns the underlying config state storage to be used elsewhere.
+   * This will only contain pre-validated target configs.
    */
   public KafkaConfigState getConfigState() {
     return kafkaConfigState;
   }
 
+  /**
+   * Returns the underlying kafka state storage to be used elsewhere.
+   */
   public KafkaStateService getKafkaState() {
     return kafkaStateService;
   }

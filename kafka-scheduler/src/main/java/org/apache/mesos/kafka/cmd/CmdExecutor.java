@@ -53,7 +53,7 @@ public class CmdExecutor {
   }
 
   public JSONObject deleteTopic(String name) throws Exception {
-    // e.g. ./kafka-topics.sh --delete --zookeeper master.mesos:2181/kafka0 --topic topic0
+    // e.g. ./kafka-topics.sh --delete --zookeeper master.mesos:2181/kafka --topic topic0
 
     List<String> cmd = new ArrayList<String>();
     cmd.add(binPath + "kafka-topics.sh");
@@ -67,7 +67,7 @@ public class CmdExecutor {
   }
 
   public JSONObject alterTopic(String name, List<String> cmds) throws Exception {
-    // e.g. ./kafka-topics.sh --zookeeper master.mesos:2181/kafka0 --alter --topic topic0 --partitions 4
+    // e.g. ./kafka-topics.sh --zookeeper master.mesos:2181/kafka --alter --topic topic0 --partitions 4
 
     List<String> cmd = new ArrayList<String>();
     cmd.add(binPath + "kafka-topics.sh");
@@ -135,7 +135,7 @@ public class CmdExecutor {
   }
 
   public JSONObject unavailablePartitions() throws Exception {
-    // e.g. ./kafka-topics.sh --zookeeper master.mesos:2181/kafka0 --describe --unavailable-partitions
+    // e.g. ./kafka-topics.sh --zookeeper master.mesos:2181/kafka --describe --unavailable-partitions
 
     List<String> cmd = new ArrayList<String>();
     cmd.add(binPath + "kafka-topics.sh");
@@ -148,7 +148,7 @@ public class CmdExecutor {
   }
 
   public JSONObject underReplicatedPartitions() throws Exception {
-    // e.g. ./kafka-topics.sh --zookeeper master.mesos:2181/kafka0 --describe --under-replicate-partitions
+    // e.g. ./kafka-topics.sh --zookeeper master.mesos:2181/kafka --describe --under-replicate-partitions
 
     List<String> cmd = new ArrayList<String>();
     cmd.add(binPath + "kafka-topics.sh");

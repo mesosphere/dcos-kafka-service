@@ -43,15 +43,15 @@ public class ConfigStateUpdater {
     if (!kafkaConfigState.hasTarget()) {
       setTargetConfig(newTargetConfig);
     } else {
-      KafkaConfigService currTarget = kafkaConfigState.getTargetConfig();
+      KafkaConfigService currTargetConfig = kafkaConfigState.getTargetConfig();
 
       ConfigurationChangeDetector changeDetector = new ConfigurationChangeDetector(
-          currTarget.getNsPropertyMap(),
+          currTargetConfig.getNsPropertyMap(),
           newTargetConfig.getNsPropertyMap(),
           new ConfigurationChangeNamespaces("*", "*"));
 
       if (changeDetector.isChangeDetected()) {
-        log.info("Detected changed properties from old=[" + currTarget.getNsPropertyMap() + "] to new=[" + newTargetConfig.getNsPropertyMap() + "]");
+        log.info("Detected changed properties from old=[" + currTargetConfig.getNsPropertyMap() + "] to new=[" + newTargetConfig.getNsPropertyMap() + "]");
         log.info("Extra config properties detected: " + Arrays.toString(changeDetector.getExtraConfigs().toArray()));
         log.info("Missing config properties detected: " + Arrays.toString(changeDetector.getMissingConfigs().toArray()));
         log.info("Changed config properties detected: " + Arrays.toString(changeDetector.getChangedProperties().toArray()));

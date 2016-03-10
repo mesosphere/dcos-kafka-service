@@ -36,7 +36,6 @@ public class KafkaEnvConfigurator implements Configurator {
 
   private List<String> ignoredKeys() {
     return Arrays.asList(
-        "BROKER_COUNT",
         "PATH",
         "HOST",
         "MESOS_SLAVE_ID",

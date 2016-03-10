@@ -16,7 +16,6 @@ import org.apache.mesos.kafka.offer.LogOperationRecorder;
 import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.PersistentOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.PersistentOperationRecorder;
-import org.apache.mesos.kafka.offer.SandboxOfferRequirementProvider;
 import org.apache.mesos.kafka.plan.KafkaStageManager;
 import org.apache.mesos.kafka.plan.KafkaUpdatePhase;
 import org.apache.mesos.kafka.state.KafkaStateService;
@@ -99,9 +98,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
             new PersistentOperationRecorder(kafkaState)));
 
     KafkaOfferRequirementProvider offerRequirementProvider =
-        (envConfig.persistentVolumes())
-            ? new PersistentOfferRequirementProvider(kafkaState, configState)
-            : new SandboxOfferRequirementProvider(kafkaState, configState);
+      new PersistentOfferRequirementProvider(kafkaState, configState);
 
     List<Phase> phases = Arrays.asList(
         new ReconciliationPhase(reconciler),

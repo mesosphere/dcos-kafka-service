@@ -97,7 +97,7 @@ DCOS Kafka Service provides the following features:
 - Step 2. Install a Kafka cluster.
 
 ```bash
-$ dcos package install kafka # framework name defaults to 'kafka0'
+$ dcos package install kafka # framework name defaults to 'kafka'
 ```
 
 - Step 3. Create a new topic.
@@ -116,15 +116,15 @@ $ dcos kafka connection
         "ip-10-0-3-230.us-west-2.compute.internal:9092",
         "ip-10-0-3-231.us-west-2.compute.internal:9093"
     ],
-    "zookeeper": "master.mesos:2181/kafka0",
-    "zookeeper_convenience": "--zookeeper master.mesos:2181/kafka0"
+    "zookeeper": "master.mesos:2181/kafka",
+    "zookeeper_convenience": "--zookeeper master.mesos:2181/kafka"
 }
 $ dcos node ssh --master-proxy --master
 core@ip-10-0-6-153 ~ $ docker run -it mesosphere/kafka-client
 root@7bc0e88cfa52:/kafka_2.10-0.8.2.2/bin# ./kafka-console-producer.sh --broker-list ip-10-0-3-230.us-west-2.compute.internal:9092 --topic test
 This is a message
 This is another message
-root@7bc0e88cfa52:/kafka_2.10-0.8.2.2/bin# ./kafka-console-consumer.sh --zookeeper master.mesos:2181/kafka0 --topic test --from-beginning
+root@7bc0e88cfa52:/kafka_2.10-0.8.2.2/bin# ./kafka-console-consumer.sh --zookeeper master.mesos:2181/kafka --topic test --from-beginning
 This is a message
 This is another message
 ```
@@ -134,7 +134,7 @@ See also [Connecting clients](#connecting-clients).
 - Step 5. Uninstall the cluster.
 
 ``` bash
-$ dcos package uninstall --app-id=kafka0 kafka
+$ dcos package uninstall --app-id=kafka kafka
 ```
 
 ### Install and Customize
@@ -147,15 +147,15 @@ To start a basic test cluster with three brokers, run the following command with
 $ dcos package install kafka
 ```
 
-This command creates a new Kafka cluster with the default name `kafka0`. Two clusters cannot share the same name, so installing additional clusters beyond the default cluster requires [customizing the `framework-name` at install time](#custom-install-configuration) for each additional instance.
+This command creates a new Kafka cluster with the default name `kafka`. Two clusters cannot share the same name, so installing additional clusters beyond the default cluster requires [customizing the `framework-name` at install time](#custom-install-configuration) for each additional instance.
 
-All `dcos kafka` CLI commands have a `--framework-name` argument allowing the user to specify which Kafka instance to query. If you do not specify a framework name, the CLI assumes the default value, `kafka0`. The default value for `--framework-name` can be customized via the DCOS CLI configuration:
+All `dcos kafka` CLI commands have a `--framework-name` argument allowing the user to specify which Kafka instance to query. If you do not specify a framework name, the CLI assumes the default value, `kafka`. The default value for `--framework-name` can be customized via the DCOS CLI configuration:
 
 ``` bash
 $ dcos config set kafka.framework_name new_default_name
 ```
 
-The default cluster, `kafka0`, is intended for testing and development. It is not suitable for production use without additional customization.
+The default cluster, `kafka`, is intended for testing and development. It is not suitable for production use without additional customization.
 
 #### Custom install configuration
 
@@ -205,13 +205,13 @@ The Apache Kafka DCOS Service is installed:
 
 ### Uninstall
 
-Uninstalling a cluster is also straightforward. Replace `kafka0` with the name of the kafka instance to be uninstalled.
+Uninstalling a cluster is also straightforward. Replace `kafka` with the name of the kafka instance to be uninstalled.
 
 ``` bash
-$ dcos package uninstall --app-id=kafka0 kafka
+$ dcos package uninstall --app-id=kafka kafka
 ```
 
-The instance will still be present in zookeeper at `/[framework_name]`, e.g., `/kafka0`. To completely clear the configuration, the zookeeper node must be removed.
+The instance will still be present in zookeeper at `/[framework_name]`, e.g., `/kafka`. To completely clear the configuration, the zookeeper node must be removed.
 
 ### Changing configuration in flight
 
@@ -245,8 +245,8 @@ The following code connects to a DCOS-hosted Kafka instance using `bin/kafka-con
          "ip-10-0-3-230.us-west-2.compute.internal:9092",
          "ip-10-0-3-231.us-west-2.compute.internal:9093"
      ],
-     "zookeeper": "master.mesos:2181/kafka0",
-     "zookeeper_convenience": "--zookeeper master.mesos:2181/kafka0"
+     "zookeeper": "master.mesos:2181/kafka",
+     "zookeeper_convenience": "--zookeeper master.mesos:2181/kafka"
  }
  $ dcos node ssh --master-proxy --master
  core@ip-10-0-6-153 ~ $ docker run -it mesosphere/kafka-client
@@ -254,7 +254,7 @@ The following code connects to a DCOS-hosted Kafka instance using `bin/kafka-con
  This is a message
  This is another message
  
- root@7bc0e88cfa52:/kafka_2.10-0.8.2.2/bin# ./kafka-console-consumer.sh --zookeeper master.mesos:2181/kafka0 --topic test --from-beginning
+ root@7bc0e88cfa52:/kafka_2.10-0.8.2.2/bin# ./kafka-console-consumer.sh --zookeeper master.mesos:2181/kafka --topic test --from-beginning
  This is a message
  This is another message
  ```
@@ -269,7 +269,7 @@ $ dcos kafka connection
 
 There are two Phases in the Update Plans for Kafka.  The first Phase is for Mesos Task reconciliation and is always executed without need for human interaction.  The more interesting phase is the Update phase.
 ```bash
-GET $DCOS_URI/service/kafka0/v1/plan/phases HTTP/1.1
+GET $DCOS_URI/service/kafka/v1/plan/phases HTTP/1.1
 Accept: */*
 Accept-Encoding: gzip, deflate
 [...]
@@ -288,7 +288,7 @@ Accept-Encoding: gzip, deflate
 
 The update phase can be viewed by making the REST request below.
 ```bash 
-GET $DCOS_URI/service/kafka0/v1/plan/phases/9d0079d6-861b-45aa-9c3b-e670531b6c10 HTTP/1.1
+GET $DCOS_URI/service/kafka/v1/plan/phases/9d0079d6-861b-45aa-9c3b-e670531b6c10 HTTP/1.1
 Accept: */*
 Accept-Encoding: gzip, deflate
 [...]
@@ -320,7 +320,7 @@ Accept-Encoding: gzip, deflate
 When using the `STAGE` deployment strategy, an update plan will initially pause without doing any update to ensure the plan is as expected.  It will look like this:
 
 ```bash
-GET $DCOS_URI/service/kafka0/v1/plan/phases/9d0079d6-861b-45aa-9c3b-e670531b6c10 HTTP/1.1
+GET $DCOS_URI/service/kafka/v1/plan/phases/9d0079d6-861b-45aa-9c3b-e670531b6c10 HTTP/1.1
 Accept: */*
 Accept-Encoding: gzip, deflate
 [...]
@@ -352,7 +352,7 @@ Accept-Encoding: gzip, deflate
 In order to execute the first block a continue command is required and can be executed in the following way:
 
 ```bash
-PUT $DCOS_URI/service/kafka0/v1/plan?cmd=continue HTTP/1.1
+PUT $DCOS_URI/service/kafka/v1/plan?cmd=continue HTTP/1.1
 Accept: */*
 Accept-Encoding: gzip, deflate
 [...]
@@ -365,7 +365,7 @@ Accept-Encoding: gzip, deflate
 After executing the continue operation the plan will look like this:
 
 ```bash
-GET $DCOS_URI/service/kafka0/v1/plan/phases/9d0079d6-861b-45aa-9c3b-e670531b6c10 HTTP/1.1
+GET $DCOS_URI/service/kafka/v1/plan/phases/9d0079d6-861b-45aa-9c3b-e670531b6c10 HTTP/1.1
 Accept: */*
 Accept-Encoding: gzip, deflate
 [...]
@@ -397,7 +397,7 @@ Accept-Encoding: gzip, deflate
 An additional continue command will cause the rest of the plan to be executed without further interruption.  If at some point an operator would like to interrupt an in progress configuration update, this can be accomplished with the following command:
 
 ```bash
-PUT $DCOS_URI/service/kafka0/v1/plan?cmd=interrupt HTTP/1.1
+PUT $DCOS_URI/service/kafka/v1/plan?cmd=interrupt HTTP/1.1
 Accept: */*
 Accept-Encoding: gzip, deflate
 [...]
@@ -415,7 +415,7 @@ The following describes the most commonly used features of the Kafka framework a
 
 The name of this Kafka instance in DCOS. This is the only option that cannot be changed once the Kafka cluster is started: it can only be configured via the `dcos-cli --options` flag the Kafka instance is created.
 
-- **In dcos-cli options.json**: `framework-name` = string (default: `kafka0`)
+- **In dcos-cli options.json**: `framework-name` = string (default: `kafka`)
 - **In Marathon**: The framework name cannot be changed after the cluster has started.
 
 ### Broker Count
@@ -522,13 +522,13 @@ Broker removal is currently a manual process. Set the `BROKER_COUNT` environment
 
 ### Uninstall
 
-Uninstalling a cluster is straightforward. Replace `kafka0` with the name of the kafka instance to be uninstalled.
+Uninstalling a cluster is straightforward. Replace `kafka` with the name of the kafka instance to be uninstalled.
 
 ``` bash
-$ dcos package uninstall --app-id=kafka0 kafka
+$ dcos package uninstall --app-id=kafka kafka
 ```
 
-The instance will still be present in zookeeper at `/[framework_name]`, e.g., `/kafka0`. To completely clear the configuration, remove the zookeeper node.
+The instance will still be present in zookeeper at `/[framework_name]`, e.g., `/kafka`. To completely clear the configuration, remove the zookeeper node.
 
 <!--  ## Troubleshooting
 
@@ -574,9 +574,9 @@ The number of deployable Brokers is constrained by two factors.  First, Brokers 
 
 For ongoing maintenance of the Kafka cluster itself, the Kafka framework exposes an HTTP API whose structure is designed to roughly match the tools provided by the Kafka distribution, such as `bin/kafka-topics.sh`.
 
-The examples here provide equivalent commands using both `[dcos-cli](https://github.com/mesosphere/dcos-cli)` (with the `kafka` CLI module installed) and `curl`. These examples assume a service named `kafka0` (the default), and the `curl` examples assume a DCOS host of `$DCOS_URI`. Replace these with appropriate values as needed.
+The examples here provide equivalent commands using both `[dcos-cli](https://github.com/mesosphere/dcos-cli)` (with the `kafka` CLI module installed) and `curl`. These examples assume a service named `kafka` (the default), and the `curl` examples assume a DCOS host of `$DCOS_URI`. Replace these with appropriate values as needed.
 
-The `dcos kafka` CLI commands have a `--framework-name` argument, allowing the user to specify which Kafka instance to query. The value defaults to `kafka0`, so it's technically redundant to specify `--framework-name=kafka0` in these examples. The default value for `--framework-name` can be customized via the DCOS CLI configuration:
+The `dcos kafka` CLI commands have a `--framework-name` argument, allowing the user to specify which Kafka instance to query. The value defaults to `kafka`, so it's technically redundant to specify `--framework-name=kafka` in these examples. The default value for `--framework-name` can be customized via the DCOS CLI configuration:
 
 ``` bash
 $ dcos config set kafka.framework_name new_default_name
@@ -587,8 +587,8 @@ $ dcos config set kafka.framework_name new_default_name
 Kafka comes with many useful tools of its own that often require either Zookeeper connection information or the list of broker endpoints. This information can be retrieved in an easily consumable format from the `/connection` endpoint:
 
 ``` bash
-$ curl -X GET "$DCOS_URI/service/kafka0/v1/connection"
-GET /service/kafka0/v1/connection HTTP/1.1
+$ curl -X GET "$DCOS_URI/service/kafka/v1/connection"
+GET /service/kafka/v1/connection HTTP/1.1
 [...]
 
 {
@@ -597,7 +597,7 @@ GET /service/kafka0/v1/connection HTTP/1.1
         "10.0.0.2:9093",
         "10.0.0.3:9094"
     ],
-    "zookeeper": "master.mesos:2181/kafka0"
+    "zookeeper": "master.mesos:2181/kafka"
 }
 ```
 
@@ -611,8 +611,8 @@ $ dcos kafka connection
         "ip-10-0-3-230.us-west-2.compute.internal:9092",
         "ip-10-0-3-231.us-west-2.compute.internal:9093"
     ],
-    "zookeeper": "master.mesos:2181/kafka0",
-    "zookeeper_convenience": "--zookeeper master.mesos:2181/kafka0"
+    "zookeeper": "master.mesos:2181/kafka",
+    "zookeeper_convenience": "--zookeeper master.mesos:2181/kafka"
 }
 $ dcos node ssh --master-proxy --master
 core@ip-10-0-6-153 ~ $ docker run -it mesosphere/kafka-client
@@ -620,7 +620,7 @@ root@7bc0e88cfa52:/kafka_2.10-0.8.2.2/bin# ./kafka-console-producer.sh --broker-
 This is a message
 This is another message
 
-root@7bc0e88cfa52:/kafka_2.10-0.8.2.2/bin# ./kafka-console-consumer.sh --zookeeper master.mesos:2181/kafka0 --topic test --from-beginning
+root@7bc0e88cfa52:/kafka_2.10-0.8.2.2/bin# ./kafka-console-consumer.sh --zookeeper master.mesos:2181/kafka --topic test --from-beginning
 This is a message
 This is another message
 ```
@@ -645,7 +645,7 @@ $ dcos kafka broker reschedule 2
 #### List All Brokers
 
 ``` bash
-$ dcos kafka --framework-name=kafka0 broker list
+$ dcos kafka --framework-name=kafka broker list
 {
     "brokers": [
         "0",
@@ -656,8 +656,8 @@ $ dcos kafka --framework-name=kafka0 broker list
 ```
 
 ``` bash
-$ curl -X GET "$DCOS_URI/service/kafka0/v1/brokers"
-GET /service/kafka0/v1/brokers HTTP/1.1
+$ curl -X GET "$DCOS_URI/service/kafka/v1/brokers"
+GET /service/kafka/v1/brokers HTTP/1.1
 [...]
 
 {
@@ -671,7 +671,7 @@ GET /service/kafka0/v1/brokers HTTP/1.1
 #### View Broker Details
 
 ``` bash
-$ dcos kafka --framework-name=kafka0 broker describe 0
+$ dcos kafka --framework-name=kafka broker describe 0
 {
     "endpoints": [
         "PLAINTEXT://w1.dcos:9092"
@@ -686,8 +686,8 @@ $ dcos kafka --framework-name=kafka0 broker describe 0
 ```
 
 ``` bash
-$ curl -X GET "$DCOS_URI/service/kafka0/v1/brokers/0"
-GET /service/kafka0/v1/brokers/0 HTTP/1.1
+$ curl -X GET "$DCOS_URI/service/kafka/v1/brokers/0"
+GET /service/kafka/v1/brokers/0 HTTP/1.1
 [...]
 
 {
@@ -705,15 +705,15 @@ GET /service/kafka0/v1/brokers/0 HTTP/1.1
 #### Restart Single Broker
 
 ``` bash
-$ dcos kafka --framework-name=kafka0 broker restart 0
+$ dcos kafka --framework-name=kafka broker restart 0
 [
     "broker-0__9c426c50-1087-475c-aa36-cd00d24ccebb"
 ]
 ```
 
 ``` bash
-$ curl -X PUT "$DCOS_URI/service/kafka0/v1/brokers/0"
-PUT /service/kafka0/v1/brokers/0 HTTP/1.1
+$ curl -X PUT "$DCOS_URI/service/kafka/v1/brokers/0"
+PUT /service/kafka/v1/brokers/0 HTTP/1.1
 [...]
 
 [
@@ -724,8 +724,8 @@ PUT /service/kafka0/v1/brokers/0 HTTP/1.1
 #### Restart All Brokers
 
 ``` bash
-$ curl -X PUT $DCOS_URI/service/kafka0/v1/brokers
-PUT /service/kafka0/v1/brokers HTTP/1.1
+$ curl -X PUT $DCOS_URI/service/kafka/v1/brokers
+PUT /service/kafka/v1/brokers HTTP/1.1
 [...]
 
 [
@@ -742,7 +742,7 @@ These operations mirror what is available with `bin/kafka-topics.sh`.
 #### List Topics
 
 ``` bash
-$ dcos kafka --framework-name=kafka0 topic list
+$ dcos kafka --framework-name=kafka topic list
 [
     "topic1",
     "topic0"
@@ -750,8 +750,8 @@ $ dcos kafka --framework-name=kafka0 topic list
 ```
 
 ``` bash
-$ curl -X GET "$DCOS_URI/service/kafka0/v1/topics"
-GET /service/kafka0/v1/topics HTTP/1.1
+$ curl -X GET "$DCOS_URI/service/kafka/v1/topics"
+GET /service/kafka/v1/topics HTTP/1.1
 [...]
 
 [
@@ -763,7 +763,7 @@ GET /service/kafka0/v1/topics HTTP/1.1
 #### Create Topic
 
 ``` bash
-$ dcos kafka --framework-name=kafka0 topic create topic1 --partitions=3 --replication=3
+$ dcos kafka --framework-name=kafka topic create topic1 --partitions=3 --replication=3
 {
     "exit_code": 0,
     "stderr": "",
@@ -772,8 +772,8 @@ $ dcos kafka --framework-name=kafka0 topic create topic1 --partitions=3 --replic
 ```
 
 ``` bash
-$ curl -X POST "$DCOS_URI/service/kafka0/v1/topics?name=topic1&partitions=3&replication=3"
-POST /service/kafka0/v1/topics?replication=3&name=topic1&partitions=3 HTTP/1.1
+$ curl -X POST "$DCOS_URI/service/kafka/v1/topics?name=topic1&partitions=3&replication=3"
+POST /service/kafka/v1/topics?replication=3&name=topic1&partitions=3 HTTP/1.1
 [...]
 
 {
@@ -786,7 +786,7 @@ POST /service/kafka0/v1/topics?replication=3&name=topic1&partitions=3 HTTP/1.1
 #### View Topic Details
 
 ``` bash
-$ dcos kafka --framework-name=kafka0 topic describe topic1
+$ dcos kafka --framework-name=kafka topic describe topic1
 {
     "partitions": [
         {
@@ -833,8 +833,8 @@ $ dcos kafka --framework-name=kafka0 topic describe topic1
 ```
 
 ``` bash
-$ curl -X GET "$DCOS_URI/service/kafka0/v1/topics/topic1"
-GET /service/kafka0/v1/topics/topic1 HTTP/1.1
+$ curl -X GET "$DCOS_URI/service/kafka/v1/topics/topic1"
+GET /service/kafka/v1/topics/topic1 HTTP/1.1
 [...]
 
 {
@@ -885,7 +885,7 @@ GET /service/kafka0/v1/topics/topic1 HTTP/1.1
 #### View Topic Offsets
 
 ``` bash
-$ dcos kafka --framework-name=kafka0 topic offsets topic1
+$ dcos kafka --framework-name=kafka topic offsets topic1
 [
     {
         "2": "334"
@@ -900,8 +900,8 @@ $ dcos kafka --framework-name=kafka0 topic offsets topic1
 ```
 
 ``` bash
-$ curl -X "$DCOS_URI/service/kafka0/v1/topics/topic1/offsets"
-GET /service/kafka0/v1/topics/topic1/offsets HTTP/1.1
+$ curl -X "$DCOS_URI/service/kafka/v1/topics/topic1/offsets"
+GET /service/kafka/v1/topics/topic1/offsets HTTP/1.1
 [...]
 
 [
@@ -920,7 +920,7 @@ GET /service/kafka0/v1/topics/topic1/offsets HTTP/1.1
 #### Alter Topic Partition Count
 
 ``` bash
-$ dcos kafka --framework-name=kafka0 topic partitions topic1 2
+$ dcos kafka --framework-name=kafka topic partitions topic1 2
 
 {
     "exit_code": 0,
@@ -930,8 +930,8 @@ $ dcos kafka --framework-name=kafka0 topic partitions topic1 2
 ```
 
 ``` bash
-$ curl -X PUT "$DCOS_URI/service/kafka0/v1/topics/topic1?operation=partitions&partitions=2"
-PUT /service/kafka0/v1/topics/topic1?operation=partitions&partitions=2 HTTP/1.1
+$ curl -X PUT "$DCOS_URI/service/kafka/v1/topics/topic1?operation=partitions&partitions=2"
+PUT /service/kafka/v1/topics/topic1?operation=partitions&partitions=2 HTTP/1.1
 [...]
 
 {
@@ -944,12 +944,12 @@ PUT /service/kafka0/v1/topics/topic1?operation=partitions&partitions=2 HTTP/1.1
 #### Alter Topic Config Value
 
 ``` bash
-$ dcos kafka --framework-name=kafka0 topic config topic1 cleanup.policy compact
+$ dcos kafka --framework-name=kafka topic config topic1 cleanup.policy compact
 ```
 
 ``` bash
-$ curl -vX PUT "$DCOS_URI/service/kafka0/v1/topics/topic1?operation=config&key=cleanup.policy&value=compact"
-PUT /service/kafka0/v1/topics/topic1?operation=config&key=cleanup.policy&value=compact HTTP/1.1
+$ curl -vX PUT "$DCOS_URI/service/kafka/v1/topics/topic1?operation=config&key=cleanup.policy&value=compact"
+PUT /service/kafka/v1/topics/topic1?operation=config&key=cleanup.policy&value=compact HTTP/1.1
 [...]
 
 {
@@ -962,17 +962,17 @@ PUT /service/kafka0/v1/topics/topic1?operation=config&key=cleanup.policy&value=c
 #### Delete/Unset Topic Config Value
 
 ``` bash
-$ dcos kafka --framework-name=kafka0 topic delete_config topic1 cleanup.policy
+$ dcos kafka --framework-name=kafka topic delete_config topic1 cleanup.policy
 ```
 
 ``` bash
-$ curl -vX PUT "$DCOS_URI/service/kafka0/v1/topics/topic1?operation=deleteConfig&key=cleanup.policy"
+$ curl -vX PUT "$DCOS_URI/service/kafka/v1/topics/topic1?operation=deleteConfig&key=cleanup.policy"
 ```
 
 #### Run Producer Test on Topic
 
 ``` bash
-$ dcos kafka --framework-name=kafka0 topic producer_test topic1 10
+$ dcos kafka --framework-name=kafka topic producer_test topic1 10
 
 {
     "exit_code": 0,
@@ -982,8 +982,8 @@ $ dcos kafka --framework-name=kafka0 topic producer_test topic1 10
 ```
 
 ``` bash
-$ curl -X PUT "$DCOS_URI/service/kafka0/v1/topics/topic1?operation=producer-test&messages=10"
-PUT /service/kafka0/v1/topics/topic1?operation=producer-test&messages=10 HTTP/1.1
+$ curl -X PUT "$DCOS_URI/service/kafka/v1/topics/topic1?operation=producer-test&messages=10"
+PUT /service/kafka/v1/topics/topic1?operation=producer-test&messages=10 HTTP/1.1
 [...]
 
 {
@@ -996,7 +996,7 @@ PUT /service/kafka0/v1/topics/topic1?operation=producer-test&messages=10 HTTP/1.
 #### Delete Topic
 
 ``` bash
-$ dcos kafka --framework-name=kafka0 topic delete topic1
+$ dcos kafka --framework-name=kafka topic delete topic1
 
 {
     "exit_code": 0,
@@ -1006,8 +1006,8 @@ $ dcos kafka --framework-name=kafka0 topic delete topic1
 ```
 
 ``` bash
-$ curl -X DELETE "$DCOS_URI/service/kafka0/v1/topics/topic1"
-DELETE /service/kafka0/v1/topics/topic1?operation=delete HTTP/1.1
+$ curl -X DELETE "$DCOS_URI/service/kafka/v1/topics/topic1"
+DELETE /service/kafka/v1/topics/topic1?operation=delete HTTP/1.1
 [...]
 
 {
@@ -1020,7 +1020,7 @@ DELETE /service/kafka0/v1/topics/topic1?operation=delete HTTP/1.1
 #### List Under Replicated Partitions
 
 ``` bash
-$ dcos kafka --framework-name=kafka0 topic under_replicated_partitions
+$ dcos kafka --framework-name=kafka topic under_replicated_partitions
 
 {
     "exit_code": 0,
@@ -1030,8 +1030,8 @@ $ dcos kafka --framework-name=kafka0 topic under_replicated_partitions
 ```
 
 ``` bash
-$ curl -X "$DCOS_URI/service/kafka0/v1/topics/under_replicated_partitions"
-GET /service/kafka0/v1/topics/under_replicated_partitions HTTP/1.1
+$ curl -X "$DCOS_URI/service/kafka/v1/topics/under_replicated_partitions"
+GET /service/kafka/v1/topics/under_replicated_partitions HTTP/1.1
 [...]
 
 {
@@ -1044,7 +1044,7 @@ GET /service/kafka0/v1/topics/under_replicated_partitions HTTP/1.1
 #### List Unavailable Partitions
 
 ``` bash
-$ dcos kafka --framework-name=kafka0 topic unavailable_partitions
+$ dcos kafka --framework-name=kafka topic unavailable_partitions
 
 {
     "exit_code": 0,
@@ -1054,8 +1054,8 @@ $ dcos kafka --framework-name=kafka0 topic unavailable_partitions
 ```
 
 ``` bash
-$ curl -X "$DCOS_URI/service/kafka0/v1/topics/unavailable_partitions"
-GET /service/kafka0/v1/topics/unavailable_partitions HTTP/1.1
+$ curl -X "$DCOS_URI/service/kafka/v1/topics/unavailable_partitions"
+GET /service/kafka/v1/topics/unavailable_partitions HTTP/1.1
 [...]
 
 {
@@ -1072,7 +1072,7 @@ GET /service/kafka0/v1/topics/unavailable_partitions HTTP/1.1
 ##### View Phases
 
 ``` bash
-$ http $DCOS_URI/service/kafka0/v1/plan
+$ http $DCOS_URI/service/kafka/v1/plan
 HTTP/1.1 200 OK
 [...]
 
@@ -1088,7 +1088,7 @@ HTTP/1.1 200 OK
 ##### View Blocks
 
 ``` bash
-$ http $DCOS_URI/service/kafka0/v1/plan/0
+$ http $DCOS_URI/service/kafka/v1/plan/0
 HTTP/1.1 200 OK
 [...]
 

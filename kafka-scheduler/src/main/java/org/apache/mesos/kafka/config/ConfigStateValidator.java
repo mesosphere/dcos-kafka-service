@@ -85,13 +85,13 @@ public class ConfigStateValidator {
           newProperty = newRoot.get(checkKey);
       log.info("Compare config value " + checkKey + ": old=[" + oldProperty + "] new=[" + newProperty + "]");
       if (oldProperty == null || newProperty == null) {
-        log.info("One version is missing, skipping check");
+        log.info("One version of the config is missing " + checkKey + ", skipping check");
         continue;
       }
       if (Integer.parseInt(newProperty.getValue()) >= Integer.parseInt(oldProperty.getValue())) {
         log.info("Value is same or increasing, OK!");
       } else {
-        log.warn("Refusing to decrease value: " + checkKey);
+        log.error("Refusing to decrease value from " + oldProperty.getValue() + " to " + newProperty.getValue() + ": " + checkKey);
         errors.add(new ValidationError(checkKey,
             "Decreasing this value (from " + oldProperty.getValue() + " to " + newProperty.getValue() + ") is not supported."));
       }

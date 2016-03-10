@@ -42,6 +42,7 @@ public class ConfigStateUpdater {
    */
   public KafkaConfigService getTargetConfig() throws StateStoreException, ValidationException {
     if (!kafkaConfigState.hasTarget()) {
+      log.info("Initializing config properties storage with new target.");
       setTargetConfig(newTargetConfig);
     } else {
       KafkaConfigService currTargetConfig = kafkaConfigState.getTargetConfig();

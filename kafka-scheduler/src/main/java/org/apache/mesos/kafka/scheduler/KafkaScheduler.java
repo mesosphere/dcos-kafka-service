@@ -79,6 +79,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
       targetConfigToUse = configStateUpdater.getTargetConfig();
     } catch (ValidationException e) {
       // New target config failed to validate and was not used. Fall back to previous target config.
+      log.error("Got " + e.getValidationErrors().size() + " errors from new config. Falling back to last valid config.");
       targetConfigToUse = configStateUpdater.getConfigState().getTargetConfig();
       for (ValidationError err : e.getValidationErrors()) {
         stageErrors.add(err.toString());

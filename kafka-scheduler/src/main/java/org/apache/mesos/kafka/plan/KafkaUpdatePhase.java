@@ -2,6 +2,7 @@ package org.apache.mesos.kafka.plan;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import org.apache.mesos.kafka.config.KafkaConfigService;
 import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
@@ -13,15 +14,17 @@ public class KafkaUpdatePhase implements Phase {
   private final List<Block> blocks;
   private final String configName;
   private final KafkaConfigService config;
+  private final UUID id;
 
   public KafkaUpdatePhase(
       String targetConfigName,
       KafkaConfigService targetConfig,
-      KafkaStateService state,
+      KafkaStateService kafkaState,
       KafkaOfferRequirementProvider offerReqProvider) {
     this.configName = targetConfigName;
     this.config = targetConfig;
-    this.blocks = createBlocks(configName, config.getBrokerCount(), state, offerReqProvider);
+    this.blocks = createBlocks(configName, config.getBrokerCount(), kafkaState, offerReqProvider);
+    this.id = UUID.randomUUID();
   }
 
   @Override
@@ -30,10 +33,25 @@ public class KafkaUpdatePhase implements Phase {
   }
 
   @Override
-  public int getId() {
-    // Kafka only has two Phases: Reconciliation which has an Id of 0
-    // and the Update Phase which has an Id of 1
-    return 1;
+  public Block getBlock(UUID id) {
+    for (Block block : getBlocks()) {
+      if (block.getId().equals(id)) {
+        return block;
+      }
+    }
+
+    return null;
+  }
+
+  @Override
+  public Block getBlock(int index){
+    return getBlocks().get(index);
+  }
+
+
+  @Override
+  public UUID getId() {
+    return id;
   }
 
   @Override
@@ -55,16 +73,15 @@ public class KafkaUpdatePhase implements Phase {
   private static List<Block> createBlocks(
       String configName,
       int brokerCount,
-      KafkaStateService state,
+      KafkaStateService kafkaState,
       KafkaOfferRequirementProvider offerReqProvider) {
 
     List<Block> blocks = new ArrayList<Block>();
 
     for (int i=0; i<brokerCount; i++) {
-      blocks.add(new KafkaUpdateBlock(state, offerReqProvider, configName, i));
+      blocks.add(new KafkaUpdateBlock(kafkaState, offerReqProvider, configName, i));
     }
 
     return blocks;
   }
 }
-

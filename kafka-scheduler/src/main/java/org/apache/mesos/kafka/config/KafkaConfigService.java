@@ -11,7 +11,7 @@ import org.apache.mesos.config.FrameworkConfigurationService;
 import com.google.common.collect.Lists;
 
 /**
- * Read-only retrieval service for a given Kafka framework configuration.
+ * Read-only retrieval service for a single configuration of the Kafka framework.
  * All access is via helper functions which retrieve the requested values from the underlying data.
  */
 public class KafkaConfigService {
@@ -20,8 +20,7 @@ public class KafkaConfigService {
    * Simple structure for returning the values of per-broker resources to be reserved.
    */
   public static class BrokerResources {
-    private BrokerResources(
-        String cpus, String mem, String disk) {
+    private BrokerResources(String cpus, String mem, String disk) {
       this.cpus = Double.parseDouble(cpus);
       this.mem = Double.parseDouble(mem);
       this.disk = Double.parseDouble(disk);
@@ -88,6 +87,7 @@ public class KafkaConfigService {
 
   /**
    * Returns to the on-disk path to the unzipped Kafka runtime.
+   * e.g.: "/path/to/sandbox/kafka-0.1.2.3"
    */
   public String getKafkaSandboxPath() {
     return configService.get("MESOS_SANDBOX") + "/" + getKafkaVersionName();
@@ -95,7 +95,7 @@ public class KafkaConfigService {
 
   /**
    * Returns the host for the Kafka ZK instance.
-   * Eg "host:port"
+   * e.g. "host:port"
    */
   public String getZookeeperAddress() {
     return "master.mesos:2181";
@@ -131,7 +131,7 @@ public class KafkaConfigService {
 
   /**
    * Returns the user-visible name of the framework.
-   * Eg "kafka0"
+   * e.g. "kafka0"
    */
   public String getFrameworkName() {
     return configService.get("FRAMEWORK_NAME");
@@ -173,14 +173,14 @@ public class KafkaConfigService {
   }
 
   /**
-   * Returns the name of the configured Plan strategy, eg "INSTALL".
+   * Returns the name of the configured Plan strategy, e.g. "INSTALL".
    */
   public String getPlanStrategy() {
     return configService.get("PLAN_STRATEGY");
   }
 
   /**
-   * Returns the name of the configured placement strategy, eg "NODE".
+   * Returns the name of the configured placement strategy, e.g. "NODE".
    */
   public String getPlacementStrategy() {
     return configService.get("PLACEMENT_STRATEGY");

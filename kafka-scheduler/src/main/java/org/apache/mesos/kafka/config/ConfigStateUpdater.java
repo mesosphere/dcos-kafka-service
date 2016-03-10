@@ -59,7 +59,7 @@ public class ConfigStateUpdater {
         setTargetConfig(newTargetConfig);
         kafkaConfigState.syncConfigs(kafkaStateService);
       } else {
-        log.info("No change detected.");
+        log.info("No config properties changes detected.");
       }
     }
     return newTargetConfig;

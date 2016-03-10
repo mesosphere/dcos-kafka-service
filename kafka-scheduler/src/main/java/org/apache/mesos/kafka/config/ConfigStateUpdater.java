@@ -1,74 +1,24 @@
 package org.apache.mesos.kafka.config;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.mesos.config.ChangedProperty;
 import org.apache.mesos.config.ConfigurationChangeDetector;
 import org.apache.mesos.config.ConfigurationChangeNamespaces;
-import org.apache.mesos.kafka.scheduler.KafkaScheduler;
+import org.apache.mesos.kafka.config.ConfigStateValidator.ValidationException;
 import org.apache.mesos.kafka.state.KafkaStateService;
 import org.apache.mesos.state.StateStoreException;
 
 public class ConfigStateUpdater {
 
-  /**
-   * A single validation error encountered when processing a modified scheduler config.
-   */
-  public static class ValidationError {
-    private ValidationError(String fieldName, String msg) {
-      this.fieldName = fieldName;
-      this.msg = msg;
-    }
-
-    /**
-     * Returns a user-visible explanation of the validation error.
-     */
-    public String toString() {
-      return String.format("Validation error on field \"%s\": %s", fieldName, msg);
-    }
-
-    private final String fieldName;
-    private final String msg;
-  }
-
-  /**
-   * A set of one or more validation errors.
-   */
-  public static class ValidationException extends Exception {
-    private final Collection<ValidationError> validationErrors;
-
-    public ValidationException(Collection<ValidationError> validationErrors) {
-      super(String.format("%d validation errors: %s",
-          validationErrors.size(), validationErrors.toString()));
-      this.validationErrors = validationErrors;
-    }
-
-    /**
-     * Returns the list of validation errors encountered when processing the config.
-     */
-    public Collection<ValidationError> getValidationErrors() {
-      return validationErrors;
-    }
-  }
-
-  private static final Log log = LogFactory.getLog(KafkaScheduler.class);
-
-  private static final Set<String> INT_VALUES_THAT_CANNOT_DECREASE = new HashSet<>();
-  static {
-    INT_VALUES_THAT_CANNOT_DECREASE.add("BROKER_COUNT");
-  }
+  private static final Log log = LogFactory.getLog(ConfigStateUpdater.class);
 
   private final KafkaConfigState kafkaConfigState;
   private final KafkaConfigService newTargetConfig;
   private final KafkaStateService kafkaStateService;
+  private final ConfigStateValidator validator;
 
   public ConfigStateUpdater() {
     this.newTargetConfig = KafkaConfigService.getEnvConfig();
@@ -80,6 +30,7 @@ public class ConfigStateUpdater {
     this.kafkaStateService = new KafkaStateService(
         newTargetConfig.getZookeeperAddress(),
         newTargetConfig.getZkRoot());
+    this.validator = new ConfigStateValidator();
   }
 
   /**
@@ -100,8 +51,11 @@ public class ConfigStateUpdater {
           new ConfigurationChangeNamespaces("*", "*"));
 
       if (changeDetector.isChangeDetected()) {
-        log.info("Detected changed properties.");
-        logAndValidateConfigChange(changeDetector);
+        log.info("Detected changed properties from old=[" + currTarget.getNsPropertyMap() + "] to new=[" + newTargetConfig.getNsPropertyMap() + "]");
+        log.info("Extra config properties detected: " + Arrays.toString(changeDetector.getExtraConfigs().toArray()));
+        log.info("Missing config properties detected: " + Arrays.toString(changeDetector.getMissingConfigs().toArray()));
+        log.info("Changed config properties detected: " + Arrays.toString(changeDetector.getChangedProperties().toArray()));
+        validator.validateConfigChange(changeDetector);
         setTargetConfig(newTargetConfig);
         kafkaConfigState.syncConfigs(kafkaStateService);
       } else {
@@ -131,25 +85,5 @@ public class ConfigStateUpdater {
     kafkaConfigState.store(newTargetConfig, targetConfigName);
     kafkaConfigState.setTargetName(targetConfigName);
     log.info("Set new target config: " + targetConfigName);
-  }
-
-  private static void logAndValidateConfigChange(ConfigurationChangeDetector changeDetector) throws ValidationException {
-    log.info("Extra config properties detected: " + Arrays.toString(changeDetector.getExtraConfigs().toArray()));
-    log.info("Missing config properties detected: " + Arrays.toString(changeDetector.getMissingConfigs().toArray()));
-    log.info("Changed config properties detected: " + Arrays.toString(changeDetector.getChangedProperties().toArray()));
-
-    List<ValidationError> errors = new ArrayList<>();
-    for (ChangedProperty change : changeDetector.getChangedProperties()) {
-      if (INT_VALUES_THAT_CANNOT_DECREASE.contains(change.getName())
-          && Integer.parseInt(change.getNewValue()) < Integer.parseInt(change.getOldValue())) {
-        errors.add(new ValidationError(change.getName(), "Decreasing this value is not supported."));
-      }
-    }
-
-    // ... any other in-framework change validation goes here ...
-
-    if (!errors.isEmpty()) {
-      throw new ValidationException(errors);
-    }
   }
 }

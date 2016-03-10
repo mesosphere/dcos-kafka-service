@@ -25,7 +25,7 @@ import org.apache.mesos.Protos.TaskInfo;
  * Each configuration is in the form of a {@link KafkaConfigService}.
  */
 public class KafkaConfigState {
-  private final Log log = LogFactory.getLog(KafkaConfigState.class);
+  private static final Log log = LogFactory.getLog(KafkaConfigState.class);
 
   private final CuratorFramework zkClient;
   private final ConfigState configState;

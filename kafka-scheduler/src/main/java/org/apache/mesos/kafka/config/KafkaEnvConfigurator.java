@@ -34,8 +34,13 @@ public class KafkaEnvConfigurator implements Configurator {
     }
   }
 
+  /**
+   * These keys are used to determine which config changes keys require broker restart.
+   * For example, we DONT want to restart preexisting brokers when BROKER_COUNT is increased.
+   */
   private List<String> ignoredKeys() {
     return Arrays.asList(
+        "BROKER_COUNT",
         "PATH",
         "HOST",
         "MESOS_SLAVE_ID",

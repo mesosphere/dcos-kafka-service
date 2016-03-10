@@ -14,15 +14,17 @@ import org.apache.mesos.state.StateStoreException;
 public class ConfigStateUpdater {
 
   private static final Log log = LogFactory.getLog(ConfigStateUpdater.class);
+  private static final ConfigurationChangeNamespaces namespaces = new ConfigurationChangeNamespaces("*", "*");
 
   private final KafkaConfigState kafkaConfigState;
+  private final ConfigStateValidator validator;
   private final KafkaConfigService newTargetConfig;
   private final KafkaStateService kafkaStateService;
-  private final ConfigStateValidator validator;
 
   public ConfigStateUpdater() {
     this.newTargetConfig = KafkaConfigService.getEnvConfig();
-    // Bootstrap with some values from the new config:
+    this.validator = new ConfigStateValidator(namespaces);
+    // We must bootstrap config management with some values from the new config:
     this.kafkaConfigState = new KafkaConfigState(
         newTargetConfig.getFrameworkName(),
         newTargetConfig.getZookeeperAddress(),
@@ -30,7 +32,6 @@ public class ConfigStateUpdater {
     this.kafkaStateService = new KafkaStateService(
         newTargetConfig.getZookeeperAddress(),
         newTargetConfig.getZkRoot());
-    this.validator = new ConfigStateValidator();
   }
 
   /**
@@ -45,17 +46,19 @@ public class ConfigStateUpdater {
     } else {
       KafkaConfigService currTargetConfig = kafkaConfigState.getTargetConfig();
 
+      /* Validator needs to examine values like BROKER_COUNT which ConfigurationChangeDetector is told to ignore.
+       * Therefore, always run validation, and run it against the raw list of properties.
+       * See also {@link KafkaEnvConfiguratior.ignoredKeys()} */
+      validator.validateConfigChange(currTargetConfig.getNsPropertyMap(), newTargetConfig.getNsPropertyMap());
+
       ConfigurationChangeDetector changeDetector = new ConfigurationChangeDetector(
           currTargetConfig.getNsPropertyMap(),
           newTargetConfig.getNsPropertyMap(),
-          new ConfigurationChangeNamespaces("*", "*"));
-
+          namespaces);
       if (changeDetector.isChangeDetected()) {
-        log.info("Detected changed properties from old=[" + currTargetConfig.getNsPropertyMap() + "] to new=[" + newTargetConfig.getNsPropertyMap() + "]");
         log.info("Extra config properties detected: " + Arrays.toString(changeDetector.getExtraConfigs().toArray()));
         log.info("Missing config properties detected: " + Arrays.toString(changeDetector.getMissingConfigs().toArray()));
         log.info("Changed config properties detected: " + Arrays.toString(changeDetector.getChangedProperties().toArray()));
-        validator.validateConfigChange(changeDetector);
         setTargetConfig(newTargetConfig);
         kafkaConfigState.syncConfigs(kafkaStateService);
       } else {

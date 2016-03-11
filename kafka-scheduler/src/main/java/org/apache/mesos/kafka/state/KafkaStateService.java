@@ -5,7 +5,6 @@ import org.apache.commons.logging.LogFactory;
 
 import org.apache.curator.framework.CuratorFramework;
 
-import org.apache.mesos.kafka.config.KafkaConfigService;
 import org.apache.mesos.kafka.offer.OfferUtils;
 import org.apache.zookeeper.KeeperException.NoNodeException;
 import org.apache.mesos.Protos.FrameworkID;
@@ -22,23 +21,21 @@ import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
 
+/**
+ * Read/write interface for storing and retrieving information about Kafka tasks.
+ */
 public class KafkaStateService implements Observer {
-  private final Log log = LogFactory.getLog(KafkaStateService.class);
+  private static final Log log = LogFactory.getLog(KafkaStateService.class);
+
   private final CuratorFramework zkClient;
-
-  private static KafkaConfigService config = KafkaConfigService.getEnvConfig();
-
   private final String zkRoot;
   private final String stateRoot;
   private final String taskPath;
   private final String fwkIdPath;
 
-  private static KafkaStateService stateService = null;
-
-  private KafkaStateService() {
-    zkClient = KafkaStateUtils.createZkClient(config.getZookeeperAddress());
-
-    zkRoot = "/" + config.get("FRAMEWORK_NAME");
+  public KafkaStateService(String zkHost, String zkRoot) {
+    zkClient = KafkaStateUtils.createZkClient(zkHost);
+    this.zkRoot = zkRoot;
     stateRoot = zkRoot + "/state";
     taskPath = stateRoot + "/tasks";
     fwkIdPath = stateRoot + "/framework-id";
@@ -50,14 +47,6 @@ public class KafkaStateService implements Observer {
     } catch(Exception ex) {
       log.fatal("Failed with exception: " + ex);
     }
-  }
-
-  public static KafkaStateService getStateService() {
-    if (stateService == null) {
-      stateService = new KafkaStateService();
-    }
-
-    return stateService;
   }
 
   public FrameworkID getFrameworkId() {

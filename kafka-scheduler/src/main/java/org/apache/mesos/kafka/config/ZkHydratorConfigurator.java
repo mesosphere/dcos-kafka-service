@@ -12,10 +12,10 @@ public class ZkHydratorConfigurator implements Configurator {
   public ZkHydratorConfigurator(Map<String, Map<String, ConfigProperty>> zkConfig) {
     this.zkConfig = zkConfig;
   }
- 
+
   public void configure(FrameworkConfigurationService fwkConfigService) {
     for (Map.Entry<String, Map<String, ConfigProperty>> namespace : zkConfig.entrySet()) {
-      String ns = namespace.getKey(); 
+      String ns = namespace.getKey();
 
       for (Map.Entry<String, ConfigProperty> configProperty : namespace.getValue().entrySet()) {
         fwkConfigService.setValue(ns, configProperty.getValue().getName(), configProperty.getValue().getValue());

@@ -1,8 +1,8 @@
 package org.apache.mesos.kafka.config;
 
-import java.util.List;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.mesos.config.ConfigProperty;
@@ -14,7 +14,7 @@ import com.google.common.collect.Lists;
  * Read-only retrieval service for a single configuration of the Kafka framework.
  * All access is via helper functions which retrieve the requested values from the underlying data.
  */
-public class KafkaConfigService extends FrameworkConfigurationService {
+public class KafkaConfigService {
 
   /**
    * Simple structure for returning the values of per-broker resources to be reserved.
@@ -33,27 +33,54 @@ public class KafkaConfigService extends FrameworkConfigurationService {
 
   private static KafkaConfigService envConfig = null;
 
-  public static KafkaConfigService getEnvConfig() {
+  /**
+   * Returns a new unverified Kafka Config containing the system environment.
+   */
+  static KafkaConfigService getEnvConfig() {
     if (null == envConfig) {
-      envConfig = new KafkaConfigService();
-      KafkaEnvConfigurator envConfigurator = new KafkaEnvConfigurator();
-      envConfigurator.configure(envConfig);
+      FrameworkConfigurationService configService = new FrameworkConfigurationService();
+      new KafkaEnvConfigurator().configure(configService);
+      envConfig = new KafkaConfigService(configService);
     }
     return envConfig;
   }
 
-  public static KafkaConfigService getHydratedConfig(
+  /**
+   * Returns a new Kafka Config containing the provided data from a previous config.
+   */
+  static KafkaConfigService getHydratedConfig(
       Map<String, Map<String, ConfigProperty>> nsMap) {
-    KafkaConfigService configService = new KafkaConfigService();
-    // Translate nsMap to configService
+    FrameworkConfigurationService configService = new FrameworkConfigurationService();
     new ZkHydratorConfigurator(nsMap).configure(configService);
-    return configService;
+    return new KafkaConfigService(configService);
   }
 
+  private final FrameworkConfigurationService configService;
+
+  private KafkaConfigService(FrameworkConfigurationService configService) {
+    this.configService = configService;
+  }
+
+  /**
+   * Returns the prefix for the Kafka ZK node path.
+   * Eg "/prefix/"
+   */
+  public String getZkRootPrefix() {
+    return "/";
+  }
+
+  /**
+   * Returns the path for the Kafka ZK node.
+   * Eg "/prefix/path"
+   */
   public String getZkRoot() {
-    return "/" + get("FRAMEWORK_NAME");
+    return getZkRootPrefix() + getFrameworkName();
   }
 
+  /**
+   * Returns the host+path for the Kafka ZK node in the form Kafka prefers.
+   * Eg "host:port/path"
+   */
   public String getKafkaZkUri() {
     return getZookeeperAddress() + getZkRoot();
   }
@@ -63,15 +90,22 @@ public class KafkaConfigService extends FrameworkConfigurationService {
    * e.g.: "/path/to/sandbox/kafka-0.1.2.3"
    */
   public String getKafkaSandboxPath() {
-    return get("MESOS_SANDBOX") + "/" + getKafkaVersionName();
+    return configService.get("MESOS_SANDBOX") + "/" + getKafkaVersionName();
   }
 
+  /**
+   * Returns the host for the Kafka ZK instance.
+   * e.g. "host:port"
+   */
   public String getZookeeperAddress() {
     return "master.mesos:2181";
   }
 
+  /**
+   * Returns the desired number of Kafka brokers to run.
+   */
   public int getBrokerCount() {
-    return Integer.parseInt(get("BROKER_COUNT"));
+    return Integer.parseInt(configService.get("BROKER_COUNT"));
   }
 
   /**
@@ -79,7 +113,9 @@ public class KafkaConfigService extends FrameworkConfigurationService {
    */
   public BrokerResources getBrokerResources() {
     return new BrokerResources(
-        get("BROKER_CPUS"), get("BROKER_MEM"), get("BROKER_DISK"));
+        configService.get("BROKER_CPUS"),
+        configService.get("BROKER_MEM"),
+        configService.get("BROKER_DISK"));
   }
 
   /**
@@ -87,55 +123,102 @@ public class KafkaConfigService extends FrameworkConfigurationService {
    */
   public List<String> getBrokerResourceUris() {
     return Lists.newArrayList(
-        get("KAFKA_URI"),
-        get("CONTAINER_HOOK_URI"),
-        get("JAVA_URI"),
-        get("OVERRIDER_URI"));
+        configService.get("KAFKA_URI"),
+        configService.get("CONTAINER_HOOK_URI"),
+        configService.get("JAVA_URI"),
+        configService.get("OVERRIDER_URI"));
   }
 
+  /**
+   * Returns the user-visible name of the framework.
+   * e.g. "kafka0"
+   */
   public String getFrameworkName() {
-    return get("FRAMEWORK_NAME");
+    return configService.get("FRAMEWORK_NAME");
   }
 
   /**
    * Returns the HTTP url for reaching the scheduler's REST API.
    */
   public URI getApiUri() throws URISyntaxException {
-    return new URI("http://" + get("LIBPROCESS_IP") + ":" + get("PORT0"));
+    return new URI("http://" + configService.get("LIBPROCESS_IP") + ":" + configService.get("PORT0"));
   }
 
+  /**
+   * Returns the configured mesos user used by the framework.
+   */
+  public String getUser() {
+    return configService.get("USER");
+  }
+
+  /**
+   * Returns the configured mesos role used by the framework.
+   */
   public String getRole() {
     return getFrameworkName() + "-role";
   }
 
+  /**
+   * Returns the configured mesos principal used by the framework.
+   */
   public String getPrincipal() {
     return getFrameworkName() + "-principal";
   }
 
+  /**
+   * Returns the version of Kafka being managed by the framework.
+   */
   public String getKafkaVersionName() {
-    return get("KAFKA_VER_NAME");
+    return configService.get("KAFKA_VER_NAME");
   }
 
   /**
    * Returns the name of the configured Plan strategy, e.g. "INSTALL".
    */
   public String getPlanStrategy() {
-    return get("PLAN_STRATEGY");
+    return configService.get("PLAN_STRATEGY");
   }
 
   /**
    * Returns the name of the configured placement strategy, e.g. "NODE".
    */
   public String getPlacementStrategy() {
-    return get("PLACEMENT_STRATEGY");
+    return configService.get("PLACEMENT_STRATEGY");
   }
 
+  /**
+   * Returns whether mesos persistent volumes are enabled.
+   */
+  public boolean persistentVolumes() {
+    return Boolean.parseBoolean(configService.get("BROKER_PV"));
+  }
+
+  /**
+   * Returns whether host ip advertisement is enabled.
+   * TODO: more info about what the behavior is between enabled vs disabled
+   */
   public boolean advertisedHost() {
-    String overrideStr = get("KAFKA_ADVERTISE_HOST_IP");
-    return Boolean.parseBoolean(overrideStr);
+    return Boolean.parseBoolean(configService.get("KAFKA_ADVERTISE_HOST_IP"));
   }
 
+  /**
+   * Returns the prefix for environment variables which should be passed directly to the Kafka broker runtime, overriding any preexisting values.
+   */
   public String getOverridePrefix() {
     return "KAFKA_OVERRIDE_";
+  }
+
+  /**
+   * For package-internal use only.
+   */
+  FrameworkConfigurationService getConfigService() {
+    return configService;
+  }
+
+  /**
+   * Returns a copy of the underlying data in this form: map[namespace][name] = value
+   */
+  public Map<String, Map<String, ConfigProperty>> getNsPropertyMap() {
+    return configService.getNsPropertyMap();
   }
 }

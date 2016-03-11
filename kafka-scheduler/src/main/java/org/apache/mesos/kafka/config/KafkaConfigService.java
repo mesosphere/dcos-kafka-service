@@ -141,7 +141,7 @@ public class KafkaConfigService {
    * Returns the HTTP url for reaching the scheduler's REST API.
    */
   public URI getApiUri() throws URISyntaxException {
-    return new URI("http://" + configService.get("LIBPROCESS_IP") + ":" + configService.get("PORT0"));
+    return new URI("http://" + System.getenv("LIBPROCESS_IP") + ":" + System.getenv("PORT0"));
   }
 
   /**

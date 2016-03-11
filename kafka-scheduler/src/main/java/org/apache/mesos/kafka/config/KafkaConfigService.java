@@ -141,6 +141,8 @@ public class KafkaConfigService {
    * Returns the HTTP url for reaching the scheduler's REST API.
    */
   public URI getApiUri() throws URISyntaxException {
+    // ALWAYS use what's currently in system env. Ignore target configs.
+    // Otherwise we'll fail to create the REST API service, since the port we're using won't match the currently granted port.
     return new URI("http://" + System.getenv("LIBPROCESS_IP") + ":" + System.getenv("PORT0"));
   }
 

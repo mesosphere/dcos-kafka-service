@@ -1078,7 +1078,7 @@ GET /service/kafka/v1/topics/unavailable_partitions HTTP/1.1
 
 #### View Plan Status
 
-##### View Phases
+##### View Full Detail
 
 ``` bash
 $ http $DCOS_URI/service/kafka/v1/plan
@@ -1086,42 +1086,81 @@ HTTP/1.1 200 OK
 [...]
 
 {
+    "errors": [], 
     "phases": [
         {
-            "0": "Update to: 91e74d8e-f50b-49ca-a7cb-7d4aff463b99"
+            "blocks": [
+                {
+                    "hasDecisionPoint": false, 
+                    "id": "5f0229a6-869c-4e14-ad7e-d6bd862a0af9", 
+                    "message": "Reconciliation complete", 
+                    "name": "Reconciliation", 
+                    "status": "Complete"
+                }
+            ], 
+            "id": "996f0818-94ab-4e42-be71-bd4b637e0711", 
+            "name": "Reconciliation", 
+            "status": "Complete"
+        }, 
+        {
+            "blocks": [
+                {
+                    "hasDecisionPoint": false, 
+                    "id": "90721c21-5894-4a4c-a0ee-e4fd6ee373f4", 
+                    "message": "Broker-0 is Complete", 
+                    "name": "broker-0", 
+                    "status": "Complete"
+                }, 
+                {
+                    "hasDecisionPoint": false, 
+                    "id": "0f9bf662-b9b5-468b-a2ad-49957a7ad96d", 
+                    "message": "Broker-1 is InProgress", 
+                    "name": "broker-1", 
+                    "status": "InProgress"
+                }, 
+                {
+                    "hasDecisionPoint": false, 
+                    "id": "4bd66559-b719-46f1-bc7b-3366a875db29", 
+                    "message": "Broker-2 is Pending", 
+                    "name": "broker-2", 
+                    "status": "Pending"
+                }
+            ], 
+            "id": "59a843b3-e4e7-4a2d-b77b-803bb704a52a", 
+            "name": "Update to: 0ca3aed4-02f1-4175-8399-61e98676a8d7", 
+            "status": "InProgress"
         }
-    ]
+    ], 
+    "status": "InProgress"
 }
 ```
 
-##### View Blocks
+##### View Active Stage/Phase/Block
 
 ``` bash
-$ http $DCOS_URI/service/kafka/v1/plan/0
+$ http $DCOS_URI/service/kafka/v1/plan/status
 HTTP/1.1 200 OK
 [...]
 
 {
-    "blocks": [
-        {
-            "0": {
-                "name": "broker-0",
-                "status": "Complete"
-            }
-        },
-        {
-            "1": {
-                "name": "broker-1",
-                "status": "Complete"
-            }
-        },
-        {
-            "2": {
-                "name": "broker-2",
-                "status": "Complete"
-            }
-        }
-    ]
+    "block": {
+        "hasDecisionPoint": false, 
+        "id": "92730669-ca1f-40b8-a737-a5b6ef506660", 
+        "message": "Broker-0 is InProgress", 
+        "name": "broker-0", 
+        "status": "InProgress"
+    }, 
+    "phase": {
+        "block_count": 3, 
+        "id": "b8ffae12-8b31-42d9-8188-aafc9edbc390", 
+        "name": "Update to: e9e28661-4a94-4999-876a-c4db6b3438d2", 
+        "status": "InProgress"
+    }, 
+    "stage": {
+        "errors": [], 
+        "phase_count": 2, 
+        "status": "InProgress"
+    }
 }
 ```
 

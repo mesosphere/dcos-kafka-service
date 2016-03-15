@@ -164,9 +164,9 @@ public class TopicController {
 
   @GET
   @Path("/{name}/offsets")
-  public Response getOffsets(@PathParam("name") String topicName) {
+    public Response getOffsets(@PathParam("name") String topicName, @QueryParam("time") Long time) {
     try {
-      JSONArray offsets = cmdExecutor.getOffsets(topicName);
+      JSONArray offsets = cmdExecutor.getOffsets(topicName, time);
       return Response.ok(offsets.toString(), MediaType.APPLICATION_JSON).build();
     } catch (Exception ex) {
       log.error("Failed to fetch offsets for: " + topicName + " with exception: " + ex);

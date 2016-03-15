@@ -114,7 +114,7 @@ public class CmdExecutor {
     return runCmd(cmd);
   }
 
-  public JSONArray getOffsets(String topicName) throws Exception {
+  public JSONArray getOffsets(String topicName, Long time) throws Exception {
     // e.g. ./kafka-run-class.sh kafka.tools.GetOffsetShell --broker-list ip-10-0-1-71.us-west-2.compute.internal:9092,ip-10-0-1-72.us-west-2.compute.internal:9093,ip-10-0-1-68.us-west-2.compute.internal:9094 --topic topic0 --time -1 --partitions 0
 
     List<String> brokerEndpoints = state.getBrokerEndpoints();
@@ -126,7 +126,7 @@ public class CmdExecutor {
     cmd.add("--topic");
     cmd.add(topicName);
     cmd.add("--time");
-    cmd.add("-1");
+    cmd.add(String.valueOf(time));
     cmd.add("--broker-list");
     cmd.add(brokers);
 
@@ -168,7 +168,12 @@ public class CmdExecutor {
       // e.g. topic0:2:33334
       String elements[] = line.trim().split(":");
       String partition = elements[1];
-      String offset = elements[2];
+
+      String offset = "";
+      if (elements.length > 2) {
+        offset = elements[2];
+      }
+
       JSONObject part = new JSONObject();
       part.put(partition, offset);
       partitions.add(part);

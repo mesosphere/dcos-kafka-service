@@ -261,8 +261,8 @@ public class KafkaStateService implements Observer {
   private void recordTaskStatus(TaskStatus taskStatus) throws Exception {
     String statusPath = getTaskStatusPath(taskStatus.getTaskId().getValue());
     if (zkClient.checkExists().forPath(statusPath) == null &&
-        isTerminated(taskStatus)) {
-          log.warn("Dropping status update because the ZK path doesn't exist and it's a terminal Status: " + taskStatus);
+        !taskStatus.getState().equals(TaskState.TASK_STAGING)) {
+          log.warn("Dropping status update because the ZK path doesn't exist and Status is not STAGING: " + taskStatus);
     } else {
       record(statusPath, taskStatus.toByteArray());
     }

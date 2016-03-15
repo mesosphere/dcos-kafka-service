@@ -3,7 +3,6 @@ package org.apache.mesos.kafka.offer;
 import com.google.common.base.Joiner;
 
 import java.util.ArrayList;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,11 +34,10 @@ public class OfferRequirementUtils {
       List<Resource> resources,
       int brokerId,
       String taskId,
-      String containerPath) {
+      String containerPath,
+      Long port) {
 
     String brokerName = OfferUtils.idToName(brokerId);
-    int port = 9092 + ThreadLocalRandom.current().nextInt(0, 1000);
-
     List<String> commands = new ArrayList<>();
 
     // Do not use the /bin/bash-specific "source"
@@ -48,7 +46,7 @@ public class OfferRequirementUtils {
     // Export the JRE and log the environment
     commands.add("export PATH=$PATH:$MESOS_SANDBOX/jre/bin");
     commands.add("env");
-    commands.add("java -cp $MESOS_SANDBOX/kafka-config-overrider-0.2.0-uber.jar org.apache.mesos.kafka.config.Overrider " + configName);
+    commands.add("java -cp $MESOS_SANDBOX/kafka-config-overrider-*.jar org.apache.mesos.kafka.config.Overrider " + configName);
 
     // Run Kafka
     String kafkaStartCmd = OfferRequirementUtils.getKafkaStartCmd(config);
@@ -63,7 +61,7 @@ public class OfferRequirementUtils {
     taskEnv.put(overridePrefix + "ZOOKEEPER_CONNECT", config.getZookeeperAddress() + config.getZkRoot());
     taskEnv.put(overridePrefix + "BROKER_ID", Integer.toString(brokerId));
     taskEnv.put(overridePrefix + "LOG_DIRS", containerPath);
-    taskEnv.put(overridePrefix + "PORT", Integer.toString(port));
+    taskEnv.put(overridePrefix + "PORT", Long.toString(port));
     taskEnv.put(overridePrefix + "LISTENERS", "PLAINTEXT://:" + port);
 
     Labels labels = new LabelBuilder()
@@ -79,7 +77,6 @@ public class OfferRequirementUtils {
 
     return new TaskInfoBuilder(taskId, brokerName, "" /* slaveId */)
       .addAllResources(resources)
-      .addResource(ResourceBuilder.ports(port, port))
       .setCommand(commandInfoBuilder.build())
       .setLabels(labels)
       .build();

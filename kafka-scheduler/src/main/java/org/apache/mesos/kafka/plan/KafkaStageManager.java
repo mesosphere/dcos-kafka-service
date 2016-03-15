@@ -14,10 +14,8 @@ import org.apache.mesos.scheduler.plan.Stage;
 import org.apache.mesos.scheduler.plan.Status;
 import org.apache.mesos.scheduler.plan.StrategyStageManager;
 
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 
 public class KafkaStageManager extends StrategyStageManager {
   private final Logger log = LoggerFactory.getLogger(getClass());
@@ -55,29 +53,6 @@ public class KafkaStageManager extends StrategyStageManager {
 
   private Block getBlock(UUID phaseId, UUID blockId) {
     Phase phase = getPhase(phaseId);
-
-    if (phase == null) {
-      return null;
-    }
-
-    for (Block block : phase.getBlocks()) {
-      if (block.getId().equals(blockId)) {
-        return block;
-      }
-    }
-
-    return null;
-  }
-
-  private Phase getPhase(UUID phaseId) {
-    Stage stage = getStage();
-    
-    for (Phase phase : stage.getPhases()) {
-      if (phase.getId().equals(phaseId)) {
-        return phase;
-      }
-    }
-
-    return null;
+    return (phase != null) ? phase.getBlock(blockId) : null;
   }
 }

@@ -11,6 +11,7 @@ import org.apache.mesos.Protos.Resource;
 import org.apache.mesos.Protos.Resource.DiskInfo;
 import org.apache.mesos.Protos.Resource.DiskInfo.Persistence;
 import org.apache.mesos.Protos.TaskInfo;
+import org.apache.mesos.Protos.Value;
 
 public class OfferUtils {
   private static final Log log = LogFactory.getLog(OfferUtils.class);
@@ -62,6 +63,21 @@ public class OfferUtils {
       }
     }
 
+    log.warn("Returning null persistenceId for taskInfo: " + taskInfo);
+    return null;
+  }
+
+  public static Long getPort(TaskInfo taskInfo) {
+    for (Resource resource : taskInfo.getResourcesList()) {
+      if (resource.getName().equals("ports")) {
+        Value.Ranges ranges = resource.getRanges();
+        for (Value.Range range : ranges.getRangeList()) {
+          return range.getBegin();
+        }
+      }
+    }
+
+    log.warn("Returning null port for taskInfo: " + taskInfo);
     return null;
   }
 }

@@ -30,9 +30,9 @@ public class KafkaUpdateBlock implements Block {
   private KafkaStateService state = null;
   private int brokerId;
   private UUID blockId;
-  private TaskInfo taskInfo;
   private final Integer taskLock = 0;
   private List<TaskID> pendingTasks;
+  private TaskInfo cachedTaskInfo;
 
   public KafkaUpdateBlock(
       KafkaStateService state,
@@ -44,8 +44,8 @@ public class KafkaUpdateBlock implements Block {
     this.offerReqProvider = offerReqProvider;
     this.targetConfigName = targetConfigName;
     this.brokerId = brokerId;
-    this.taskInfo = getTaskInfo();
     this.blockId = UUID.randomUUID();
+    this.cachedTaskInfo = getTaskInfo();
 
     pendingTasks = getUpdateIds();
     initializeStatus();
@@ -152,6 +152,8 @@ public class KafkaUpdateBlock implements Block {
   private void initializeStatus() {
     log.info("Setting initial status for: " + getName());
 
+    TaskInfo taskInfo = getTaskInfo();
+
     if (taskInfo != null) {
       String configName = OfferUtils.getConfigName(taskInfo);
 
@@ -163,23 +165,26 @@ public class KafkaUpdateBlock implements Block {
     }
   }
 
-  private TaskInfo getTaskInfo() {
+  private synchronized TaskInfo getTaskInfo() {
     try {
       List<TaskInfo> allTasks = state.getTaskInfos();
 
       for (TaskInfo taskInfo : allTasks) {
         if (taskInfo.getName().equals(getBrokerName())) {
-          return taskInfo;
+          cachedTaskInfo = taskInfo;
+          return cachedTaskInfo;
         }
       }
     } catch (Exception ex) {
       log.error("Failed to retrieve TaskInfo with exception: " + ex);
     }
 
-    return null;
+    return cachedTaskInfo; 
   }
 
   private OfferRequirement getOfferRequirement() {
+    TaskInfo taskInfo = getTaskInfo();
+
     if (taskInfo == null) {
       return offerReqProvider.getNewOfferRequirement(targetConfigName, brokerId);
     } else {
@@ -207,6 +212,7 @@ public class KafkaUpdateBlock implements Block {
 
   public List<TaskID> getUpdateIds() {
     List<TaskID> taskIds = new ArrayList<TaskID>();
+    TaskInfo taskInfo = getTaskInfo();
 
     if (taskInfo != null) {
       taskIds.add(taskInfo.getTaskId());
@@ -249,6 +255,8 @@ public class KafkaUpdateBlock implements Block {
   }
 
   private TaskStatus getTaskStatus() {
+    TaskInfo taskInfo = getTaskInfo();
+
     if (null != taskInfo) {
       try {
         String taskId = taskInfo.getTaskId().getValue();

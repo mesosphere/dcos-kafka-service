@@ -263,9 +263,13 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   private void processTasksToReschedule(SchedulerDriver driver) {
     synchronized (rescheduleLock) {
       for (String taskId : tasksToReschedule) {
-        log.info("Rescheduling task: " + taskId);
-        kafkaState.deleteTask(taskId);
-        driver.killTask(TaskID.newBuilder().setValue(taskId).build());
+        if (taskId != null) {
+          log.info("Rescheduling task: " + taskId);
+          kafkaState.deleteTask(taskId);
+          driver.killTask(TaskID.newBuilder().setValue(taskId).build());
+        } else {
+          log.warn("No work to do on null TaskID");
+        }
       }
 
       tasksToReschedule = new ArrayList<String>();

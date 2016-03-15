@@ -280,7 +280,7 @@ Accept-Encoding: gzip, deflate
         {
             "blocks": [
                 {
-                    "hasDecisionPoint": false, 
+                    "has_decision_point": false, 
                     "id": "5f0229a6-869c-4e14-ad7e-d6bd862a0af9", 
                     "message": "Reconciliation complete", 
                     "name": "Reconciliation", 
@@ -294,21 +294,21 @@ Accept-Encoding: gzip, deflate
         {
             "blocks": [
                 {
-                    "hasDecisionPoint": false, 
+                    "has_decision_point": false, 
                     "id": "90721c21-5894-4a4c-a0ee-e4fd6ee373f4", 
                     "message": "Broker-0 is Complete", 
                     "name": "broker-0", 
                     "status": "Complete"
                 }, 
                 {
-                    "hasDecisionPoint": false, 
+                    "has_decision_point": false, 
                     "id": "0f9bf662-b9b5-468b-a2ad-49957a7ad96d", 
                     "message": "Broker-1 is InProgress", 
                     "name": "broker-1", 
                     "status": "InProgress"
                 }, 
                 {
-                    "hasDecisionPoint": false, 
+                    "has_decision_point": false, 
                     "id": "4bd66559-b719-46f1-bc7b-3366a875db29", 
                     "message": "Broker-2 is Pending", 
                     "name": "broker-2", 
@@ -1091,7 +1091,7 @@ HTTP/1.1 200 OK
         {
             "blocks": [
                 {
-                    "hasDecisionPoint": false, 
+                    "has_decision_point": false, 
                     "id": "5f0229a6-869c-4e14-ad7e-d6bd862a0af9", 
                     "message": "Reconciliation complete", 
                     "name": "Reconciliation", 
@@ -1105,21 +1105,21 @@ HTTP/1.1 200 OK
         {
             "blocks": [
                 {
-                    "hasDecisionPoint": false, 
+                    "has_decision_point": false, 
                     "id": "90721c21-5894-4a4c-a0ee-e4fd6ee373f4", 
                     "message": "Broker-0 is Complete", 
                     "name": "broker-0", 
                     "status": "Complete"
                 }, 
                 {
-                    "hasDecisionPoint": false, 
+                    "has_decision_point": false, 
                     "id": "0f9bf662-b9b5-468b-a2ad-49957a7ad96d", 
                     "message": "Broker-1 is InProgress", 
                     "name": "broker-1", 
                     "status": "InProgress"
                 }, 
                 {
-                    "hasDecisionPoint": false, 
+                    "has_decision_point": false, 
                     "id": "4bd66559-b719-46f1-bc7b-3366a875db29", 
                     "message": "Broker-2 is Pending", 
                     "name": "broker-2", 
@@ -1144,7 +1144,7 @@ HTTP/1.1 200 OK
 
 {
     "block": {
-        "hasDecisionPoint": false, 
+        "has_decision_point": false, 
         "id": "92730669-ca1f-40b8-a737-a5b6ef506660", 
         "message": "Broker-0 is InProgress", 
         "name": "broker-0", 

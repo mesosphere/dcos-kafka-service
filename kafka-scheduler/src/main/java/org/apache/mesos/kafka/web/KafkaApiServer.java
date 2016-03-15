@@ -12,7 +12,7 @@ import org.apache.mesos.kafka.config.KafkaConfigService;
 import org.apache.mesos.kafka.config.KafkaConfigState;
 import org.apache.mesos.kafka.state.KafkaStateService;
 import org.apache.mesos.scheduler.plan.StrategyStageManager;
-
+import org.apache.mesos.scheduler.plan.api.StageResource;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
 
@@ -27,11 +27,11 @@ public class KafkaApiServer {
       KafkaConfigService kafkaConfigService,
       KafkaStateService kafkaStateService,
       StrategyStageManager strategyStageManager) {
-    ResourceConfig resourceConfig = new ResourceConfig()
-        .registerInstances(new ClusterController(kafkaConfigService.getKafkaZkUri(), kafkaConfigState, kafkaStateService))
-        .registerInstances(new BrokerController(kafkaStateService))
-        .registerInstances(new TopicController(new CmdExecutor(kafkaConfigService, kafkaStateService), kafkaStateService))
-        .registerInstances(new PlanController(strategyStageManager));
+    ResourceConfig resourceConfig = new ResourceConfig().registerInstances(
+        new ClusterController(kafkaConfigService.getKafkaZkUri(), kafkaConfigState, kafkaStateService),
+        new BrokerController(kafkaStateService),
+        new TopicController(new CmdExecutor(kafkaConfigService, kafkaStateService), kafkaStateService),
+        new StageResource(strategyStageManager));
 
     // Manually enable verbose HTTP logging
     Logger l = Logger.getLogger("org.glassfish.grizzly.http.server.HttpHandler");

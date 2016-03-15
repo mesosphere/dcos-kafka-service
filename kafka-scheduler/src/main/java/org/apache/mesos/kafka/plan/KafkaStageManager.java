@@ -68,16 +68,4 @@ public class KafkaStageManager extends StrategyStageManager {
 
     return null;
   }
-
-  private Phase getPhase(UUID phaseId) {
-    Stage stage = getStage();
-    
-    for (Phase phase : stage.getPhases()) {
-      if (phase.getId().equals(phaseId)) {
-        return phase;
-      }
-    }
-
-    return null;
-  }
 }

@@ -62,6 +62,7 @@ public class ConfigStateUpdater {
         log.info("Changed config properties detected: " + Arrays.toString(changeDetector.getChangedProperties().toArray()));
         setTargetConfig(newTargetConfig);
         kafkaConfigState.syncConfigs(kafkaStateService);
+        kafkaConfigState.cleanConfigs(kafkaStateService);
       } else {
         log.info("No config properties changes detected.");
       }

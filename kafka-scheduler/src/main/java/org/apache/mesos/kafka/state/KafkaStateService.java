@@ -1,5 +1,12 @@
 package org.apache.mesos.kafka.state;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Observable;
+import java.util.Observer;
+import java.util.Set;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -7,6 +14,8 @@ import org.apache.curator.framework.CuratorFramework;
 
 import org.apache.mesos.kafka.offer.OfferUtils;
 import org.apache.zookeeper.KeeperException.NoNodeException;
+import org.apache.mesos.reconciliation.TaskStatusProvider;
+
 import org.apache.mesos.Protos.FrameworkID;
 import org.apache.mesos.Protos.TaskID;
 import org.apache.mesos.Protos.TaskInfo;
@@ -16,15 +25,10 @@ import org.apache.mesos.Protos.TaskStatus;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Observable;
-import java.util.Observer;
-
 /**
  * Read/write interface for storing and retrieving information about Kafka tasks.
  */
-public class KafkaStateService implements Observer {
+public class KafkaStateService implements Observer, TaskStatusProvider {
   private static final Log log = LogFactory.getLog(KafkaStateService.class);
 
   private final CuratorFramework zkClient;
@@ -105,8 +109,9 @@ public class KafkaStateService implements Observer {
     return TaskStatus.parseFrom(bytes);
   }
 
-  public List<TaskStatus> getTaskStatuses() throws Exception {
-    List<TaskStatus> taskStatuses = new ArrayList<TaskStatus>();
+  @Override
+  public Set<TaskStatus> getTaskStatuses() throws Exception {
+    Set<TaskStatus> taskStatuses = new HashSet<TaskStatus>();
 
     List<String> taskIds = getTaskIds();
     for (String taskId : taskIds) {

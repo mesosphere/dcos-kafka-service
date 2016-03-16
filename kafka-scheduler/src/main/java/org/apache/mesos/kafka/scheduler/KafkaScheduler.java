@@ -30,9 +30,11 @@ import org.apache.mesos.scheduler.plan.DefaultStageScheduler;
 import org.apache.mesos.scheduler.plan.DefaultStrategyFactory;
 import org.apache.mesos.scheduler.plan.Phase;
 import org.apache.mesos.scheduler.plan.PhaseStrategyFactory;
+import org.apache.mesos.scheduler.plan.ReconciliationBlock;
 import org.apache.mesos.scheduler.plan.ReconciliationPhase;
 import org.apache.mesos.scheduler.plan.Stage;
 import org.apache.mesos.scheduler.plan.StageStrategyFactory;
+import org.apache.mesos.scheduler.plan.Status;
 
 import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos.ExecutorID;
@@ -101,7 +103,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
       new PersistentOfferRequirementProvider(kafkaState, configState);
 
     List<Phase> phases = Arrays.asList(
-        new ReconciliationPhase(reconciler),
+        new ReconciliationPhase(reconciler, kafkaState),
         new KafkaUpdatePhase(
             configState.getTargetName(),
             envConfig,
@@ -182,7 +184,6 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   public void registered(SchedulerDriver driver, FrameworkID frameworkId, MasterInfo masterInfo) {
     log.info("Registered framework with frameworkId: " + frameworkId.getValue());
     kafkaState.setFrameworkId(frameworkId);
-    reconcile();
     apiServer.start(configState, envConfig, kafkaState, stageManager);
   }
 
@@ -252,8 +253,12 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   private void processTasksToRestart(SchedulerDriver driver) {
     synchronized (restartLock) {
       for (String taskId : tasksToRestart) {
-        log.info("Restarting task: " + taskId);
-        driver.killTask(TaskID.newBuilder().setValue(taskId).build());
+        if (taskId != null) {
+          log.info("Restarting task: " + taskId);
+          driver.killTask(TaskID.newBuilder().setValue(taskId).build());
+        } else {
+          log.warn("Asked to restart null task.");
+        }
       }
 
       tasksToRestart = new ArrayList<String>();
@@ -268,7 +273,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
           kafkaState.deleteTask(taskId);
           driver.killTask(TaskID.newBuilder().setValue(taskId).build());
         } else {
-          log.warn("No work to do on null TaskID");
+          log.warn("Asked to reschedule null task.");
         }
       }
 
@@ -290,11 +295,27 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   }
 
   private void reconcile() {
-    try {
-      reconciler.start(kafkaState.getTaskStatuses());
-    } catch(Exception ex) {
-      log.error("Failed to reconcile with exception: " + ex);
+    Block recBlock = getReconciliationBlock();
+
+    if (recBlock != null) {
+      recBlock.setStatus(Status.Pending);
+    } else {
+      log.error("Failed to reconcile because unable to find the Reconciliation Block");
     }
+  }
+
+  private Block getReconciliationBlock() {
+    Stage stage = stageManager.getStage();
+
+    for (Phase phase : stage.getPhases()) {
+      for (Block block : phase.getBlocks()) {
+        if (block instanceof ReconciliationBlock) {
+          return block;
+        }
+      }
+    }
+
+    return null;
   }
 
   private FrameworkInfo getFrameworkInfo() {

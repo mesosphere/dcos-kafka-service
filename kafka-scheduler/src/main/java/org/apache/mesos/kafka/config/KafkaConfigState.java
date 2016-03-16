@@ -1,7 +1,9 @@
 package org.apache.mesos.kafka.config;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -17,6 +19,7 @@ import org.apache.mesos.kafka.state.KafkaStateUtils;
 import org.apache.mesos.protobuf.LabelBuilder;
 import org.apache.mesos.state.StateStoreException;
 
+import org.apache.mesos.Protos.Label;
 import org.apache.mesos.Protos.Labels;
 import org.apache.mesos.Protos.TaskInfo;
 
@@ -25,11 +28,12 @@ import org.apache.mesos.Protos.TaskInfo;
  * Each configuration is in the form of a {@link KafkaConfigService}.
  */
 public class KafkaConfigState {
-  private static final Log log = LogFactory.getLog(KafkaConfigState.class);
+  private final Log log = LogFactory.getLog(KafkaConfigState.class);
 
   private final CuratorFramework zkClient;
   private final ConfigState configState;
   private final String configTargetPath;
+  private final String CONFIG_KEY = "config_target";
 
   /**
    * Creates a new Kafka config state manager based on the provided bootstrap information.
@@ -90,7 +94,7 @@ public class KafkaConfigState {
    *
    * @throws StateStoreException if the underlying storage failed to write
    */
-  void store(KafkaConfigService configurationService, String version) throws StateStoreException {
+  public void store(KafkaConfigService configurationService, String version) throws StateStoreException {
     configState.store(configurationService.getConfigService(), version);
   }
 
@@ -98,7 +102,7 @@ public class KafkaConfigState {
    * Sets the name of the target configuration to be used in the future.
    * The name must match a 'version' previously passed to {@link #store(KafkaConfigService, String)}.
    */
-  void setTargetName(String targetConfigName) {
+  public void setTargetName(String targetConfigName) {
     try {
       byte[] bytes = targetConfigName.getBytes("UTF-8");
 
@@ -112,7 +116,7 @@ public class KafkaConfigState {
     }
   }
 
-  void syncConfigs(KafkaStateService state) {
+  public void syncConfigs(KafkaStateService state) {
     try {
       String targetName = getTargetName();
       List<String> duplicateConfigs = getDuplicateConfigs();
@@ -126,6 +130,40 @@ public class KafkaConfigState {
     }
   }
 
+  public void cleanConfigs(KafkaStateService state) {
+    Set<String> activeConfigs = new HashSet<String>();
+    activeConfigs.add(getTargetName());
+    activeConfigs.addAll(getTaskConfigs(state));
+
+    log.info("Cleaning all configs which are NOT in the active list: " + activeConfigs); 
+
+    for (String configName : getConfigNames()) {
+      if (!activeConfigs.contains(configName)) {
+        log.info("Removing config: " + configName);
+        configState.clear(configName);
+      }
+    }
+  }
+
+  private Set<String> getTaskConfigs(KafkaStateService state) {
+    Set<String> activeConfigs = new HashSet<String>();
+
+    try {
+      for (TaskInfo taskInfo : state.getTaskInfos()) {
+        Labels labels = taskInfo.getLabels();
+        for (Label label : labels.getLabelsList()) {
+          if (label.getKey().equals(CONFIG_KEY)) {
+            activeConfigs.add(label.getValue());
+          }
+        }
+      }
+    } catch (Exception ex) {
+      log.error("Failed to fetch configurations from TaskInfos with exception: " + ex);
+    }
+
+    return activeConfigs;
+  }
+
   private void replaceDuplicateConfig(KafkaStateService state, TaskInfo taskInfo, List<String> duplicateConfigs, String targetName) {
     try {
       String taskConfig = OfferUtils.getConfigName(taskInfo);
@@ -133,7 +171,7 @@ public class KafkaConfigState {
       for (String duplicateConfig : duplicateConfigs) {
         if (taskConfig.equals(duplicateConfig)) {
           Labels labels = new LabelBuilder()
-            .addLabel("config_target", targetName)
+            .addLabel(CONFIG_KEY, targetName)
             .build();
 
           TaskInfo newTaskInfo = TaskInfo.newBuilder(taskInfo).setLabels(labels).build();

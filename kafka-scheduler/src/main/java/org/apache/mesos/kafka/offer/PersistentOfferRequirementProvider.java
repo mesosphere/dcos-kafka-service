@@ -36,26 +36,17 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     this.placementStrategyManager = new PlacementStrategyManager(kafkaStateService);
   }
 
+  @Override
   public OfferRequirement getNewOfferRequirement(String configName, int brokerId) {
     return getNewOfferRequirementInternal(configName, brokerId);
   }
 
+  @Override
   public OfferRequirement getReplacementOfferRequirement(TaskInfo taskInfo) {
     return getExistingOfferRequirement(taskInfo);
   }
 
-  private OfferRequirement getNewOfferRequirementInternal(String configName, int brokerId) {
-    log.info("Getting new OfferRequirement for: " + configName);
-
-    KafkaConfigService config = configState.fetch(configName);
-
-    String brokerName = "broker-" + brokerId;
-    String taskId = brokerName + "__" + UUID.randomUUID();
-    String persistenceId = UUID.randomUUID().toString();
-    TaskInfo taskInfo = getTaskInfo(configName, config, persistenceId, brokerId, taskId);
-    return getCreateOfferRequirement(taskInfo);
-  }
-
+  @Override
   public OfferRequirement getUpdateOfferRequirement(String configName, TaskInfo taskInfo) {
     log.info("Getting update OfferRequirement for: " + configName);
 
@@ -72,6 +63,18 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     log.info("Update TaskInfo: " + newTaskInfo);
 
     return getExistingOfferRequirement(newTaskInfo);
+  }
+
+  private OfferRequirement getNewOfferRequirementInternal(String configName, int brokerId) {
+    log.info("Getting new OfferRequirement for: " + configName);
+
+    KafkaConfigService config = configState.fetch(configName);
+
+    String brokerName = "broker-" + brokerId;
+    String taskId = brokerName + "__" + UUID.randomUUID();
+    String persistenceId = UUID.randomUUID().toString();
+    TaskInfo taskInfo = getTaskInfo(configName, config, persistenceId, brokerId, taskId);
+    return getCreateOfferRequirement(taskInfo);
   }
 
   private OfferRequirement getCreateOfferRequirement(TaskInfo taskInfo) {
@@ -98,12 +101,20 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
   private OfferRequirement getExistingOfferRequirement(TaskInfo taskInfo) {
     log.info("Getting existing OfferRequirement");
 
+    String configName = OfferUtils.getConfigName(taskInfo);
     KafkaConfigService config = getConfigService(taskInfo);
+    String persistenceId = OfferUtils.getPersistenceId(taskInfo);
+    String brokerName = taskInfo.getName();
+    Integer brokerId = OfferUtils.nameToId(brokerName);
+    String taskId = taskInfo.getTaskId().getValue();
+    Long port = OfferUtils.getPort(taskInfo);
+
+    TaskInfo newTaskInfo = getTaskInfo(configName, config, persistenceId, brokerId, taskId, port);
 
     return new OfferRequirement(
         config.getRole(),
         config.getPrincipal(),
-        Arrays.asList(taskInfo),
+        Arrays.asList(newTaskInfo),
         null,
         null,
         VolumeMode.EXISTING);

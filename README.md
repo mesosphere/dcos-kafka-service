@@ -201,11 +201,11 @@ Uninstalling a cluster is also straightforward. Replace `kafka` with the name of
 $ dcos package uninstall --app-id=kafka kafka
 ```
 
-Then, use the [framerwork cleaner script](https://github.com/mesosphere/framework-cleaner) to remove your Kafka instance from Zookeeper and to destroy all data associated with it. The script require several arguments, the values for which are derived from your framework name:
+Then, use the [framework cleaner script](https://github.com/mesosphere/framework-cleaner) to remove your Kafka instance from Zookeeper and to destroy all data associated with it. The script require several arguments, the values for which are derived from your framework name:
 
-`framework-role` is `<framework-name>-role`.
-`framework-principle` is `<framework-name>-principal.
-`zk_path` is `<framework-name>`.
+- `framework-role` is `<framework-name>-role`.
+- `framework-principle` is `<framework-name>-principal.
+- `zk_path` is `<framework-name>`.
 
 ## Configuring
 
@@ -443,7 +443,7 @@ Accept-Encoding: gzip, deflate
 }
 ```
 
-**Note:** The interrupt command can’t stop a Block that is `InProgress`, but it will stop the change on the subsequent Blocks.
+**Note:** The interrupt command can’t stop a block that is `InProgress`, but it will stop the change on the subsequent blocks.
 
 ### Configuration Options
 
@@ -564,8 +564,10 @@ Possible repair actions include `dcos kafka broker restart <broker-id>` and `dco
 
 ### Configuration Update Errors
 
-The highlighted entries below indicate the necessary changes needed to create a valid configuration:
+The bolded entries below indicate the necessary changes needed to create a valid configuration:
 
+<pre>
+```
 $ http $DCOS_URI/service/kafka/v1/plan
 HTTP/1.1 200 OK
 Connection: keep-alive
@@ -575,9 +577,9 @@ Date: Tue, 15 Mar 2016 19:17:16 GMT
 Server: openresty/1.7.10.2
 
 {
-    "errors": [
+    <b>"errors": [
         "Validation error on field \"BROKER_COUNT\": Decreasing this value (from 3 to 2) is not supported."
-    ],
+    ],</b>
     "phases": [
         {
             "blocks": [
@@ -622,8 +624,10 @@ Server: openresty/1.7.10.2
             "status": "Complete"
         }
     ],
-    "status": "Error"
+    <b>"status": "Error"</b>
 }
+```
+</pre>
 
 ### Replacing a Permanently Failed Server
 

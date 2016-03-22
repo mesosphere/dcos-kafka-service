@@ -2,7 +2,7 @@ allprojects {
   apply plugin: 'idea'
   apply plugin: 'eclipse'
   group = "com.apache.mesos.kafka"
-  version = "0.2.3"
+  version = "0.2.4"
 }
 
 idea {

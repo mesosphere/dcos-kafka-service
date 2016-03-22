@@ -1,5 +1,6 @@
 package org.apache.mesos.kafka.config;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -39,26 +40,32 @@ public class KafkaEnvConfigurator implements Configurator {
    * For example, we DONT want to restart preexisting brokers when BROKER_COUNT is increased.
    */
   private List<String> ignoredKeys() {
-    return Arrays.asList(
-        "BROKER_COUNT",
-        "PATH",
-        "HOST",
-        "MESOS_SLAVE_ID",
-        "MESOS_SANDBOX",
-        "PWD",
-        "MESOS_AGENT_ENDPOINT",
-        "LIBPROCESS_IP",
-        "MESOS_TASK_ID",
-        "MARATHON_APP_VERSION",
-        "MESOS_SLAVE_PID",
-        "PORT",
-        "PORTS",
-        "PORT0",
-        "PORT_10000",
-        "PORT_10001",
-        "MESOS_EXECUTOR_ID",
-        "_",
-        "MESOS_DIRECTORY",
-        "PLAN_STRATEGY");
+      List<String> ignoredKeys = new ArrayList<String>();
+      Map<String, String> env = System.getenv();
+      for (String envName : env.keySet()) {
+          if (envName.startsWith("PORT")) {
+              ignoredKeys.add(envName);
+          }
+      }
+
+      List<String> staticKeys = Arrays.asList(
+              "BROKER_COUNT",
+              "PATH",
+              "HOST",
+              "MESOS_SLAVE_ID",
+              "MESOS_SANDBOX",
+              "PWD",
+              "MESOS_AGENT_ENDPOINT",
+              "LIBPROCESS_IP",
+              "MESOS_TASK_ID",
+              "MARATHON_APP_VERSION",
+              "MESOS_SLAVE_PID",
+              "MESOS_EXECUTOR_ID",
+              "_",
+              "MESOS_DIRECTORY",
+              "PLAN_STRATEGY");
+
+      ignoredKeys.addAll(staticKeys);
+      return ignoredKeys;
   }
 }

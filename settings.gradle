@@ -3,6 +3,7 @@ rootProject.name = 'kafka'
 include "dcos-commons-ee"
 include "kafka-scheduler"
 include "kafka-config-overrider"
+include "kafka-test-client"
 
 include "dcos-commons"
 

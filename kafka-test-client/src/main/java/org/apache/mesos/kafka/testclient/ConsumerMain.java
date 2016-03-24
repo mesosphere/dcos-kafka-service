@@ -42,14 +42,14 @@ public final class ConsumerMain {
         try {
           LOGGER.info("Waiting {}ms for messages", consumerConfig.pollTimeoutMs);
           ConsumerRecords<byte[], byte[]> records = kafkaConsumer.poll(consumerConfig.pollTimeoutMs);
-          LOGGER.info("Got {} messages", records.count());
-          messages += records.count();
+          messages = records.count();
           for (ConsumerRecord<byte[], byte[]> record : records) {
             if (record.key() != null) {
               bytes += record.key().length;
             }
             bytes += record.value().length;
           }
+          LOGGER.info("Got {} messages ({} bytes)", messages, bytes);
         } catch (Throwable e) {
           values.registerError(e);
         }

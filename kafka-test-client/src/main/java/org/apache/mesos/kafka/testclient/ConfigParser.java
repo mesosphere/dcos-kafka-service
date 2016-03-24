@@ -52,6 +52,8 @@ public class ConfigParser {
   private static final String KAFKA_OVERRIDE_STARTS_WITH = "KAFKA_OVERRIDE_";
 
   private static final String KAFKA_BOOTSTRAP_SERVERS_KEY = "bootstrap.servers";
+  private static final String ENV_KAFKA_BOOTSTRAP_SERVERS_KEY =
+      KAFKA_OVERRIDE_STARTS_WITH + KAFKA_BOOTSTRAP_SERVERS_KEY.toUpperCase().replace('.', '_');
 
   /**
    * Parses and sorts envvars into Kafka config and Test Client config.
@@ -73,10 +75,11 @@ public class ConfigParser {
     // special case: get the bootstrap endpoints from the Kafka framework.
     // this can be overridden by providing "KAFKA_OVERRIDE_BOOTSTRAP_SERVERS=..." in env.
     if (!kafkaConfig.containsKey(KAFKA_BOOTSTRAP_SERVERS_KEY)) {
+      LOGGER.info("{} not provided in env, querying framework for broker list.", ENV_KAFKA_BOOTSTRAP_SERVERS_KEY);
       ClientConfigs.BrokerLookupConfig brokerLookupConfig = ClientConfigs.BrokerLookupConfig.parseFrom(testClientConfig);
       if (brokerLookupConfig == null) {
         LOGGER.error(
-            "Unable to proceed without broker lookup config, or {}BOOTSTRAP_SERVERS", KAFKA_OVERRIDE_STARTS_WITH);
+            "Unable to proceed without broker lookup config, or {}", ENV_KAFKA_BOOTSTRAP_SERVERS_KEY);
         return null;
       }
       BrokerLookup serverLookup = new BrokerLookup(brokerLookupConfig);

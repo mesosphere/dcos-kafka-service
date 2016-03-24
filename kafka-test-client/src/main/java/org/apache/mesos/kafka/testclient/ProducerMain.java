@@ -87,7 +87,7 @@ public final class ProducerMain {
     }
     Stats.PrintRunner printer = new Stats.PrintRunner(statsConfig);
 
-    // Share a single producer object across all threads (TODO is this actually ok?)
+    // Share a single KafkaProducer instance across all threads
     ByteArraySerializer serializer = new ByteArraySerializer();
     KafkaProducer<byte[], byte[]> kafkaProducer;
     try {

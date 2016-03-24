@@ -61,7 +61,7 @@ public class Stats {
       return fatalError.get();
     }
 
-    public void setShutdown() {//TODO call outside of setFatalError() at some point?
+    public void setShutdown() {
       shutdown.set(true);
     }
 
@@ -86,7 +86,6 @@ public class Stats {
       lastPrintBytes = bytesTotal;
       lastPrintErrors = errorsTotal;
 
-      //TODO print exact time that each error occurred (if any)
       LOGGER.info("STATS RECENT: {} messages, {} messages/sec, {} bytes, {} bytes/sec, {} errors, {} errors/sec",
           messagesSinceLastPrint, messagesSinceLastPrint / timeSinceLastPrintSecs,
           bytesSinceLastPrint, bytesSinceLastPrint / timeSinceLastPrintSecs,

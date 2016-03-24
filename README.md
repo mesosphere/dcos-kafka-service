@@ -665,12 +665,14 @@ GET /service/kafka/v1/connection HTTP/1.1
 [...]
 
 {
+   "broker_list_convenience": "--broker-list 10.0.0.1:9092, 10.0.0.2:9093, 10.0.0.3:9094",
    "brokers": [
        "10.0.0.1:9092",
        "10.0.0.2:9093",
        "10.0.0.3:9094"
    ],
-   "zookeeper": "master.mesos:2181/kafka"
+   "zookeeper": "master.mesos:2181/kafka",
+   "zookeeper_convenience": "--zookeeper master.mesos:2181/kafka"
 }
 ```
 

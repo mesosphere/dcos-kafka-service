@@ -1,42 +1,66 @@
 package org.apache.mesos.kafka.scheduler;
 
+import com.google.inject.Guice;
 import com.google.inject.Injector;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import io.dropwizard.Application;
+import io.dropwizard.configuration.EnvironmentVariableLookup;
+import io.dropwizard.configuration.SubstitutingSourceProvider;
+import io.dropwizard.java8.Java8Bundle;
+import io.dropwizard.setup.Bootstrap;
+import io.dropwizard.setup.Environment;
+import org.apache.commons.lang3.text.StrSubstitutor;
+import org.apache.mesos.kafka.config.KafkaSchedulerConfiguration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Main entry point for the Scheduler.
  */
-public final class Main {
+public final class Main extends Application<KafkaSchedulerConfiguration> {
+  private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
 
-  private final Log log = LogFactory.getLog(Main.class);
-
-  public static void main(String[] args) {
-    new Main().start();
+  public static void main(String[] args) throws Exception {
+    new Main().run(args);
   }
 
-  private void start() {
-    Injector injector = ApplicationContext.getInjector();
-    getSchedulerThread(injector).start();
+  protected Main() {
+    super();
   }
 
-  private Thread getSchedulerThread(Injector injector) {
-    Thread scheduler = new Thread(injector.getInstance(KafkaScheduler.class));
-    scheduler.setName("KafkaScheduler");
-    scheduler.setUncaughtExceptionHandler(getUncaughtExceptionHandler());
-    return scheduler;
+  @Override
+  public String getName() {
+    return "DCOS Kafka Service";
   }
 
-  private Thread.UncaughtExceptionHandler getUncaughtExceptionHandler() {
+  @Override
+  public void initialize(Bootstrap<KafkaSchedulerConfiguration> bootstrap) {
+    super.initialize(bootstrap);
 
-    return new Thread.UncaughtExceptionHandler() {
-      @Override
-      public void uncaughtException(Thread t, Throwable e) {
-        final String msg = "Scheduler exiting due to uncaught exception";
-        log.error(msg, e);
-        log.fatal(msg);
-        System.exit(2);
-      }
-    };
+    StrSubstitutor strSubstitutor = new StrSubstitutor(new EnvironmentVariableLookup(false));
+    strSubstitutor.setEnableSubstitutionInVariables(true);
+
+    bootstrap.addBundle(new Java8Bundle());
+    bootstrap.setConfigurationSourceProvider(
+            new SubstitutingSourceProvider(
+                    bootstrap.getConfigurationSourceProvider(),
+                    strSubstitutor));
+  }
+
+  @Override
+  public void run(KafkaSchedulerConfiguration configuration, Environment environment) throws Exception {
+    logConfiguration(configuration);
+
+    final KafkaSchedulerModule kafkaSchedulerModule = new KafkaSchedulerModule(configuration, environment);
+    Injector injector = Guice.createInjector(kafkaSchedulerModule);
+
+    registerManagedObjects(environment, injector);
+  }
+
+  private void registerManagedObjects(Environment environment, Injector injector) {
+    environment.lifecycle().manage(
+            injector.getInstance(KafkaScheduler.class));
+  }
+
+  private void logConfiguration(KafkaSchedulerConfiguration configuration) {
   }
 }

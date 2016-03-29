@@ -24,7 +24,7 @@ except ImportError:
 def __urljoin(*elements):
     return "/".join(elem.strip("/") for elem in elements)
 
-def __post(url, json=None):
+def __post(url, auth_token="", json=None):
     pprint.pprint(json)
     if auth_token:
         headers = {"Authorization": "token={}".format(auth_token)}
@@ -44,7 +44,7 @@ def __handle_response(httpcmd, url, response):
     print("Got response for %s %s:\n%s" % (httpcmd, url, json))
     return json
 
-def marathon_launch_app(cluster_url, app_id, cmd, instances=1, packages=[], env={}, auth_token=""):
+def marathon_launch_app(marathon_url, app_id, cmd, instances=1, packages=[], env={}, auth_token=""):
     formatted_packages = []
     for package in packages:
         formatted_packages.append({"uri": package})
@@ -65,7 +65,7 @@ def marathon_launch_app(cluster_url, app_id, cmd, instances=1, packages=[], env=
         "env": formatted_env,
     }
 
-    json = __post(__urljoin(cluster_url, "marathon/v2/apps"), json=post_json)
+    json = __post(marathon_url, auth_token=auth_token, json=post_json)
     return json["deployments"]
 
 def get_random_id(length=8):
@@ -165,15 +165,17 @@ def main(
 
     package_filename = jar_url.split('/')[-1]
 
+    auth_token = ""
     if username and password:
         post_json = {
             "uid": username,
             "password": password
         }
         tok_response = __post(__urljoin(cluster_url, "acs/api/v1/auth/login"), json=post_json)
-        auth_token = tok_response.token
+        auth_token = tok_response["token"]
+    marathon_url = __urljoin(cluster_url, "marathon/v2/apps")
     if not marathon_launch_app(
-            cluster_url = cluster_url,
+            marathon_url = marathon_url,
             app_id = consumer_app_id,
             cmd = "env && ${MESOS_SANDBOX}/%s -cp ${MESOS_SANDBOX}/%s %s" % (
                 JRE_JAVA_PATH, package_filename, CONSUMER_CLASS),
@@ -184,7 +186,7 @@ def main(
         print("Starting consumers failed, skipping launch of producers")
         return 1
     if not marathon_launch_app(
-            cluster_url = cluster_url,
+            marathon_url = marathon_url,
             app_id = producer_app_id,
             cmd = "env && ${MESOS_SANDBOX}/%s -cp ${MESOS_SANDBOX}/%s %s" % (
                 JRE_JAVA_PATH, package_filename, PRODUCER_CLASS),

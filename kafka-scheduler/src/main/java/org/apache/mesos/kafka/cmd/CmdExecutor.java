@@ -1,25 +1,22 @@
 package org.apache.mesos.kafka.cmd;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-
-import javax.ws.rs.core.MultivaluedMap;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
+import org.apache.mesos.kafka.config.KafkaConfiguration;
+import org.apache.mesos.kafka.config.KafkaSchedulerConfiguration;
 import org.apache.mesos.kafka.state.KafkaStateService;
-import org.apache.mesos.kafka.config.KafkaConfigService;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
+
+import javax.ws.rs.core.MultivaluedMap;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public class CmdExecutor {
   private static final Log log = LogFactory.getLog(CmdExecutor.class);
@@ -28,10 +25,11 @@ public class CmdExecutor {
   private final String binPath;
   private final String zkPath;
 
-  public CmdExecutor(KafkaConfigService config, KafkaStateService state) {
+  public CmdExecutor(KafkaSchedulerConfiguration configuration, KafkaStateService state) {
     this.state = state;
-    this.binPath = config.getKafkaSandboxPath() + "/bin/";
-    this.zkPath = config.getKafkaZkUri();
+    final KafkaConfiguration kafkaConfiguration = configuration.getKafkaConfiguration();
+    this.binPath = kafkaConfiguration.getKafkaSandboxPath() + "/bin/";
+    this.zkPath = kafkaConfiguration.getKafkaZkUri();
   }
 
   public JSONObject createTopic(String name, int partitionCount, int replicationFactor) throws Exception {

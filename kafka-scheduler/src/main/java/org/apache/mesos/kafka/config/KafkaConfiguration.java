@@ -8,6 +8,15 @@ public class KafkaConfiguration {
     @JsonProperty("kafkaAdvertiseHostIp")
     private boolean kafkaAdvertiseHostIp;
 
+    @JsonProperty("kafkaVerName")
+    private String kafkaVerName;
+
+    @JsonProperty("kafkaSandboxPath")
+    private String kafkaSandboxPath;
+
+    @JsonProperty("kafkaZkUri")
+    private String kafkaZkUri;
+
     @JsonProperty("overrides")
     private Map<String, String> overrides;
 
@@ -18,6 +27,33 @@ public class KafkaConfiguration {
     @JsonProperty("kafkaAdvertiseHostIp")
     public void setKafkaAdvertiseHostIp(boolean kafkaAdvertiseHostIp) {
         this.kafkaAdvertiseHostIp = kafkaAdvertiseHostIp;
+    }
+
+    public String getKafkaVerName() {
+        return kafkaVerName;
+    }
+
+    @JsonProperty("kafkaVerName")
+    public void setKafkaVerName(String kafkaVerName) {
+        this.kafkaVerName = kafkaVerName;
+    }
+
+    public String getKafkaSandboxPath() {
+        return kafkaSandboxPath;
+    }
+
+    @JsonProperty("kafkaSandboxPath")
+    public void setKafkaSandboxPath(String kafkaSandboxPath) {
+        this.kafkaSandboxPath = kafkaSandboxPath;
+    }
+
+    public String getKafkaZkUri() {
+        return kafkaZkUri;
+    }
+
+    @JsonProperty("kafkaZkUri")
+    public void setKafkaZkUri(String kafkaZkUri) {
+        this.kafkaZkUri = kafkaZkUri;
     }
 
     public Map<String, String> getOverrides() {
@@ -32,7 +68,10 @@ public class KafkaConfiguration {
     @Override
     public String toString() {
         return "KafkaConfiguration{" +
-                "kafkaAdvertiseHostIp='" + kafkaAdvertiseHostIp + '\'' +
+                "kafkaAdvertiseHostIp=" + kafkaAdvertiseHostIp +
+                ", kafkaVerName='" + kafkaVerName + '\'' +
+                ", kafkaSandboxPath='" + kafkaSandboxPath + '\'' +
+                ", kafkaZkUri='" + kafkaZkUri + '\'' +
                 ", overrides=" + overrides +
                 '}';
     }

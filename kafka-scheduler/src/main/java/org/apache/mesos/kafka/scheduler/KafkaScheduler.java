@@ -16,6 +16,7 @@ import org.apache.mesos.kafka.config.ConfigStateValidator.ValidationError;
 import org.apache.mesos.kafka.config.ConfigStateValidator.ValidationException;
 import org.apache.mesos.kafka.config.KafkaConfigService;
 import org.apache.mesos.kafka.config.KafkaConfigState;
+import org.apache.mesos.kafka.config.KafkaSchedulerConfiguration;
 import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.LogOperationRecorder;
 import org.apache.mesos.kafka.offer.PersistentOfferRequirementProvider;
@@ -60,10 +61,14 @@ public class KafkaScheduler extends Observable implements Scheduler, Managed {
   private static final Integer rescheduleLock = 0;
   private static List<String> tasksToReschedule = new ArrayList<String>();
 
-  @Inject
   private Environment environment;
 
-  public KafkaScheduler() {
+  private KafkaSchedulerConfiguration configuration;
+
+  @Inject
+  public KafkaScheduler(KafkaSchedulerConfiguration configuration, Environment environment) {
+    this.configuration = configuration;
+    this.environment = environment;
 
     ConfigStateUpdater configStateUpdater = new ConfigStateUpdater();
     List<String> stageErrors = new ArrayList<>();
@@ -386,7 +391,7 @@ public class KafkaScheduler extends Observable implements Scheduler, Managed {
   private void registerJerseyResources() {
     environment.jersey().register(new ClusterController(envConfig.getKafkaZkUri(), configState, kafkaState));
     environment.jersey().register(new BrokerController(kafkaState));
-    environment.jersey().register(new TopicController(new CmdExecutor(envConfig, kafkaState), kafkaState));
+    environment.jersey().register(new TopicController(new CmdExecutor(configuration, kafkaState), kafkaState));
     environment.jersey().register(new StageResource(stageManager));
   }
 }

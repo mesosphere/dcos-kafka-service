@@ -2,45 +2,55 @@
 
 '''Launches kafka-test-client consumers and producers in Marathon.'''
 
-import getopt
 import json
 import logging
 import pprint
 import random
-import requests
-from requests.exceptions import HTTPError
 import string
 import sys
 import urllib
 import urlparse
 
+# non-stdlib libs:
+try:
+    import click
+    import requests
+    from requests.exceptions import HTTPError
+except ImportError:
+    print("Failed to load third-party libraries.")
+    print("Please run: $ pip install -r requirements.txt")
+    sys.exit(1)
+
 def __urljoin(*elements):
     return "/".join(elem.strip("/") for elem in elements)
 
-def marathon_apps_url(cluster_uri):
-    url = __urljoin(cluster_uri, "marathon", "v2", "apps")
-    print("Marathon query: %s" % url)
-    return url
+def __post(url, json=None):
+    pprint.pprint(json)
+    if auth_token:
+        headers = {"Authorization": "token={}".format(auth_token)}
+    else:
+        headers = {}
+    response = requests.post(url, json=json, headers=headers)
+    return __handle_response("POST", url, response)
 
-def marathon_launch_app(marathon_url, app_id, cmd, instances=1, packages=[], env={}):
-    def __post(url, json=None):
-        pprint.pprint(json)
-        return __handle_response("POST", url, requests.post(url, json=json))
+def __handle_response(httpcmd, url, response):
+    # http code 200-299 => success!
+    if response.status_code < 200 or response.status_code >= 300:
+        errmsg = "Error code in response to %s %s: %s/%s" % (
+            httpcmd, url, response.status_code, response.content)
+        print(errmsg)
+        raise HTTPError(errmsg)
+    json = response.json()
+    print("Got response for %s %s:\n%s" % (httpcmd, url, json))
+    return json
 
-    def __handle_response(httpcmd, url, response):
-        # http code 200-299 => success!
-        if response.status_code < 200 or response.status_code >= 300:
-            errmsg = "Error code in response to %s %s: %s/%s" % (
-                httpcmd, url, response.status_code, response.content)
-            print(errmsg)
-            raise HTTPError(errmsg)
-        json = response.json()
-        print("Got response for %s %s:\n%s" % (httpcmd, url, json))
-        return json
-
+def marathon_launch_app(cluster_url, app_id, cmd, instances=1, packages=[], env={}, auth_token=""):
     formatted_packages = []
     for package in packages:
         formatted_packages.append({"uri": package})
+    formatted_env = {}
+    for k,v in env.iteritems():
+        formatted_env[str(k)] = str(v)
     post_json = {
         "id": app_id,
         "container": {
@@ -52,9 +62,10 @@ def marathon_launch_app(marathon_url, app_id, cmd, instances=1, packages=[], env
         "disk": 1,
         "instances": instances,
         "fetch": formatted_packages,
+        "env": formatted_env,
     }
 
-    json = __post(marathon_url, json=post_json)
+    json = __post(__urljoin(cluster_url, "marathon/v2/apps"), json=post_json)
     return json["deployments"]
 
 def get_random_id(length=8):
@@ -62,116 +73,65 @@ def get_random_id(length=8):
 
 CONSUMER_CLASS = "org.apache.mesos.kafka.testclient.ConsumerMain"
 PRODUCER_CLASS = "org.apache.mesos.kafka.testclient.ProducerMain"
-JRE_URL = "https://s3-eu-west-1.amazonaws.com/downloads.mesosphere.com/kafka/jre-8u72-linux-x64.tar.gz"
-JRE_JAVA_PATH = "jre/bin/java"
+JRE_JAVA_PATH = "jre/bin/java" # relative to MESOS_SANDBOX
 
-FRAMEWORK_NAME_DEFAULT='kafka'
-CONSUMER_COUNT_DEFAULT = 5
-PRODUCER_COUNT_DEFAULT = 5
-THREAD_COUNT_DEFAULT = 5
-PRODUCER_QPS_LIMIT_DEFAULT = 5
-PRODUCER_MSG_SIZE_DEFAULT = 1024
-STATS_PRINT_PERIOD_MS_DEFAULT = 500
-JAR_URL_DEFAULT = "https://s3-us-west-2.amazonaws.com/infinity-artifacts/kafka/kafka-test-client-0.2.4-uber.jar"
+@click.command()
+@click.argument('cluster_url', envvar='DCOS_URI')
+@click.option("--framework-name", show_default=True, default="kafka",
+              help="framework's name in DCOS, for auto-detecting brokers")
+@click.option("--producer-count", show_default=True, default=5,
+              help="number of producers to launch")
+@click.option("--consumer-count", show_default=True, default=5,
+              help="number of consumers to launch")
+@click.option("--thread-count", show_default=True, default=5,
+              help="number of threads to launch in each producer and consumer")
+@click.option("--producer-qps-limit", show_default=True, default=5,
+              help="rate limit for producers, in messages per second")
+@click.option("--producer-msg-size", show_default=True, default=1024,
+              help="per-message size for producers")
+@click.option("--stats-print-period-ms", show_default=True, default=500,
+              help="how frequently to print throughput stats to stdout")
+@click.option("--username", envvar="DCOS_USERNAME",
+              help="username to use when making requests to the DCOS cluster (if the cluster requires auth)")
+@click.option("--password", envvar="DCOS_PASSWORD",
+              help="password to use when making requests to the DCOS cluster (if the cluster requires auth)")
+@click.option("--jar-url", show_default=True, default="https://s3-us-west-2.amazonaws.com/infinity-artifacts/kafka/kafka-test-client-0.2.4-uber.jar",
+              help="url of the kafka test client package")
+@click.option("--jre-url", show_default=True, default="https://s3-eu-west-1.amazonaws.com/downloads.mesosphere.com/kafka/jre-8u72-linux-x64.tar.gz",
+              help="url of the jre package")
+@click.option("--topic-override",
+              help="topic to use instead of a randomized default")
+@click.option("--broker-override",
+              help="list of broker endpoints to use instead of what the framework returns")
+def main(
+        cluster_url,
+        framework_name,
+        producer_count,
+        consumer_count,
+        thread_count,
+        producer_qps_limit,
+        producer_msg_size,
+        stats_print_period_ms,
+        username,
+        password,
+        jar_url,
+        jre_url,
+        topic_override,
+        broker_override):
+    """Launches zero or more test producer and consumer clients against a Kafka framework.
 
+    The clients are launched as marathon tasks, which may be destroyed using the provided curl commands when testing is complete.
 
-def print_help(argv):
-    print('''Flags: {}
-  -h/--help
-  -c/--cluster_url=<REQUIRED, eg https://cluster-url.com>
-  -f/--framework_name={}
-  -i/--producer_count={}
-  -o/--consumer_count={}
-  -t/--thread_count={}
-  -q/--producer_qps_limit={}
-  -m/--producer_msg_size={}
-  -s/--stats_print_period_ms={}
-  --jar_url={}
-  --topic_override=""
-  --broker_override=""
-'''.format(
-      argv[0],
-      FRAMEWORK_NAME_DEFAULT,
-      CONSUMER_COUNT_DEFAULT,
-      PRODUCER_COUNT_DEFAULT,
-      THREAD_COUNT_DEFAULT,
-      PRODUCER_QPS_LIMIT_DEFAULT,
-      PRODUCER_MSG_SIZE_DEFAULT,
-      STATS_PRINT_PERIOD_MS_DEFAULT,
-      JAR_URL_DEFAULT))
-    print('Example: {} -c http://your-cluster-url.com'.format(argv[0]))
+    You must at least provide the URL of the cluster, for example: 'python launcher.py http://your-dcos-cluster.com'"""
+    print(cluster_url)
 
-
-def main(argv):
-    # You must initialize logging, otherwise you'll not see debug output.
     logging.basicConfig()
     logging.getLogger().setLevel(logging.DEBUG)
     requests_log = logging.getLogger('requests.packages.urllib3')
     requests_log.setLevel(logging.DEBUG)
     requests_log.propagate = True
 
-    cluster_url = ''
-    jar_url = JAR_URL_DEFAULT
-    framework_name = FRAMEWORK_NAME_DEFAULT
-    consumer_count = CONSUMER_COUNT_DEFAULT
-    producer_count = PRODUCER_COUNT_DEFAULT
-    thread_count = THREAD_COUNT_DEFAULT
-    producer_qps_limit = PRODUCER_QPS_LIMIT_DEFAULT
-    producer_msg_size = PRODUCER_MSG_SIZE_DEFAULT
-    stats_print_period_ms = STATS_PRINT_PERIOD_MS_DEFAULT
-    topic_override = ''
-    broker_override = ''
-
-    try:
-        opts, args = getopt.getopt(argv[1:], 'hc:f:i:o:t:q:m:s:', [
-            'help',
-            'cluster_url=',
-            'framework_name=',
-            'producer_count=',
-            'consumer_count=',
-            'thread_count=',
-            'producer_qps_limit=',
-            'producer_msg_size=',
-            'stats_print_period_ms=',
-            'jar_url=',
-            'topic_override=',
-            'broker_override='])
-    except getopt.GetoptError:
-        print_help(argv)
-        sys.exit(1)
-    for opt, arg in opts:
-        if opt in ['-h', '--help']:
-            print_help(argv)
-            sys.exit(1)
-        elif opt in ['-c', '--cluster_url']:
-            cluster_url = arg.rstrip('/')
-        elif opt in ['-f', '--framework_name']:
-            framework_name = arg
-        elif opt in ['-i', '--producer_count']:
-            producer_count = int(arg)
-        elif opt in ['-o', '--consumer_count']:
-            consumer_count = int(arg)
-        elif opt in ['-t', '--thread_count']:
-            thread_count = int(arg)
-        elif opt in ['-q', '--producer_qps_limit']:
-            producer_qps_limit = int(arg)
-        elif opt in ['-m', '--producer_msg_size']:
-            producer_msg_size = int(arg)
-        elif opt in ['-s', '--stats_print_period_ms']:
-            stats_print_period_ms = int(arg)
-        elif opt in ['--jar_url']:
-            jar_url = arg
-        elif opt in ['--topic_override']:
-            topic_override = arg
-        elif opt in ['--broker_override']:
-            broker_override = arg
-
-    if not cluster_url:
-        print("-c/--cluster_url is required")
-        print_help(argv)
-        sys.exit(1)
-
-    topic_rand_id = get_random_id()
+    topic_rand_id = get_random_id() # reused for topic, unless --topic_override is specified
     producer_app_id = "kafkatest-" + topic_rand_id + "-producer"
     consumer_app_id = "kafkatest-" + topic_rand_id + "-consumer"
 
@@ -205,25 +165,33 @@ def main(argv):
 
     package_filename = jar_url.split('/')[-1]
 
-    marathon_url = marathon_apps_url(cluster_url)
+    if username and password:
+        post_json = {
+            "uid": username,
+            "password": password
+        }
+        tok_response = __post(__urljoin(cluster_url, "acs/api/v1/auth/login"), json=post_json)
+        auth_token = tok_response.token
     if not marathon_launch_app(
-            marathon_url = marathon_url,
+            cluster_url = cluster_url,
             app_id = consumer_app_id,
             cmd = "env && ${MESOS_SANDBOX}/%s -cp ${MESOS_SANDBOX}/%s %s" % (
                 JRE_JAVA_PATH, package_filename, CONSUMER_CLASS),
             instances = consumer_count,
-            packages = [JRE_URL, jar_url],
-            env = consumer_env):
+            packages = [jre_url, jar_url],
+            env = consumer_env,
+            auth_token = auth_token):
         print("Starting consumers failed, skipping launch of producers")
         return 1
     if not marathon_launch_app(
-            marathon_url = marathon_url,
+            cluster_url = cluster_url,
             app_id = producer_app_id,
             cmd = "env && ${MESOS_SANDBOX}/%s -cp ${MESOS_SANDBOX}/%s %s" % (
                 JRE_JAVA_PATH, package_filename, PRODUCER_CLASS),
             instances = producer_count,
-            packages = [JRE_URL, jar_url],
-            env = producer_env):
+            packages = [jre_url, jar_url],
+            env = producer_env,
+            auth_token = auth_token):
         print("Starting producers failed")
         return 1
 
@@ -238,4 +206,4 @@ curl -X DELETE {}/{}'''.format(
     return 0
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv))
+    sys.exit(main(sys.argv[1:]))

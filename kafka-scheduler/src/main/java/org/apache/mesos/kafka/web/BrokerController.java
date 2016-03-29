@@ -46,17 +46,6 @@ public class BrokerController {
     }
   }
 
-  @PUT
-  public Response killBrokers(@QueryParam("reschedule") String reschedule) {
-    try {
-      List<String> taskIds = state.getTaskIds();
-      return killBrokers(taskIds, reschedule);
-    } catch (Exception ex) {
-      log.error("Failed to kill brokers with exception: " + ex);
-      return Response.serverError().build();
-    }
-  }
-
   @GET
   @Path("/{id}")
   public Response broker(@PathParam("id") String id) {
@@ -101,5 +90,4 @@ public class BrokerController {
       return Response.serverError().build();
     }
   }
-
 }

@@ -93,18 +93,18 @@ public class KafkaStateService implements Observer, TaskStatusProvider {
   public List<TaskInfo> getTerminatedTaskInfos() throws Exception {
     List<TaskInfo> taskInfos = new ArrayList<TaskInfo>();
 
-    for (String taskId : getTaskIds()) {
-      TaskStatus taskStatus = getTaskStatus(taskId);
+    for (String taskName : getTaskNames()) {
+      TaskStatus taskStatus = getTaskStatus(taskName);
       if (isTerminated(taskStatus)) {
-        taskInfos.add(getTaskInfo(taskId));
+        taskInfos.add(getTaskInfo(taskName));
       }
     }
 
     return taskInfos;
   }
 
-  public TaskStatus getTaskStatus(String taskId) throws Exception {
-    String path = getTaskStatusPath(taskId);
+  public TaskStatus getTaskStatus(String taskName) throws Exception {
+    String path = getTaskStatusPath(taskName);
     byte[] bytes = zkClient.getData().forPath(path);
     return TaskStatus.parseFrom(bytes);
   }
@@ -113,38 +113,36 @@ public class KafkaStateService implements Observer, TaskStatusProvider {
   public Set<TaskStatus> getTaskStatuses() throws Exception {
     Set<TaskStatus> taskStatuses = new HashSet<TaskStatus>();
 
-    List<String> taskIds = getTaskIds();
-    for (String taskId : taskIds) {
-      taskStatuses.add(getTaskStatus(taskId));
+    for (String taskName : getTaskNames()) {
+      taskStatuses.add(getTaskStatus(taskName));
     }
 
     return taskStatuses;
   }
 
-  public TaskInfo getTaskInfo(String taskId) throws Exception {
-    String path = getTaskInfoPath(taskId);
+  public TaskInfo getTaskInfo(String taskName) throws Exception {
+    String path = getTaskInfoPath(taskName);
     byte[] bytes = zkClient.getData().forPath(path);
     return TaskInfo.parseFrom(bytes);
   }
 
-  public List<String> getTaskNames() throws Exception {
-    List<String> taskNames = new ArrayList<String>();
-
-    List<TaskInfo> taskInfos = getTaskInfos();
-    for (TaskInfo taskInfo : taskInfos) {
-      taskNames.add(taskInfo.getName());
-    }
-
-    return taskNames;
-  }
-
   public List<TaskInfo> getTaskInfos() throws Exception {
     List<TaskInfo> taskInfos = new ArrayList<TaskInfo>();
-    for (String taskId : getTaskIds()) {
+    for (String taskId : getTaskNames()) {
         taskInfos.add(getTaskInfo(taskId));
     }
 
     return taskInfos;
+  }
+
+  public List<TaskID> getTaskIds() throws Exception {
+    List<TaskID> taskIds = new ArrayList<TaskID>();
+
+    for (TaskInfo taskInfo : getTaskInfos()) {
+      taskIds.add(taskInfo.getTaskId());
+    }
+
+    return taskIds;
   }
 
   public String getTaskIdForBroker(Integer brokerId) throws Exception {
@@ -228,20 +226,20 @@ public class KafkaStateService implements Observer, TaskStatusProvider {
       taskState.equals(TaskState.TASK_ERROR);
   }
 
-  public List<String> getTaskIds() throws Exception {
+  public List<String> getTaskNames() throws Exception {
     return zkClient.getChildren().forPath(taskPath);
   }
 
-  private String getTaskRootPath(String taskId) {
-    return taskPath + "/" + taskId;
+  private String getTaskRootPath(String taskName) {
+    return taskPath + "/" + taskName;
   }
 
-  private String getTaskInfoPath(String taskId) {
-    return getTaskRootPath(taskId) + "/info";
+  private String getTaskInfoPath(String taskName) {
+    return getTaskRootPath(taskName) + "/info";
   }
 
-  private String getTaskStatusPath(String taskId) {
-    return getTaskRootPath(taskId) + "/status";
+  private String getTaskStatusPath(String taskName) {
+    return getTaskRootPath(taskName) + "/status";
   }
 
   private void record(String path, byte[] bytes) throws Exception {
@@ -253,7 +251,7 @@ public class KafkaStateService implements Observer, TaskStatusProvider {
   }
 
   public void recordTaskInfo(TaskInfo taskInfo) throws Exception {
-    String infoPath = getTaskInfoPath(taskInfo.getTaskId().getValue());
+    String infoPath = getTaskInfoPath(taskInfo.getName());
     record(infoPath, taskInfo.toByteArray());
   }
 
@@ -264,7 +262,7 @@ public class KafkaStateService implements Observer, TaskStatusProvider {
   }
 
   private void recordTaskStatus(TaskStatus taskStatus) throws Exception {
-    String statusPath = getTaskStatusPath(taskStatus.getTaskId().getValue());
+    String statusPath = getTaskStatusPath(OfferUtils.getTaskName(taskStatus.getTaskId().getValue()));
     if (zkClient.checkExists().forPath(statusPath) == null &&
         !taskStatus.getState().equals(TaskState.TASK_STAGING)) {
           log.warn("Dropping status update because the ZK path doesn't exist and Status is not STAGING: " + taskStatus);

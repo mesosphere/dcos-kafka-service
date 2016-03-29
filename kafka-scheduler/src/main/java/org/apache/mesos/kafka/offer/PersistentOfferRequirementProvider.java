@@ -54,7 +54,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
 
     String brokerName = taskInfo.getName();
     Integer brokerId = OfferUtils.nameToId(brokerName);
-    String taskId = taskInfo.getTaskId().getValue();
+    String taskId = getTaskId(brokerName);
     String persistenceId = OfferUtils.getPersistenceId(taskInfo);
     Long port = OfferUtils.getPort(taskInfo);
 
@@ -71,10 +71,14 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     KafkaConfigService config = configState.fetch(configName);
 
     String brokerName = "broker-" + brokerId;
-    String taskId = brokerName + "__" + UUID.randomUUID();
+    String taskId = getTaskId(brokerName);
     String persistenceId = UUID.randomUUID().toString();
     TaskInfo taskInfo = getTaskInfo(configName, config, persistenceId, brokerId, taskId);
     return getCreateOfferRequirement(taskInfo);
+  }
+
+  private String getTaskId(String taskName) {
+    return taskName + "__" + UUID.randomUUID();
   }
 
   private OfferRequirement getCreateOfferRequirement(TaskInfo taskInfo) {
@@ -106,7 +110,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     String persistenceId = OfferUtils.getPersistenceId(taskInfo);
     String brokerName = taskInfo.getName();
     Integer brokerId = OfferUtils.nameToId(brokerName);
-    String taskId = taskInfo.getTaskId().getValue();
+    String taskId = getTaskId(brokerName);
     Long port = OfferUtils.getPort(taskInfo);
 
     TaskInfo newTaskInfo = getTaskInfo(configName, config, persistenceId, brokerId, taskId, port);

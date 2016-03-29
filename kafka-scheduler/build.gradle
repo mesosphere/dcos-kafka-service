@@ -36,3 +36,10 @@ shadowJar {
 task wrapper(type: Wrapper) {
   gradleVersion = '2.3'
 }
+
+distributions {
+    main {
+        baseName = 'scheduler'
+        version = ""
+    }
+}

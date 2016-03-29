@@ -48,7 +48,7 @@ public final class Main extends Application<KafkaSchedulerConfiguration> {
 
   @Override
   public void run(KafkaSchedulerConfiguration configuration, Environment environment) throws Exception {
-    logConfiguration(configuration);
+    LOGGER.info("" + configuration);
 
     final KafkaSchedulerModule kafkaSchedulerModule = new KafkaSchedulerModule(configuration, environment);
     Injector injector = Guice.createInjector(kafkaSchedulerModule);
@@ -59,8 +59,5 @@ public final class Main extends Application<KafkaSchedulerConfiguration> {
   private void registerManagedObjects(Environment environment, Injector injector) {
     environment.lifecycle().manage(
             injector.getInstance(KafkaScheduler.class));
-  }
-
-  private void logConfiguration(KafkaSchedulerConfiguration configuration) {
   }
 }

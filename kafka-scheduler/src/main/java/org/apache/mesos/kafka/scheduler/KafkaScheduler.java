@@ -48,7 +48,7 @@ public class KafkaScheduler extends Observable implements Scheduler, Managed {
   private static final int TWO_WEEK_SEC = 2 * 7 * 24 * 60 * 60;
 
   private final KafkaConfigState configState;
-  private final KafkaConfigService envConfig;
+  private final KafkaSchedulerConfiguration envConfig;
   private final KafkaStateService kafkaState;
   private final DefaultStageScheduler stageScheduler;
   private final KafkaRepairScheduler repairScheduler;
@@ -70,9 +70,9 @@ public class KafkaScheduler extends Observable implements Scheduler, Managed {
     this.configuration = configuration;
     this.environment = environment;
 
-    ConfigStateUpdater configStateUpdater = new ConfigStateUpdater();
+    ConfigStateUpdater configStateUpdater = new ConfigStateUpdater(configuration);
     List<String> stageErrors = new ArrayList<>();
-    KafkaConfigService targetConfigToUse;
+    KafkaSchedulerConfiguration targetConfigToUse;
     try {
       targetConfigToUse = configStateUpdater.getTargetConfig();
     } catch (ValidationException e) {
@@ -122,8 +122,8 @@ public class KafkaScheduler extends Observable implements Scheduler, Managed {
         offerAccepter);
   }
 
-  private static PhaseStrategyFactory getPhaseStrategyFactory(KafkaConfigService config) {
-    String strategy = config.getPlanStrategy();
+  private static PhaseStrategyFactory getPhaseStrategyFactory(KafkaSchedulerConfiguration config) {
+    String strategy = config.getServiceConfiguration().getPlanStrategy();
 
     switch (strategy) {
       case "INSTALL":
@@ -287,7 +287,7 @@ public class KafkaScheduler extends Observable implements Scheduler, Managed {
     Thread.currentThread().setName("KafkaScheduler");
     Thread.currentThread().setUncaughtExceptionHandler(getUncaughtExceptionHandler());
 
-    String zkPath = "zk://" + envConfig.getZookeeperAddress() + "/mesos";
+    String zkPath = "zk://" + envConfig.getKafkaConfiguration().getZkAddress() + "/mesos";
     FrameworkInfo fwkInfo = getFrameworkInfo();
     log.info("Registering framework with: " + fwkInfo);
     registerFramework(this, fwkInfo, zkPath);
@@ -328,11 +328,11 @@ public class KafkaScheduler extends Observable implements Scheduler, Managed {
 
   private FrameworkInfo getFrameworkInfo() {
     FrameworkInfo.Builder fwkInfoBuilder = FrameworkInfo.newBuilder()
-      .setName(envConfig.getFrameworkName())
+      .setName(envConfig.getServiceConfiguration().getName())
       .setFailoverTimeout(TWO_WEEK_SEC)
-      .setUser(envConfig.getUser())
-      .setRole(envConfig.getRole())
-      .setPrincipal(envConfig.getPrincipal())
+      .setUser(envConfig.getServiceConfiguration().getUser())
+      .setRole(envConfig.getServiceConfiguration().getRole())
+      .setPrincipal(envConfig.getServiceConfiguration().getPrincipal())
       .setCheckpoint(true);
 
     FrameworkID fwkId = kafkaState.getFrameworkId();
@@ -389,7 +389,7 @@ public class KafkaScheduler extends Observable implements Scheduler, Managed {
   }
 
   private void registerJerseyResources() {
-    environment.jersey().register(new ClusterController(envConfig.getKafkaZkUri(), configState, kafkaState));
+    environment.jersey().register(new ClusterController(envConfig.getKafkaConfiguration().getKafkaZkUri(), configState, kafkaState));
     environment.jersey().register(new BrokerController(kafkaState));
     environment.jersey().register(new TopicController(new CmdExecutor(configuration, kafkaState), kafkaState));
     environment.jersey().register(new StageResource(stageManager));

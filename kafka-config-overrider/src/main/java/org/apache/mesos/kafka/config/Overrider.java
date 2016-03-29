@@ -36,8 +36,8 @@ public final class Overrider {
       System.exit(1);
     }
 
-    KafkaConfigService config = fetchConfig(args[0]);
-    Map<String, String> overrides = getOverrides(config);
+    KafkaSchedulerConfiguration config = fetchConfig(args[0]);
+    Map<String, String> overrides = config.getKafkaConfiguration().getOverrides();
     UpdateProperties(overrides);
   }
 
@@ -71,7 +71,7 @@ public final class Overrider {
     }
   }
 
-  private static KafkaConfigService fetchConfig(String configName) {
+  private static KafkaSchedulerConfiguration fetchConfig(String configName) {
     log.info("Fetching configuration: " + configName);
     return configState.fetch(configName);
   }

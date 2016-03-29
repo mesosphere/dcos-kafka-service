@@ -3,6 +3,8 @@ service:
   user: ${USER}
   placementStrategy: ${PLACEMENT_STRATEGY}
   planStrategy: ${PLAN_STRATEGY}
+  role: "${FRAMEWORK_NAME}-role"
+  principal: "${FRAMEWORK_NAME}-principal"
 
 broker:
   count: ${BROKER_COUNT}
@@ -10,11 +12,16 @@ broker:
   mem: ${BROKER_MEM}
   disk: ${BROKER_DISK}
   diskType: ${DISK_TYPE:-ROOT}
+  javaUri: ${JAVA_URI}
+  kafkaUri: ${KAFKA_URI}
+  overriderUri: ${OVERRIDER_URI}
+  containerHookUri: ${CONTAINER_HOOK_URI}
 
 kafka:
   kafkaAdvertiseHostIp: ${KAFKA_ADVERTISE_HOST_IP}
   kafkaVerName: ${KAFKA_VER_NAME}
   kafkaSandboxPath: "${MESOS_SANDBOX}/${KAFKA_VER_NAME}"
+  zkAddress: "master.mesos:2181"
   kafkaZkUri: "master.mesos:2181/${FRAMEWORK_NAME}"
   overrides:
     reservedBrokerMaxId: ${KAFKA_OVERRIDE_RESERVED_BROKER_MAX_ID}

@@ -9,8 +9,7 @@ import java.util.UUID;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.apache.mesos.kafka.config.KafkaConfigService;
-import org.apache.mesos.kafka.config.KafkaConfigState;
+import org.apache.mesos.kafka.config.*;
 import org.apache.mesos.kafka.state.KafkaStateService;
 import org.apache.mesos.offer.OfferRequirement;
 import org.apache.mesos.offer.OfferRequirement.VolumeMode;
@@ -50,7 +49,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
   public OfferRequirement getUpdateOfferRequirement(String configName, TaskInfo taskInfo) {
     log.info("Getting update OfferRequirement for: " + configName);
 
-    KafkaConfigService config = configState.fetch(configName);
+    KafkaSchedulerConfiguration config = configState.fetch(configName);
 
     String brokerName = taskInfo.getName();
     Integer brokerId = OfferUtils.nameToId(brokerName);
@@ -68,7 +67,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
   private OfferRequirement getNewOfferRequirementInternal(String configName, int brokerId) {
     log.info("Getting new OfferRequirement for: " + configName);
 
-    KafkaConfigService config = configState.fetch(configName);
+    KafkaSchedulerConfiguration config = configState.fetch(configName);
 
     String brokerName = "broker-" + brokerId;
     String taskId = getTaskId(brokerName);
@@ -84,7 +83,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
   private OfferRequirement getCreateOfferRequirement(TaskInfo taskInfo) {
     log.info("Getting create OfferRequirement");
 
-    KafkaConfigService config = getConfigService(taskInfo);
+    KafkaSchedulerConfiguration config = getConfigService(taskInfo);
     PlacementStrategy placementStrategy = placementStrategyManager.getPlacementStrategy(config);
 
     List<SlaveID> avoidAgents = placementStrategy.getAgentsToAvoid(taskInfo);
@@ -93,9 +92,10 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     log.info("Avoiding agents       : " + avoidAgents);
     log.info("Colocating with agents: " + colocateAgents);
 
+    final ServiceConfiguration serviceConfiguration = config.getServiceConfiguration();
     return new OfferRequirement(
-        config.getRole(),
-        config.getPrincipal(),
+        serviceConfiguration.getRole(),
+        serviceConfiguration.getPrincipal(),
         Arrays.asList(taskInfo),
         avoidAgents,
         colocateAgents,
@@ -106,7 +106,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     log.info("Getting existing OfferRequirement");
 
     String configName = OfferUtils.getConfigName(taskInfo);
-    KafkaConfigService config = getConfigService(taskInfo);
+    KafkaSchedulerConfiguration config = getConfigService(taskInfo);
     String persistenceId = OfferUtils.getPersistenceId(taskInfo);
     String brokerName = taskInfo.getName();
     Integer brokerId = OfferUtils.nameToId(brokerName);
@@ -115,16 +115,17 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
 
     TaskInfo newTaskInfo = getTaskInfo(configName, config, persistenceId, brokerId, taskId, port);
 
+    final ServiceConfiguration serviceConfiguration = config.getServiceConfiguration();
     return new OfferRequirement(
-        config.getRole(),
-        config.getPrincipal(),
+        serviceConfiguration.getRole(),
+        serviceConfiguration.getPrincipal(),
         Arrays.asList(newTaskInfo),
         null,
         null,
         VolumeMode.EXISTING);
   }
 
-  private KafkaConfigService getConfigService(TaskInfo taskInfo) {
+  private KafkaSchedulerConfiguration getConfigService(TaskInfo taskInfo) {
     String configName = OfferUtils.getConfigName(taskInfo);
     return configState.fetch(configName);
   }
@@ -136,7 +137,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
 
   private TaskInfo getTaskInfo(
       String configName,
-      KafkaConfigService config,
+      KafkaSchedulerConfiguration config,
       String persistenceId,
       int brokerId,
       String taskId) {
@@ -147,7 +148,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
 
   private TaskInfo getTaskInfo(
       String configName,
-      KafkaConfigService config,
+      KafkaSchedulerConfiguration config,
       String persistenceId,
       int brokerId,
       String taskId,
@@ -159,20 +160,20 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
   }
 
   private List<Resource> getResources(
-      KafkaConfigService config,
+      KafkaSchedulerConfiguration config,
       Long port,
       String persistenceId,
       String containerPath) {
 
-    KafkaConfigService.BrokerResources brokerResources = config.getBrokerResources();
-    String role = config.getRole();
-    String principal = config.getPrincipal();
+    final BrokerConfiguration brokerResources = config.getBrokerConfiguration();
+    String role = config.getServiceConfiguration().getRole();
+    String principal = config.getServiceConfiguration().getPrincipal();
 
     List<Resource> resources = new ArrayList<>();
-    resources.add(ResourceBuilder.reservedCpus(brokerResources.cpus, role, principal));
-    resources.add(ResourceBuilder.reservedMem(brokerResources.mem, role, principal));
+    resources.add(ResourceBuilder.reservedCpus(brokerResources.getCpus(), role, principal));
+    resources.add(ResourceBuilder.reservedMem(brokerResources.getMem(), role, principal));
     resources.add(ResourceBuilder.reservedPorts(port, port, role, principal));
-    resources.add(getVolumeResource(brokerResources.disk, role, principal, containerPath, persistenceId));
+    resources.add(getVolumeResource(brokerResources.getDisk(), role, principal, containerPath, persistenceId));
 
     return resources;
   }

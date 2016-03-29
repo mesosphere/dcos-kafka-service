@@ -1,7 +1,10 @@
 package org.apache.mesos.kafka.config;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.gson.Gson;
+
+import java.util.Objects;
 
 public class BrokerConfiguration {
     @JsonProperty("count")
@@ -14,6 +17,36 @@ public class BrokerConfiguration {
     private double disk;
     @JsonProperty("diskType")
     private String diskType;
+    @JsonProperty("kafkaUri")
+    private String kafkaUri;
+    @JsonProperty("containerHookUri")
+    private String containerHookUri;
+    @JsonProperty("javaUri")
+    private String javaUri;
+    @JsonProperty("overriderUri")
+    private String overriderUri;
+
+    @JsonCreator
+    public BrokerConfiguration(
+            @JsonProperty("count")int count,
+            @JsonProperty("cpus")double cpus,
+            @JsonProperty("mem")double mem,
+            @JsonProperty("disk")double disk,
+            @JsonProperty("diskType")String diskType,
+            @JsonProperty("kafkaUri")String kafkaUri,
+            @JsonProperty("containerHookUri")String containerHookUri,
+            @JsonProperty("javaUri")String javaUri,
+            @JsonProperty("overriderUri")String overriderUri) {
+        this.count = count;
+        this.cpus = cpus;
+        this.mem = mem;
+        this.disk = disk;
+        this.diskType = diskType;
+        this.kafkaUri = kafkaUri;
+        this.containerHookUri = containerHookUri;
+        this.javaUri = javaUri;
+        this.overriderUri = overriderUri;
+    }
 
     public int getCount() {
         return count;
@@ -60,6 +93,42 @@ public class BrokerConfiguration {
         this.diskType = diskType;
     }
 
+    public String getKafkaUri() {
+        return kafkaUri;
+    }
+
+    @JsonProperty("kafkaUri")
+    public void setKafkaUri(String kafkaUri) {
+        this.kafkaUri = kafkaUri;
+    }
+
+    public String getContainerHookUri() {
+        return containerHookUri;
+    }
+
+    @JsonProperty("containerHookUri")
+    public void setContainerHookUri(String containerHookUri) {
+        this.containerHookUri = containerHookUri;
+    }
+
+    public String getJavaUri() {
+        return javaUri;
+    }
+
+    @JsonProperty("javaUri")
+    public void setJavaUri(String javaUri) {
+        this.javaUri = javaUri;
+    }
+
+    public String getOverriderUri() {
+        return overriderUri;
+    }
+
+    @JsonProperty("overriderUri")
+    public void setOverriderUri(String overriderUri) {
+        this.overriderUri = overriderUri;
+    }
+
     @Override
     public String toString() {
         return "BrokerConfiguration{" +
@@ -68,6 +137,31 @@ public class BrokerConfiguration {
                 ", mem=" + mem +
                 ", disk=" + disk +
                 ", diskType='" + diskType + '\'' +
+                ", kafkaUri='" + kafkaUri + '\'' +
+                ", containerHookUri='" + containerHookUri + '\'' +
+                ", javaUri='" + javaUri + '\'' +
+                ", overriderUri='" + overriderUri + '\'' +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        BrokerConfiguration that = (BrokerConfiguration) o;
+        return count == that.count &&
+                Double.compare(that.cpus, cpus) == 0 &&
+                Double.compare(that.mem, mem) == 0 &&
+                Double.compare(that.disk, disk) == 0 &&
+                Objects.equals(diskType, that.diskType) &&
+                Objects.equals(kafkaUri, that.kafkaUri) &&
+                Objects.equals(containerHookUri, that.containerHookUri) &&
+                Objects.equals(javaUri, that.javaUri) &&
+                Objects.equals(overriderUri, that.overriderUri);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(count, cpus, mem, disk, diskType, kafkaUri, containerHookUri, javaUri, overriderUri);
     }
 }

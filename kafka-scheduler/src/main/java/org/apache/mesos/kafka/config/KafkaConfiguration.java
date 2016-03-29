@@ -1,8 +1,10 @@
 package org.apache.mesos.kafka.config;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Map;
+import java.util.Objects;
 
 public class KafkaConfiguration {
     @JsonProperty("kafkaAdvertiseHostIp")
@@ -17,8 +19,27 @@ public class KafkaConfiguration {
     @JsonProperty("kafkaZkUri")
     private String kafkaZkUri;
 
+    @JsonProperty("zkAddress")
+    private String zkAddress;
+
     @JsonProperty("overrides")
     private Map<String, String> overrides;
+
+    @JsonCreator
+    public KafkaConfiguration(
+            @JsonProperty("kafkaAdvertiseHostIp")boolean kafkaAdvertiseHostIp,
+            @JsonProperty("kafkaVerName")String kafkaVerName,
+            @JsonProperty("kafkaSandboxPath")String kafkaSandboxPath,
+            @JsonProperty("kafkaZkUri")String kafkaZkUri,
+            @JsonProperty("zkAddress")String zkAddress,
+            @JsonProperty("overrides")Map<String, String> overrides) {
+        this.kafkaAdvertiseHostIp = kafkaAdvertiseHostIp;
+        this.kafkaVerName = kafkaVerName;
+        this.kafkaSandboxPath = kafkaSandboxPath;
+        this.kafkaZkUri = kafkaZkUri;
+        this.zkAddress = zkAddress;
+        this.overrides = overrides;
+    }
 
     public boolean isKafkaAdvertiseHostIp() {
         return kafkaAdvertiseHostIp;
@@ -56,6 +77,15 @@ public class KafkaConfiguration {
         this.kafkaZkUri = kafkaZkUri;
     }
 
+    public String getZkAddress() {
+        return zkAddress;
+    }
+
+    @JsonProperty("zkAddress")
+    public void setZkAddress(String zkAddress) {
+        this.zkAddress = zkAddress;
+    }
+
     public Map<String, String> getOverrides() {
         return overrides;
     }
@@ -66,12 +96,31 @@ public class KafkaConfiguration {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        KafkaConfiguration that = (KafkaConfiguration) o;
+        return kafkaAdvertiseHostIp == that.kafkaAdvertiseHostIp &&
+                Objects.equals(kafkaVerName, that.kafkaVerName) &&
+                Objects.equals(kafkaSandboxPath, that.kafkaSandboxPath) &&
+                Objects.equals(kafkaZkUri, that.kafkaZkUri) &&
+                Objects.equals(zkAddress, that.zkAddress) &&
+                Objects.equals(overrides, that.overrides);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(kafkaAdvertiseHostIp, kafkaVerName, kafkaSandboxPath, kafkaZkUri, zkAddress, overrides);
+    }
+
+    @Override
     public String toString() {
         return "KafkaConfiguration{" +
                 "kafkaAdvertiseHostIp=" + kafkaAdvertiseHostIp +
                 ", kafkaVerName='" + kafkaVerName + '\'' +
                 ", kafkaSandboxPath='" + kafkaSandboxPath + '\'' +
                 ", kafkaZkUri='" + kafkaZkUri + '\'' +
+                ", zkAddress='" + zkAddress + '\'' +
                 ", overrides=" + overrides +
                 '}';
     }

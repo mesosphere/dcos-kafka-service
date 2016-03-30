@@ -24,12 +24,8 @@ except ImportError:
 def __urljoin(*elements):
     return "/".join(elem.strip("/") for elem in elements)
 
-def __post(url, auth_token="", json=None):
+def __post(url, headers={}, json=None):
     pprint.pprint(json)
-    if auth_token:
-        headers = {"Authorization": "token={}".format(auth_token)}
-    else:
-        headers = {}
     response = requests.post(url, json=json, headers=headers)
     return __handle_response("POST", url, response)
 
@@ -44,7 +40,7 @@ def __handle_response(httpcmd, url, response):
     print("Got response for %s %s:\n%s" % (httpcmd, url, json))
     return json
 
-def marathon_launch_app(marathon_url, app_id, cmd, instances=1, packages=[], env={}, auth_token=""):
+def marathon_launch_app(marathon_url, app_id, cmd, instances=1, packages=[], env={}, headers={}):
     formatted_packages = []
     for package in packages:
         formatted_packages.append({"uri": package})
@@ -65,7 +61,7 @@ def marathon_launch_app(marathon_url, app_id, cmd, instances=1, packages=[], env
         "env": formatted_env,
     }
 
-    json = __post(marathon_url, auth_token=auth_token, json=post_json)
+    json = __post(marathon_url, headers=headers, json=post_json)
     return json["deployments"]
 
 def get_random_id(length=8):
@@ -164,14 +160,14 @@ def main(
 
     package_filename = jar_url.split('/')[-1]
 
-    auth_token = ""
+    headers = {}
     if username and password:
         post_json = {
             "uid": username,
             "password": password
         }
         tok_response = __post(__urljoin(cluster_url, "acs/api/v1/auth/login"), json=post_json)
-        auth_token = tok_response["token"]
+        headers = {"Authorization": "token={}".format(tok_response["token"])}
     marathon_url = __urljoin(cluster_url, "marathon/v2/apps")
     if not marathon_launch_app(
             marathon_url = marathon_url,
@@ -181,7 +177,7 @@ def main(
             instances = consumer_count,
             packages = [jre_url, jar_url],
             env = consumer_env,
-            auth_token = auth_token):
+            headers = headers):
         print("Starting consumers failed, skipping launch of producers")
         return 1
     if not marathon_launch_app(
@@ -192,7 +188,7 @@ def main(
             instances = producer_count,
             packages = [jre_url, jar_url],
             env = producer_env,
-            auth_token = auth_token):
+            headers = headers):
         print("Starting producers failed")
         return 1
 

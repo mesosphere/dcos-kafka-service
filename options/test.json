@@ -1,5 +1,10 @@
 {
-  "kafka": {
-    "pv": false
+  "service": {
+    "name": "kafkatest0",
+    "placement-strategy": "ANY",
+    "plan-strategy": "INSTALL"
+  },
+  "brokers": {
+    "count": 2 
   }
 }

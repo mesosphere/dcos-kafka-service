@@ -2,7 +2,6 @@ package org.apache.mesos.kafka.config;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.gson.Gson;
 
 import java.util.Objects;
 

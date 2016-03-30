@@ -90,7 +90,7 @@ public class KafkaConfigService {
    * e.g.: "/path/to/sandbox/kafka-0.1.2.3"
    */
   public String getKafkaSandboxPath() {
-    return configService.get("MESOS_SANDBOX") + "/" + getKafkaVersionName();
+    return System.getenv("MESOS_SANDBOX") + "/" + getKafkaVersionName();
   }
 
   /**

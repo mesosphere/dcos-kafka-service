@@ -123,7 +123,6 @@ def main(
     The clients are launched as marathon tasks, which may be destroyed using the provided curl commands when testing is complete.
 
     You must at least provide the URL of the cluster, for example: 'python launcher.py http://your-dcos-cluster.com'"""
-    print(cluster_url)
 
     logging.basicConfig()
     logging.getLogger().setLevel(logging.DEBUG)
@@ -131,7 +130,7 @@ def main(
     requests_log.setLevel(logging.DEBUG)
     requests_log.propagate = True
 
-    topic_rand_id = get_random_id() # reused for topic, unless --topic_override is specified
+    topic_rand_id = get_random_id() # reused for topic, unless --topic-override is specified
     producer_app_id = "kafkatest-" + topic_rand_id + "-producer"
     consumer_app_id = "kafkatest-" + topic_rand_id + "-consumer"
 

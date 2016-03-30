@@ -9,7 +9,12 @@ import random
 import string
 import sys
 import urllib
-import urlparse
+
+try:
+    from urllib.parse import urlparse
+except ImportError:
+    # Python 2
+    from urlparse import urlparse
 
 # non-stdlib libs:
 try:
@@ -45,7 +50,7 @@ def marathon_launch_app(marathon_url, app_id, cmd, instances=1, packages=[], env
     for package in packages:
         formatted_packages.append({"uri": package})
     formatted_env = {}
-    for k,v in env.iteritems():
+    for k,v in env.items():
         formatted_env[str(k)] = str(v)
     post_json = {
         "id": app_id,
@@ -143,7 +148,7 @@ def main(
 
     common_env = {
         "THREADS": thread_count,
-        "MASTER_HOST": urlparse.urlparse(cluster_url).netloc, # http://example.com/ -> example.com
+        "MASTER_HOST": urlparse(cluster_url).netloc, # http://example.com/ -> example.com
         "STATS_PRINT_PERIOD_MS": stats_print_period_ms,
     }
     if topic_override:
@@ -197,14 +202,17 @@ def main(
         print("Starting producers failed")
         return 1
 
+    curl_headers = ""
+    for k,v in headers.items():
+        curl_headers += ' -H "{}: {}"'.format(k,v)
     print('''#################
 Consumers/producers have been launched.
 When finished, delete them from Marathon with these commands:
 
-curl -X DELETE {}/{}
-curl -X DELETE {}/{}'''.format(
-    marathon_url, consumer_app_id,
-    marathon_url, producer_app_id))
+curl -X DELETE{} {}/{}
+curl -X DELETE{} {}/{}'''.format(
+    curl_headers, marathon_url, reader_app_id,
+    curl_headers, marathon_url, writer_app_id))
     return 0
 
 if __name__ == "__main__":

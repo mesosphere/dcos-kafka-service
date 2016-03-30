@@ -130,6 +130,17 @@ def main(
     producer_app_id = "kafkatest-" + topic_rand_id + "-producer"
     consumer_app_id = "kafkatest-" + topic_rand_id + "-consumer"
 
+    auth_token = ""
+    headers = {}
+    if username and password:
+        post_json = {
+            "uid": username,
+            "password": password
+        }
+        tok_response = __post(__urljoin(cluster_url, "acs/api/v1/auth/login"), json=post_json)
+        auth_token = tok_response["token"]
+        headers = {"Authorization": "token={}".format(auth_token)}
+
     common_env = {
         "THREADS": thread_count,
         "MASTER_HOST": urlparse.urlparse(cluster_url).netloc, # http://example.com/ -> example.com
@@ -145,6 +156,8 @@ def main(
     else:
         # default to letting the framework scheduler provide the list of servers
         common_env["FRAMEWORK_NAME"] = framework_name
+        if auth_token:
+            common_env["FRAMEWORK_AUTH_TOKEN"] = auth_token
 
     producer_env = {
         "KAFKA_OVERRIDE_METADATA_FETCH_TIMEOUT_MS": "3000",
@@ -160,16 +173,8 @@ def main(
 
     package_filename = jar_url.split('/')[-1]
 
-    headers = {}
-    if username and password:
-        post_json = {
-            "uid": username,
-            "password": password
-        }
-        tok_response = __post(__urljoin(cluster_url, "acs/api/v1/auth/login"), json=post_json)
-        headers = {"Authorization": "token={}".format(tok_response["token"])}
     marathon_url = __urljoin(cluster_url, "marathon/v2/apps")
-    if not marathon_launch_app(
+    if consumer_count and not marathon_launch_app(
             marathon_url = marathon_url,
             app_id = consumer_app_id,
             cmd = "env && ${MESOS_SANDBOX}/%s -cp ${MESOS_SANDBOX}/%s %s" % (
@@ -180,7 +185,7 @@ def main(
             headers = headers):
         print("Starting consumers failed, skipping launch of producers")
         return 1
-    if not marathon_launch_app(
+    if producer_count and not marathon_launch_app(
             marathon_url = marathon_url,
             app_id = producer_app_id,
             cmd = "env && ${MESOS_SANDBOX}/%s -cp ${MESOS_SANDBOX}/%s %s" % (

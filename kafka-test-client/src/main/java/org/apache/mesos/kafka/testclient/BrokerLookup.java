@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,6 +43,14 @@ public class BrokerLookup {
           String.format("/" + PATH_TEMPLATE, config.frameworkName));
     }
     LOGGER.info("Connecting to {} for broker lookup", url.toString());
+
+    if (!config.frameworkAuthToken.isEmpty()) {
+      // Include provided authtoken in request headers
+      URLConnection connection = url.openConnection();
+      connection.setRequestProperty("Authorization", "token=" + config.frameworkAuthToken);
+      connection.setDoOutput(true);
+    }
+
     JSONObject responseObj;
     if (LOGGER.isInfoEnabled()) {
       // Intercept the response text so that it can be logged

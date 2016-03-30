@@ -52,6 +52,11 @@ public class OfferUtils {
     return "broker-" + Integer.toString(brokerId);
   }
 
+  public static String getTaskName(String taskId) {
+    int underScoreIndex = taskId.indexOf("__");
+    return taskId.substring(0, underScoreIndex);
+  }
+
   public static String getPersistenceId(TaskInfo taskInfo) {
     for (Resource resource : taskInfo.getResourcesList()) {
       if (resource.getName().equals("disk")) {

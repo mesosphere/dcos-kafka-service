@@ -1,7 +1,5 @@
 package org.apache.mesos.kafka.scheduler;
 
-import com.google.inject.Inject;
-import io.dropwizard.lifecycle.Managed;
 import io.dropwizard.setup.Environment;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -10,11 +8,9 @@ import org.apache.mesos.Protos;
 import org.apache.mesos.Protos.*;
 import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
-import org.apache.mesos.kafka.cmd.CmdExecutor;
 import org.apache.mesos.kafka.config.ConfigStateUpdater;
 import org.apache.mesos.kafka.config.ConfigStateValidator.ValidationError;
 import org.apache.mesos.kafka.config.ConfigStateValidator.ValidationException;
-import org.apache.mesos.kafka.config.KafkaConfigService;
 import org.apache.mesos.kafka.config.KafkaConfigState;
 import org.apache.mesos.kafka.config.KafkaSchedulerConfiguration;
 import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
@@ -24,15 +20,11 @@ import org.apache.mesos.kafka.offer.PersistentOperationRecorder;
 import org.apache.mesos.kafka.plan.KafkaStageManager;
 import org.apache.mesos.kafka.plan.KafkaUpdatePhase;
 import org.apache.mesos.kafka.state.KafkaStateService;
-import org.apache.mesos.kafka.web.BrokerController;
-import org.apache.mesos.kafka.web.ClusterController;
-import org.apache.mesos.kafka.web.TopicController;
 import org.apache.mesos.offer.OfferAccepter;
 import org.apache.mesos.reconciliation.DefaultReconciler;
 import org.apache.mesos.reconciliation.Reconciler;
 import org.apache.mesos.scheduler.plan.*;
 import org.apache.mesos.scheduler.plan.Status;
-import org.apache.mesos.scheduler.plan.api.StageResource;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,7 +34,7 @@ import java.util.Observable;
 /**
  * Kafka Framework Scheduler.
  */
-public class KafkaScheduler extends Observable implements Scheduler, Managed {
+public class KafkaScheduler extends Observable implements Scheduler, Runnable {
   private static final Log log = LogFactory.getLog(KafkaScheduler.class);
 
   private static final int TWO_WEEK_SEC = 2 * 7 * 24 * 60 * 60;
@@ -62,10 +54,8 @@ public class KafkaScheduler extends Observable implements Scheduler, Managed {
   private static List<String> tasksToReschedule = new ArrayList<String>();
 
   private Environment environment;
-
   private KafkaSchedulerConfiguration configuration;
 
-  @Inject
   public KafkaScheduler(KafkaSchedulerConfiguration configuration, Environment environment) {
     this.configuration = configuration;
     this.environment = environment;
@@ -180,7 +170,6 @@ public class KafkaScheduler extends Observable implements Scheduler, Managed {
   public void registered(SchedulerDriver driver, FrameworkID frameworkId, MasterInfo masterInfo) {
     log.info("Registered framework with frameworkId: " + frameworkId.getValue());
     kafkaState.setFrameworkId(frameworkId);
-    registerJerseyResources();
   }
 
   @Override
@@ -283,7 +272,7 @@ public class KafkaScheduler extends Observable implements Scheduler, Managed {
   }
 
   @Override
-  public void start() {
+  public void run() {
     Thread.currentThread().setName("KafkaScheduler");
     Thread.currentThread().setUncaughtExceptionHandler(getUncaughtExceptionHandler());
 
@@ -291,15 +280,6 @@ public class KafkaScheduler extends Observable implements Scheduler, Managed {
     FrameworkInfo fwkInfo = getFrameworkInfo();
     log.info("Registering framework with: " + fwkInfo);
     registerFramework(this, fwkInfo, zkPath);
-  }
-
-  @Override
-  public void stop() throws Exception {
-    if (this.driver != null) {
-      log.info("Aborting driver...");
-      final Protos.Status driverStatus = this.driver.abort();
-      log.info("Aborted driver with status: " + driverStatus);
-    }
   }
 
   private void reconcile() {
@@ -388,10 +368,15 @@ public class KafkaScheduler extends Observable implements Scheduler, Managed {
     };
   }
 
-  private void registerJerseyResources() {
-    environment.jersey().register(new ClusterController(envConfig.getKafkaConfiguration().getKafkaZkUri(), configState, kafkaState));
-    environment.jersey().register(new BrokerController(kafkaState));
-    environment.jersey().register(new TopicController(new CmdExecutor(configuration, kafkaState), kafkaState));
-    environment.jersey().register(new StageResource(stageManager));
+  public KafkaConfigState getConfigState() {
+    return configState;
+  }
+
+  public KafkaStateService getKafkaState() {
+    return kafkaState;
+  }
+
+  public KafkaStageManager getStageManager() {
+    return stageManager;
   }
 }

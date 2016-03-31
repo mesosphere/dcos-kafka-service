@@ -26,7 +26,7 @@ import java.util.Properties;
  * Fetches values it will override from the configuration indicated stored in ZK.
  * Produces a non-zero exit code if it fails to fetch.
  */
-public final class Overrider extends Application<KafkaSchedulerConfiguration> {
+public final class Overrider extends Application<DropwizardConfiguration> {
   private static final Log log = LogFactory.getLog(Overrider.class);
 
   private static KafkaConfigState configState;
@@ -48,7 +48,7 @@ public final class Overrider extends Application<KafkaSchedulerConfiguration> {
   }
 
   @Override
-  public void initialize(Bootstrap<KafkaSchedulerConfiguration> bootstrap) {
+  public void initialize(Bootstrap<DropwizardConfiguration> bootstrap) {
     super.initialize(bootstrap);
 
     final EnvironmentVariableSubstitutor environmentVariableSubstitutor
@@ -62,12 +62,12 @@ public final class Overrider extends Application<KafkaSchedulerConfiguration> {
   }
 
   @Override
-  public void run(KafkaSchedulerConfiguration configEnv, Environment environment) throws Exception {
-    this.configuration = configEnv;
+  public void run(DropwizardConfiguration configEnv, Environment environment) throws Exception {
+    this.configuration = configEnv.getSchedulerConfiguration();
     configId = System.getenv().get("CONFIG_ID");
 
     configState = new KafkaConfigState(
-            configEnv.getServiceConfiguration().getName(), configEnv.getKafkaConfiguration().getZkAddress(), "/");
+            configuration.getServiceConfiguration().getName(), configuration.getKafkaConfiguration().getZkAddress(), "/");
 
     if (StringUtils.isBlank(configId)) {
       log.error("Require configId. Please set CONFIG_ID env var correctly.");
@@ -77,7 +77,7 @@ public final class Overrider extends Application<KafkaSchedulerConfiguration> {
     log.info("" + configEnv);
 
     KafkaSchedulerConfiguration configZk = fetchConfig(configId);
-    Map<String, String> overrides = getOverrides(configZk, configEnv);
+    Map<String, String> overrides = getOverrides(configZk, configuration);
     UpdateProperties(overrides);
     System.exit(0);
   }

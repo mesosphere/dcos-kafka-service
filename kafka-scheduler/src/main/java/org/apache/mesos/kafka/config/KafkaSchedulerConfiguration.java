@@ -1,15 +1,11 @@
 package org.apache.mesos.kafka.config;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.gson.Gson;
-import io.dropwizard.Configuration;
 
 import java.util.Objects;
 
-@JsonIgnoreProperties({"server", "logging", "metrics"})
-public class KafkaSchedulerConfiguration extends Configuration {
+public class KafkaSchedulerConfiguration {
     public static final String KAFKA_OVERRIDE_PREFIX = "KAFKA_OVERRIDE_";
 
     @JsonProperty("service")

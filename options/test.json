@@ -1,6 +1,6 @@
 {
   "service": {
-    "name": "kafkatest0",
+    "name": "kafkatest",
     "placement-strategy": "ANY",
     "plan-strategy": "INSTALL"
   },

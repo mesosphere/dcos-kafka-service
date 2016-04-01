@@ -6,9 +6,9 @@ schedulerConfiguration:
     planStrategy: ${PLAN_STRATEGY}
     role: "${FRAMEWORK_NAME}-role"
     principal: "${FRAMEWORK_NAME}-principal"
+    count: ${BROKER_COUNT:-3}
 
   broker:
-    count: ${BROKER_COUNT}
     cpus: ${BROKER_CPUS}
     mem: ${BROKER_MEM}
     disk: ${BROKER_DISK}
@@ -120,7 +120,7 @@ server:
       port: ${PORT1:-8081}
 
 logging:
-  level: TRACE
+  level: INFO
   appenders:
     - type: file
       currentLogFilename: ${LOG_FILE:-dcos-kafka-service.log}

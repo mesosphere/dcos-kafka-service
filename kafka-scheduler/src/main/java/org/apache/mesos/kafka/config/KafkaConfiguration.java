@@ -102,7 +102,6 @@ public class KafkaConfiguration {
         KafkaConfiguration that = (KafkaConfiguration) o;
         return kafkaAdvertiseHostIp == that.kafkaAdvertiseHostIp &&
                 Objects.equals(kafkaVerName, that.kafkaVerName) &&
-                Objects.equals(kafkaSandboxPath, that.kafkaSandboxPath) &&
                 Objects.equals(kafkaZkUri, that.kafkaZkUri) &&
                 Objects.equals(zkAddress, that.zkAddress) &&
                 Objects.equals(overrides, that.overrides);
@@ -110,7 +109,7 @@ public class KafkaConfiguration {
 
     @Override
     public int hashCode() {
-        return Objects.hash(kafkaAdvertiseHostIp, kafkaVerName, kafkaSandboxPath, kafkaZkUri, zkAddress, overrides);
+        return Objects.hash(kafkaAdvertiseHostIp, kafkaVerName, kafkaZkUri, zkAddress, overrides);
     }
 
     @Override

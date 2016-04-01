@@ -53,7 +53,14 @@ public class ConfigStateUpdater {
        * See also {@link KafkaEnvConfiguratior.ignoredKeys()} */
       validator.validateConfigChange(currTargetConfig, newTargetConfig);
 
-      if (!currTargetConfig.equals(newTargetConfig)) {
+      final BrokerConfiguration currTargetConfigBrokerConfiguration = currTargetConfig.getBrokerConfiguration();
+      final BrokerConfiguration newTargetConfigBrokerConfiguration = newTargetConfig.getBrokerConfiguration();
+
+      final KafkaConfiguration currTargetConfigKafkaConfiguration = currTargetConfig.getKafkaConfiguration();
+      final KafkaConfiguration newTargetConfigKafkaConfiguration = newTargetConfig.getKafkaConfiguration();
+
+      if (!currTargetConfigBrokerConfiguration.equals(newTargetConfigBrokerConfiguration) ||
+              !currTargetConfigKafkaConfiguration.equals(newTargetConfigKafkaConfiguration)) {
         log.info("Config change detected!");
         log.info("Old config: " + currTargetConfig);
         log.info("New config: " + newTargetConfig);

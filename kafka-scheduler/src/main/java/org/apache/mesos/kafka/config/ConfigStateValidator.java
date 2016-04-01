@@ -67,8 +67,8 @@ public class ConfigStateValidator {
           throws ValidationException {
     List<ValidationError> errors = new ArrayList<>();
 
-    final int oldBrokerCount = oldConfig.getBrokerConfiguration().getCount();
-    final int newBrokerCount = newConfig.getBrokerConfiguration().getCount();
+    final int oldBrokerCount = oldConfig.getServiceConfiguration().getCount();
+    final int newBrokerCount = newConfig.getServiceConfiguration().getCount();
 
     if (newBrokerCount < oldBrokerCount) {
       errors.add(new ValidationError("BROKER_COUNT",

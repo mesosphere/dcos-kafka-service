@@ -6,6 +6,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 
 public class ServiceConfiguration {
+    @JsonProperty("count")
+    private int count;
     @JsonProperty("name")
     private String name;
     @JsonProperty("user")
@@ -21,18 +23,29 @@ public class ServiceConfiguration {
 
     @JsonCreator
     public ServiceConfiguration(
+            @JsonProperty("count")int count,
             @JsonProperty("name")String name,
             @JsonProperty("user")String user,
             @JsonProperty("placementStrategy")String placementStrategy,
             @JsonProperty("planStrategy")String planStrategy,
             @JsonProperty("role")String role,
             @JsonProperty("principal")String principal) {
+        this.count = count;
         this.name = name;
         this.user = user;
         this.placementStrategy = placementStrategy;
         this.planStrategy = planStrategy;
         this.role = role;
         this.principal = principal;
+    }
+
+    public int getCount() {
+        return count;
+    }
+
+    @JsonProperty("count")
+    public void setCount(int count) {
+        this.count = count;
     }
 
     public String getName() {
@@ -94,22 +107,25 @@ public class ServiceConfiguration {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ServiceConfiguration that = (ServiceConfiguration) o;
-        return Objects.equals(name, that.name) &&
+        return count == that.count &&
+                Objects.equals(name, that.name) &&
                 Objects.equals(user, that.user) &&
                 Objects.equals(placementStrategy, that.placementStrategy) &&
+                Objects.equals(planStrategy, that.planStrategy) &&
                 Objects.equals(role, that.role) &&
                 Objects.equals(principal, that.principal);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, user, placementStrategy, role, principal);
+        return Objects.hash(count, name, user, placementStrategy, planStrategy, role, principal);
     }
 
     @Override
     public String toString() {
         return "ServiceConfiguration{" +
-                "name='" + name + '\'' +
+                "count=" + count +
+                ", name='" + name + '\'' +
                 ", user='" + user + '\'' +
                 ", placementStrategy='" + placementStrategy + '\'' +
                 ", planStrategy='" + planStrategy + '\'' +

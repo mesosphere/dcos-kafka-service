@@ -6,9 +6,9 @@ schedulerConfiguration:
     planStrategy: ${PLAN_STRATEGY}
     role: "${FRAMEWORK_NAME}-role"
     principal: "${FRAMEWORK_NAME}-principal"
+    count: ${BROKER_COUNT:-3}
 
   broker:
-    count: ${BROKER_COUNT:-3}
     cpus: ${BROKER_CPUS:-1}
     mem: ${BROKER_MEM:-2048}
     disk: ${BROKER_DISK:-5000}

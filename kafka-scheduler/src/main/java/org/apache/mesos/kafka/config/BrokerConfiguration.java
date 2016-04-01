@@ -7,8 +7,6 @@ import com.google.gson.Gson;
 import java.util.Objects;
 
 public class BrokerConfiguration {
-    @JsonProperty("count")
-    private int count;
     @JsonProperty("cpus")
     private double cpus;
     @JsonProperty("mem")
@@ -28,7 +26,6 @@ public class BrokerConfiguration {
 
     @JsonCreator
     public BrokerConfiguration(
-            @JsonProperty("count")int count,
             @JsonProperty("cpus")double cpus,
             @JsonProperty("mem")double mem,
             @JsonProperty("disk")double disk,
@@ -37,7 +34,6 @@ public class BrokerConfiguration {
             @JsonProperty("containerHookUri")String containerHookUri,
             @JsonProperty("javaUri")String javaUri,
             @JsonProperty("overriderUri")String overriderUri) {
-        this.count = count;
         this.cpus = cpus;
         this.mem = mem;
         this.disk = disk;
@@ -46,15 +42,6 @@ public class BrokerConfiguration {
         this.containerHookUri = containerHookUri;
         this.javaUri = javaUri;
         this.overriderUri = overriderUri;
-    }
-
-    public int getCount() {
-        return count;
-    }
-
-    @JsonProperty("count")
-    public void setCount(int count) {
-        this.count = count;
     }
 
     public double getCpus() {
@@ -130,27 +117,11 @@ public class BrokerConfiguration {
     }
 
     @Override
-    public String toString() {
-        return "BrokerConfiguration{" +
-                "count=" + count +
-                ", cpus=" + cpus +
-                ", mem=" + mem +
-                ", disk=" + disk +
-                ", diskType='" + diskType + '\'' +
-                ", kafkaUri='" + kafkaUri + '\'' +
-                ", containerHookUri='" + containerHookUri + '\'' +
-                ", javaUri='" + javaUri + '\'' +
-                ", overriderUri='" + overriderUri + '\'' +
-                '}';
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         BrokerConfiguration that = (BrokerConfiguration) o;
-        return count == that.count &&
-                Double.compare(that.cpus, cpus) == 0 &&
+        return Double.compare(that.cpus, cpus) == 0 &&
                 Double.compare(that.mem, mem) == 0 &&
                 Double.compare(that.disk, disk) == 0 &&
                 Objects.equals(diskType, that.diskType) &&
@@ -162,6 +133,20 @@ public class BrokerConfiguration {
 
     @Override
     public int hashCode() {
-        return Objects.hash(count, cpus, mem, disk, diskType, kafkaUri, containerHookUri, javaUri, overriderUri);
+        return Objects.hash(cpus, mem, disk, diskType, kafkaUri, containerHookUri, javaUri, overriderUri);
+    }
+
+    @Override
+    public String toString() {
+        return "BrokerConfiguration{" +
+                "cpus=" + cpus +
+                ", mem=" + mem +
+                ", disk=" + disk +
+                ", diskType='" + diskType + '\'' +
+                ", kafkaUri='" + kafkaUri + '\'' +
+                ", containerHookUri='" + containerHookUri + '\'' +
+                ", javaUri='" + javaUri + '\'' +
+                ", overriderUri='" + overriderUri + '\'' +
+                '}';
     }
 }

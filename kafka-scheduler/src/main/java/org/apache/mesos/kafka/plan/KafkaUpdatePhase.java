@@ -24,7 +24,7 @@ public class KafkaUpdatePhase implements Phase {
       KafkaOfferRequirementProvider offerReqProvider) {
     this.configName = targetConfigName;
     this.config = targetConfig;
-    this.blocks = createBlocks(configName, config.getBrokerConfiguration().getCount(), kafkaState, offerReqProvider);
+    this.blocks = createBlocks(configName, config.getServiceConfiguration().getCount(), kafkaState, offerReqProvider);
     this.id = UUID.randomUUID();
   }
 

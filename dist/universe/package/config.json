@@ -26,15 +26,15 @@
             "type":"string",
             "default":"NODE"
           },
-          "plan-strategy":{
-            "description":"Broker placement strategy. See documentation. [INSTALL, STAGE]",
+          "phase-strategy":{
+            "description":"Broker rollout strategy. See documentation. [INSTALL, STAGE]",
             "type":"string",
             "default":"INSTALL"
           }
         },
         "required":[
           "placement-strategy",
-          "plan-strategy",
+          "phase-strategy",
           "role",
           "principal",
           "user"

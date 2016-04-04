@@ -5,7 +5,6 @@ import org.apache.mesos.Protos.Labels;
 import org.apache.mesos.Protos.Resource;
 import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.kafka.config.BrokerConfiguration;
-import org.apache.mesos.kafka.config.KafkaConfigService;
 import org.apache.mesos.kafka.config.KafkaSchedulerConfiguration;
 import org.apache.mesos.protobuf.CommandInfoBuilder;
 import org.apache.mesos.protobuf.LabelBuilder;

@@ -113,7 +113,7 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
   }
 
   private static PhaseStrategyFactory getPhaseStrategyFactory(KafkaSchedulerConfiguration config) {
-    String strategy = config.getServiceConfiguration().getPlanStrategy();
+    String strategy = config.getServiceConfiguration().getPhaseStrategy();
 
     switch (strategy) {
       case "INSTALL":

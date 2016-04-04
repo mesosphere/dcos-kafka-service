@@ -1,11 +1,11 @@
 {
   "assets": {
     "uris": {
-      "jre-8u72-linux-x64-tar-gz": "https://s3-eu-west-1.amazonaws.com/downloads.mesosphere.com/kafka/jre-8u72-linux-x64.tar.gz",
-      "kafka_2-10-0-9-0-1-tgz": "https://s3-eu-west-1.amazonaws.com/downloads.mesosphere.com/kafka/kafka_2.10-0.9.0.1.tgz",
-      "kafka-scheduler": "{{artifact-dir}}/kafka-scheduler-0.2.4-uber.jar",
-      "kafka-config-overrider": "{{artifact-dir}}/kafka-config-overrider-0.2.4-uber.jar",
-      "container-hook": "{{artifact-dir}}/container-hook-0.2.4.tgz"
+      "jre-tar-gz": "https://s3-eu-west-1.amazonaws.com/downloads.mesosphere.com/kafka/jre-8u72-linux-x64.tar.gz",
+      "kafka_tgz": "https://s3-eu-west-1.amazonaws.com/downloads.mesosphere.com/kafka/kafka_2.10-0.9.0.1.tgz",
+      "scheduler-zip": "{{artifact-dir}}/scheduler.zip",
+      "overrider-zip": "{{artifact-dir}}/overrider.zip",
+      "container-hook-tgz": "{{artifact-dir}}/container-hook-0.2.4.tgz"
     }
   },
   "images": {

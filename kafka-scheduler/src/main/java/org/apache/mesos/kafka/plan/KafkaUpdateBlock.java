@@ -83,10 +83,12 @@ public class KafkaUpdateBlock implements Block {
     log.info("Starting block: " + getName() + " with status: " + getStatus());
 
     if(!isPending()) {
+      log.info("Block is not pending. No offer requirement.");
       return null;
     }
 
     if (taskIsRunning() || taskIsStaging()) {
+      log.info("Adding to restart task list. Block: " + getName() + " Status: " + getTaskStatus());
       KafkaScheduler.restartTasks(taskIdsToStrings(getUpdateIds()));
       return null;
     }
@@ -156,13 +158,15 @@ public class KafkaUpdateBlock implements Block {
 
     if (taskInfo != null) {
       String configName = OfferUtils.getConfigName(taskInfo);
-
+      log.info("TargetConfigName: " + targetConfigName + " currentConfigName: " + configName);
       if (configName.equals(targetConfigName)) {
         setStatus(Status.Complete);
       } else {
         setStatus(Status.Pending);
       }
     }
+
+    log.info("Status initialized as " + getStatus() + " for block: " + getName());
   }
 
   private synchronized TaskInfo getTaskInfo() {

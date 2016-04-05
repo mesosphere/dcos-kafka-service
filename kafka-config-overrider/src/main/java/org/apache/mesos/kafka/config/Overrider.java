@@ -1,90 +1,49 @@
 package org.apache.mesos.kafka.config;
 
-import com.google.common.base.CaseFormat;
-import io.dropwizard.Application;
-import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
-import io.dropwizard.configuration.SubstitutingSourceProvider;
-import io.dropwizard.java8.Java8Bundle;
-import io.dropwizard.setup.Bootstrap;
-import io.dropwizard.setup.Environment;
-import org.apache.commons.exec.CommandLine;
-import org.apache.commons.exec.DefaultExecutor;
-import org.apache.commons.exec.PumpStreamHandler;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+
+import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecutor;
+import org.apache.commons.exec.PumpStreamHandler;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import org.apache.mesos.config.ConfigProperty;
 
 /**
  * Overrides Kafka properties files.
  * Fetches values it will override from the configuration indicated stored in ZK.
  * Produces a non-zero exit code if it fails to fetch.
  */
-public final class Overrider extends Application<DropwizardConfiguration> {
+public final class Overrider {
   private static final Log log = LogFactory.getLog(Overrider.class);
+  private static KafkaConfigService envConfig = KafkaConfigService.getEnvConfig();
+  private static String overridePrefix = envConfig.getOverridePrefix();
 
-  private static KafkaConfigState configState;
+  private static KafkaConfigState configState = new KafkaConfigState(
+      envConfig.getFrameworkName(), envConfig.getZookeeperAddress(), envConfig.getZkRootPrefix());
 
-  private String configId;
-  private KafkaSchedulerConfiguration configuration;
-
-  public static void main(String[] args) throws Exception {
-    new Overrider().run(args);
-  }
-
-  protected Overrider() {
-    super();
-  }
-
-  @Override
-  public String getName() {
-    return "DCOS Kafka Service";
-  }
-
-  @Override
-  public void initialize(Bootstrap<DropwizardConfiguration> bootstrap) {
-    super.initialize(bootstrap);
-
-    final EnvironmentVariableSubstitutor environmentVariableSubstitutor
-            = new EnvironmentVariableSubstitutor(false, true);
-
-    bootstrap.addBundle(new Java8Bundle());
-    bootstrap.setConfigurationSourceProvider(
-            new SubstitutingSourceProvider(
-                    bootstrap.getConfigurationSourceProvider(),
-                    environmentVariableSubstitutor));
-  }
-
-  @Override
-  public void run(DropwizardConfiguration configEnv, Environment environment) throws Exception {
-    this.configuration = configEnv.getSchedulerConfiguration();
-    configId = System.getenv().get("CONFIG_ID");
-
-    configState = new KafkaConfigState(
-            configuration.getServiceConfiguration().getName(), configuration.getKafkaConfiguration().getZkAddress(), "/");
-
-    if (StringUtils.isBlank(configId)) {
-      log.error("Require configId. Please set CONFIG_ID env var correctly.");
+  public static void main(String[] args) {
+    if (args.length != 1) {
+      log.fatal("Expected a single argument, received: " + Arrays.toString(args));
       System.exit(1);
     }
 
-    log.info("" + configEnv);
-
-    KafkaSchedulerConfiguration configZk = fetchConfig(configId);
-    Map<String, String> overrides = getOverrides(configZk, configuration);
+    KafkaConfigService config = fetchConfig(args[0]);
+    Map<String, String> overrides = getOverrides(config);
     UpdateProperties(overrides);
-    System.exit(0);
   }
 
-  private void UpdateProperties(Map<String, String> overrides) {
+  private static void UpdateProperties(Map<String, String> overrides) {
     String serverPropertiesFileName =
-        configuration.getKafkaConfiguration().getKafkaSandboxPath() + "/config/server.properties";
+        envConfig.getKafkaSandboxPath() + "/config/server.properties";
 
     log.info("Updating config file: " + serverPropertiesFileName);
 
@@ -98,7 +57,7 @@ public final class Overrider extends Application<DropwizardConfiguration> {
 
       FileOutputStream out = new FileOutputStream(serverPropertiesFileName);
       for (Map.Entry<String, String> override : overrides.entrySet()) {
-        String key = convertKey(override.getKey());
+        String key = override.getKey();
         String value = override.getValue();
         log.info("Overriding key: " + key + " value: " + value);
         props.setProperty(key, value);
@@ -112,30 +71,34 @@ public final class Overrider extends Application<DropwizardConfiguration> {
     }
   }
 
-  private static String convertKey(String key) {
-    key = CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, key);
-    key = key.replace('_', '.');
-    return key;
-  }
-
-  private static KafkaSchedulerConfiguration fetchConfig(String configName) {
+  private static KafkaConfigService fetchConfig(String configName) {
     log.info("Fetching configuration: " + configName);
     return configState.fetch(configName);
   }
 
-  private static Map<String, String> getOverrides(
-          KafkaSchedulerConfiguration fromZk,
-          KafkaSchedulerConfiguration fromEnv) {
+  private static Map<String, String> getOverrides(KafkaConfigService config) {
     Map<String, String> overrides = new HashMap<>();
+    for (Map<String, ConfigProperty> configNamespace : config.getNsPropertyMap().values()) {
+      for (ConfigProperty configProperty : configNamespace.values()) {
+        String key = configProperty.getName();
+        if (key.startsWith(overridePrefix)) {
+          key = convertKey(key);
+          String value = configProperty.getValue();
+          overrides.put(key, value);
+        }
+      }
+    }
 
-    final Map<String, String> overridesFromZk = fromZk.getKafkaConfiguration().getOverrides();
-    log.info("Overrides from ZK: " + overridesFromZk);
-    overrides.putAll(overridesFromZk);
-    final Map<String, String> overridesFromEnv = fromEnv.getKafkaConfiguration().getOverrides();
-    log.info("Overrides from ENV: " + overridesFromEnv);
-    overrides.putAll(overridesFromEnv);
+    Map<String, String> env = System.getenv();
+    for (String key : env.keySet()) {
+      if (key.startsWith(overridePrefix)) {
+        String value = env.get(key);
+        key = convertKey(key);
+        overrides.put(key, value);
+      }
+    }
 
-    if (fromZk.getKafkaConfiguration().isKafkaAdvertiseHostIp()) {
+    if (config.advertisedHost()) {
       String ip = getIp();
       overrides.put("advertised.host.name", ip);
     } else {
@@ -143,6 +106,13 @@ public final class Overrider extends Application<DropwizardConfiguration> {
     }
 
     return overrides;
+  }
+
+  private static String convertKey(String key) {
+    key = key.substring(key.lastIndexOf(overridePrefix) + overridePrefix.length());
+    key = key.toLowerCase();
+    key = key.replace('_', '.');
+    return key;
   }
 
   private static String getIp() {

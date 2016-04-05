@@ -76,7 +76,7 @@ public class ClusterController {
 
       for (String configName : configState.getConfigNames()) {
         if (configName.equals(configurationName)) {
-          JSONObject configObj = new JSONObject(configState.fetch(configName));
+          JSONObject configObj = new JSONObject(configState.fetch(configName).getNsPropertyMap());
           return Response.ok(configObj.toString(), MediaType.APPLICATION_JSON).build();
         } else {
           log.warn(configName + " doesn't equal " + configurationName);
@@ -98,7 +98,7 @@ public class ClusterController {
     try {
       log.info("Attempting to fetch config: " + configState.getTargetName());
 
-      JSONObject configObj = new JSONObject(configState.getTargetConfig());
+      JSONObject configObj = new JSONObject(configState.getTargetConfig().getNsPropertyMap());
       return Response.ok(configObj.toString(), MediaType.APPLICATION_JSON).build();
 
     } catch (Exception ex) {

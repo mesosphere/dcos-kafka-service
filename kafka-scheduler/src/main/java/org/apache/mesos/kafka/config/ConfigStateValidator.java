@@ -1,9 +1,16 @@
 package org.apache.mesos.kafka.config;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import java.util.*;
+import org.apache.mesos.config.ConfigProperty;
+import org.apache.mesos.config.ConfigurationChangeNamespaces;
 
 public class ConfigStateValidator {
 
@@ -53,26 +60,41 @@ public class ConfigStateValidator {
     INT_VALUES_THAT_CANNOT_DECREASE.add("BROKER_COUNT");
   }
 
-  public ConfigStateValidator() {
+  private final ConfigurationChangeNamespaces namespaces;
+
+  public ConfigStateValidator(ConfigurationChangeNamespaces namespaces) {
+    this.namespaces = namespaces;
   }
 
   /**
    * Checks that the provided configuration change is valid.
+   * Requires the raw underlying configs, because some values to be checked may be filtered out by
+   * {@link ConfigurationChangeDetector}.
    *
    * @throws ValidationException if the configuration change isn't allowed
    */
   public void validateConfigChange(
-      KafkaSchedulerConfiguration oldConfig,
-      KafkaSchedulerConfiguration newConfig)
+      Map<String, Map<String, ConfigProperty>> oldConfig,
+      Map<String, Map<String, ConfigProperty>> newConfig)
           throws ValidationException {
     List<ValidationError> errors = new ArrayList<>();
-
-    final int oldBrokerCount = oldConfig.getServiceConfiguration().getCount();
-    final int newBrokerCount = newConfig.getServiceConfiguration().getCount();
-
-    if (newBrokerCount < oldBrokerCount) {
-      errors.add(new ValidationError("BROKER_COUNT",
-              "Decreasing this value (from " + oldBrokerCount + " to " + newBrokerCount + ") is not supported."));
+    final Map<String, ConfigProperty> oldRoot = oldConfig.get(namespaces.getRoot()),
+        newRoot = newConfig.get(namespaces.getRoot());
+    for (String checkKey : INT_VALUES_THAT_CANNOT_DECREASE) {
+      final ConfigProperty oldProperty = oldRoot.get(checkKey),
+          newProperty = newRoot.get(checkKey);
+      log.info("Compare config value " + checkKey + ": old=[" + oldProperty + "] new=[" + newProperty + "]");
+      if (oldProperty == null || newProperty == null) {
+        log.info("One version of the config is missing " + checkKey + ", skipping check");
+        continue;
+      }
+      if (Integer.parseInt(newProperty.getValue()) >= Integer.parseInt(oldProperty.getValue())) {
+        log.info("Value is same or increasing, OK!");
+      } else {
+        log.error("Refusing to decrease value from " + oldProperty.getValue() + " to " + newProperty.getValue() + ": " + checkKey);
+        errors.add(new ValidationError(checkKey,
+            "Decreasing this value (from " + oldProperty.getValue() + " to " + newProperty.getValue() + ") is not supported."));
+      }
     }
 
     // ... any other in-framework change validation goes here ...

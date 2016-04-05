@@ -204,7 +204,7 @@ $ dcos package uninstall --app-id=kafka kafka
 Then, use the [framework cleaner script](https://github.com/mesosphere/framework-cleaner) to remove your Kafka instance from Zookeeper and to destroy all data associated with it. The script require several arguments, the values for which are derived from your framework name:
 
 - `framework-role` is `<framework-name>-role`.
-- `framework-principle` is `<framework-name>-principal.
+- `framework-principal` is `<framework-name>-principal`.
 - `zk_path` is `<framework-name>`.
 
 ## Configuring

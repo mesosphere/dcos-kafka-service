@@ -1,27 +1,27 @@
 {
-  "id": "{{kafka.framework-name}}",
-  "cpus": {{kafka.app.cpus}},
-  "mem": {{kafka.app.mem}},
-  "instances": {{kafka.app.instances}},
-  "cmd": "export PATH=$PATH:$MESOS_SANDBOX/jre/bin && java -Xmx{{kafka.app.heap-mb}}m -jar kafka-scheduler*.jar",
-  "labels": {
-    "DCOS_PACKAGE_FRAMEWORK_NAME": "{{service.name}}"
+  "id": "{{service.name}}",
+  "cpus": 1.0,
+  "mem": 1230,
+  "instances": 1,
+  "cmd": "export PATH=$PATH:$MESOS_SANDBOX/jre/bin && java -Xmx1024m -jar kafka-scheduler*.jar",
+  "labels": {      
+    "DCOS_PACKAGE_FRAMEWORK_NAME": "{{service.name}}"      
   },
   "env": {
-    "LD_LIBRARY_PATH": "{{kafka.ld-library-path}}",
-    "FRAMEWORK_NAME": "{{kafka.framework-name}}",
-    "USER": "{{kafka.user}}",
-    "PLACEMENT_STRATEGY": "{{kafka.placement-strategy}}",
-    "PLAN_STRATEGY": "{{kafka.plan-strategy}}",
-    "BROKER_COUNT": "{{kafka.broker-count}}",
-    "BROKER_CPUS": "{{kafka.cpus}}",
-    "BROKER_MEM": "{{kafka.mem}}",
-    "BROKER_DISK": "{{kafka.disk}}",
-    "KAFKA_VER_NAME": "{{kafka.version_name}}",
-    "KAFKA_URI": "{{resource.assets.uris.kafka_2-10-0-9-0-1-tgz}}",
-    "CONTAINER_HOOK_URI": "{{resource.assets.uris.container-hook}}",
-    "OVERRIDER_URI": "{{resource.assets.uris.kafka-config-overrider}}",
-    "JAVA_URI": "{{resource.assets.uris.jre-8u72-linux-x64-tar-gz}}",
+    "LD_LIBRARY_PATH": "/opt/mesosphere/lib",
+    "FRAMEWORK_NAME": "{{service.name}}",
+    "USER": "{{service.user}}",
+    "PLACEMENT_STRATEGY": "{{service.placement-strategy}}",
+    "PLAN_STRATEGY": "{{service.plan-strategy}}",
+    "BROKER_COUNT": "{{brokers.count}}",
+    "BROKER_CPUS": "{{brokers.cpus}}",
+    "BROKER_MEM": "{{brokers.mem}}",
+    "BROKER_DISK": "{{brokers.disk}}",
+    "KAFKA_VER_NAME": "kafka_2.10-0.9.0.1",
+    "KAFKA_URI": "{{resource.assets.uris.kafka_tgz}}",
+    "CONTAINER_HOOK_URI": "{{resource.assets.uris.container-hook-tgz}}",
+    "OVERRIDER_URI": "{{resource.assets.uris.kafka-config-overrider-jar}}",
+    "JAVA_URI": "{{resource.assets.uris.jre-tar-gz}}",
     "KAFKA_ADVERTISE_HOST_IP" : "{{kafka.kafka_advertise_host_ip}}",
     "KAFKA_OVERRIDE_RESERVED_BROKER_MAX_ID": "{{kafka.kafka_override_reserved_broker_max_id}}",
     "KAFKA_OVERRIDE_OFFSETS_TOPIC_COMPRESSION_CODEC": "{{kafka.kafka_override_offsets_topic_compression_codec}}",
@@ -108,14 +108,14 @@
     "KAFKA_OVERRIDE_COMPRESSION_TYPE": "{{kafka.kafka_override_compression_type}}"
   },
   "uris": [
-    "{{resource.assets.uris.jre-8u72-linux-x64-tar-gz}}",
-    "{{resource.assets.uris.kafka-scheduler}}",
-    "{{resource.assets.uris.kafka_2-10-0-9-0-1-tgz}}"
+    "{{resource.assets.uris.jre-tar-gz}}",
+    "{{resource.assets.uris.kafka-scheduler-jar}}",
+    "{{resource.assets.uris.kafka_tgz}}"
   ],
   "healthChecks": [
     {
       "protocol": "COMMAND",
-      "command": { "value": "export PATH=$PATH:$MESOS_SANDBOX/jre/bin && ./kafka_2.10-0.9.0.1/bin/kafka-topics.sh --zookeeper master.mesos:2181/{{kafka.framework-name}} --describe --under-replicated-partitions | wc -l | { read count; echo Under replicated partition count = $count; exit $count; }" },
+      "command": { "value": "export PATH=$PATH:$MESOS_SANDBOX/jre/bin && ./kafka_2.10-0.9.0.1/bin/kafka-topics.sh --zookeeper master.mesos:2181/{{service.name}} --describe --under-replicated-partitions | wc -l | { read count; echo Under replicated partition count = $count; exit $count; }" },
       "gracePeriodSeconds": 300,
       "intervalSeconds": 60,
       "timeoutSeconds": 60,

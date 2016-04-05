@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.UUID;
 
 import org.apache.mesos.kafka.config.KafkaConfigService;
-import org.apache.mesos.kafka.config.KafkaSchedulerConfiguration;
 import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
 import org.apache.mesos.kafka.state.KafkaStateService;
 import org.apache.mesos.scheduler.plan.Block;
@@ -14,17 +13,17 @@ import org.apache.mesos.scheduler.plan.Phase;
 public class KafkaUpdatePhase implements Phase {
   private final List<Block> blocks;
   private final String configName;
-  private final KafkaSchedulerConfiguration config;
+  private final KafkaConfigService config;
   private final UUID id;
 
   public KafkaUpdatePhase(
       String targetConfigName,
-      KafkaSchedulerConfiguration targetConfig,
+      KafkaConfigService targetConfig,
       KafkaStateService kafkaState,
       KafkaOfferRequirementProvider offerReqProvider) {
     this.configName = targetConfigName;
     this.config = targetConfig;
-    this.blocks = createBlocks(configName, config.getServiceConfiguration().getCount(), kafkaState, offerReqProvider);
+    this.blocks = createBlocks(configName, config.getBrokerCount(), kafkaState, offerReqProvider);
     this.id = UUID.randomUUID();
   }
 

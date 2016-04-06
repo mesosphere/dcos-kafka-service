@@ -46,18 +46,6 @@ public class BrokerController {
     }
   }
 
-  @GET
-  @Path("/{id}")
-  public Response broker(@PathParam("id") String id) {
-    try {
-      JSONObject broker = state.getBroker(id);
-      return Response.ok(broker.toString(), MediaType.APPLICATION_JSON).build();
-    } catch (Exception ex) {
-      log.error("Failed to fetch broker: " + id + " with exception: " + ex);
-      return Response.serverError().build();
-    }
-  }
-
   @PUT
   @Path("/{id}")
   public Response killBrokers(

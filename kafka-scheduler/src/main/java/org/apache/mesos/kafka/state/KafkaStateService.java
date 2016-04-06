@@ -161,10 +161,6 @@ public class KafkaStateService implements Observer, TaskStatusProvider {
     return getIds(zkRoot + "/brokers/ids");
   }
 
-  public JSONObject getBroker(String id) throws Exception {
-    return getElement(zkRoot + "/brokers/ids/" + id);
-  }
-
   public List<String> getBrokerEndpoints() throws Exception {
     String brokerPath = zkRoot + "/brokers/ids";
     List<String> endpoints = new ArrayList<String>();

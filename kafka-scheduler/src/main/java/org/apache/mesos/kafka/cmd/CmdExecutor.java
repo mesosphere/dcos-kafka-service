@@ -189,26 +189,32 @@ public class CmdExecutor {
 
     String stdout = streamToString(process.getInputStream());
     String stderr = streamToString(process.getErrorStream());
+    log.warn(String.format("stdout:%n%s", stdout));
+    log.warn(String.format("stderr:%n%s", stderr));
+    String message = createOutputMessage(stdout, stderr);
 
-    String message;
     if (exitCode == 0) {
       log.info(String.format(
         "Command succeeded in %dms: %s",
         stopWatch.getTime(), StringUtils.join(cmd, " ")));
-      message = stdout;
     } else {
       log.warn(String.format(
         "Command failed with code=%d in %dms: %s",
         exitCode, stopWatch.getTime(), StringUtils.join(cmd, " ")));
-      log.warn(String.format("stdout:\n%s", stdout));
-      log.warn(String.format("stderr:\n%s", stderr));
-      message = "Error: " + stderr;
     }
 
     JSONObject obj = new JSONObject();
     obj.put("message", message);
 
     return obj;
+  }
+
+  private static String createOutputMessage(String stdout, String stderr) {
+    String message = String.format("Output: %s", stdout);
+    if (StringUtils.isNotBlank(stderr)) {
+      message += String.format(" Error: %s", stderr);
+    }
+    return message;
   }
 
   private static String streamToString(InputStream stream) throws Exception {

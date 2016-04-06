@@ -1,25 +1,21 @@
 package org.apache.mesos.kafka.cmd;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-
-import javax.ws.rs.core.MultivaluedMap;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import org.apache.mesos.kafka.state.KafkaStateService;
 import org.apache.mesos.kafka.config.KafkaConfigService;
-
+import org.apache.mesos.kafka.state.KafkaStateService;
 import org.json.JSONArray;
 import org.json.JSONObject;
+
+import javax.ws.rs.core.MultivaluedMap;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public class CmdExecutor {
   private static final Log log = LogFactory.getLog(CmdExecutor.class);
@@ -84,7 +80,7 @@ public class CmdExecutor {
   public List<String> getListOverrides(MultivaluedMap<String, String> overrides) {
     List<String> output = new ArrayList<String>();
 
-    for (Map.Entry<String,List<String>> override : overrides.entrySet()) {
+    for (Map.Entry<String, List<String>> override : overrides.entrySet()) {
       output.add("--" + override.getKey());
       output.add(override.getValue().get(0));
     }
@@ -194,22 +190,23 @@ public class CmdExecutor {
     String stdout = streamToString(process.getInputStream());
     String stderr = streamToString(process.getErrorStream());
 
+    String message;
     if (exitCode == 0) {
       log.info(String.format(
-          "Command succeeded in %dms: %s",
-          stopWatch.getTime(), StringUtils.join(cmd, " ")));
+        "Command succeeded in %dms: %s",
+        stopWatch.getTime(), StringUtils.join(cmd, " ")));
+      message = stdout;
     } else {
       log.warn(String.format(
-          "Command failed with code=%d in %dms: %s",
-          exitCode, stopWatch.getTime(), StringUtils.join(cmd, " ")));
+        "Command failed with code=%d in %dms: %s",
+        exitCode, stopWatch.getTime(), StringUtils.join(cmd, " ")));
       log.warn(String.format("stdout:\n%s", stdout));
       log.warn(String.format("stderr:\n%s", stderr));
+      message = "Error: " + stderr;
     }
 
     JSONObject obj = new JSONObject();
-    obj.put("stdout", stdout);
-    obj.put("stderr", stderr);
-    obj.put("exit_code", exitCode);
+    obj.put("message", message);
 
     return obj;
   }
@@ -217,10 +214,10 @@ public class CmdExecutor {
   private static String streamToString(InputStream stream) throws Exception {
     BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
     StringBuilder builder = new StringBuilder();
-    String line = null;
-    while ( (line = reader.readLine()) != null) {
-         builder.append(line);
-            builder.append(System.getProperty("line.separator"));
+    String line;
+    while ((line = reader.readLine()) != null) {
+      builder.append(line);
+      builder.append(System.getProperty("line.separator"));
     }
 
     return builder.toString();

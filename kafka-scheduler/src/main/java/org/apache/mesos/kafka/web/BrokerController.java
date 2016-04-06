@@ -62,23 +62,23 @@ public class BrokerController {
   @Path("/{id}")
   public Response killBrokers(
       @PathParam("id") String id,
-      @QueryParam("reschedule") String reschedule) {
+      @QueryParam("replace") String replace) {
 
     try {
       List<String> taskIds =
         Arrays.asList(state.getTaskIdForBroker(Integer.parseInt(id)));
-      return killBrokers(taskIds, reschedule);
+      return killBrokers(taskIds, replace);
     } catch (Exception ex) {
       log.error("Failed to kill brokers with exception: " + ex);
       return Response.serverError().build();
     }
   }
 
-  private Response killBrokers(List<String> taskIds, String reschedule) {
+  private Response killBrokers(List<String> taskIds, String replace) {
     try {
-      boolean resched = Boolean.parseBoolean(reschedule);
+      boolean replaced = Boolean.parseBoolean(replace);
 
-      if (resched) {
+      if (replaced) {
         KafkaScheduler.rescheduleTasks(taskIds);
       } else {
         KafkaScheduler.restartTasks(taskIds);

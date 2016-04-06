@@ -127,7 +127,7 @@ $ dcos kafka connection
 Step 4. Produce and consume data.
 
 ```bash
-$ dcos node ssh --master-proxy --master
+$ dcos node ssh --master-proxy --leader
 core@ip-10-0-6-153 ~ $ docker run -it mesosphere/kafka-client
 root@7bc0e88cfa52:/kafka_2.10-0.8.2.2/bin# ./kafka-console-producer.sh --broker-list ip-10-0-3-230.us-west-2.compute.internal:9092 --topic test
 This is a message
@@ -512,7 +512,7 @@ $ dcos kafka connection
     "zookeeper": "master.mesos:2181/kafka",
     "zookeeper_convenience": "--zookeeper master.mesos:2181/kafka"
 }
-$ dcos node ssh --master-proxy --master
+$ dcos node ssh --master-proxy --leader
 core@ip-10-0-6-153 ~ $ docker run -it mesosphere/kafka-client
 root@7bc0e88cfa52:/kafka_2.10-0.8.2.2/bin# ./kafka-console-producer.sh --broker-list ip-10-0-3-230.us-west-2.compute.internal:9092 --topic test
 This is a message
@@ -689,7 +689,7 @@ $ dcos kafka connection
    "zookeeper": "master.mesos:2181/kafka",
    "zookeeper_convenience": "--zookeeper master.mesos:2181/kafka"
 }
-$ dcos node ssh --master-proxy --master
+$ dcos node ssh --master-proxy --leader
 core@ip-10-0-6-153 ~ $ docker run -it mesosphere/kafka-client
 root@7bc0e88cfa52:/kafka_2.10-0.8.2.2/bin# ./kafka-console-producer.sh --broker-list ip-10-0-3-230.us-west-2.compute.internal:9092 --topic test
 This is a message
@@ -730,39 +730,6 @@ GET /service/kafka/v1/brokers HTTP/1.1
        "1",
        "2"
    ]
-}
-```
-#### View Broker Details
-
-``` bash
-$ dcos kafka --framework-name=kafka broker describe 0
-{
-   "endpoints": [
-       "PLAINTEXT://w1.dcos:9092"
-   ],
-   "host": "w1.dcos",
-   "jmx_port": -1,
-   "port": 9092,
-   "timestamp": "1454462821420",
-   "version": 2
-}
-
-```
-
-``` bash
-$ curl -X GET "$DCOS_URI/service/kafka/v1/brokers/0"
-GET /service/kafka/v1/brokers/0 HTTP/1.1
-[...]
-
-{
-   "endpoints": [
-       "PLAINTEXT://worker12398:9092"
-   ],
-   "host": "worker12398",
-   "jmx_port": -1,
-   "port": 9092,
-   "timestamp": "1453854226816",
-   "version": 2
 }
 ```
 
@@ -830,105 +797,6 @@ POST /service/kafka/v1/topics?replication=3&name=topic1&partitions=3 HTTP/1.1
    "exit_code": 0,
    "stderr": "",
    "stdout": "Created topic \"topic1\".\n"
-}
-```
-
-#### View Topic Details
-
-``` bash
-$ dcos kafka --framework-name=kafka topic describe topic1
-{
-   "partitions": [
-       {
-           "0": {
-               "controller_epoch": 1,
-               "isr": [
-                   0,
-                   1,
-                   2
-               ],
-               "leader": 0,
-               "leader_epoch": 0,
-               "version": 1
-           }
-       },
-       {
-           "1": {
-               "controller_epoch": 1,
-               "isr": [
-                   1,
-                   2,
-                   0
-               ],
-               "leader": 1,
-               "leader_epoch": 0,
-               "version": 1
-           }
-       },
-       {
-           "2": {
-               "controller_epoch": 1,
-               "isr": [
-                   2,
-                   0,
-                   1
-               ],
-               "leader": 2,
-               "leader_epoch": 0,
-               "version": 1
-           }
-       }
-   ]
-}
-```
-
-``` bash
-$ curl -X GET "$DCOS_URI/service/kafka/v1/topics/topic1"
-GET /service/kafka/v1/topics/topic1 HTTP/1.1
-[...]
-
-{
-   "partitions": [
-       {
-           "0": {
-               "controller_epoch": 1,
-               "isr": [
-                   0,
-                   1,
-                   2
-               ],
-               "leader": 0,
-               "leader_epoch": 0,
-               "version": 1
-           }
-       },
-       {
-           "1": {
-               "controller_epoch": 1,
-               "isr": [
-                   1,
-                   2,
-                   0
-               ],
-               "leader": 1,
-               "leader_epoch": 0,
-               "version": 1
-           }
-       },
-       {
-           "2": {
-               "controller_epoch": 1,
-               "isr": [
-                   2,
-                   0,
-                   1
-               ],
-               "leader": 2,
-               "leader_epoch": 0,
-               "version": 1
-           }
-       }
-   ]
 }
 ```
 

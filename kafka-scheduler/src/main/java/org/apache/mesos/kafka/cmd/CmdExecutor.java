@@ -126,7 +126,8 @@ public class CmdExecutor {
     cmd.add("--broker-list");
     cmd.add(brokers);
 
-    String stdout = (String) runCmd(cmd).get("stdout");
+    String stdout = (String) runCmd(cmd).get("message");
+    stdout = stdout.substring("Output: ".length());
     return getPartitions(stdout);
   }
 
@@ -210,9 +211,15 @@ public class CmdExecutor {
   }
 
   private static String createOutputMessage(String stdout, String stderr) {
-    String message = String.format("Output: %s", stdout);
-    if (StringUtils.isNotBlank(stderr)) {
-      message += String.format(" Error: %s", stderr);
+    String message = "";
+
+    if (StringUtils.isNotBlank(stdout)) {
+      message += String.format("Output: %s", stdout);
+
+      // error only if we have stdout
+      if (StringUtils.isNotBlank(stderr)) {
+        message += String.format(" Error: %s", stderr);
+      }
     }
     return message;
   }

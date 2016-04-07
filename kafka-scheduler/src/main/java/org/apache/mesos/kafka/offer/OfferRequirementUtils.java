@@ -1,41 +1,40 @@
 package org.apache.mesos.kafka.offer;
 
 import com.google.common.base.Joiner;
+import org.apache.mesos.Protos.Labels;
+import org.apache.mesos.Protos.Resource;
+import org.apache.mesos.Protos.TaskInfo;
+import org.apache.mesos.kafka.config.KafkaConfigService;
+import org.apache.mesos.protobuf.CommandInfoBuilder;
+import org.apache.mesos.protobuf.LabelBuilder;
+import org.apache.mesos.protobuf.TaskInfoBuilder;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.mesos.kafka.config.KafkaConfigService;
-
-import org.apache.mesos.protobuf.CommandInfoBuilder;
-import org.apache.mesos.protobuf.LabelBuilder;
-import org.apache.mesos.protobuf.ResourceBuilder;
-import org.apache.mesos.protobuf.TaskInfoBuilder;
-
-import org.apache.mesos.Protos.Labels;
-import org.apache.mesos.Protos.Resource;
-import org.apache.mesos.Protos.TaskInfo;
-
+/**
+ * Utility for working with Offer Requirements for Kafka.
+ */
 public class OfferRequirementUtils {
 
   public static String getKafkaStartCmd(KafkaConfigService config) {
     return String.format(
-        "$MESOS_SANDBOX/%1$s/bin/kafka-server-start.sh " +
+      "$MESOS_SANDBOX/%1$s/bin/kafka-server-start.sh " +
         "$MESOS_SANDBOX/%1$s/config/server.properties " +
         "$CONTAINER_HOOK_FLAGS",
-        config.getKafkaVersionName());
+      config.getKafkaVersionName());
   }
 
   public static TaskInfo getTaskInfo(
-      String configName,
-      KafkaConfigService config,
-      List<Resource> resources,
-      int brokerId,
-      String taskId,
-      String containerPath,
-      Long port) {
+    String configName,
+    KafkaConfigService config,
+    List<Resource> resources,
+    int brokerId,
+    String taskId,
+    String containerPath,
+    Long port) {
 
     String brokerName = OfferUtils.idToName(brokerId);
     List<String> commands = new ArrayList<>();
@@ -69,8 +68,8 @@ public class OfferRequirementUtils {
       .build();
 
     CommandInfoBuilder commandInfoBuilder = new CommandInfoBuilder()
-        .addEnvironmentMap(taskEnv)
-        .setCommand(command);
+      .addEnvironmentMap(taskEnv)
+      .setCommand(command);
     for (String resourceUri : config.getBrokerResourceUris()) {
       commandInfoBuilder.addUri(resourceUri);
     }

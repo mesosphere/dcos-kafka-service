@@ -1,26 +1,22 @@
 package org.apache.mesos.kafka.web;
 
-import java.util.Arrays;
-import java.util.List;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.mesos.kafka.scheduler.KafkaScheduler;
+import org.apache.mesos.kafka.state.KafkaStateService;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
-
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import org.apache.mesos.kafka.scheduler.KafkaScheduler;
-import org.apache.mesos.kafka.state.KafkaStateService;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
+import javax.ws.rs.core.Response;
+import java.util.Arrays;
+import java.util.List;
 
 @Path("/v1/brokers")
 @Produces("application/json")
@@ -49,8 +45,8 @@ public class BrokerController {
   @PUT
   @Path("/{id}")
   public Response killBrokers(
-      @PathParam("id") String id,
-      @QueryParam("replace") String replace) {
+    @PathParam("id") String id,
+    @QueryParam("replace") String replace) {
 
     try {
       List<String> taskIds =

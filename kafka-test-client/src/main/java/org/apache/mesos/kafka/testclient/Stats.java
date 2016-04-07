@@ -1,10 +1,10 @@
 package org.apache.mesos.kafka.testclient;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class Stats {
   public static class Values {
@@ -87,13 +87,13 @@ public class Stats {
       lastPrintErrors = errorsTotal;
 
       LOGGER.info("STATS RECENT: {} messages, {} messages/sec, {} bytes, {} bytes/sec, {} errors, {} errors/sec",
-          messagesSinceLastPrint, messagesSinceLastPrint / timeSinceLastPrintSecs,
-          bytesSinceLastPrint, bytesSinceLastPrint / timeSinceLastPrintSecs,
-          errorsSinceLastPrint, errorsSinceLastPrint / timeSinceLastPrintSecs);
+        messagesSinceLastPrint, messagesSinceLastPrint / timeSinceLastPrintSecs,
+        bytesSinceLastPrint, bytesSinceLastPrint / timeSinceLastPrintSecs,
+        errorsSinceLastPrint, errorsSinceLastPrint / timeSinceLastPrintSecs);
       LOGGER.info("STATS TOTAL: {} messages, {} messages/sec, {} bytes, {} bytes/sec, {} errors, {} errors/sec",
-          messagesTotal, messagesTotal / timeSinceStartSecs,
-          bytesTotal, bytesTotal / timeSinceStartSecs,
-          errorsTotal, errorsTotal / timeSinceStartSecs);
+        messagesTotal, messagesTotal / timeSinceStartSecs,
+        bytesTotal, bytesTotal / timeSinceStartSecs,
+        errorsTotal, errorsTotal / timeSinceStartSecs);
     }
   }
 

@@ -1,16 +1,18 @@
 package org.apache.mesos.kafka.offer;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.mesos.Protos.SlaveID;
+import org.apache.mesos.Protos.TaskInfo;
+import org.apache.mesos.kafka.state.KafkaStateService;
+import org.apache.mesos.offer.PlacementStrategy;
+
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import org.apache.mesos.kafka.state.KafkaStateService;
-import org.apache.mesos.offer.PlacementStrategy;
-import org.apache.mesos.Protos.SlaveID;
-import org.apache.mesos.Protos.TaskInfo;
-
+/**
+ * Strategy that separates the tasks to separate nodes.
+ */
 public class NodePlacementStrategy implements PlacementStrategy {
   private static final Log log = LogFactory.getLog(NodePlacementStrategy.class);
 
@@ -25,7 +27,7 @@ public class NodePlacementStrategy implements PlacementStrategy {
 
     try {
       agents = getAgentsToAvoidInternal(taskInfo);
-    } catch(Exception ex) {
+    } catch (Exception ex) {
       log.error("Failed to retrieve TaskInfos");
     }
 

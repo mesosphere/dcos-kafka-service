@@ -1,21 +1,21 @@
 package org.apache.mesos.kafka.config;
 
+import edu.umd.cs.findbugs.annotations.SuppressWarnings;
+import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecutor;
+import org.apache.commons.exec.PumpStreamHandler;
+import org.apache.commons.lang3.CharEncoding;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.mesos.config.ConfigProperty;
+
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-
-import org.apache.commons.exec.CommandLine;
-import org.apache.commons.exec.DefaultExecutor;
-import org.apache.commons.exec.PumpStreamHandler;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import org.apache.mesos.config.ConfigProperty;
 
 /**
  * Overrides Kafka properties files.
@@ -28,7 +28,7 @@ public final class Overrider {
   private static String overridePrefix = envConfig.getOverridePrefix();
 
   private static KafkaConfigState configState = new KafkaConfigState(
-      envConfig.getFrameworkName(), envConfig.getZookeeperAddress(), envConfig.getZkRootPrefix());
+    envConfig.getFrameworkName(), envConfig.getZookeeperAddress(), envConfig.getZkRootPrefix());
 
   public static void main(String[] args) {
     if (args.length != 1) {
@@ -38,24 +38,27 @@ public final class Overrider {
 
     KafkaConfigService config = fetchConfig(args[0]);
     Map<String, String> overrides = getOverrides(config);
-    UpdateProperties(overrides);
+    updateProperties(overrides);
   }
 
-  private static void UpdateProperties(Map<String, String> overrides) {
+  @SuppressWarnings("REC_CATCH_EXCEPTION")
+  private static void updateProperties(Map<String, String> overrides) {
     String serverPropertiesFileName =
-        envConfig.getKafkaSandboxPath() + "/config/server.properties";
+      envConfig.getKafkaSandboxPath() + "/config/server.properties";
 
     log.info("Updating config file: " + serverPropertiesFileName);
 
-    try {
+    try (
       FileInputStream in = new FileInputStream(serverPropertiesFileName);
+      FileOutputStream out = new FileOutputStream(serverPropertiesFileName)) {
+
       Properties props = new Properties();
       props.load(in);
       in.close();
 
       log.info("Opened properties file: " + props);
 
-      FileOutputStream out = new FileOutputStream(serverPropertiesFileName);
+
       for (Map.Entry<String, String> override : overrides.entrySet()) {
         String key = override.getKey();
         String value = override.getValue();
@@ -90,10 +93,10 @@ public final class Overrider {
     }
 
     Map<String, String> env = System.getenv();
-    for (String key : env.keySet()) {
-      if (key.startsWith(overridePrefix)) {
-        String value = env.get(key);
-        key = convertKey(key);
+    for (Map.Entry<String, String> entry : env.entrySet()) {
+      if (entry.getKey().startsWith(overridePrefix)) {
+        String key = convertKey(entry.getKey());
+        String value = entry.getValue();
         overrides.put(key, value);
       }
     }
@@ -128,7 +131,7 @@ public final class Overrider {
         log.error("Got error code when executing: " + commandline.toString());
         return null;
       } else {
-        String ip = outputStream.toString().trim();
+        String ip = outputStream.toString(CharEncoding.UTF_8).trim();
         log.info("Got ip: " + ip);
         return ip;
       }

@@ -12,6 +12,9 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.config.ConfigProperty;
 import org.apache.mesos.config.ConfigurationChangeNamespaces;
 
+/**
+ * Provides validation of configrations.
+ */
 public class ConfigStateValidator {
 
   /**

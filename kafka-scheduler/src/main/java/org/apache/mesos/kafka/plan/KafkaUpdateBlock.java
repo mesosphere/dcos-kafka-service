@@ -1,25 +1,22 @@
 package org.apache.mesos.kafka.plan;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
-import org.apache.mesos.kafka.offer.OfferUtils;
-import org.apache.mesos.kafka.scheduler.KafkaScheduler;
-import org.apache.mesos.kafka.state.KafkaStateService;
-
-import org.apache.mesos.offer.OfferRequirement;
-import org.apache.mesos.scheduler.plan.Block;
-import org.apache.mesos.scheduler.plan.Status;
-
 import org.apache.mesos.Protos.TaskID;
 import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.Protos.TaskState;
 import org.apache.mesos.Protos.TaskStatus;
+import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
+import org.apache.mesos.kafka.offer.OfferUtils;
+import org.apache.mesos.kafka.scheduler.KafkaScheduler;
+import org.apache.mesos.kafka.state.KafkaStateService;
+import org.apache.mesos.offer.OfferRequirement;
+import org.apache.mesos.scheduler.plan.Block;
+import org.apache.mesos.scheduler.plan.Status;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 public class KafkaUpdateBlock implements Block {
   private final Log log = LogFactory.getLog(KafkaUpdateBlock.class);
@@ -30,15 +27,15 @@ public class KafkaUpdateBlock implements Block {
   private KafkaStateService state = null;
   private int brokerId;
   private UUID blockId;
-  private final Integer taskLock = 0;
+  private final Object taskLock = new Object();
   private List<TaskID> pendingTasks;
   private TaskInfo cachedTaskInfo;
 
   public KafkaUpdateBlock(
-      KafkaStateService state,
-      KafkaOfferRequirementProvider offerReqProvider,
-      String targetConfigName,
-      int brokerId) {
+    KafkaStateService state,
+    KafkaOfferRequirementProvider offerReqProvider,
+    String targetConfigName,
+    int brokerId) {
 
     this.state = state;
     this.offerReqProvider = offerReqProvider;
@@ -82,7 +79,7 @@ public class KafkaUpdateBlock implements Block {
   public OfferRequirement start() {
     log.info("Starting block: " + getName() + " with status: " + getStatus());
 
-    if(!isPending()) {
+    if (!isPending()) {
       return null;
     }
 
@@ -99,7 +96,7 @@ public class KafkaUpdateBlock implements Block {
 
   @Override
   public void update(TaskStatus taskStatus) {
-    synchronized(taskLock) {
+    synchronized (taskLock) {
       log.info(getName() + " has pending tasks: " + pendingTasks);
 
       if (!isRelevantStatus(taskStatus) || isPending()) {
@@ -179,7 +176,7 @@ public class KafkaUpdateBlock implements Block {
       log.error("Failed to retrieve TaskInfo with exception: " + ex);
     }
 
-    return cachedTaskInfo; 
+    return cachedTaskInfo;
   }
 
   private OfferRequirement getOfferRequirement() {

@@ -218,7 +218,7 @@ public class KafkaConfigService {
   }
 
   /**
-   * Returns a copy of the underlying data in this form: map[namespace][name] = value
+   * Returns a copy of the underlying data in this form: map[namespace][name] = value.
    */
   public Map<String, Map<String, ConfigProperty>> getNsPropertyMap() {
     return configService.getNsPropertyMap();

@@ -1,5 +1,5 @@
 plugins {
-  id 'com.github.johnrengelman.shadow' version '1.2.2'
+  id 'com.github.johnrengelman.shadow' version '1.2.3'
 }
 
 ext {
@@ -11,6 +11,7 @@ ext {
 dependencies {
   compile "org.apache.kafka:kafka-clients:${kafkaClientsVer}"
   compile "ch.qos.logback:logback-classic:${logbackVer}"
+  compile 'commons-io:commons-io:2.4'
   compile "org.json:json:${jsonVer}"
 }
 

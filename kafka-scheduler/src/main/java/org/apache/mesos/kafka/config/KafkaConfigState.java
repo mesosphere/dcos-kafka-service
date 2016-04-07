@@ -1,15 +1,11 @@
 package org.apache.mesos.kafka.config;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.curator.framework.CuratorFramework;
-
+import org.apache.mesos.Protos.Label;
+import org.apache.mesos.Protos.Labels;
+import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.config.ConfigurationChangeDetector;
 import org.apache.mesos.config.ConfigurationChangeNamespaces;
 import org.apache.mesos.config.state.ConfigState;
@@ -19,9 +15,10 @@ import org.apache.mesos.kafka.state.KafkaStateUtils;
 import org.apache.mesos.protobuf.LabelBuilder;
 import org.apache.mesos.state.StateStoreException;
 
-import org.apache.mesos.Protos.Label;
-import org.apache.mesos.Protos.Labels;
-import org.apache.mesos.Protos.TaskInfo;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Stores and manages multiple Kafka framework configurations in persistent storage.
@@ -33,7 +30,7 @@ public class KafkaConfigState {
   private final CuratorFramework zkClient;
   private final ConfigState configState;
   private final String configTargetPath;
-  private final String CONFIG_KEY = "config_target";
+  private static final String CONFIG_KEY = "config_target";
 
   /**
    * Creates a new Kafka config state manager based on the provided bootstrap information.
@@ -135,7 +132,7 @@ public class KafkaConfigState {
     activeConfigs.add(getTargetName());
     activeConfigs.addAll(getTaskConfigs(state));
 
-    log.info("Cleaning all configs which are NOT in the active list: " + activeConfigs); 
+    log.info("Cleaning all configs which are NOT in the active list: " + activeConfigs);
 
     for (String configName : getConfigNames()) {
       if (!activeConfigs.contains(configName)) {
@@ -195,9 +192,9 @@ public class KafkaConfigState {
       KafkaConfigService currConfig = fetch(configName);
 
       ConfigurationChangeDetector changeDetector = new ConfigurationChangeDetector(
-          currConfig.getNsPropertyMap(),
-          targetConfig.getNsPropertyMap(),
-          new ConfigurationChangeNamespaces("*", "*"));
+        currConfig.getNsPropertyMap(),
+        targetConfig.getNsPropertyMap(),
+        new ConfigurationChangeNamespaces("*", "*"));
 
       if (!changeDetector.isChangeDetected()) {
         log.info("Duplicate config detected: " + configName);

@@ -1,26 +1,23 @@
 package org.apache.mesos.kafka.scheduler;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.mesos.Protos.Offer;
 import org.apache.mesos.Protos.OfferID;
 import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.SchedulerDriver;
-
+import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.OfferUtils;
+import org.apache.mesos.kafka.state.KafkaStateService;
 import org.apache.mesos.offer.OfferAccepter;
 import org.apache.mesos.offer.OfferEvaluator;
 import org.apache.mesos.offer.OfferRecommendation;
 import org.apache.mesos.offer.OfferRequirement;
 import org.apache.mesos.scheduler.plan.Block;
 
-import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
-import org.apache.mesos.kafka.state.KafkaStateService;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 public class KafkaRepairScheduler {
   private final Log log = LogFactory.getLog(KafkaRepairScheduler.class);
@@ -31,10 +28,10 @@ public class KafkaRepairScheduler {
   private final KafkaOfferRequirementProvider offerReqProvider;
 
   public KafkaRepairScheduler(
-      String targetConfigName,
-      KafkaStateService kafkaStateService,
-      KafkaOfferRequirementProvider offerReqProvider,
-      OfferAccepter offerAccepter) {
+    String targetConfigName,
+    KafkaStateService kafkaStateService,
+    KafkaOfferRequirementProvider offerReqProvider,
+    OfferAccepter offerAccepter) {
     this.targetConfigName = targetConfigName;
     this.state = kafkaStateService;
     this.offerReqProvider = offerReqProvider;
@@ -82,7 +79,7 @@ public class KafkaRepairScheduler {
           filteredTerminatedTasks.add(taskInfo);
         }
       }
-    } catch(Exception ex) {
+    } catch (Exception ex) {
       log.error("Failed to fetch terminated tasks.");
     }
 
@@ -106,7 +103,7 @@ public class KafkaRepairScheduler {
       return missingBrokerIds;
     }
 
-    for (Integer i=0; i<= lastExpectedBrokerId; i++) {
+    for (Integer i = 0; i <= lastExpectedBrokerId; i++) {
       if (!brokerExists(brokerTasks, i)) {
         String brokerName = OfferUtils.idToName(i);
         if (block == null || !brokerName.equals(block.getName())) {

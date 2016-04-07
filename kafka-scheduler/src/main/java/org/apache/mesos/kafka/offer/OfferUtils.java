@@ -1,17 +1,16 @@
 package org.apache.mesos.kafka.offer;
 
-import java.util.List;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import org.apache.mesos.kafka.state.KafkaStateService;
 import org.apache.mesos.Protos.Label;
 import org.apache.mesos.Protos.Resource;
 import org.apache.mesos.Protos.Resource.DiskInfo;
 import org.apache.mesos.Protos.Resource.DiskInfo.Persistence;
 import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.Protos.Value;
+import org.apache.mesos.kafka.state.KafkaStateService;
+
+import java.util.List;
 
 public class OfferUtils {
   private static final Log log = LogFactory.getLog(OfferUtils.class);
@@ -72,6 +71,7 @@ public class OfferUtils {
     return null;
   }
 
+  @SuppressWarnings("PMD")
   public static Long getPort(TaskInfo taskInfo) {
     for (Resource resource : taskInfo.getResourcesList()) {
       if (resource.getName().equals("ports")) {

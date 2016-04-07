@@ -1,14 +1,13 @@
 package org.apache.mesos.kafka.offer;
 
-import java.util.ArrayList;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
+import org.apache.mesos.Protos.Resource;
+import org.apache.mesos.Protos.Resource.DiskInfo;
+import org.apache.mesos.Protos.Resource.DiskInfo.Persistence;
+import org.apache.mesos.Protos.SlaveID;
+import org.apache.mesos.Protos.TaskInfo;
+import org.apache.mesos.Protos.Volume;
 import org.apache.mesos.kafka.config.KafkaConfigService;
 import org.apache.mesos.kafka.config.KafkaConfigState;
 import org.apache.mesos.kafka.state.KafkaStateService;
@@ -17,13 +16,16 @@ import org.apache.mesos.offer.OfferRequirement.VolumeMode;
 import org.apache.mesos.offer.PlacementStrategy;
 import org.apache.mesos.offer.ResourceUtils;
 import org.apache.mesos.protobuf.ResourceBuilder;
-import org.apache.mesos.Protos.Resource;
-import org.apache.mesos.Protos.Resource.DiskInfo;
-import org.apache.mesos.Protos.Resource.DiskInfo.Persistence;
-import org.apache.mesos.Protos.SlaveID;
-import org.apache.mesos.Protos.TaskInfo;
-import org.apache.mesos.Protos.Volume;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
+
+/**
+ * Offer requirement provider that works with Persistent Volumes.
+ */
 public class PersistentOfferRequirementProvider implements KafkaOfferRequirementProvider {
   private final Log log = LogFactory.getLog(PersistentOfferRequirementProvider.class);
 
@@ -31,7 +33,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
   private final PlacementStrategyManager placementStrategyManager;
 
   public PersistentOfferRequirementProvider(
-      KafkaStateService kafkaStateService, KafkaConfigState configState) {
+    KafkaStateService kafkaStateService, KafkaConfigState configState) {
     this.configState = configState;
     this.placementStrategyManager = new PlacementStrategyManager(kafkaStateService);
   }
@@ -94,12 +96,12 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     log.info("Colocating with agents: " + colocateAgents);
 
     return new OfferRequirement(
-        config.getRole(),
-        config.getPrincipal(),
-        Arrays.asList(taskInfo),
-        avoidAgents,
-        colocateAgents,
-        VolumeMode.CREATE);
+      config.getRole(),
+      config.getPrincipal(),
+      Arrays.asList(taskInfo),
+      avoidAgents,
+      colocateAgents,
+      VolumeMode.CREATE);
   }
 
   private OfferRequirement getExistingOfferRequirement(TaskInfo taskInfo) {
@@ -116,12 +118,12 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     TaskInfo newTaskInfo = getTaskInfo(configName, config, persistenceId, brokerId, taskId, port);
 
     return new OfferRequirement(
-        config.getRole(),
-        config.getPrincipal(),
-        Arrays.asList(newTaskInfo),
-        null,
-        null,
-        VolumeMode.EXISTING);
+      config.getRole(),
+      config.getPrincipal(),
+      Arrays.asList(newTaskInfo),
+      null,
+      null,
+      VolumeMode.EXISTING);
   }
 
   private KafkaConfigService getConfigService(TaskInfo taskInfo) {
@@ -135,23 +137,23 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
   }
 
   private TaskInfo getTaskInfo(
-      String configName,
-      KafkaConfigService config,
-      String persistenceId,
-      int brokerId,
-      String taskId) {
+    String configName,
+    KafkaConfigService config,
+    String persistenceId,
+    int brokerId,
+    String taskId) {
 
     Long port = 9092 + ThreadLocalRandom.current().nextLong(0, 1000);
     return getTaskInfo(configName, config, persistenceId, brokerId, taskId, port);
   }
 
   private TaskInfo getTaskInfo(
-      String configName,
-      KafkaConfigService config,
-      String persistenceId,
-      int brokerId,
-      String taskId,
-      Long port) {
+    String configName,
+    KafkaConfigService config,
+    String persistenceId,
+    int brokerId,
+    String taskId,
+    Long port) {
 
     String containerPath = "kafka-volume-" + UUID.randomUUID();
     List<Resource> resources = getResources(config, port, persistenceId, containerPath);
@@ -159,10 +161,10 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
   }
 
   private List<Resource> getResources(
-      KafkaConfigService config,
-      Long port,
-      String persistenceId,
-      String containerPath) {
+    KafkaConfigService config,
+    Long port,
+    String persistenceId,
+    String containerPath) {
 
     KafkaConfigService.BrokerResources brokerResources = config.getBrokerResources();
     String role = config.getRole();
@@ -190,10 +192,10 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
   private static DiskInfo createDiskInfo(String persistenceId, String containerPath) {
     return DiskInfo.newBuilder()
       .setPersistence(Persistence.newBuilder()
-          .setId(persistenceId))
+        .setId(persistenceId))
       .setVolume(Volume.newBuilder()
-          .setMode(Volume.Mode.RW)
-          .setContainerPath(containerPath))
+        .setMode(Volume.Mode.RW)
+        .setContainerPath(containerPath))
       .build();
   }
 }

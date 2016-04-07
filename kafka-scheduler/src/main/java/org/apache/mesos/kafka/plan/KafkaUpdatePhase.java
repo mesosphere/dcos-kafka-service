@@ -1,14 +1,14 @@
 package org.apache.mesos.kafka.plan;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
 import org.apache.mesos.kafka.config.KafkaConfigService;
 import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
 import org.apache.mesos.kafka.state.KafkaStateService;
 import org.apache.mesos.scheduler.plan.Block;
 import org.apache.mesos.scheduler.plan.Phase;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 public class KafkaUpdatePhase implements Phase {
   private final List<Block> blocks;
@@ -17,10 +17,10 @@ public class KafkaUpdatePhase implements Phase {
   private final UUID id;
 
   public KafkaUpdatePhase(
-      String targetConfigName,
-      KafkaConfigService targetConfig,
-      KafkaStateService kafkaState,
-      KafkaOfferRequirementProvider offerReqProvider) {
+    String targetConfigName,
+    KafkaConfigService targetConfig,
+    KafkaStateService kafkaState,
+    KafkaOfferRequirementProvider offerReqProvider) {
     this.configName = targetConfigName;
     this.config = targetConfig;
     this.blocks = createBlocks(configName, config.getBrokerCount(), kafkaState, offerReqProvider);
@@ -44,7 +44,7 @@ public class KafkaUpdatePhase implements Phase {
   }
 
   @Override
-  public Block getBlock(int index){
+  public Block getBlock(int index) {
     return getBlocks().get(index);
   }
 
@@ -71,14 +71,14 @@ public class KafkaUpdatePhase implements Phase {
   }
 
   private static List<Block> createBlocks(
-      String configName,
-      int brokerCount,
-      KafkaStateService kafkaState,
-      KafkaOfferRequirementProvider offerReqProvider) {
+    String configName,
+    int brokerCount,
+    KafkaStateService kafkaState,
+    KafkaOfferRequirementProvider offerReqProvider) {
 
     List<Block> blocks = new ArrayList<Block>();
 
-    for (int i=0; i<brokerCount; i++) {
+    for (int i = 0; i < brokerCount; i++) {
       blocks.add(new KafkaUpdateBlock(kafkaState, offerReqProvider, configName, i));
     }
 

@@ -11,6 +11,9 @@ import org.apache.mesos.kafka.config.ConfigStateValidator.ValidationException;
 import org.apache.mesos.kafka.state.KafkaStateService;
 import org.apache.mesos.state.StateStoreException;
 
+/**
+ * Retrieves and stores configurations in the state store.
+ */
 public class ConfigStateUpdater {
 
   private static final Log log = LogFactory.getLog(ConfigStateUpdater.class);

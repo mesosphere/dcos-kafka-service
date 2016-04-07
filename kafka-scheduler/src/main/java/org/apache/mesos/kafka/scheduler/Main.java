@@ -3,6 +3,7 @@ package org.apache.mesos.kafka.scheduler;
 import com.google.inject.Injector;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.mesos.process.FailureUtils;
 
 /**
  * Main entry point for the Scheduler.
@@ -35,7 +36,7 @@ public final class Main {
         final String msg = "Scheduler exiting due to uncaught exception";
         log.error(msg, e);
         log.fatal(msg);
-        System.exit(2);
+        FailureUtils.exit("Uncaught Handler", 2);
       }
     };
   }

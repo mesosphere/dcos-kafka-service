@@ -499,6 +499,125 @@ These same values are also represented as environment variables for the Schedule
 
 ## Connecting Clients
 
+The only supported client library is the official Kafka Java library, ie `org.apache.kafka.clients.consumer.KafkaConsumer` and `org.apache.kafka.clients.producer.KafkaProducer`. Other clients are at the user's risk.
+
+### Connection Info Using the CLI
+
+The following command can be executed from the cli in order to retrieve a set of brokers to connect to.
+
+``` bash
+dcos kafka --framework-name=<framework-name> connection
+```
+
+### Connection Info Using the API
+
+The following curl example demonstrates how to retrive connection a set of brokers to connect to using the REST API.
+
+``` bash
+curl http://<dcos_url>/cassandra/v1/nodes/connect
+```
+
+### Connection Info Response
+
+The response, for both the CLI and the REST API is as below.
+
+``` json
+{
+    "broker_list_convenience": "--broker-list 10.0.0.26:9318, 10.0.0.23:9505, 10.0.0.24:9989",
+    "brokers": [
+        "10.0.0.26:9318",
+        "10.0.0.23:9505",
+        "10.0.0.24:9989"
+    ],
+    "zookeeper": "hostname:2181/kafka",
+    "zookeeper_convenience": "--zookeeper hostname:2181/kafka"
+}
+```
+
+This JSON array contains a list of valid brokers that the client can use to connect to the Cassandra cluster. For availability reasons, it is best to specify multiple brokers in configuration of the client. 
+
+### Configuring the Kafka Client Library
+
+#### Adding the Kafka Client Library to Your Application
+
+``` xml
+<dependency>
+  <groupId>org.apache.kafka</groupId>
+  <artifactId>kafka-clients</artifactId>
+  <version>0.9.0.1</version>
+</dependency>
+```
+
+The above is the correct dependency for the Kafka Client Library to use with the DCOS Cassandra service. After adding this dependency to your project, you should have access to the correct binary dependencies to interface with the Kafka Cluster.
+
+#### Connecting the Kafka Client Library
+
+The code snippet below demonstrates how to connect a Kafka Producer to the cluster and perform a loop of simple insertions.
+
+``` java
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
+
+Map<String, Object> producerConfig = new HashMap<>();
+producerConfig.put("bootstrap.servers", "10.0.0.26:9318,10.0.0.23:9505,10.0.0.24:9989");
+// optional:
+producerConfig.put("metadata.fetch.timeout.ms": "3000");
+producerConfig.put("request.timeout.ms", "3000");
+// ... other options: http://kafka.apache.org/documentation.html#producerconfigs
+ByteArraySerializer serializer = new ByteArraySerializer();
+KafkaProducer<byte[], byte[]> kafkaProducer = new KafkaProducer<>(producerConfig, serializer, serializer);
+  
+byte[] message = new byte[1024];
+for (int i = 0; i < message.length; ++i) {
+  if (i % 2 == 0) {
+    message[i] = 'x';
+  } else {
+    message[i] = 'o';
+  }
+}
+ProducerRecord<byte[], byte[]> record = new ProducerRecord<>("test-topic", message);
+while (true) {
+  kafkaProducer.send(record).get();
+  Thread.sleep(1000);
+}
+```
+
+The code snippet below demonstrates how to connect a Kafka Consumer to the cluster and perform a simple retrievals.
+
+``` java
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.serialization.ByteArrayDeserializer;
+
+Map<String, Object> consumerConfig = new HashMap<>();
+consumerConfig.put("bootstrap.servers", "10.0.0.26:9318,10.0.0.23:9505,10.0.0.24:9989");
+// optional:
+consumerConfig.put("group.id", "test-client-consumer")
+// ... other options: http://kafka.apache.org/documentation.html#consumerconfigs
+ByteArrayDeserializer deserializer = new ByteArrayDeserializer();
+KafkaConsumer<byte[], byte[]> kafkaConsumer = new KafkaConsumer<>(consumerConfig, deserializer, deserializer);
+
+List<String> topics = new ArrayList<>();
+topics.add("test-topic");
+kafkaConsumer.subscribe(topics);
+while (true) {
+  ConsumerRecords<byte[], byte[]> records = kafkaConsumer.poll(1000);
+  int bytes = 0;
+  for (ConsumerRecord<byte[], byte[]> record : records) {
+    if (record.key() != null) {
+      bytes += record.key().length;
+    }
+    bytes += record.value().length;
+  }
+  System.out.println(String.format("Got %d messages (%d bytes)", records.count(), bytes));
+}
+kafkaConsumer.close();
+```
+
+### Configuring the Kafka Test Scripts
+
 The following code connects to a DCOS-hosted Kafka instance using `bin/kafka-console-producer.sh` and `bin/kafka-console-consumer.sh` as an example:
 
 ``` bash
@@ -523,14 +642,11 @@ This is a message
 This is another message
 ```
 
-
 ## Managing
 
 ### Add a Broker
 
 Increase the `BROKER_COUNT` value via Marathon as in any other configuration update.
-
-
 
 ### Upgrade Software
 

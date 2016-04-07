@@ -3,7 +3,7 @@ plugins {
 }
 
 ext {
-  mesosVer = "0.24.1"
+  mesosVer = "0.28.0"
   loggingVer = "1.1.1"
   guiceVer = "3.0"
   grizzlyVer = "2.16"

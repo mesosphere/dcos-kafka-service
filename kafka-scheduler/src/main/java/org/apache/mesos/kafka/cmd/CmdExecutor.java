@@ -4,7 +4,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.mesos.kafka.config.KafkaConfigService;
+import org.apache.mesos.kafka.config.KafkaConfiguration;
+import org.apache.mesos.kafka.config.KafkaSchedulerConfiguration;
 import org.apache.mesos.kafka.state.KafkaStateService;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -13,14 +14,10 @@ import javax.ws.rs.core.MultivaluedMap;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Provides command line commands for invoking kafka behavior and returns JSON.
- */
 public class CmdExecutor {
   private static final Log log = LogFactory.getLog(CmdExecutor.class);
 
@@ -28,15 +25,15 @@ public class CmdExecutor {
   private final String binPath;
   private final String zkPath;
 
-  public CmdExecutor(KafkaConfigService config, KafkaStateService state) {
+  public CmdExecutor(KafkaSchedulerConfiguration configuration, KafkaStateService state) {
     this.state = state;
-    this.binPath = config.getKafkaSandboxPath() + "/bin/";
-    this.zkPath = config.getKafkaZkUri();
+    final KafkaConfiguration kafkaConfiguration = configuration.getKafkaConfiguration();
+    this.binPath = kafkaConfiguration.getKafkaSandboxPath() + "/bin/";
+    this.zkPath = kafkaConfiguration.getKafkaZkUri();
   }
 
   public JSONObject createTopic(String name, int partitionCount, int replicationFactor) throws Exception {
-    // e.g. ./kafka-topics.sh --create --zookeeper master.mesos:2181/kafka-0
-    // --topic topic0 --partitions 3 --replication-factor 3
+    // e.g. ./kafka-topics.sh --create --zookeeper master.mesos:2181/kafka-0 --topic topic0 --partitions 3 --replication-factor 3
 
     List<String> cmd = new ArrayList<String>();
     cmd.add(binPath + "kafka-topics.sh");
@@ -85,7 +82,7 @@ public class CmdExecutor {
   public List<String> getListOverrides(MultivaluedMap<String, String> overrides) {
     List<String> output = new ArrayList<String>();
 
-    for (Map.Entry<String, List<String>> override : overrides.entrySet()) {
+    for (Map.Entry<String,List<String>> override : overrides.entrySet()) {
       output.add("--" + override.getKey());
       output.add(override.getValue().get(0));
     }
@@ -94,9 +91,7 @@ public class CmdExecutor {
   }
 
   public JSONObject producerTest(String topicName, int messages) throws Exception {
-    // e.g. ./kafka-producer-perf-test.sh --topic topic0 --num-records 1000 --producer-props
-    // bootstrap.servers=ip-10-0-2-171.us-west-2.compute.internal:9092,ip-10-0-2-172.us-west-2.compute.internal:9093,
-    // ip-10-0-2-173.us-west-2.compute.internal:9094 --throughput 100000 --record-size 1024
+    // e.g. ./kafka-producer-perf-test.sh --topic topic0 --num-records 1000 --producer-props bootstrap.servers=ip-10-0-2-171.us-west-2.compute.internal:9092,ip-10-0-2-172.us-west-2.compute.internal:9093,ip-10-0-2-173.us-west-2.compute.internal:9094 --throughput 100000 --record-size 1024
     List<String> brokerEndpoints = state.getBrokerEndpoints();
     String brokers = StringUtils.join(brokerEndpoints, ",");
     String bootstrapServers = "bootstrap.servers=" + brokers;
@@ -118,9 +113,7 @@ public class CmdExecutor {
   }
 
   public JSONArray getOffsets(String topicName, Long time) throws Exception {
-    // e.g. ./kafka-run-class.sh kafka.tools.GetOffsetShell --broker-list
-    // ip-10-0-1-71.us-west-2.compute.internal:9092,ip-10-0-1-72.us-west-2.compute.internal:9093,
-    // ip-10-0-1-68.us-west-2.compute.internal:9094 --topic topic0 --time -1 --partitions 0
+    // e.g. ./kafka-run-class.sh kafka.tools.GetOffsetShell --broker-list ip-10-0-1-71.us-west-2.compute.internal:9092,ip-10-0-1-72.us-west-2.compute.internal:9093,ip-10-0-1-68.us-west-2.compute.internal:9094 --topic topic0 --time -1 --partitions 0
 
     List<String> brokerEndpoints = state.getBrokerEndpoints();
     String brokers = StringUtils.join(brokerEndpoints, ",");
@@ -205,14 +198,14 @@ public class CmdExecutor {
 
     if (exitCode == 0) {
       log.info(String.format(
-        "Command succeeded in %dms: %s",
-        stopWatch.getTime(), StringUtils.join(cmd, " ")));
+          "Command succeeded in %dms: %s",
+          stopWatch.getTime(), StringUtils.join(cmd, " ")));
     } else {
       log.warn(String.format(
-        "Command failed with code=%d in %dms: %s",
-        exitCode, stopWatch.getTime(), StringUtils.join(cmd, " ")));
-      log.warn(String.format("stdout:%n%s", stdout));
-      log.warn(String.format("stderr:%n%s", stderr));
+          "Command failed with code=%d in %dms: %s",
+          exitCode, stopWatch.getTime(), StringUtils.join(cmd, " ")));
+      log.warn(String.format("stdout:\n%s", stdout));
+      log.warn(String.format("stderr:\n%s", stderr));
     }
 
     JSONObject obj = new JSONObject();
@@ -236,12 +229,12 @@ public class CmdExecutor {
   }
 
   private static String streamToString(InputStream stream) throws Exception {
-    BufferedReader reader = new BufferedReader(new InputStreamReader(stream, Charset.defaultCharset()));
+    BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
     StringBuilder builder = new StringBuilder();
-    String line;
-    while ((line = reader.readLine()) != null) {
-      builder.append(line);
-      builder.append(System.getProperty("line.separator"));
+    String line = null;
+    while ( (line = reader.readLine()) != null) {
+         builder.append(line);
+            builder.append(System.getProperty("line.separator"));
     }
 
     return builder.toString();

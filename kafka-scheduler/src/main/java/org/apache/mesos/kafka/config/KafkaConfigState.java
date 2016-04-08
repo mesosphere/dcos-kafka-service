@@ -6,8 +6,6 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.mesos.Protos.Label;
 import org.apache.mesos.Protos.Labels;
 import org.apache.mesos.Protos.TaskInfo;
-import org.apache.mesos.config.ConfigurationChangeDetector;
-import org.apache.mesos.config.ConfigurationChangeNamespaces;
 import org.apache.mesos.config.state.ConfigState;
 import org.apache.mesos.kafka.offer.OfferUtils;
 import org.apache.mesos.kafka.state.KafkaStateService;
@@ -28,9 +26,11 @@ public class KafkaConfigState {
   private final Log log = LogFactory.getLog(KafkaConfigState.class);
 
   private final CuratorFramework zkClient;
-  private final ConfigState configState;
   private final String configTargetPath;
-  private static final String CONFIG_KEY = "config_target";
+  private final String CONFIG_KEY = "config_target";
+  private String zkConfigRootPath;
+  private String zkVersionPath;
+  private ConfigState configState;
 
   /**
    * Creates a new Kafka config state manager based on the provided bootstrap information.
@@ -40,11 +40,38 @@ public class KafkaConfigState {
     zkClient = KafkaStateUtils.createZkClient(zkHost);
     //TODO(nick): Just pass full ZK path (ie KafkaConfigService.getZkRoot()) to ConfigState?
     configState = new ConfigState(frameworkName, zkPathPrefix, zkClient);
+    zkConfigRootPath = zkPathPrefix + frameworkName + "/configurations/";
+    zkVersionPath = zkConfigRootPath + "versions";
   }
 
-  public KafkaConfigService fetch(String version) throws StateStoreException {
-    return KafkaConfigService.getHydratedConfig(configState.fetch(version));
+  public KafkaSchedulerConfiguration fetch(String version) throws StateStoreException {
+    return fetchForPath(getVersionPath(version));
   }
+
+  private String getVersionPath(String version) {
+    return zkVersionPath + "/" + version;
+  }
+
+  private void logDataSize(byte[] data) {
+    log.info(String.format("Size of config to serialize: %s b.", data.length));
+  }
+
+  private KafkaSchedulerConfiguration fetchForPath(String path) {
+    try {
+      byte[] data = zkClient.getData().forPath(path);
+      if (data == null) {
+        return null;
+      } else {
+        logDataSize(data);
+        return JSONSerializer.fromBytes(data, KafkaSchedulerConfiguration.class);
+      }
+    } catch (Exception e) {
+      String msg = "Failure to fetch configurations.";
+      log.error(msg);
+      throw new StateStoreException(msg, e);
+    }
+  }
+
 
   /**
    * Returns whether a current target configuration exists.
@@ -74,7 +101,7 @@ public class KafkaConfigState {
   /**
    * Returns the content of the current target configuration.
    */
-  public KafkaConfigService getTargetConfig() {
+  public KafkaSchedulerConfiguration getTargetConfig() {
     return fetch(getTargetName());
   }
 
@@ -91,13 +118,30 @@ public class KafkaConfigState {
    *
    * @throws StateStoreException if the underlying storage failed to write
    */
-  public void store(KafkaConfigService configurationService, String version) throws StateStoreException {
-    configState.store(configurationService.getConfigService(), version);
+  public void store(KafkaSchedulerConfiguration configuration, String version) throws StateStoreException {
+    ensurePath(getVersionPath(version));
+    try {
+      final byte[] data = JSONSerializer.toBytes(configuration);
+      logDataSize(data);
+      zkClient.setData().forPath(getVersionPath(version), data);
+    } catch (Exception e) {
+      String msg = "Failure to store configurations.";
+      log.error(msg);
+      throw new StateStoreException(msg, e);
+    }
+  }
+
+  private void ensurePath(String path) {
+    try {
+      zkClient.create().creatingParentsIfNeeded().forPath(path);
+    } catch (Exception e) {
+      log.debug(String.format("Path for %s already exists!", path));
+    }
   }
 
   /**
    * Sets the name of the target configuration to be used in the future.
-   * The name must match a 'version' previously passed to {@link #store(KafkaConfigService, String)}.
+   * The name must match a 'version' previously passed to {@link #store(KafkaSchedulerConfiguration, String)}.
    */
   public void setTargetName(String targetConfigName) {
     try {
@@ -132,7 +176,7 @@ public class KafkaConfigState {
     activeConfigs.add(getTargetName());
     activeConfigs.addAll(getTaskConfigs(state));
 
-    log.info("Cleaning all configs which are NOT in the active list: " + activeConfigs);
+    log.info("Cleaning all configs which are NOT in the active list: " + activeConfigs); 
 
     for (String configName : getConfigNames()) {
       if (!activeConfigs.contains(configName)) {
@@ -185,18 +229,20 @@ public class KafkaConfigState {
    * Returns the list of configs which are duplicates of the current Target config.
    */
   private List<String> getDuplicateConfigs() {
-    KafkaConfigService targetConfig = getTargetConfig();
+    KafkaSchedulerConfiguration newTargetConfig = getTargetConfig();
 
     List<String> duplicateConfigs = new ArrayList<String>();
     for (String configName : configState.getVersions()) {
-      KafkaConfigService currConfig = fetch(configName);
+      KafkaSchedulerConfiguration currTargetConfig = fetch(configName);
 
-      ConfigurationChangeDetector changeDetector = new ConfigurationChangeDetector(
-        currConfig.getNsPropertyMap(),
-        targetConfig.getNsPropertyMap(),
-        new ConfigurationChangeNamespaces("*", "*"));
+      final BrokerConfiguration currBrokerConfig = currTargetConfig.getBrokerConfiguration();
+      final BrokerConfiguration newBrokerConfig = newTargetConfig.getBrokerConfiguration();
 
-      if (!changeDetector.isChangeDetected()) {
+      final KafkaConfiguration currKafkaConfig = currTargetConfig.getKafkaConfiguration();
+      final KafkaConfiguration newKafkaConfig = newTargetConfig.getKafkaConfiguration();
+
+      if (currBrokerConfig.equals(newBrokerConfig) &&
+          currKafkaConfig.equals(newKafkaConfig)) {
         log.info("Duplicate config detected: " + configName);
         duplicateConfigs.add(configName);
       }

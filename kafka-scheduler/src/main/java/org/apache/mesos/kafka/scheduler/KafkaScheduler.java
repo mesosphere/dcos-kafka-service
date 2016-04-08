@@ -1,23 +1,17 @@
 package org.apache.mesos.kafka.scheduler;
 
+import io.dropwizard.setup.Environment;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.MesosSchedulerDriver;
-import org.apache.mesos.Protos.ExecutorID;
-import org.apache.mesos.Protos.FrameworkID;
-import org.apache.mesos.Protos.FrameworkInfo;
-import org.apache.mesos.Protos.MasterInfo;
-import org.apache.mesos.Protos.Offer;
-import org.apache.mesos.Protos.OfferID;
-import org.apache.mesos.Protos.SlaveID;
-import org.apache.mesos.Protos.TaskID;
-import org.apache.mesos.Protos.TaskStatus;
+import org.apache.mesos.Protos.*;
+import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.kafka.config.ConfigStateUpdater;
 import org.apache.mesos.kafka.config.ConfigStateValidator.ValidationError;
 import org.apache.mesos.kafka.config.ConfigStateValidator.ValidationException;
-import org.apache.mesos.kafka.config.KafkaConfigService;
 import org.apache.mesos.kafka.config.KafkaConfigState;
+import org.apache.mesos.kafka.config.KafkaSchedulerConfiguration;
 import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.LogOperationRecorder;
 import org.apache.mesos.kafka.offer.PersistentOfferRequirementProvider;
@@ -25,21 +19,10 @@ import org.apache.mesos.kafka.offer.PersistentOperationRecorder;
 import org.apache.mesos.kafka.plan.KafkaStageManager;
 import org.apache.mesos.kafka.plan.KafkaUpdatePhase;
 import org.apache.mesos.kafka.state.KafkaStateService;
-import org.apache.mesos.kafka.web.KafkaApiServer;
 import org.apache.mesos.offer.OfferAccepter;
 import org.apache.mesos.reconciliation.DefaultReconciler;
 import org.apache.mesos.reconciliation.Reconciler;
-import org.apache.mesos.scheduler.plan.Block;
-import org.apache.mesos.scheduler.plan.DefaultStage;
-import org.apache.mesos.scheduler.plan.DefaultStageScheduler;
-import org.apache.mesos.scheduler.plan.DefaultStrategyFactory;
-import org.apache.mesos.scheduler.plan.Phase;
-import org.apache.mesos.scheduler.plan.PhaseStrategyFactory;
-import org.apache.mesos.scheduler.plan.ReconciliationBlock;
-import org.apache.mesos.scheduler.plan.ReconciliationPhase;
-import org.apache.mesos.scheduler.plan.Stage;
-import org.apache.mesos.scheduler.plan.StageStrategyFactory;
-import org.apache.mesos.scheduler.plan.Status;
+import org.apache.mesos.scheduler.plan.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,31 +32,36 @@ import java.util.Observable;
 /**
  * Kafka Framework Scheduler.
  */
-public class KafkaScheduler extends Observable implements org.apache.mesos.Scheduler, Runnable {
+public class KafkaScheduler extends Observable implements Scheduler, Runnable {
   private static final Log log = LogFactory.getLog(KafkaScheduler.class);
 
   private static final int TWO_WEEK_SEC = 2 * 7 * 24 * 60 * 60;
 
   private final KafkaConfigState configState;
-  private final KafkaConfigService envConfig;
+  private final KafkaSchedulerConfiguration envConfig;
   private final KafkaStateService kafkaState;
   private final DefaultStageScheduler stageScheduler;
   private final KafkaRepairScheduler repairScheduler;
-  private final KafkaApiServer apiServer;
   private final OfferAccepter offerAccepter;
   private final Reconciler reconciler;
   private final KafkaStageManager stageManager;
-
-  private static final Object restartLock = new Object();
+  private MesosSchedulerDriver driver;
+  private static final Integer restartLock = 0;
   private static List<String> tasksToRestart = new ArrayList<String>();
-  private static final Object rescheduleLock = new Object();
+  private static final Integer rescheduleLock = 0;
   private static List<String> tasksToReschedule = new ArrayList<String>();
 
-  public KafkaScheduler() {
+  private Environment environment;
+  private KafkaSchedulerConfiguration configuration;
 
-    ConfigStateUpdater configStateUpdater = new ConfigStateUpdater();
+  public KafkaScheduler(KafkaSchedulerConfiguration configuration, Environment environment) {
+    this.configuration = configuration;
+    this.environment = environment;
+
+    ConfigStateUpdater configStateUpdater = new ConfigStateUpdater(configuration);
     List<String> stageErrors = new ArrayList<>();
-    KafkaConfigService targetConfigToUse;
+    KafkaSchedulerConfiguration targetConfigToUse;
+
     try {
       targetConfigToUse = configStateUpdater.getTargetConfig();
     } catch (ValidationException e) {
@@ -84,8 +72,8 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
         stageErrors.add(err.toString());
       }
     }
+
     envConfig = targetConfigToUse;
-    apiServer = new KafkaApiServer();
     reconciler = new DefaultReconciler();
 
     configState = configStateUpdater.getConfigState();
@@ -94,23 +82,23 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
 
     offerAccepter =
       new OfferAccepter(Arrays.asList(
-        new LogOperationRecorder(),
-        new PersistentOperationRecorder(kafkaState)));
+            new LogOperationRecorder(),
+            new PersistentOperationRecorder(kafkaState)));
 
     KafkaOfferRequirementProvider offerRequirementProvider =
       new PersistentOfferRequirementProvider(kafkaState, configState);
 
     List<Phase> phases = Arrays.asList(
-      new ReconciliationPhase(reconciler, kafkaState),
-      new KafkaUpdatePhase(
-        configState.getTargetName(),
-        envConfig,
-        kafkaState,
-        offerRequirementProvider));
+        new ReconciliationPhase(reconciler, kafkaState),
+        new KafkaUpdatePhase(
+            configState.getTargetName(),
+            envConfig,
+            kafkaState,
+            offerRequirementProvider));
     // If config validation had errors, expose them via the Stage.
     Stage stage = stageErrors.isEmpty()
-      ? DefaultStage.fromList(phases)
-      : DefaultStage.withErrors(phases, stageErrors);
+        ? DefaultStage.fromList(phases)
+        : DefaultStage.withErrors(phases, stageErrors);
 
     stageManager = new KafkaStageManager(stage, getPhaseStrategyFactory(envConfig), kafkaState);
     addObserver(stageManager);
@@ -118,14 +106,14 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     stageScheduler = new DefaultStageScheduler(offerAccepter);
 
     repairScheduler = new KafkaRepairScheduler(
-      configState.getTargetName(),
-      kafkaState,
-      offerRequirementProvider,
-      offerAccepter);
+        configState.getTargetName(),
+        kafkaState,
+        offerRequirementProvider,
+        offerAccepter);
   }
 
-  private static PhaseStrategyFactory getPhaseStrategyFactory(KafkaConfigService config) {
-    String strategy = config.getPlanStrategy();
+  private static PhaseStrategyFactory getPhaseStrategyFactory(KafkaSchedulerConfiguration config) {
+    String strategy = config.getServiceConfiguration().getPlanStrategy();
 
     switch (strategy) {
       case "INSTALL":
@@ -163,14 +151,14 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   @Override
   public void executorLost(SchedulerDriver driver, ExecutorID executorID, SlaveID slaveID, int status) {
     log.info("Executor lost: executorId: " + executorID.getValue()
-      + " slaveId: " + slaveID.getValue() + " status: " + status);
+        + " slaveId: " + slaveID.getValue() + " status: " + status);
   }
 
   @Override
   public void frameworkMessage(SchedulerDriver driver, ExecutorID executorID, SlaveID slaveID,
-    byte[] data) {
+      byte[] data) {
     log.info("Framework message: executorId: " + executorID.getValue() + " slaveId: "
-      + slaveID.getValue() + " data: '" + Arrays.toString(data) + "'");
+        + slaveID.getValue() + " data: '" + Arrays.toString(data) + "'");
   }
 
   @Override
@@ -182,7 +170,6 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   public void registered(SchedulerDriver driver, FrameworkID frameworkId, MasterInfo masterInfo) {
     log.info("Registered framework with frameworkId: " + frameworkId.getValue());
     kafkaState.setFrameworkId(frameworkId);
-    apiServer.start(configState, envConfig, kafkaState, stageManager);
   }
 
   @Override
@@ -194,10 +181,10 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   @Override
   public void statusUpdate(SchedulerDriver driver, TaskStatus status) {
     log.info(String.format(
-      "Received status update for taskId=%s state=%s message='%s'",
-      status.getTaskId().getValue(),
-      status.getState().toString(),
-      status.getMessage()));
+        "Received status update for taskId=%s state=%s message='%s'",
+        status.getTaskId().getValue(),
+        status.getState().toString(),
+        status.getMessage()));
 
     setChanged();
     notifyObservers(status);
@@ -234,8 +221,8 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
   }
 
   private boolean offerAccepted(Offer offer, List<OfferID> acceptedOfferIds) {
-    for (OfferID acceptedOfferId : acceptedOfferIds) {
-      if (acceptedOfferId.equals(offer.getId())) {
+    for (OfferID acceptedOfferId: acceptedOfferIds) {
+      if(acceptedOfferId.equals(offer.getId())) {
         return true;
       }
     }
@@ -286,7 +273,10 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
 
   @Override
   public void run() {
-    String zkPath = "zk://" + envConfig.getZookeeperAddress() + "/mesos";
+    Thread.currentThread().setName("KafkaScheduler");
+    Thread.currentThread().setUncaughtExceptionHandler(getUncaughtExceptionHandler());
+
+    String zkPath = "zk://" + envConfig.getKafkaConfiguration().getZkAddress() + "/mesos";
     FrameworkInfo fwkInfo = getFrameworkInfo();
     log.info("Registering framework with: " + fwkInfo);
     registerFramework(this, fwkInfo, zkPath);
@@ -296,7 +286,7 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
     Block recBlock = getReconciliationBlock();
 
     if (recBlock != null) {
-      recBlock.setStatus(Status.Pending);
+      recBlock.setStatus(org.apache.mesos.scheduler.plan.Status.Pending);
     } else {
       log.error("Failed to reconcile because unable to find the Reconciliation Block");
     }
@@ -318,11 +308,11 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
 
   private FrameworkInfo getFrameworkInfo() {
     FrameworkInfo.Builder fwkInfoBuilder = FrameworkInfo.newBuilder()
-      .setName(envConfig.getFrameworkName())
+      .setName(envConfig.getServiceConfiguration().getName())
       .setFailoverTimeout(TWO_WEEK_SEC)
-      .setUser(envConfig.getUser())
-      .setRole(envConfig.getRole())
-      .setPrincipal(envConfig.getPrincipal())
+      .setUser(envConfig.getServiceConfiguration().getUser())
+      .setRole(envConfig.getServiceConfiguration().getRole())
+      .setPrincipal(envConfig.getServiceConfiguration().getPrincipal())
       .setCheckpoint(true);
 
     FrameworkID fwkId = kafkaState.getFrameworkId();
@@ -361,6 +351,32 @@ public class KafkaScheduler extends Observable implements org.apache.mesos.Sched
 
   private void registerFramework(KafkaScheduler sched, FrameworkInfo frameworkInfo, String masterUri) {
     log.info("Registering without authentication");
-    new MesosSchedulerDriver(sched, frameworkInfo, masterUri).run();
+    driver = new MesosSchedulerDriver(sched, frameworkInfo, masterUri);
+    driver.run();
+  }
+
+  private Thread.UncaughtExceptionHandler getUncaughtExceptionHandler() {
+
+    return new Thread.UncaughtExceptionHandler() {
+      @Override
+      public void uncaughtException(Thread t, Throwable e) {
+        final String msg = "Scheduler exiting due to uncaught exception";
+        log.error(msg, e);
+        log.fatal(msg, e);
+        System.exit(2);
+      }
+    };
+  }
+
+  public KafkaConfigState getConfigState() {
+    return configState;
+  }
+
+  public KafkaStateService getKafkaState() {
+    return kafkaState;
+  }
+
+  public KafkaStageManager getStageManager() {
+    return stageManager;
   }
 }

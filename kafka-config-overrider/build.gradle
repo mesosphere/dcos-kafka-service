@@ -28,3 +28,12 @@ shadowJar {
 task wrapper(type: Wrapper) {
   gradleVersion = '2.3'
 }
+
+distributions {
+    main {
+        baseName = 'overrider'
+        version = ""
+    }
+}
+
+mainClassName = 'org.apache.mesos.kafka.config.Overrider'

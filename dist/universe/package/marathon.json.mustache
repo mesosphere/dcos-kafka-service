@@ -3,7 +3,7 @@
   "cpus": 1.0,
   "mem": 1230,
   "instances": 1,
-  "cmd": "export PATH=$PATH:$MESOS_SANDBOX/jre/bin && java -Xmx1024m -jar kafka-scheduler*.jar",
+  "cmd": "export PATH=$PATH:$MESOS_SANDBOX/jre/bin && ./scheduler/bin/kafka-scheduler server ./scheduler/conf/scheduler.yml",
   "labels": {      
     "DCOS_PACKAGE_FRAMEWORK_NAME": "{{service.name}}"      
   },
@@ -17,10 +17,11 @@
     "BROKER_CPUS": "{{brokers.cpus}}",
     "BROKER_MEM": "{{brokers.mem}}",
     "BROKER_DISK": "{{brokers.disk}}",
+    "DISK_TYPE": "{{brokers.diskType}}",
     "KAFKA_VER_NAME": "kafka_2.10-0.9.0.1",
     "KAFKA_URI": "{{resource.assets.uris.kafka_tgz}}",
     "CONTAINER_HOOK_URI": "{{resource.assets.uris.container-hook-tgz}}",
-    "OVERRIDER_URI": "{{resource.assets.uris.kafka-config-overrider-jar}}",
+    "OVERRIDER_URI": "{{resource.assets.uris.overrider-zip}}",
     "JAVA_URI": "{{resource.assets.uris.jre-tar-gz}}",
     "KAFKA_ADVERTISE_HOST_IP" : "{{kafka.kafka_advertise_host_ip}}",
     "KAFKA_OVERRIDE_RESERVED_BROKER_MAX_ID": "{{kafka.kafka_override_reserved_broker_max_id}}",
@@ -109,7 +110,7 @@
   },
   "uris": [
     "{{resource.assets.uris.jre-tar-gz}}",
-    "{{resource.assets.uris.kafka-scheduler-jar}}",
+    "{{resource.assets.uris.scheduler-zip}}",
     "{{resource.assets.uris.kafka_tgz}}"
   ],
   "healthChecks": [

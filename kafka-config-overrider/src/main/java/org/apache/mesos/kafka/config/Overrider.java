@@ -29,7 +29,7 @@ import java.util.Properties;
 public final class Overrider extends Application<DropwizardConfiguration> {
   private static final Log log = LogFactory.getLog(Overrider.class);
 
-  private static KafkaConfigState configState;
+  private KafkaConfigState configState;
 
   private String configId;
   private KafkaSchedulerConfiguration configuration;
@@ -112,18 +112,18 @@ public final class Overrider extends Application<DropwizardConfiguration> {
     }
   }
 
-  private static String convertKey(String key) {
+  private String convertKey(String key) {
     key = CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, key);
     key = key.replace('_', '.');
     return key;
   }
 
-  private static KafkaSchedulerConfiguration fetchConfig(String configName) {
+  private KafkaSchedulerConfiguration fetchConfig(String configName) {
     log.info("Fetching configuration: " + configName);
     return configState.fetch(configName);
   }
 
-  private static Map<String, String> getOverrides(
+  private Map<String, String> getOverrides(
           KafkaSchedulerConfiguration fromZk,
           KafkaSchedulerConfiguration fromEnv) {
     Map<String, String> overrides = new HashMap<>();

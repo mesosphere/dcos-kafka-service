@@ -65,8 +65,14 @@ public class KafkaSchedulerConfiguration {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
         KafkaSchedulerConfiguration that = (KafkaSchedulerConfiguration) o;
         return Objects.equals(serviceConfiguration, that.serviceConfiguration) &&
                 Objects.equals(brokerConfiguration, that.brokerConfiguration) &&

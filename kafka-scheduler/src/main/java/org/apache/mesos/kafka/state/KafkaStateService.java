@@ -1,29 +1,25 @@
 package org.apache.mesos.kafka.state;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.mesos.Protos.FrameworkID;
+import org.apache.mesos.Protos.TaskID;
+import org.apache.mesos.Protos.TaskInfo;
+import org.apache.mesos.Protos.TaskState;
+import org.apache.mesos.Protos.TaskStatus;
+import org.apache.mesos.kafka.offer.OfferUtils;
+import org.apache.mesos.reconciliation.TaskStatusProvider;
+import org.apache.zookeeper.KeeperException.NoNodeException;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Set;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import org.apache.curator.framework.CuratorFramework;
-
-import org.apache.mesos.kafka.offer.OfferUtils;
-import org.apache.zookeeper.KeeperException.NoNodeException;
-import org.apache.mesos.reconciliation.TaskStatusProvider;
-
-import org.apache.mesos.Protos.FrameworkID;
-import org.apache.mesos.Protos.TaskID;
-import org.apache.mesos.Protos.TaskInfo;
-import org.apache.mesos.Protos.TaskState;
-import org.apache.mesos.Protos.TaskStatus;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 /**
  * Read/write interface for storing and retrieving information about Kafka tasks.
@@ -48,7 +44,7 @@ public class KafkaStateService implements Observer, TaskStatusProvider {
     try {
       initializePath(taskPath);
       initializePath(fwkIdPath);
-    } catch(Exception ex) {
+    } catch (Exception ex) {
       log.fatal("Failed with exception: " + ex);
     }
   }
@@ -59,7 +55,7 @@ public class KafkaStateService implements Observer, TaskStatusProvider {
       if (bytes.length > 0) {
         return FrameworkID.parseFrom(bytes);
       }
-    } catch(Exception ex) {
+    } catch (Exception ex) {
       log.error("Failed to get FrameworkID with exception: " + ex);
     }
 
@@ -69,7 +65,7 @@ public class KafkaStateService implements Observer, TaskStatusProvider {
   public void setFrameworkId(FrameworkID fwkId) {
     try {
       zkClient.setData().forPath(fwkIdPath, fwkId.toByteArray());
-    } catch(Exception ex) {
+    } catch (Exception ex) {
       log.error("Failed to set FrameworkID: " + fwkId + " with exception: " + ex);
     }
   }
@@ -129,7 +125,7 @@ public class KafkaStateService implements Observer, TaskStatusProvider {
   public List<TaskInfo> getTaskInfos() throws Exception {
     List<TaskInfo> taskInfos = new ArrayList<TaskInfo>();
     for (String taskId : getTaskNames()) {
-        taskInfos.add(getTaskInfo(taskId));
+      taskInfos.add(getTaskInfo(taskId));
     }
 
     return taskInfos;
@@ -159,10 +155,6 @@ public class KafkaStateService implements Observer, TaskStatusProvider {
 
   public JSONArray getBrokerIds() throws Exception {
     return getIds(zkRoot + "/brokers/ids");
-  }
-
-  public JSONObject getBroker(String id) throws Exception {
-    return getElement(zkRoot + "/brokers/ids/" + id);
   }
 
   public List<String> getBrokerEndpoints() throws Exception {
@@ -264,8 +256,8 @@ public class KafkaStateService implements Observer, TaskStatusProvider {
   private void recordTaskStatus(TaskStatus taskStatus) throws Exception {
     String statusPath = getTaskStatusPath(OfferUtils.getTaskName(taskStatus.getTaskId().getValue()));
     if (zkClient.checkExists().forPath(statusPath) == null &&
-        !taskStatus.getState().equals(TaskState.TASK_STAGING)) {
-          log.warn("Dropping status update because the ZK path doesn't exist and Status is not STAGING: " + taskStatus);
+      !taskStatus.getState().equals(TaskState.TASK_STAGING)) {
+      log.warn("Dropping status update because the ZK path doesn't exist and Status is not STAGING: " + taskStatus);
     } else {
       record(statusPath, taskStatus.toByteArray());
     }
@@ -276,7 +268,7 @@ public class KafkaStateService implements Observer, TaskStatusProvider {
       String pathToDelete = getTaskRootPath(taskId);
       log.info("Deleting path: " + pathToDelete);
       zkClient.delete().deletingChildrenIfNeeded().forPath(pathToDelete);
-    } catch(Exception ex) {
+    } catch (Exception ex) {
       log.error("Failed to delete Task: " + taskId + " with exception: " + ex);
     }
   }
@@ -288,12 +280,12 @@ public class KafkaStateService implements Observer, TaskStatusProvider {
   }
 
   private TaskStatus taskInfoToTaskStatus(TaskInfo taskInfo) {
-      TaskID taskId = taskInfo.getTaskId();
+    TaskID taskId = taskInfo.getTaskId();
 
-      TaskStatus.Builder taskBuilder = TaskStatus.newBuilder();
-      taskBuilder.setTaskId(taskId);
-      taskBuilder.setState(TaskState.TASK_STAGING);
-      return taskBuilder.build();
+    TaskStatus.Builder taskBuilder = TaskStatus.newBuilder();
+    taskBuilder.setTaskId(taskId);
+    taskBuilder.setState(TaskState.TASK_STAGING);
+    return taskBuilder.build();
   }
 
   private List<TaskStatus> taskInfosToTaskStatuses(List<TaskInfo> taskInfos) {

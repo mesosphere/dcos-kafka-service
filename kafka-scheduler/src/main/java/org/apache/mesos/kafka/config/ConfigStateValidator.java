@@ -3,8 +3,13 @@ package org.apache.mesos.kafka.config;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.apache.mesos.kafka.state.KafkaStateService;
+
 import java.util.*;
 
+/**
+ * Provides validation of configrations.
+ */
 public class ConfigStateValidator {
 
   /**
@@ -49,11 +54,14 @@ public class ConfigStateValidator {
 
   private static final Log log = LogFactory.getLog(ConfigStateValidator.class);
   private static final Set<String> INT_VALUES_THAT_CANNOT_DECREASE = new HashSet<>();
+  private final KafkaStateService state;
+
   static {
     INT_VALUES_THAT_CANNOT_DECREASE.add("BROKER_COUNT");
   }
 
-  public ConfigStateValidator() {
+  public ConfigStateValidator(KafkaStateService state) {
+      this.state = state;
   }
 
   /**
@@ -67,12 +75,18 @@ public class ConfigStateValidator {
           throws ValidationException {
     List<ValidationError> errors = new ArrayList<>();
 
-    final int oldBrokerCount = oldConfig.getServiceConfiguration().getCount();
+    int currBrokerCount = Integer.MAX_VALUE;
+    try {
+      currBrokerCount = state.getTaskInfos().size();
+    } catch (Exception ex) {
+      log.error("Failed to retrieve Broker count with exception: " + ex);
+    }
+
     final int newBrokerCount = newConfig.getServiceConfiguration().getCount();
 
-    if (newBrokerCount < oldBrokerCount) {
+    if (newBrokerCount < currBrokerCount) {
       errors.add(new ValidationError("BROKER_COUNT",
-              "Decreasing this value (from " + oldBrokerCount + " to " + newBrokerCount + ") is not supported."));
+              "Decreasing this value (from " + currBrokerCount + " to " + newBrokerCount + ") is not supported."));
     }
 
     // ... any other in-framework change validation goes here ...

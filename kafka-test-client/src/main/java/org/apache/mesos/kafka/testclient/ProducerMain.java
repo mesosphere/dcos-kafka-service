@@ -1,14 +1,14 @@
 package org.apache.mesos.kafka.testclient;
 
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 public final class ProducerMain {
 
@@ -21,9 +21,9 @@ public final class ProducerMain {
     private final Stats.Values values;
 
     private ProducerRunner(
-        KafkaProducer<byte[], byte[]> kafkaProducer,
-        ClientConfigs.ProducerConfig producerConfig,
-        Stats.Values values) {
+      KafkaProducer<byte[], byte[]> kafkaProducer,
+      ClientConfigs.ProducerConfig producerConfig,
+      Stats.Values values) {
       this.kafkaProducer = kafkaProducer;
       this.producerConfig = producerConfig;
       this.values = values;
@@ -40,7 +40,7 @@ public final class ProducerMain {
         }
       }
       ProducerRecord<byte[], byte[]> record = new ProducerRecord<>(producerConfig.topic, message);
-      long queryPeriodMillis = (producerConfig.qpsLimit > 0) ? (long)( 1000. / (double)producerConfig.qpsLimit ) : 0;
+      long queryPeriodMillis = producerConfig.qpsLimit > 0 ? (long) (1000. / (double) producerConfig.qpsLimit) : 0;
       while (!values.isShutdown()) {
         LOGGER.info("Sending {}-byte message...", message.length);
         Future<RecordMetadata> resultFuture = kafkaProducer.send(record);

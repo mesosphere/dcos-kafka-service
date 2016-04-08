@@ -1,0 +1,10 @@
+{
+  "service": {
+    "placement-strategy": "ANY"
+  },
+  "brokers": {
+    "count": 1,
+    "mem": 512,
+    "disk": 1000
+  }
+}

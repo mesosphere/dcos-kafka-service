@@ -229,13 +229,20 @@ public class KafkaConfigState {
    * Returns the list of configs which are duplicates of the current Target config.
    */
   private List<String> getDuplicateConfigs() {
-    KafkaSchedulerConfiguration targetConfig = getTargetConfig();
+    KafkaSchedulerConfiguration newTargetConfig = getTargetConfig();
 
     List<String> duplicateConfigs = new ArrayList<String>();
     for (String configName : configState.getVersions()) {
-      KafkaSchedulerConfiguration currConfig = fetch(configName);
+      KafkaSchedulerConfiguration currTargetConfig = fetch(configName);
 
-      if (currConfig.equals(targetConfig)) {
+      final BrokerConfiguration currBrokerConfig = currTargetConfig.getBrokerConfiguration();
+      final BrokerConfiguration newBrokerConfig = newTargetConfig.getBrokerConfiguration();
+
+      final KafkaConfiguration currKafkaConfig = currTargetConfig.getKafkaConfiguration();
+      final KafkaConfiguration newKafkaConfig = newTargetConfig.getKafkaConfiguration();
+
+      if (currBrokerConfig.equals(newBrokerConfig) &&
+          currKafkaConfig.equals(newKafkaConfig)) {
         log.info("Duplicate config detected: " + configName);
         duplicateConfigs.add(configName);
       }

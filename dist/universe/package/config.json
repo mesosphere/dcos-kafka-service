@@ -4,18 +4,11 @@
       "service":{
         "type":"object",
         "properties":{
-          "role":{
-            "default":"*",
-            "type":"string"
-          },
-          "principal":{
-            "default":"",
-            "type":"string"
-          },
-          "secret":{
+          "name":{
+            "description":"The name of the service in DCOS.",
             "type":"string",
-            "description":"Mesos secret (password)",
-            "default":""
+            "default":"kafka",
+            "title":"name"
           },
           "user":{
             "default":"root",
@@ -33,11 +26,10 @@
           }
         },
         "required":[
+          "name",
+          "user",
           "placement-strategy",
-          "phase-strategy",
-          "role",
-          "principal",
-          "user"
+          "phase-strategy"
         ]
       },
       "brokers":{
@@ -79,11 +71,6 @@
         "type":"object",
         "additionalProperties":false,
         "properties":{
-          "framework-name":{
-            "type":"string",
-            "description":"Mesos Framework Name",
-            "default":"kafka"
-          },
           "kafka_advertise_host_ip":{
             "description":"Override advertised.host.name with the IP address detected in /opt/mesosphere/detect_ip",
             "type":"boolean",

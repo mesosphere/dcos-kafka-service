@@ -97,8 +97,14 @@ public class KafkaConfiguration {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+          return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+          return false;
+        }
+
         KafkaConfiguration that = (KafkaConfiguration) o;
         return kafkaAdvertiseHostIp == that.kafkaAdvertiseHostIp &&
                 Objects.equals(kafkaVerName, that.kafkaVerName) &&

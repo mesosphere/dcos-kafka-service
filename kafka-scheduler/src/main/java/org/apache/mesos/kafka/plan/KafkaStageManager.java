@@ -1,21 +1,19 @@
 package org.apache.mesos.kafka.plan;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
-
 import org.apache.mesos.kafka.scheduler.KafkaScheduler;
 import org.apache.mesos.kafka.state.KafkaStateService;
-
 import org.apache.mesos.scheduler.plan.Block;
 import org.apache.mesos.scheduler.plan.Phase;
 import org.apache.mesos.scheduler.plan.PhaseStrategyFactory;
 import org.apache.mesos.scheduler.plan.Stage;
 import org.apache.mesos.scheduler.plan.Status;
 import org.apache.mesos.scheduler.plan.StrategyStageManager;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
 
 public class KafkaStageManager extends StrategyStageManager {
   private final Logger log = LoggerFactory.getLogger(getClass());
@@ -32,6 +30,7 @@ public class KafkaStageManager extends StrategyStageManager {
 
     if (block == null) {
       log.error(String.format("Failed to find Block for phaseId: %s and blockId: %s", phaseId, blockId));
+      return;
     }
 
     if (block instanceof KafkaUpdateBlock) {

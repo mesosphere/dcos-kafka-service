@@ -4,7 +4,6 @@ import io.dropwizard.setup.Environment;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.MesosSchedulerDriver;
-import org.apache.mesos.Protos;
 import org.apache.mesos.Protos.*;
 import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
@@ -24,7 +23,6 @@ import org.apache.mesos.offer.OfferAccepter;
 import org.apache.mesos.reconciliation.DefaultReconciler;
 import org.apache.mesos.reconciliation.Reconciler;
 import org.apache.mesos.scheduler.plan.*;
-import org.apache.mesos.scheduler.plan.Status;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -63,6 +61,7 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
     ConfigStateUpdater configStateUpdater = new ConfigStateUpdater(configuration);
     List<String> stageErrors = new ArrayList<>();
     KafkaSchedulerConfiguration targetConfigToUse;
+
     try {
       targetConfigToUse = configStateUpdater.getTargetConfig();
     } catch (ValidationException e) {
@@ -73,6 +72,7 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
         stageErrors.add(err.toString());
       }
     }
+
     envConfig = targetConfigToUse;
     reconciler = new DefaultReconciler();
 
@@ -96,7 +96,7 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
             kafkaState,
             offerRequirementProvider));
     // If config validation had errors, expose them via the Stage.
-    Stage stage = (stageErrors.isEmpty())
+    Stage stage = stageErrors.isEmpty()
         ? DefaultStage.fromList(phases)
         : DefaultStage.withErrors(phases, stageErrors);
 
@@ -286,7 +286,7 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
     Block recBlock = getReconciliationBlock();
 
     if (recBlock != null) {
-      recBlock.setStatus(Status.Pending);
+      recBlock.setStatus(org.apache.mesos.scheduler.plan.Status.Pending);
     } else {
       log.error("Failed to reconcile because unable to find the Reconciliation Block");
     }

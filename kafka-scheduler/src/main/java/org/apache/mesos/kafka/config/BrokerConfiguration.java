@@ -2,7 +2,6 @@ package org.apache.mesos.kafka.config;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.gson.Gson;
 
 import java.util.Objects;
 
@@ -118,8 +117,14 @@ public class BrokerConfiguration {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+          return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+          return false;
+        }
+
         BrokerConfiguration that = (BrokerConfiguration) o;
         return Double.compare(that.cpus, cpus) == 0 &&
                 Double.compare(that.mem, mem) == 0 &&

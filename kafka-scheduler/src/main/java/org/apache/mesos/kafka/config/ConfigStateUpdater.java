@@ -1,16 +1,16 @@
 package org.apache.mesos.kafka.config;
 
-import java.util.Arrays;
 import java.util.UUID;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.mesos.config.ConfigurationChangeDetector;
-import org.apache.mesos.config.ConfigurationChangeNamespaces;
 import org.apache.mesos.kafka.config.ConfigStateValidator.ValidationException;
 import org.apache.mesos.kafka.state.KafkaStateService;
 import org.apache.mesos.state.StateStoreException;
 
+/**
+ * Retrieves and stores configurations in the state store.
+ */
 public class ConfigStateUpdater {
   private static final Log log = LogFactory.getLog(ConfigStateUpdater.class);
 
@@ -21,7 +21,6 @@ public class ConfigStateUpdater {
 
   public ConfigStateUpdater(KafkaSchedulerConfiguration newTargetConfig) {
     this.newTargetConfig = newTargetConfig;
-    this.validator = new ConfigStateValidator();
     final KafkaConfiguration kafkaConfiguration = newTargetConfig.getKafkaConfiguration();
     final String frameworkName = newTargetConfig.getServiceConfiguration().getName();
 
@@ -33,6 +32,8 @@ public class ConfigStateUpdater {
     this.kafkaStateService = new KafkaStateService(
         kafkaConfiguration.getZkAddress(),
         "/" + frameworkName);
+
+    this.validator = new ConfigStateValidator(kafkaStateService);
   }
 
   /**
@@ -47,23 +48,16 @@ public class ConfigStateUpdater {
       setTargetConfig(newTargetConfig);
     } else {
       KafkaSchedulerConfiguration currTargetConfig = kafkaConfigState.getTargetConfig();
+      log.info("Old config: " + currTargetConfig);
+      log.info("New config: " + newTargetConfig);
 
       /* Validator needs to examine values like BROKER_COUNT which ConfigurationChangeDetector is told to ignore.
        * Therefore, always run validation, and run it against the raw list of properties.
        * See also {@link KafkaEnvConfiguratior.ignoredKeys()} */
       validator.validateConfigChange(currTargetConfig, newTargetConfig);
 
-      final BrokerConfiguration currTargetConfigBrokerConfiguration = currTargetConfig.getBrokerConfiguration();
-      final BrokerConfiguration newTargetConfigBrokerConfiguration = newTargetConfig.getBrokerConfiguration();
-
-      final KafkaConfiguration currTargetConfigKafkaConfiguration = currTargetConfig.getKafkaConfiguration();
-      final KafkaConfiguration newTargetConfigKafkaConfiguration = newTargetConfig.getKafkaConfiguration();
-
-      if (!currTargetConfigBrokerConfiguration.equals(newTargetConfigBrokerConfiguration) ||
-              !currTargetConfigKafkaConfiguration.equals(newTargetConfigKafkaConfiguration)) {
+      if (!currTargetConfig.equals(newTargetConfig)) {
         log.info("Config change detected!");
-        log.info("Old config: " + currTargetConfig);
-        log.info("New config: " + newTargetConfig);
         setTargetConfig(newTargetConfig);
         kafkaConfigState.syncConfigs(kafkaStateService);
         kafkaConfigState.cleanConfigs(kafkaStateService);

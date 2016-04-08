@@ -128,7 +128,8 @@ public class CmdExecutor {
     cmd.add("--broker-list");
     cmd.add(brokers);
 
-    String stdout = (String) runCmd(cmd).get("stdout");
+    String stdout = (String) runCmd(cmd).get("message");
+    stdout = stdout.substring("Output: ".length());
     return getPartitions(stdout);
   }
 
@@ -191,6 +192,9 @@ public class CmdExecutor {
 
     String stdout = streamToString(process.getInputStream());
     String stderr = streamToString(process.getErrorStream());
+    log.warn(String.format("stdout:%n%s", stdout));
+    log.warn(String.format("stderr:%n%s", stderr));
+    String message = createOutputMessage(stdout, stderr);
 
     if (exitCode == 0) {
       log.info(String.format(
@@ -205,11 +209,23 @@ public class CmdExecutor {
     }
 
     JSONObject obj = new JSONObject();
-    obj.put("stdout", stdout);
-    obj.put("stderr", stderr);
-    obj.put("exit_code", exitCode);
+    obj.put("message", message);
 
     return obj;
+  }
+
+  private static String createOutputMessage(String stdout, String stderr) {
+    String message = "";
+
+    if (StringUtils.isNotBlank(stdout)) {
+      message += String.format("Output: %s", stdout);
+
+      // error only if we have stdout
+      if (StringUtils.isNotBlank(stderr)) {
+        message += String.format(" Error: %s", stderr);
+      }
+    }
+    return message;
   }
 
   private static String streamToString(InputStream stream) throws Exception {

@@ -124,14 +124,6 @@ public class TopicController {
             cmds = Arrays.asList("--partitions", partitions);
             result = cmdExecutor.alterTopic(name, cmds);
             break;
-          case "config":
-            cmds = Arrays.asList("--config", key + "=" + value);
-            result = cmdExecutor.alterTopic(name, cmds);
-            break;
-          case "deleteConfig":
-            cmds = Arrays.asList("--deleteConfig", key);
-            result = cmdExecutor.alterTopic(name, cmds);
-            break;
           default:
             result = new JSONObject();
             result.put("Error", "Unrecognized operation: " + operation);

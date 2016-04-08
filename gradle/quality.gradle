@@ -1,5 +1,5 @@
-apply plugin: 'findbugs'
-apply plugin: 'checkstyle'
+// apply plugin: 'findbugs'
+// apply plugin: 'checkstyle'
 apply plugin: 'pmd'
 apply plugin: "jacoco"
 
@@ -12,14 +12,14 @@ tasks.withType(FindBugs) {
 tasks.withType(GroovyCompile) {
   configure(groovyOptions.forkOptions) {
     memoryMaximumSize = '1g'
-    jvmArgs = ['-XX:MaxPermSize=512m', '-Xms512m', '-Xmx1g']
+    jvmArgs = ['-Xms512m', '-Xmx1g']
   }
 }
 
-checkstyle {
-  configFile = file("$rootProject.projectDir/gradle/checkstyle/checkstyle.xml")
-  sourceSets = [project.sourceSets.main]  // disable style checks on tests
-}
+//checkstyle {
+//  configFile = file("$rootProject.projectDir/gradle/checkstyle/checkstyle.xml")
+//  sourceSets = [project.sourceSets.main]  // disable style checks on tests
+//}
 
 pmd {
   ruleSets = [

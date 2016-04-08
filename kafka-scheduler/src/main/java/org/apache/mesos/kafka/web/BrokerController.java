@@ -1,26 +1,22 @@
 package org.apache.mesos.kafka.web;
 
-import java.util.Arrays;
-import java.util.List;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.mesos.kafka.scheduler.KafkaScheduler;
+import org.apache.mesos.kafka.state.KafkaStateService;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
-
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import org.apache.mesos.kafka.scheduler.KafkaScheduler;
-import org.apache.mesos.kafka.state.KafkaStateService;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
+import javax.ws.rs.core.Response;
+import java.util.Arrays;
+import java.util.List;
 
 @Path("/v1/brokers")
 @Produces("application/json")
@@ -46,39 +42,27 @@ public class BrokerController {
     }
   }
 
-  @GET
-  @Path("/{id}")
-  public Response broker(@PathParam("id") String id) {
-    try {
-      JSONObject broker = state.getBroker(id);
-      return Response.ok(broker.toString(), MediaType.APPLICATION_JSON).build();
-    } catch (Exception ex) {
-      log.error("Failed to fetch broker: " + id + " with exception: " + ex);
-      return Response.serverError().build();
-    }
-  }
-
   @PUT
   @Path("/{id}")
   public Response killBrokers(
-      @PathParam("id") String id,
-      @QueryParam("reschedule") String reschedule) {
+    @PathParam("id") String id,
+    @QueryParam("replace") String replace) {
 
     try {
       List<String> taskIds =
         Arrays.asList(state.getTaskIdForBroker(Integer.parseInt(id)));
-      return killBrokers(taskIds, reschedule);
+      return killBrokers(taskIds, replace);
     } catch (Exception ex) {
       log.error("Failed to kill brokers with exception: " + ex);
       return Response.serverError().build();
     }
   }
 
-  private Response killBrokers(List<String> taskIds, String reschedule) {
+  private Response killBrokers(List<String> taskIds, String replace) {
     try {
-      boolean resched = Boolean.parseBoolean(reschedule);
+      boolean replaced = Boolean.parseBoolean(replace);
 
-      if (resched) {
+      if (replaced) {
         KafkaScheduler.rescheduleTasks(taskIds);
       } else {
         KafkaScheduler.restartTasks(taskIds);

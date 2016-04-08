@@ -1,9 +1,9 @@
 package org.apache.mesos.kafka.testclient;
 
-import java.util.Map;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Map;
 
 /**
  * Namespace for POJO classes containing configuration for various parts of our clients.
@@ -13,7 +13,7 @@ public class ClientConfigs {
   private static final Logger LOGGER = LoggerFactory.getLogger(ClientConfigs.class);
 
   /**
-   * POJO containing stats emitter options
+   * POJO containing stats emitter options.
    */
   public static class StatsConfig {
     public final long printPeriodMs;
@@ -23,7 +23,7 @@ public class ClientConfigs {
      */
     public static StatsConfig parseFrom(Map<String, String> testClientConfig) {
       try {
-        long printPeriodMs = Long.valueOf(get(testClientConfig, "STATS_PRINT_PERIOD_MS", "500"));
+        long printPeriodMs = Long.parseLong(get(testClientConfig, "STATS_PRINT_PERIOD_MS", "500"));
         return new StatsConfig(printPeriodMs);
       } catch (Throwable e) {
         printFlagParseFailure(e);
@@ -37,7 +37,7 @@ public class ClientConfigs {
   }
 
   /**
-   * POJO containing broker lookup options
+   * POJO containing broker lookup options.
    */
   public static class BrokerLookupConfig {
     public final String masterHost;
@@ -67,7 +67,7 @@ public class ClientConfigs {
   }
 
   /**
-   * POJO containing test consumer options
+   * POJO containing test consumer options.
    */
   public static class ConsumerConfig {
     public final long pollTimeoutMs;
@@ -79,8 +79,8 @@ public class ClientConfigs {
      */
     public static ConsumerConfig parseFrom(Map<String, String> testClientConfig) {
       try {
-        long pollTimeoutMs = Long.valueOf(get(testClientConfig, "POLL_TIMEOUT_MS", "1000"));
-        int threads = Integer.valueOf(get(testClientConfig, "THREADS", "5"));
+        long pollTimeoutMs = Long.parseLong(get(testClientConfig, "POLL_TIMEOUT_MS", "1000"));
+        int threads = Integer.parseInt(get(testClientConfig, "THREADS", "5"));
         String topic = get(testClientConfig, "TOPIC", "bench_topic");
         return new ConsumerConfig(pollTimeoutMs, threads, topic);
       } catch (Throwable e) {
@@ -97,7 +97,7 @@ public class ClientConfigs {
   }
 
   /**
-   * POJO containing test producer options
+   * POJO containing test producer options.
    */
   public static class ProducerConfig {
     public final boolean synchronous;
@@ -111,11 +111,11 @@ public class ClientConfigs {
      */
     public static ProducerConfig parseFrom(Map<String, String> testClientConfig) {
       try {
-        boolean synchronous = Boolean.valueOf(get(testClientConfig, "SYNCHRONOUS", "true"));
-        int threads = Integer.valueOf(get(testClientConfig, "THREADS", "5"));
-        int qpsLimit = Integer.valueOf(get(testClientConfig, "QPS_LIMIT", "5"));
+        boolean synchronous = Boolean.parseBoolean(get(testClientConfig, "SYNCHRONOUS", "true"));
+        int threads = Integer.parseInt(get(testClientConfig, "THREADS", "5"));
+        int qpsLimit = Integer.parseInt(get(testClientConfig, "QPS_LIMIT", "5"));
         String topic = get(testClientConfig, "TOPIC", "bench_topic");
-        int messageSize = Integer.valueOf(get(testClientConfig, "MESSAGE_SIZE_BYTES", "1024"));
+        int messageSize = Integer.parseInt(get(testClientConfig, "MESSAGE_SIZE_BYTES", "1024"));
         return new ProducerConfig(synchronous, threads, qpsLimit, topic, messageSize);
       } catch (Throwable e) {
         printFlagParseFailure(e);
@@ -136,18 +136,18 @@ public class ClientConfigs {
   /**
    * Local hack to provide a bridge between get() and printFlagParseFailure().
    */
-  private static String LAST_GET_KEY = "";
-  private static String LAST_GET_VALUE = "";
+  private static String lastGetKey = "";
+  private static String lastGetValue = "";
 
   private static void printFlagParseFailure(Throwable e) {
-    LOGGER.error(String.format("Failed to parse value for arg %s=%s", LAST_GET_KEY, LAST_GET_VALUE), e);
+    LOGGER.error(String.format("Failed to parse value for arg %s=%s", lastGetKey, lastGetValue), e);
   }
 
   private static String get(Map<String, String> testClientConfig, String key, String defaultVal) {
-    LAST_GET_KEY = key;
+    lastGetKey = key;
     String setVal = testClientConfig.get(key);
     String val = (setVal != null) ? setVal : defaultVal;
-    LAST_GET_VALUE = val;
+    lastGetValue = val;
     return val;
   }
 }

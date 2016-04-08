@@ -44,9 +44,9 @@ public class TopicController {
 
   @POST
   public Response createTopic(
-    @QueryParam("name") String name,
-    @QueryParam("partitions") String partitionCount,
-    @QueryParam("replication") String replicationFactor) {
+      @QueryParam("name") String name,
+      @QueryParam("partitions") String partitionCount,
+      @QueryParam("replication") String replicationFactor) {
 
     try {
       int partCount = Integer.parseInt(partitionCount);
@@ -98,12 +98,12 @@ public class TopicController {
   @PUT
   @Path("/{name}")
   public Response operationOnTopic(
-    @PathParam("name") String name,
-    @QueryParam("operation") String operation,
-    @QueryParam("key") String key,
-    @QueryParam("value") String value,
-    @QueryParam("partitions") String partitions,
-    @QueryParam("messages") String messages) {
+      @PathParam("name") String name,
+      @QueryParam("operation") String operation,
+      @QueryParam("key") String key,
+      @QueryParam("value") String value,
+      @QueryParam("partitions") String partitions,
+      @QueryParam("messages") String messages) {
 
     try {
       JSONObject result = null;
@@ -120,14 +120,6 @@ public class TopicController {
             break;
           case "partitions":
             cmds = Arrays.asList("--partitions", partitions);
-            result = cmdExecutor.alterTopic(name, cmds);
-            break;
-          case "config":
-            cmds = Arrays.asList("--config", key + "=" + value);
-            result = cmdExecutor.alterTopic(name, cmds);
-            break;
-          case "deleteConfig":
-            cmds = Arrays.asList("--deleteConfig", key);
             result = cmdExecutor.alterTopic(name, cmds);
             break;
           default:
@@ -148,7 +140,7 @@ public class TopicController {
   @DELETE
   @Path("/{name}")
   public Response deleteTopic(
-    @PathParam("name") String name) {
+      @PathParam("name") String name) {
 
     try {
       JSONObject result = cmdExecutor.deleteTopic(name);

@@ -2,13 +2,13 @@ allprojects {
   apply plugin: 'idea'
   apply plugin: 'eclipse'
   group = "com.apache.mesos.kafka"
-  version = "0.2.4"
+  version = "0.2.5"
 }
 
 idea {
   project {
     jdkName = '1.8'
-    languageLevel = '1.7'
+    languageLevel = '1.8'
     ipr {
       withXml { provider ->
         provider.node.component
@@ -22,7 +22,8 @@ idea {
 subprojects {
   apply plugin: 'java'
   apply plugin: 'application'
-  
+  apply from: "$rootDir/gradle/quality.gradle"
+
   sourceCompatibility = 1.8
   targetCompatibility = 1.8
 
@@ -32,8 +33,4 @@ subprojects {
     mavenLocal()
     mavenCentral()
   }
-}
-
-task wrapper(type: Wrapper) {
-  gradleVersion = '2.3'
 }

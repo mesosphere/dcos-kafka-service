@@ -1,15 +1,15 @@
 package org.apache.mesos.kafka.testclient;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public final class ConsumerMain {
 
@@ -22,9 +22,9 @@ public final class ConsumerMain {
     private final Stats.Values values;
 
     private ConsumerRunner(
-        Map<String, Object> kafkaConfig,
-        ClientConfigs.ConsumerConfig consumerConfig,
-        Stats.Values values) {
+      Map<String, Object> kafkaConfig,
+      ClientConfigs.ConsumerConfig consumerConfig,
+      Stats.Values values) {
       ByteArrayDeserializer deserializer = new ByteArrayDeserializer();
       this.kafkaConsumer = new KafkaConsumer<>(kafkaConfig, deserializer, deserializer);
       this.consumerConfig = consumerConfig;

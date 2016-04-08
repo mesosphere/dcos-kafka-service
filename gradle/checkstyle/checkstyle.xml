@@ -78,7 +78,7 @@ page at http://checkstyle.sourceforge.net/config.html -->
 
         <module name="JavadocType">
             <property name="scope" value="protected"/>
-            <property name="severity" value="error"/>
+            <property name="severity" value="warning"/>
         </module>
 
         <module name="JavadocStyle">
@@ -181,7 +181,7 @@ page at http://checkstyle.sourceforge.net/config.html -->
 
         <module name="LineLength">
             <!-- Checks if a line is too long. -->
-            <property name="max" value="${com.puppycrawl.tools.checkstyle.checks.sizes.LineLength.max}" default="120"/>
+            <property name="max" value="${com.puppycrawl.tools.checkstyle.checks.sizes.LineLength.max}" default="150"/>
             <property name="severity" value="error"/>
 
             <!--

@@ -7,6 +7,9 @@ import org.apache.mesos.offer.OperationRecorder;
 import org.apache.mesos.Protos.Offer;
 import org.apache.mesos.Protos.Offer.Operation;
 
+/**
+ * Logs the operation.
+ */
 public class LogOperationRecorder implements OperationRecorder {
   private final Log log = LogFactory.getLog(LogOperationRecorder.class);
 

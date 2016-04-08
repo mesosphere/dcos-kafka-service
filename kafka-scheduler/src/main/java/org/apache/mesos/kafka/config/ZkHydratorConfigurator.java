@@ -1,13 +1,16 @@
 package org.apache.mesos.kafka.config;
 
-import java.util.Map;
-
-import org.apache.mesos.config.configurator.Configurator;
 import org.apache.mesos.config.ConfigProperty;
 import org.apache.mesos.config.FrameworkConfigurationService;
+import org.apache.mesos.config.configurator.Configurator;
 
+import java.util.Map;
+
+/**
+ * Retrieves Configuration from Zookeeper.
+ */
 public class ZkHydratorConfigurator implements Configurator {
-  Map<String, Map<String, ConfigProperty>> zkConfig = null;
+  private Map<String, Map<String, ConfigProperty>> zkConfig = null;
 
   public ZkHydratorConfigurator(Map<String, Map<String, ConfigProperty>> zkConfig) {
     this.zkConfig = zkConfig;

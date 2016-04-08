@@ -1,7 +1,11 @@
 package org.apache.mesos.kafka.web;
 
-import java.util.Arrays;
-import java.util.List;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.mesos.kafka.cmd.CmdExecutor;
+import org.apache.mesos.kafka.state.KafkaStateService;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -12,14 +16,8 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import org.apache.mesos.kafka.cmd.CmdExecutor;
-import org.apache.mesos.kafka.state.KafkaStateService;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
+import java.util.Arrays;
+import java.util.List;
 
 @Path("/v1/topics")
 public class TopicController {
@@ -134,7 +132,7 @@ public class TopicController {
       return Response.ok(result.toString(), MediaType.APPLICATION_JSON).build();
 
     } catch (Exception ex) {
-      log.error("Failed to perform operation: " + operation + " on Topic: " + name +  " with exception: " + ex);
+      log.error("Failed to perform operation: " + operation + " on Topic: " + name + " with exception: " + ex);
       return Response.serverError().build();
     }
   }
@@ -146,7 +144,12 @@ public class TopicController {
 
     try {
       JSONObject result = cmdExecutor.deleteTopic(name);
-      return Response.ok(result.toString(), MediaType.APPLICATION_JSON).build();
+      String message = result.getString("message");
+      if (message.contains("This will have no impact if delete.topic.enable is not set to true")) {
+        return Response.accepted().entity(result.toString()).type(MediaType.APPLICATION_JSON).build();
+      } else {
+        return Response.ok(result.toString(), MediaType.APPLICATION_JSON).build();
+      }
 
     } catch (Exception ex) {
       log.error("Failed to delete Topic: " + name + " with exception: " + ex);
@@ -156,7 +159,7 @@ public class TopicController {
 
   @GET
   @Path("/{name}/offsets")
-    public Response getOffsets(@PathParam("name") String topicName, @QueryParam("time") Long time) {
+  public Response getOffsets(@PathParam("name") String topicName, @QueryParam("time") Long time) {
     try {
       JSONArray offsets = cmdExecutor.getOffsets(topicName, time);
       return Response.ok(offsets.toString(), MediaType.APPLICATION_JSON).build();

@@ -1,6 +1,5 @@
 {
   "kafka": {
-    "pv": false,
-    "plan-strategy": "STAGE"
+    "plan_strategy": "STAGE"
   }
 }

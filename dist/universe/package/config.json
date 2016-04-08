@@ -14,12 +14,12 @@
             "default":"root",
             "type":"string"
           },
-          "placement-strategy":{
+          "placement_strategy":{
             "description":"Broker placement strategy. See documentation. [ANY, NODE]",
             "type":"string",
             "default":"NODE"
           },
-          "phase-strategy":{
+          "phase_strategy":{
             "description":"Broker rollout strategy. See documentation. [INSTALL, STAGE]",
             "type":"string",
             "default":"INSTALL"
@@ -28,8 +28,8 @@
         "required":[
           "name",
           "user",
-          "placement-strategy",
-          "phase-strategy"
+          "placement_strategy",
+          "phase_strategy"
         ]
       },
       "brokers":{

@@ -14,8 +14,8 @@ public class ServiceConfiguration {
     private String user;
     @JsonProperty("placementStrategy")
     private String placementStrategy;
-    @JsonProperty("planStrategy")
-    private String planStrategy;
+    @JsonProperty("phaseStrategy")
+    private String phaseStrategy;
     @JsonProperty("role")
     private String role;
     @JsonProperty("principal")
@@ -27,14 +27,14 @@ public class ServiceConfiguration {
             @JsonProperty("name")String name,
             @JsonProperty("user")String user,
             @JsonProperty("placementStrategy")String placementStrategy,
-            @JsonProperty("planStrategy")String planStrategy,
+            @JsonProperty("phaseStrategy")String phaseStrategy,
             @JsonProperty("role")String role,
             @JsonProperty("principal")String principal) {
         this.count = count;
         this.name = name;
         this.user = user;
         this.placementStrategy = placementStrategy;
-        this.planStrategy = planStrategy;
+        this.phaseStrategy = phaseStrategy;
         this.role = role;
         this.principal = principal;
     }
@@ -75,13 +75,13 @@ public class ServiceConfiguration {
         this.placementStrategy = placementStrategy;
     }
 
-    public String getPlanStrategy() {
-        return planStrategy;
+    public String getPhaseStrategy() {
+        return phaseStrategy;
     }
 
-    @JsonProperty("planStrategy")
-    public void setPlanStrategy(String planStrategy) {
-        this.planStrategy = planStrategy;
+    @JsonProperty("phaseStrategy")
+    public void setPlanStrategy(String phaseStrategy) {
+        this.phaseStrategy = phaseStrategy;
     }
 
     public String getRole() {
@@ -117,14 +117,14 @@ public class ServiceConfiguration {
                 Objects.equals(name, that.name) &&
                 Objects.equals(user, that.user) &&
                 Objects.equals(placementStrategy, that.placementStrategy) &&
-                Objects.equals(planStrategy, that.planStrategy) &&
+                Objects.equals(phaseStrategy, that.phaseStrategy) &&
                 Objects.equals(role, that.role) &&
                 Objects.equals(principal, that.principal);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(count, name, user, placementStrategy, planStrategy, role, principal);
+        return Objects.hash(count, name, user, placementStrategy, phaseStrategy, role, principal);
     }
 
     @Override
@@ -134,7 +134,7 @@ public class ServiceConfiguration {
                 ", name='" + name + '\'' +
                 ", user='" + user + '\'' +
                 ", placementStrategy='" + placementStrategy + '\'' +
-                ", planStrategy='" + planStrategy + '\'' +
+                ", phaseStrategy='" + phaseStrategy + '\'' +
                 ", role='" + role + '\'' +
                 ", principal='" + principal + '\'' +
                 '}';

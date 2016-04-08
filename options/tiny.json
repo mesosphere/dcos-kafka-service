@@ -1,6 +1,6 @@
 {
   "service": {
-    "placement-strategy": "ANY"
+    "placement_strategy": "ANY"
   },
   "brokers": {
     "count": 1,

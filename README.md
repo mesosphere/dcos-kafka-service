@@ -111,27 +111,30 @@ $ dcos kafka topic create topic1 --partitions 3 --replication 3
 
 - Step 3. Find connection information.
 
-```bash
+``` bash
 $ dcos kafka connection
 {
-   "broker_list_convenience": "--broker-list ip-10-0-3-230.us-west-2.compute.internal:9092, ip-10-0-3-231.us-west-2.compute.internal:9093",
-   "brokers": [
-       "ip-10-0-3-230.us-west-2.compute.internal:9092",
-       "ip-10-0-3-231.us-west-2.compute.internal:9093"
-   ],
-   "zookeeper": "master.mesos:2181/kafka",
-   "zookeeper_convenience": "--zookeeper master.mesos:2181/kafka"
+    "broker_list_convenience": "--broker-list ip-10-0-3-230.us-west-2.compute.internal:9092, ip-10-0-3-231.us-west-2.compute.internal:9093",
+    "brokers": [
+        "ip-10-0-3-230.us-west-2.compute.internal:9092",
+        "ip-10-0-3-231.us-west-2.compute.internal:9093"
+    ],
+    "zookeeper": "master.mesos:2181/kafka",
+    "zookeeper_convenience": "--zookeeper master.mesos:2181/kafka"
 }
 ```
 
 Step 4. Produce and consume data.
 
-```bash
+``` bash
 $ dcos node ssh --master-proxy --leader
+
 core@ip-10-0-6-153 ~ $ docker run -it mesosphere/kafka-client
+
 root@7bc0e88cfa52:/kafka_2.10-0.8.2.2/bin# ./kafka-console-producer.sh --broker-list ip-10-0-3-230.us-west-2.compute.internal:9092 --topic test
 This is a message
 This is another message
+
 root@7bc0e88cfa52:/kafka_2.10-0.8.2.2/bin# ./kafka-console-consumer.sh --zookeeper master.mesos:2181/kafka --topic test --from-beginning
 This is a message
 This is another message
@@ -164,11 +167,11 @@ Customize the defaults by creating a JSON file. Then, pass it to `dcos package i
 Sample JSON options file named `sample-kafka.json`:
 ``` json
 {
- "kafka": {
-   "broker-count": 10,
-   "framework-name": "sample-kafka",
-   "placement-strategy": "NODE"
- }
+    "kafka": {
+        "broker-count": 10,
+        "framework-name": "sample-kafka",
+        "placement-strategy": "NODE"
+    }
 }
 ```
 
@@ -183,15 +186,16 @@ See [Configuration Options](#configuration-options) for a list of fields that ca
 
 Installing multiple Kafka clusters is identical to installing Kafka clusters with custom configurations as described above.  The only requirement on the operator is that a unique `framework-name` is specified for each installation. For example:
 
-```
+``` bash
 $ cat kafka1.json
 {
- "kafka": {
-   "framework-name": "kafka1"
- }
+    "kafka": {
+        "framework-name": "kafka1"
+    }
 }
 
-$ dcos package install kafka --options=kafka1.json```
+$ dcos package install kafka --options=kafka1.json
+```
 
 ### Uninstall
 
@@ -240,7 +244,7 @@ There are two phases in the update plans for Kafka: Mesos task reconciliation an
 
 Make the REST request below to view the current plan:
 
-```bash
+``` bash
 GET $DCOS_URI/service/kafka/v1/plan HTTP/1.1
 Accept: */*
 Accept-Encoding: gzip, deflate
@@ -299,7 +303,7 @@ Accept-Encoding: gzip, deflate
 
 When using the `STAGE` deployment strategy, an update plan will initially pause without doing any update to ensure the plan is correct. It will look like this:
 
-```bash
+``` bash
 GET $DCOS_URI/service/kafka/v1/plan HTTP/1.1
 Accept: */*
 Accept-Encoding: gzip, deflate
@@ -360,20 +364,20 @@ Accept-Encoding: gzip, deflate
 
 Enter the `continue` command to execute the first block:
 
-```bash
+``` bash
 PUT $DCOS_URI/service/kafka/v1/plan?cmd=continue HTTP/1.1
 Accept: */*
 Accept-Encoding: gzip, deflate
 [...]
 
 {
-   "Result": "Received cmd: continue"
+    "Result": "Received cmd: continue"
 }
 ```
 
 After you execute the continue operation, the plan will look like this:
 
-```bash
+``` bash
 GET $DCOS_URI/service/kafka/v1/plan HTTP/1.1
 Accept: */*
 Accept-Encoding: gzip, deflate
@@ -432,14 +436,14 @@ Accept-Encoding: gzip, deflate
 
 If you enter `continue` a second time, the rest of the plan will be executed without further interruption. If you want to interrupt a configuration update that is in progress, enter the `interrupt` command:
 
-```bash
+``` bash
 PUT $DCOS_URI/service/kafka/v1/plan?cmd=interrupt HTTP/1.1
 Accept: */*
 Accept-Encoding: gzip, deflate
 [...]
 
 {
-   "Result": "Received cmd: interrupt"
+    "Result": "Received cmd: interrupt"
 }
 ```
 
@@ -476,10 +480,10 @@ Configure the number of brokers running in a given Kafka cluster. The default co
 
 Kafka Brokers are configured through settings in a server.properties file deployed with each Broker.  The settings here can be specified at installation time or during a post-deployment configuration update.  They are set in the DCOS Universe's config.json as options such as:
 
-```
+``` json
 "kafka_override_log_retention_hours": {
     "description": "Override log.retention.hours: The number of hours to keep a log file before deleting it (in hours), tertiary to log.retention.ms property",
-    “type": "integer",
+    "type": "integer",
     "default": 168
 },
 
@@ -487,11 +491,11 @@ Kafka Brokers are configured through settings in a server.properties file deploy
 ```
 
 The defaults can be overridden at install time by specifying an options.json file with a format like this:
-```
+``` json
 {
- "kafka": {
-   "kafka_override_log_retention_hours": 100
- }
+    "kafka": {
+        "kafka_override_log_retention_hours": 100
+    }
 }
 ```
 
@@ -656,17 +660,17 @@ Increase the `BROKER_COUNT` value via Marathon as in any other configuration upd
 
 3. If you are using the enterprise edition, create an JSON options file with your latest configuration and set your plan strategy to “STAGE”
 
-```
+``` json
 {
- "kafka": {
-   "plan_strategy": STAGE
- }
+    "kafka": {
+        "plan_strategy": STAGE
+    }
 }
 ```
 
 4. Install the latest version of Kafka:
 
-```
+``` bash
 dcos package install kafka -—options=options.json
 ```
 
@@ -683,7 +687,7 @@ Possible repair actions include `dcos kafka broker restart <broker-id>` and `dco
 The bolded entries below indicate the necessary changes needed to create a valid configuration:
 
 <pre>
-```
+``` json
 $ http $DCOS_URI/service/kafka/v1/plan
 HTTP/1.1 200 OK
 Connection: keep-alive
@@ -781,14 +785,14 @@ GET /service/kafka/v1/connection HTTP/1.1
 [...]
 
 {
-   "broker_list_convenience": "--broker-list 10.0.0.1:9092, 10.0.0.2:9093, 10.0.0.3:9094",
-   "brokers": [
-       "10.0.0.1:9092",
-       "10.0.0.2:9093",
-       "10.0.0.3:9094"
-   ],
-   "zookeeper": "master.mesos:2181/kafka",
-   "zookeeper_convenience": "--zookeeper master.mesos:2181/kafka"
+    "broker_list_convenience": "--broker-list 10.0.0.1:9092, 10.0.0.2:9093, 10.0.0.3:9094",
+    "brokers": [
+        "10.0.0.1:9092",
+        "10.0.0.2:9093",
+        "10.0.0.3:9094"
+    ],
+    "zookeeper": "master.mesos:2181/kafka",
+    "zookeeper_convenience": "--zookeeper master.mesos:2181/kafka"
 }
 ```
 
@@ -797,16 +801,19 @@ The same information can be retrieved through the CLI:
 ``` bash
 $ dcos kafka connection
 {
-   "broker_list_convenience": "--broker-list ip-10-0-3-230.us-west-2.compute.internal:9092, ip-10-0-3-231.us-west-2.compute.internal:9093",
-   "brokers": [
-       "ip-10-0-3-230.us-west-2.compute.internal:9092",
-       "ip-10-0-3-231.us-west-2.compute.internal:9093"
-   ],
-   "zookeeper": "master.mesos:2181/kafka",
-   "zookeeper_convenience": "--zookeeper master.mesos:2181/kafka"
+    "broker_list_convenience": "--broker-list ip-10-0-3-230.us-west-2.compute.internal:9092, ip-10-0-3-231.us-west-2.compute.internal:9093",
+    "brokers": [
+        "ip-10-0-3-230.us-west-2.compute.internal:9092",
+        "ip-10-0-3-231.us-west-2.compute.internal:9093"
+    ],
+    "zookeeper": "master.mesos:2181/kafka",
+    "zookeeper_convenience": "--zookeeper master.mesos:2181/kafka"
 }
+
 $ dcos node ssh --master-proxy --leader
+
 core@ip-10-0-6-153 ~ $ docker run -it mesosphere/kafka-client
+
 root@7bc0e88cfa52:/kafka_2.10-0.8.2.2/bin# ./kafka-console-producer.sh --broker-list ip-10-0-3-230.us-west-2.compute.internal:9092 --topic test
 This is a message
 This is another message
@@ -827,11 +834,11 @@ Increase the `BROKER_COUNT` value via Marathon. This should be rolled as in any 
 ``` bash
 $ dcos kafka --framework-name=kafka broker list
 {
-   "brokers": [
-       "0",
-       "1",
-       "2"
-   ]
+    "brokers": [
+        "0",
+        "1",
+        "2"
+    ]
 }
 ```
 
@@ -841,11 +848,11 @@ GET /service/kafka/v1/brokers HTTP/1.1
 [...]
 
 {
-   "brokers": [
-       "0",
-       "1",
-       "2"
-   ]
+    "brokers": [
+        "0",
+        "1",
+        "2"
+    ]
 }
 ```
 
@@ -854,7 +861,7 @@ GET /service/kafka/v1/brokers HTTP/1.1
 ``` bash
 $ dcos kafka --framework-name=kafka broker restart 0
 [
-   "broker-0__9c426c50-1087-475c-aa36-cd00d24ccebb"
+    "broker-0__9c426c50-1087-475c-aa36-cd00d24ccebb"
 ]
 ```
 
@@ -864,7 +871,7 @@ PUT /service/kafka/v1/brokers/0 HTTP/1.1
 [...]
 
 [
-   "broker-0__9c426c50-1087-475c-aa36-cd00d24ccebb"
+    "broker-0__9c426c50-1087-475c-aa36-cd00d24ccebb"
 ]
 ```
 
@@ -877,8 +884,8 @@ These operations mirror what is available with `bin/kafka-topics.sh`.
 ``` bash
 $ dcos kafka --framework-name=kafka topic list
 [
-   "topic1",
-   "topic0"
+    "topic1",
+    "topic0"
 ]
 ```
 
@@ -888,8 +895,8 @@ GET /service/kafka/v1/topics HTTP/1.1
 [...]
 
 [
-   "topic1",
-   "topic0"
+    "topic1",
+    "topic0"
 ]
 ```
 
@@ -898,9 +905,9 @@ GET /service/kafka/v1/topics HTTP/1.1
 ``` bash
 $ dcos kafka --framework-name=kafka topic create topic1 --partitions=3 --replication=3
 {
-   "exit_code": 0,
-   "stderr": "",
-   "stdout": "Created topic \"topic1\".\n"
+    "exit_code": 0,
+    "stderr": "",
+    "stdout": "Created topic \"topic1\".\n"
 }
 ```
 
@@ -910,9 +917,9 @@ POST /service/kafka/v1/topics?replication=3&name=topic1&partitions=3 HTTP/1.1
 [...]
 
 {
-   "exit_code": 0,
-   "stderr": "",
-   "stdout": "Created topic \"topic1\".\n"
+    "exit_code": 0,
+    "stderr": "",
+    "stdout": "Created topic \"topic1\".\n"
 }
 ```
 
@@ -923,15 +930,15 @@ There is an optional --time parameter which may be set to either “first”, �
 ``` bash
 $ dcos kafka --framework-name=kafka topic offsets topic1
 [
-   {
-       "2": "334"
-   },
-   {
-       "1": "333"
-   },
-   {
-       "0": "333"
-   }
+    {
+        "2": "334"
+    },
+    {
+        "1": "333"
+    },
+    {
+        "0": "333"
+    }
 ]
 ```
 
@@ -941,15 +948,15 @@ GET /service/kafka/v1/topics/topic1/offsets HTTP/1.1
 [...]
 
 [
-   {
-       "2": "334"
-   },
-   {
-       "1": "333"
-   },
-   {
-       "0": "333"
-   }
+    {
+        "2": "334"
+    },
+    {
+        "1": "333"
+    },
+    {
+        "0": "333"
+    }
 ]
 ```
 
@@ -959,9 +966,9 @@ GET /service/kafka/v1/topics/topic1/offsets HTTP/1.1
 $ dcos kafka --framework-name=kafka topic partitions topic1 2
 
 {
-   "exit_code": 0,
-   "stderr": "",
-   "stdout": "WARNING: If partitions are increased for a topic that has a key, the partition logic or ordering of the messages will be affected\nAdding partitions succeeded!\n"
+    "exit_code": 0,
+    "stderr": "",
+    "stdout": "WARNING: If partitions are increased for a topic that has a key, the partition logic or ordering of the messages will be affected\nAdding partitions succeeded!\n"
 }
 ```
 
@@ -971,9 +978,9 @@ PUT /service/kafka/v1/topics/topic1?operation=partitions&partitions=2 HTTP/1.1
 [...]
 
 {
-   "exit_code": 0,
-   "stderr": "",
-   "stdout": "WARNING: If partitions are increased for a topic that has a key, the partition logic or ordering of the messages will be affected\nAdding partitions succeeded!\n"
+    "exit_code": 0,
+    "stderr": "",
+    "stdout": "WARNING: If partitions are increased for a topic that has a key, the partition logic or ordering of the messages will be affected\nAdding partitions succeeded!\n"
 }
 ```
 
@@ -983,9 +990,9 @@ PUT /service/kafka/v1/topics/topic1?operation=partitions&partitions=2 HTTP/1.1
 $ dcos kafka --framework-name=kafka topic producer_test topic1 10
 
 {
-   "exit_code": 0,
-   "stderr": "",
-   "stdout": "10 records sent, 70.422535 records/sec (0.07 MB/sec), 24.20 ms avg latency, 133.00 ms max latency, 13 ms 50th, 133 ms 95th, 133 ms 99th, 133 ms 99.9th.\n"
+    "exit_code": 0,
+    "stderr": "",
+    "stdout": "10 records sent, 70.422535 records/sec (0.07 MB/sec), 24.20 ms avg latency, 133.00 ms max latency, 13 ms 50th, 133 ms 95th, 133 ms 99th, 133 ms 99.9th.\n"
 }
 ```
 
@@ -995,9 +1002,9 @@ PUT /service/kafka/v1/topics/topic1?operation=producer-test&messages=10 HTTP/1.1
 [...]
 
 {
-   "exit_code": 0,
-   "stderr": "",
-   "stdout": "10 records sent, 70.422535 records/sec (0.07 MB/sec), 24.20 ms avg latency, 133.00 ms max latency, 13 ms 50th, 133 ms 95th, 133 ms 99th, 133 ms 99.9th.\n"
+    "exit_code": 0,
+    "stderr": "",
+    "stdout": "10 records sent, 70.422535 records/sec (0.07 MB/sec), 24.20 ms avg latency, 133.00 ms max latency, 13 ms 50th, 133 ms 95th, 133 ms 99th, 133 ms 99.9th.\n"
 }
 ```
 
@@ -1007,9 +1014,9 @@ PUT /service/kafka/v1/topics/topic1?operation=producer-test&messages=10 HTTP/1.1
 $ dcos kafka --framework-name=kafka topic delete topic1
 
 {
-   "exit_code": 0,
-   "stderr": "",
-   "stdout": "Topic topic1 is marked for deletion.\nNote: This will have no impact if delete.topic.enable is not set to true.\n"
+    "exit_code": 0,
+    "stderr": "",
+    "stdout": "Topic topic1 is marked for deletion.\nNote: This will have no impact if delete.topic.enable is not set to true.\n"
 }
 ```
 
@@ -1019,9 +1026,9 @@ DELETE /service/kafka/v1/topics/topic1?operation=delete HTTP/1.1
 [...]
 
 {
-   "exit_code": 0,
-   "stderr": "",
-   "stdout": "Topic topic1 is marked for deletion.\nNote: This will have no impact if delete.topic.enable is not set to true.\n"
+    "exit_code": 0,
+    "stderr": "",
+    "stdout": "Topic topic1 is marked for deletion.\nNote: This will have no impact if delete.topic.enable is not set to true.\n"
 }
 ```
 
@@ -1033,9 +1040,9 @@ Note the warning in the output from the commands above. You can change the indic
 $ dcos kafka --framework-name=kafka topic under_replicated_partitions
 
 {
-   "exit_code": 0,
-   "stderr": "",
-   "stdout": ""
+    "exit_code": 0,
+    "stderr": "",
+    "stdout": ""
 }
 ```
 
@@ -1045,9 +1052,9 @@ GET /service/kafka/v1/topics/under_replicated_partitions HTTP/1.1
 [...]
 
 {
-   "exit_code": 0,
-   "stderr": "",
-   "stdout": ""
+    "exit_code": 0,
+    "stderr": "",
+    "stdout": ""
 }
 ```
 
@@ -1057,9 +1064,9 @@ GET /service/kafka/v1/topics/under_replicated_partitions HTTP/1.1
 $ dcos kafka --framework-name=kafka topic unavailable_partitions
 
 {
-   "exit_code": 0,
-   "stderr": "",
-   "stdout": ""
+    "exit_code": 0,
+    "stderr": "",
+    "stdout": ""
 }
 ```
 
@@ -1069,9 +1076,9 @@ GET /service/kafka/v1/topics/unavailable_partitions HTTP/1.1
 [...]
 
 {
-   "exit_code": 0,
-   "stderr": "",
-   "stdout": ""
+    "exit_code": 0,
+    "stderr": "",
+    "stdout": ""
 }
 ```
 
@@ -1145,7 +1152,7 @@ The “disk” configuration value is denominated in MB. We recommend you set th
 
 #### Pitfalls of Managing Configurations Outside of the Framework
 
-The Kafka framework's core responsibility is to deploy and maintain the deployment of a Kafka cluster whose configuration has been specified.  In order to do this the framework makes the assumption that it has ownership of broker configuration.  If an end-user makes modifications to individual brokers through out-of-band configuration operations, the framework will almost certainly override those modifications at a later time. If a broker crashes, it will be restarted with the configuration known to the scheduler, not one modified out-of-band. If a configuration update is initiated, all out-of-band modifications will be overwritten during the rolling update.
+The Kafka framework's core responsibility is to deploy and maintain the deployment of a Kafka cluster whose configuration has been specified. In order to do this the framework makes the assumption that it has ownership of broker configuration. If an end-user makes modifications to individual brokers through out-of-band configuration operations, the framework will almost certainly override those modifications at a later time. If a broker crashes, it will be restarted with the configuration known to the scheduler, not one modified out-of-band. If a configuration update is initiated, all out-of-band modifications will be overwritten during the rolling update.
 
 ### Brokers
 

@@ -211,8 +211,8 @@ When finished, delete them from Marathon with these commands:
 
 curl -X DELETE{} {}/{}
 curl -X DELETE{} {}/{}'''.format(
-    curl_headers, marathon_url, reader_app_id,
-    curl_headers, marathon_url, writer_app_id))
+    curl_headers, marathon_url, producer_app_id,
+    curl_headers, marathon_url, consumer_app_id))
     return 0
 
 if __name__ == "__main__":

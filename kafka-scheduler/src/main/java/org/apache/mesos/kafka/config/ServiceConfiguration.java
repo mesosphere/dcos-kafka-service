@@ -80,7 +80,7 @@ public class ServiceConfiguration {
     }
 
     @JsonProperty("phaseStrategy")
-    public void setPlanStrategy(String phaseStrategy) {
+    public void setPhaseStrategy(String phaseStrategy) {
         this.phaseStrategy = phaseStrategy;
     }
 

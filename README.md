@@ -232,7 +232,7 @@ Configuration updates are rolled out through execution of Update Plans. You can 
 
 #### Configuration Update Plans
 
-In brief, "plans" are composed of "phases," which are in turn composed of "blocks." Two possible configuration update strategies specify how the blocks are executed. These strategies are specified by setting the `PLAN_STRATEGY` environment variable on the scheduler.  By default, the strategy is `INSTALL`, which rolls changes out to one broker at a time with no pauses.
+In brief, "plans" are composed of "phases," which are in turn composed of "blocks." Two possible configuration update strategies specify how the blocks are executed. These strategies are specified by setting the `PHASE_STRATEGY` environment variable on the scheduler.  By default, the strategy is `INSTALL`, which rolls changes out to one broker at a time with no pauses.
 
 The alternative is the `STAGE` strategy. This strategy injects two mandatory human decision points into the configuration update process. Initially, no configuration update will take place: the service waits for a human to confirm the update plan is correct. You may then decide to either continue the configuration update through a REST API call or roll back the configuration update by replacing the original configuration through Marathon in exactly the same way as a configuration update is specified above.
 
@@ -663,7 +663,7 @@ Increase the `BROKER_COUNT` value via Marathon as in any other configuration upd
 ``` json
 {
     "kafka": {
-        "plan_strategy": STAGE
+        "phase_strategy": STAGE
     }
 }
 ```
@@ -688,7 +688,7 @@ The bolded entries below indicate the necessary changes needed to create a valid
 
 <pre>
 ``` json
-$ http $DCOS_URI/service/kafka/v1/plan
+$ curl -X GET "$DCOS_URI/service/kafka/v1/plan"
 HTTP/1.1 200 OK
 Connection: keep-alive
 Content-Length: 952
@@ -1089,7 +1089,7 @@ GET /service/kafka/v1/topics/unavailable_partitions HTTP/1.1
 ##### View Plan
 
 ``` bash
-$ http $DCOS_URI/service/kafka/v1/plan
+$ curl -X GET "$DCOS_URI/service/kafka/v1/plan"
 HTTP/1.1 200 OK
 [...]
 

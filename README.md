@@ -534,7 +534,7 @@ All `curl` examples in this document assume that an auth token has already been 
 
 DCOS Enterprise Edition comes with support for [user ACLs](https://docs.mesosphere.com/administration/security-and-authentication/). Interacting with the Kafka REST API requires first retrieving an auth token from the [auth HTTP endpoint](https://docs.mesosphere.com/administration/security-and-authentication/auth-api/), and then providing this token in following requests.
 
-First, we retrieve `uSeR_t0k3n` with our user credentials:
+First, we retrieve `uSeR_t0k3n` with our user credentials, and store the token as an environment variable:
 
 ``` bash
 $ curl --data '{"uid":"username", "password":"password"}' --header "Content-Type:application/json" "$DCOS_URI/acs/api/v1/auth/login"
@@ -564,6 +564,8 @@ GET /service/kafka/v1/connection HTTP/1.1
     "zookeeper_convenience": "--zookeeper hostname:2181/kafka"
 }
 ```
+
+The token is not needed to access the Kafka brokers themselves.
 
 ##### OAuth token authentication
 

@@ -96,7 +96,7 @@ JRE_JAVA_PATH = "jre/bin/java" # relative to MESOS_SANDBOX
               help="username to use when making requests to the DCOS cluster (if the cluster requires auth)")
 @click.option("--password", envvar="DCOS_PASSWORD",
               help="password to use when making requests to the DCOS cluster (if the cluster requires auth)")
-@click.option("--jar-url", show_default=True, default="https://s3-us-west-2.amazonaws.com/infinity-artifacts/kafka/kafka-test-client-0.2.4-uber.jar",
+@click.option("--jar-url", show_default=True, default="https://s3-us-west-2.amazonaws.com/infinity-artifacts/kafka/kafka-test-client-0.2.5-uber.jar",
               help="url of the kafka test client package")
 @click.option("--jre-url", show_default=True, default="https://s3-eu-west-1.amazonaws.com/downloads.mesosphere.com/kafka/jre-8u72-linux-x64.tar.gz",
               help="url of the jre package")

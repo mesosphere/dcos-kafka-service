@@ -169,11 +169,11 @@ $ dcos kafka --framework-name kafka-dev <cmd>
 
 ### Minimal Installation
 
-On DCOS-Vagrant or other testing environments, a minimal configuration may be required to keep within the available resources.
+For development purposes, you may wish to install Kafka on a local DCOS cluster. For this, you can use [dcos-vagrant](https://github.com/mesosphere/dcos-vagrant).
 
 To start a minimal cluster with a single broker, create a JSON options file named `sample-kafka-minimal.json`:
 
-```json
+``` json
 {
     "brokers": {
         "count": 1,

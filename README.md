@@ -8,8 +8,10 @@ DCOS Kafka Service Guide
 
 [Getting Started](#getting-started)
 - [Quick Start](#quick-start)
-- [Install and Customize](#install-and-customize)
+
+[Install and Customize](#install-and-customize)
 - [Default Installation](#default-installation)
+- [Minimal Installation](#minimal-installation)
 - [Custom Installation](#custom-installation)
 - [Multiple Kafka cluster installation](#multiple-kafka-cluster-installation)
 - [Uninstall](#uninstall)
@@ -26,26 +28,32 @@ DCOS Kafka Service Guide
   - [Configure Kafka Broker Properties](#configure-kafka-broker-properties)
 
 [Connecting Clients](#connecting-clients)
+- [Connection Info Using the CLI](#connection-info-using-the-cli)
+- [Connection Info Using the API](#connection-info-using-the-api)
+- [Connection Info Response](#connection-info-response)
+- [Configuring the Kafka Client Library](#configuring-the-kafka-client-library)
+  - [Adding the Kafka Client Library to Your Application](#adding-the-kafka-client-library-to-your-application)
+  - [Connecting the Kafka Client Library](#connecting-the-kafka-client-library)
+- [Configuring the Kafka Test Scripts](#configuring-the-kafka-test-scripts)
 
 [Managing](#managing)
-- [Add a Broker](add-a-broker)
-- [Upgrade Software](upgrade-software)
+- [Add a Broker](#add-a-broker)
+- [Upgrade Software](#upgrade-software)
 
 [Troubleshooting](#troubleshooting)
 - [Configuration Update Errors](#configuration-update-errors)
 - [Replacing a Permanently Failed Server](#replacing-a-permanently-failed-server)
+- [Security](#security)
 
 [API Reference](#api-reference)
-- [Connection Information](connection-information)
+- [Connection Information](#connection-information)
 - [Broker Operations](#broker-operations)
   - [Add Broker](#add-broker)
   - [List All Brokers](#list-all-brokers)
-  - [View Broker Details](#view-all-broker-details)
   - [Restart Single Broker](#restart-single-broker)
 - [Topic Operations](#topic-operations)
   - [List Topics](#list-topics)
   - [Create Topic](#create-topic)
-  - [View Topic Details](view-topic-details)
   - [View Topic Offsets](#view-topic-offsets)
   - [Alter Topic Partition Count](#alter-topic-partition-count)
   - [Run Producer Test on Topic](#run-producer-test-on-topic)
@@ -60,10 +68,9 @@ DCOS Kafka Service Guide
 - [Configurations](#configurations)
   - [Pitfalls of Managing Configurations Outside of the Framework](#pitfalls-of-managing-configurations-outside-of-the-framework)
 - [Brokers](#brokers)
-- [Security](#security)
 
 [Development](#development)
-  
+
 ## Overview
 
 DCOS Kafka is an automated service that makes it easy to deploy and manage Apache Kafka on Mesosphere DCOS, eliminating nearly all of the complexity traditionally associated with managing a Kafka cluster. Apache Kafka is a distributed high-throughput publish-subscribe messaging system with strong ordering guarantees. Kafka clusters are highly available, fault tolerant, and very durable. For more information on Apache Kafka, see the Apache Kafka [documentation](http://kafka.apache.org/documentation.html). DCOS Kafka gives you direct access to the Kafka API so that existing producers and consumers can interoperate. You can configure and install DCOS Kafka in moments. Multiple Kafka clusters can be installed on DCOS and managed independently, so you can offer Kafka as a managed service to your organization.
@@ -160,24 +167,51 @@ All `dcos kafka` CLI commands have a `--framework-name` argument allowing the us
 $ dcos kafka --framework-name kafka-dev <cmd>
 ```
 
-### Custom installation
+### Minimal Installation
 
-Customize the defaults by creating a JSON file. Then, pass it to `dcos package install` using the `--options parameter`.
+For development purposes, you may wish to install Kafka on a local DCOS cluster. For this, you can use [dcos-vagrant](https://github.com/mesosphere/dcos-vagrant).
 
-Sample JSON options file named `sample-kafka.json`:
+To start a minimal cluster with a single broker, create a JSON options file named `sample-kafka-minimal.json`:
+
 ``` json
 {
+    "brokers": {
+        "count": 1,
+        "mem": 512,
+        "disk": 1000
+    }
+}
+```
+
+The command below creates a cluster using `sample-kafka-minimal.json`:
+``` bash
+$ dcos package install --options=sample-kafka-minimal.json kafka
+```
+
+### Custom Installation
+
+Customize the defaults by creating a JSON file. Then, pass it to `dcos package install` using the `--options` parameter.
+
+Sample JSON options file named `sample-kafka-custom.json`:
+``` json
+{
+    "service": {
+        "name": "sample-kafka-custom",
+        "placement_strategy": "NODE"
+    },
+    "brokers": {
+        "count": 10
+    },
     "kafka": {
-        "broker-count": 10,
-        "framework-name": "sample-kafka",
-        "placement-strategy": "NODE"
+        "delete_topic_enable": true,
+        "log_retention_hours": 128
     }
 }
 ```
 
 The command below creates a cluster using `sample-kafka.json`:
 ``` bash
-$ dcos package install --options=sample-kafka.json kafka
+$ dcos package install --options=sample-kafka-custom.json kafka
 ```
 
 See [Configuration Options](#configuration-options) for a list of fields that can be customized via an options JSON file when the Kafka cluster is created.
@@ -189,8 +223,8 @@ Installing multiple Kafka clusters is identical to installing Kafka clusters wit
 ``` bash
 $ cat kafka1.json
 {
-    "kafka": {
-        "framework-name": "kafka1"
+    "service": {
+        "name": "kafka1"
     }
 }
 
@@ -199,10 +233,10 @@ $ dcos package install kafka --options=kafka1.json
 
 ### Uninstall
 
-Uninstalling a cluster is also straightforward. Replace `kafka` with the name of the kafka instance to be uninstalled.
+Uninstalling a cluster is also straightforward. Replace `name` with the name of the kafka instance to be uninstalled.
 
 ``` bash
-$ dcos package uninstall --app-id=kafka kafka
+$ dcos package uninstall --app-id=name kafka
 ```
 
 Then, use the [framework cleaner script](https://github.com/mesosphere/framework-cleaner) to remove your Kafka instance from Zookeeper and to destroy all data associated with it. The script require several arguments, the values for which are derived from your framework name:
@@ -223,7 +257,7 @@ The Kafka scheduler runs as a Marathon process and can be reconfigured by changi
 2. In the list of `Applications`, click the name of the Kafka framework to be updated.
 3. Within the Kafka instance details view, click the `Configuration` tab, then click the `Edit` button.
 4. In the dialog that appears, expand the `Environment Variables` section and update any field(s) to their desired value(s). For example, to [increase the number of Brokers](#broker-count), edit the value for `BROKER_COUNT`. Do not edit the value for `FRAMEWORK_NAME` or `BROKER_DISK` or  `PLACEMENT_STRATEGY`.
-5.  A `PHASE_STRATEGY` of `STAGE` should also be set.  See “Configuration Deployment Strategy” for more details.
+5.  A `PHASE_STRATEGY` of `STAGE` should also be set.  See “Configuration Deployment Strategy” below for more details.
 6. Click `Change and deploy configuration` to apply any changes and cleanly reload the Kafka Framework scheduler. The Kafka cluster itself will persist across the change.
 
 #### Configuration Deployment Strategy
@@ -232,7 +266,7 @@ Configuration updates are rolled out through execution of Update Plans. You can 
 
 #### Configuration Update Plans
 
-In brief, "plans" are composed of "phases," which are in turn composed of "blocks." Two possible configuration update strategies specify how the blocks are executed. These strategies are specified by setting the `PLAN_STRATEGY` environment variable on the scheduler.  By default, the strategy is `INSTALL`, which rolls changes out to one broker at a time with no pauses.
+In brief, "plans" are composed of "phases," which are in turn composed of "blocks." Two possible configuration update strategies specify how the blocks are executed. These strategies are specified by setting the `PHASE_STRATEGY` environment variable on the scheduler.  By default, the strategy is `INSTALL`, which rolls changes out to one broker at a time with no pauses.
 
 The alternative is the `STAGE` strategy. This strategy injects two mandatory human decision points into the configuration update process. Initially, no configuration update will take place: the service waits for a human to confirm the update plan is correct. You may then decide to either continue the configuration update through a REST API call or roll back the configuration update by replacing the original configuration through Marathon in exactly the same way as a configuration update is specified above.
 
@@ -451,7 +485,7 @@ Accept-Encoding: gzip, deflate
 
 ### Configuration Options
 
-The following describes the most commonly used features of the Kafka framework and how to configure them via dcos-cli and in Marathon. View the [default `config.json` in DCOS Universe](https://github.com/mesosphere/universe/tree/kafka_0_9_0_1__0_2_3/repo/packages/K/kafka/3) to see all possible configuration options.
+The following describes the most commonly used features of the Kafka framework and how to configure them via dcos-cli and in Marathon. View the [default `config.json` in DCOS Universe](https://github.com/mesosphere/universe/tree/1-7ea/repo/packages/K/kafka/6) to see all possible configuration options.
 
 **Note:** To get the latest version of `config.json`, make sure that you are accessing the file from the highest number folder in the `https://github.com/mesosphere/universe/tree/kafka_0_9_0_1__0_2_3/repo/packages/K/kafka/` directory.
 
@@ -481,7 +515,7 @@ Configure the number of brokers running in a given Kafka cluster. The default co
 Kafka Brokers are configured through settings in a server.properties file deployed with each Broker.  The settings here can be specified at installation time or during a post-deployment configuration update.  They are set in the DCOS Universe's config.json as options such as:
 
 ``` json
-"kafka_override_log_retention_hours": {
+"log_retention_hours": {
     "description": "Override log.retention.hours: The number of hours to keep a log file before deleting it (in hours), tertiary to log.retention.ms property",
     "type": "integer",
     "default": 168
@@ -494,7 +528,7 @@ The defaults can be overridden at install time by specifying an options.json fil
 ``` json
 {
     "kafka": {
-        "kafka_override_log_retention_hours": 100
+        "log_retention_hours": 100
     }
 }
 ```
@@ -518,7 +552,7 @@ dcos kafka --framework-name=<framework-name> connection
 The following curl example demonstrates how to retrive connection a set of brokers to connect to using the REST API.
 
 ``` bash
-curl http://<dcos_url>/cassandra/v1/nodes/connect
+curl http://<dcos_url>/service/kafka/v1/connection
 ```
 
 ### Connection Info Response
@@ -538,7 +572,7 @@ The response, for both the CLI and the REST API is as below.
 }
 ```
 
-This JSON array contains a list of valid brokers that the client can use to connect to the Cassandra cluster. For availability reasons, it is best to specify multiple brokers in configuration of the client. 
+This JSON array contains a list of valid brokers that the client can use to connect to the Kafka cluster. For availability reasons, it is best to specify multiple brokers in configuration of the client.
 
 ### Configuring the Kafka Client Library
 
@@ -571,7 +605,7 @@ producerConfig.put("request.timeout.ms", "3000");
 // ... other options: http://kafka.apache.org/documentation.html#producerconfigs
 ByteArraySerializer serializer = new ByteArraySerializer();
 KafkaProducer<byte[], byte[]> kafkaProducer = new KafkaProducer<>(producerConfig, serializer, serializer);
-  
+
 byte[] message = new byte[1024];
 for (int i = 0; i < message.length; ++i) {
   if (i % 2 == 0) {
@@ -662,8 +696,8 @@ Increase the `BROKER_COUNT` value via Marathon as in any other configuration upd
 
 ``` json
 {
-    "kafka": {
-        "plan_strategy": STAGE
+    "service": {
+        "phase_strategy": "STAGE"
     }
 }
 ```
@@ -688,7 +722,7 @@ The bolded entries below indicate the necessary changes needed to create a valid
 
 <pre>
 ``` json
-$ http $DCOS_URI/service/kafka/v1/plan
+$ curl -X GET "$DCOS_URI/service/kafka/v1/plan"
 HTTP/1.1 200 OK
 Connection: keep-alive
 Content-Length: 952
@@ -1089,7 +1123,7 @@ GET /service/kafka/v1/topics/unavailable_partitions HTTP/1.1
 ##### View Plan
 
 ``` bash
-$ http $DCOS_URI/service/kafka/v1/plan
+$ curl -X GET "$DCOS_URI/service/kafka/v1/plan"
 HTTP/1.1 200 OK
 [...]
 
@@ -1148,7 +1182,7 @@ HTTP/1.1 200 OK
 
 ### Configurations
 
-The “disk” configuration value is denominated in MB. We recommend you set the configuration value `kafka_override_log_retention_bytes` to a value smaller than the indicated “disk” configuration.
+The “disk” configuration value is denominated in MB. We recommend you set the configuration value `log_retention_bytes` to a value smaller than the indicated “disk” configuration.
 
 #### Pitfalls of Managing Configurations Outside of the Framework
 

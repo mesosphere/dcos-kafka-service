@@ -233,10 +233,10 @@ $ dcos package install kafka --options=kafka1.json
 
 ### Uninstall
 
-Uninstalling a cluster is also straightforward. Replace `kafka` with the name of the kafka instance to be uninstalled.
+Uninstalling a cluster is also straightforward. Replace `name` with the name of the kafka instance to be uninstalled.
 
 ``` bash
-$ dcos package uninstall --app-id=kafka kafka
+$ dcos package uninstall --app-id=name kafka
 ```
 
 Then, use the [framework cleaner script](https://github.com/mesosphere/framework-cleaner) to remove your Kafka instance from Zookeeper and to destroy all data associated with it. The script require several arguments, the values for which are derived from your framework name:

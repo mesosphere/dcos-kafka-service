@@ -23,6 +23,7 @@ DCOS Kafka Service Guide
 [Connecting Clients](#connecting-clients)
 - [Using the DCOS CLI](#using-the-dcos-cli)
 - [Using the REST API](#using-the-rest-api)
+- [REST API Authentication](#rest-api-authentication)
 - [Connection Info Response](#connection-info-response)
 - [Configuring the Kafka Client Library](#configuring-the-kafka-client-library)
 - [Configuring the Kafka Test Scripts](#configuring-the-kafka-test-scripts)
@@ -234,7 +235,7 @@ The Kafka scheduler runs as a Marathon process and can be reconfigured by changi
 2. In the list of `Applications`, click the name of the Kafka framework to be updated.
 3. Within the Kafka instance details view, click the `Configuration` tab, then click the `Edit` button.
 4. In the dialog that appears, expand the `Environment Variables` section and update any field(s) to their desired value(s). For example, to [increase the number of Brokers](#broker-count), edit the value for `BROKER_COUNT`. Do not edit the value for `FRAMEWORK_NAME` or `BROKER_DISK` or  `PLACEMENT_STRATEGY`.
-5.  A `PHASE_STRATEGY` of `STAGE` should also be set.  See “Configuration Deployment Strategy” below for more details.
+5.  A `PHASE_STRATEGY` of `STAGE` should also be set.  See "Configuration Deployment Strategy" below for more details.
 6. Click `Change and deploy configuration` to apply any changes and cleanly reload the Kafka Framework scheduler. The Kafka cluster itself will persist across the change.
 
 #### Configuration Deployment Strategy
@@ -245,22 +246,19 @@ Configuration updates are rolled out through execution of Update Plans. You can 
 
 In brief, "plans" are composed of "phases," which are in turn composed of "blocks." Two possible configuration update strategies specify how the blocks are executed. These strategies are specified by setting the `PHASE_STRATEGY` environment variable on the scheduler.  By default, the strategy is `INSTALL`, which rolls changes out to one broker at a time with no pauses.
 
-The alternative is the `STAGE` strategy. This strategy injects two mandatory human decision points into the configuration update process. Initially, no configuration update will take place: the service waits for a human to confirm the update plan is correct. You may then decide to either continue the configuration update through a REST API call or roll back the configuration update by replacing the original configuration through Marathon in exactly the same way as a configuration update is specified above.
+The alternative is the `STAGE` strategy. This strategy injects two mandatory human decision points into the configuration update process. Initially, no configuration update will take place: the service waits for a human to confirm the update plan is correct. You may then decide to either continue the configuration update through a [REST API](#using-the-rest-api) call, or roll back the configuration update by replacing the original configuration through Marathon in exactly the same way as a configuration update is specified above.
 
-After specifying that an update should continue, one block representing one broker will be updated and the configuration update will again pause. At this point, you have a second opportunity to roll back or continue. If you decide to continue a second time, the rest of the brokers will be updated one at a time until all the brokers are using the new configuration. You may interrupt an update at any point. After interrupting, you can choose to continue or roll back. Consult the “Configuration Update REST API” for these operations.
+After specifying that an update should continue, one block representing one broker will be updated and the configuration update will again pause. At this point, you have a second opportunity to roll back or continue. If you decide to continue a second time, the rest of the brokers will be updated one at a time until all the brokers are using the new configuration. You may interrupt an update at any point. After interrupting, you can choose to continue or roll back. Consult the "Configuration Update REST API" for these operations.
 
 #### Configuration Update REST API
 
 There are two phases in the update plans for Kafka: Mesos task reconciliation and update. Mesos task reconciliation is always executed without need for human interaction.
 
-Make the REST request below to view the current plan. See [API authentication](#api-authentication) for information on how this request must be authenticated:
+Make the REST request below to view the current plan. See [REST API authentication](#rest-api-authentication) for information on how this request must be authenticated.
 
 ``` bash
-$ curl "$DCOS_URI/service/kafka/v1/plan"
+$ curl --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan"
 GET $DCOS_URI/service/kafka/v1/plan HTTP/1.1
-Accept: */*
-Accept-Encoding: gzip, deflate
-[...]
 
 {
     "errors": [],
@@ -316,11 +314,8 @@ Accept-Encoding: gzip, deflate
 When using the `STAGE` deployment strategy, an update plan will initially pause without doing any update to ensure the plan is correct. It will look like this:
 
 ``` bash
-$ curl "$DCOS_URI/service/kafka/v1/plan"
+$ curl --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan"
 GET $DCOS_URI/service/kafka/v1/plan HTTP/1.1
-Accept: */*
-Accept-Encoding: gzip, deflate
-[...]
 
 {
     "errors": [],
@@ -378,11 +373,8 @@ Accept-Encoding: gzip, deflate
 Enter the `continue` command to execute the first block:
 
 ``` bash
-$ curl -X PUT "$DCOS_URI/service/kafka/v1/plan?cmd=continue"
+$ curl -X PUT --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan?cmd=continue"
 PUT $DCOS_URI/service/kafka/v1/plan?cmd=continue HTTP/1.1
-Accept: */*
-Accept-Encoding: gzip, deflate
-[...]
 
 {
     "Result": "Received cmd: continue"
@@ -392,11 +384,8 @@ Accept-Encoding: gzip, deflate
 After you execute the continue operation, the plan will look like this:
 
 ``` bash
-$ curl "$DCOS_URI/service/kafka/v1/plan"
+$ curl --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan"
 GET $DCOS_URI/service/kafka/v1/plan HTTP/1.1
-Accept: */*
-Accept-Encoding: gzip, deflate
-[...]
 
 {
     "errors": [],
@@ -452,11 +441,8 @@ Accept-Encoding: gzip, deflate
 If you enter `continue` a second time, the rest of the plan will be executed without further interruption. If you want to interrupt a configuration update that is in progress, enter the `interrupt` command:
 
 ``` bash
-$ curl -X PUT "$DCOS_URI/service/kafka/v1/plan?cmd=interrupt"
+$ curl -X PUT --header "Authorization: token=$AUTH_TOKEN"  "$DCOS_URI/service/kafka/v1/plan?cmd=interrupt"
 PUT $DCOS_URI/service/kafka/v1/plan?cmd=interrupt HTTP/1.1
-Accept: */*
-Accept-Encoding: gzip, deflate
-[...]
 
 {
     "Result": "Received cmd: interrupt"
@@ -498,6 +484,7 @@ Kafka Brokers are configured through settings in a server.properties file deploy
 
 ``` json
 "log_retention_hours": {
+    "title": "log.retention.hours",
     "description": "Override log.retention.hours: The number of hours to keep a log file before deleting it (in hours), tertiary to log.retention.ms property",
     "type": "integer",
     "default": 168
@@ -531,25 +518,83 @@ dcos kafka --framework-name=<framework-name> connection
 
 ### Using the REST API
 
-The following curl example demonstrates how to retrive connection a set of brokers to connect to using the REST API.
+The following `curl` example demonstrates how to retrive connection a set of brokers to connect to using the REST API. See [REST API authentication](#rest-api-authentication) for information on how this request must be authenticated.
 
 ``` bash
-$ curl "$DCOS_URI/service/kafka/v1/connection"
+$ curl --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/connection"
 ```
 
-#### API Authentication
+### REST API Authentication
 
-Commands using the REST API must be authenticated using one of the following methods, depending on how the cluster is configured:
+Depending on how the cluster is configured, commands using the REST API must be authenticated using one of the following methods. This authentication is only applicable for interacting with the Framework REST API directly. Access to the underlying Kafka Brokers themselves just uses standard Kafka APIs.
+
+All `curl` examples in this document assume that an auth token has already been retrieved using one of the following methods, and stored in an environment variable named `AUTH_TOKEN`. See the following documentation for how to retrieve this token from the authentication service.
 
 ##### User token authentication
 
-TODO link to EE docs
+DCOS Enterprise Edition comes with support for [user ACLs](https://docs.mesosphere.com/administration/security-and-authentication/). Interacting with the Kafka REST API requires first retrieving an auth token from the [auth HTTP endpoint](https://docs.mesosphere.com/administration/security-and-authentication/auth-api/), and then providing this token in following requests.
+
+First, we retrieve `uSeR_t0k3n` with our user credentials:
+
+``` bash
+$ curl --data '{"uid":"username", "password":"password"}' --header "Content-Type:application/json" "$DCOS_URI/acs/api/v1/auth/login"
+POST /acs/api/v1/auth/login HTTP/1.1
+
+{
+  "token": "uSeR_t0k3n"
+}
+
+$ export AUTH_TOKEN=uSeR_t0k3n
+```
+
+This token is then used to authenticate requests to the Kafka Framework:
+
+``` bash
+$ curl --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/connection"
+GET /service/kafka/v1/connection HTTP/1.1
+
+{
+    "broker_list_convenience": "--broker-list 10.0.0.26:9318, 10.0.0.23:9505, 10.0.0.24:9989",
+    "brokers": [
+        "10.0.0.26:9318",
+        "10.0.0.23:9505",
+        "10.0.0.24:9989"
+    ],
+    "zookeeper": "hostname:2181/kafka",
+    "zookeeper_convenience": "--zookeeper hostname:2181/kafka"
+}
+```
 
 ##### OAuth token authentication
 
-TODO link to OAuth docs.. once they exist
+Similar to User token authentication, OAuth token authentication produces a token which must then be included in REST API requests. TODO link to OAuth docs once they exist
 
-#### 
+``` bash
+$ TODO command for getting an OAuth token.. once docs describing OAuth exist
+{
+  "token": "uSeR_t0k3n"
+}
+
+$ export AUTH_TOKEN=uSeR_t0k3n
+```
+
+This token is then used to authenticate requests to the Kafka Framework:
+
+``` bash
+$ curl --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/connection"
+GET /service/kafka/v1/connection HTTP/1.1
+
+{
+    "broker_list_convenience": "--broker-list 10.0.0.26:9318, 10.0.0.23:9505, 10.0.0.24:9989",
+    "brokers": [
+        "10.0.0.26:9318",
+        "10.0.0.23:9505",
+        "10.0.0.24:9989"
+    ],
+    "zookeeper": "hostname:2181/kafka",
+    "zookeeper_convenience": "--zookeeper hostname:2181/kafka"
+}
+```
 
 ### Connection Info Response
 
@@ -689,7 +734,7 @@ Increase the `BROKER_COUNT` value via Marathon as in any other configuration upd
 
 2. Verify that you no longer see it in the DCOS web interface.
 
-3. If you are using the enterprise edition, create an JSON options file with your latest configuration and set your plan strategy to “STAGE”
+3. If you are using the enterprise edition, create an JSON options file with your latest configuration and set your plan strategy to "STAGE"
 
 ``` json
 {
@@ -709,7 +754,7 @@ $ dcos package install kafka -—options=options.json
 
 ## Troubleshooting
 
-The Kafka service will be listed as “Unhealthy” when it detects any underreplicated partitions. This error condition usually indicates a malfunctioning broker.  Use the `dcos kafka topic under_replicated_partitions` and `dcos kafka topic describe <topic-name>` commands to find the problem broker and determine what actions are required.
+The Kafka service will be listed as "Unhealthy" when it detects any underreplicated partitions. This error condition usually indicates a malfunctioning broker.  Use the `dcos kafka topic under_replicated_partitions` and `dcos kafka topic describe <topic-name>` commands to find the problem broker and determine what actions are required.
 
 Possible repair actions include `dcos kafka broker restart <broker-id>` and `dcos kafka broker replace <broker-id>`.  The replace operation is destructive and will irrevocably lose all data associated with the broker. The restart operation is not destructive and indicates an attempt to restart a broker process.
 
@@ -719,9 +764,8 @@ The bolded entries below indicate the necessary changes needed to create a valid
 
 <pre>
 ``` json
-$ curl "$DCOS_URI/service/kafka/v1/plan"
+$ curl --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan"
 GET /service/kafka/v1/plan HTTP/1.1
-[...]
 
 {
     <b>"errors": [
@@ -807,9 +851,8 @@ $ dcos config set kafka.framework_name new_default_name
 Kafka comes with many useful tools of its own that often require either Zookeeper connection information or the list of broker endpoints. This information can be retrieved in an easily consumable format from the `/connection` endpoint:
 
 ``` bash
-$ curl "$DCOS_URI/service/kafka/v1/connection"
+$ curl --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/connection"
 GET /service/kafka/v1/connection HTTP/1.1
-[...]
 
 {
     "broker_list_convenience": "--broker-list 10.0.0.1:9092, 10.0.0.2:9093, 10.0.0.3:9094",
@@ -858,9 +901,8 @@ $ dcos kafka --framework-name=kafka broker list
 ```
 
 ``` bash
-$ curl "$DCOS_URI/service/kafka/v1/brokers"
+$ curl --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/brokers"
 GET /service/kafka/v1/brokers HTTP/1.1
-[...]
 
 {
     "brokers": [
@@ -881,9 +923,8 @@ $ dcos kafka --framework-name=kafka broker restart 0
 ```
 
 ``` bash
-$ curl -X PUT "$DCOS_URI/service/kafka/v1/brokers/0"
+$ curl -X PUT --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/brokers/0"
 PUT /service/kafka/v1/brokers/0 HTTP/1.1
-[...]
 
 [
     "broker-0__9c426c50-1087-475c-aa36-cd00d24ccebb"
@@ -905,9 +946,8 @@ $ dcos kafka --framework-name=kafka topic list
 ```
 
 ``` bash
-$ curl "$DCOS_URI/service/kafka/v1/topics"
+$ curl --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics"
 GET /service/kafka/v1/topics HTTP/1.1
-[...]
 
 [
     "topic1",
@@ -927,9 +967,8 @@ $ dcos kafka --framework-name=kafka topic create topic1 --partitions=3 --replica
 ```
 
 ``` bash
-$ curl -X POST "$DCOS_URI/service/kafka/v1/topics?name=topic1&partitions=3&replication=3"
+$ curl -X POST --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics?name=topic1&partitions=3&replication=3"
 POST /service/kafka/v1/topics?replication=3&name=topic1&partitions=3 HTTP/1.1
-[...]
 
 {
     "exit_code": 0,
@@ -940,7 +979,7 @@ POST /service/kafka/v1/topics?replication=3&name=topic1&partitions=3 HTTP/1.1
 
 #### View Topic Offsets
 
-There is an optional --time parameter which may be set to either “first”, “last”, or a timestamp in milliseconds as [described in the Kafka documentation](https://cwiki.apache.org/confluence/display/KAFKA/System+Tools#SystemTools-GetOffsetShell).
+There is an optional --time parameter which may be set to either "first", "last", or a timestamp in milliseconds as [described in the Kafka documentation](https://cwiki.apache.org/confluence/display/KAFKA/System+Tools#SystemTools-GetOffsetShell).
 
 ``` bash
 $ dcos kafka --framework-name=kafka topic offsets topic1
@@ -958,9 +997,8 @@ $ dcos kafka --framework-name=kafka topic offsets topic1
 ```
 
 ``` bash
-$ curl "$DCOS_URI/service/kafka/v1/topics/topic1/offsets"
+$ curl --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics/topic1/offsets"
 GET /service/kafka/v1/topics/topic1/offsets HTTP/1.1
-[...]
 
 [
     {
@@ -988,9 +1026,8 @@ $ dcos kafka --framework-name=kafka topic partitions topic1 2
 ```
 
 ``` bash
-$ curl -X PUT "$DCOS_URI/service/kafka/v1/topics/topic1?operation=partitions&partitions=2"
+$ curl -X PUT --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics/topic1?operation=partitions&partitions=2"
 PUT /service/kafka/v1/topics/topic1?operation=partitions&partitions=2 HTTP/1.1
-[...]
 
 {
     "exit_code": 0,
@@ -1012,9 +1049,8 @@ $ dcos kafka --framework-name=kafka topic producer_test topic1 10
 ```
 
 ``` bash
-$ curl -X PUT "$DCOS_URI/service/kafka/v1/topics/topic1?operation=producer-test&messages=10"
+$ curl -X PUT --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics/topic1?operation=producer-test&messages=10"
 PUT /service/kafka/v1/topics/topic1?operation=producer-test&messages=10 HTTP/1.1
-[...]
 
 {
     "exit_code": 0,
@@ -1036,9 +1072,8 @@ $ dcos kafka --framework-name=kafka topic delete topic1
 ```
 
 ``` bash
-$ curl -X DELETE "$DCOS_URI/service/kafka/v1/topics/topic1"
+$ curl -X DELETE --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics/topic1"
 DELETE /service/kafka/v1/topics/topic1?operation=delete HTTP/1.1
-[...]
 
 {
     "exit_code": 0,
@@ -1047,7 +1082,7 @@ DELETE /service/kafka/v1/topics/topic1?operation=delete HTTP/1.1
 }
 ```
 
-Note the warning in the output from the commands above. You can change the indicated “delete.topic.enable” configuration value as a configuration change.
+Note the warning in the output from the commands above. You can change the indicated "delete.topic.enable" configuration value as a configuration change.
 
 #### List Under Replicated Partitions
 
@@ -1062,9 +1097,8 @@ $ dcos kafka --framework-name=kafka topic under_replicated_partitions
 ```
 
 ``` bash
-$ curl "$DCOS_URI/service/kafka/v1/topics/under_replicated_partitions"
+$ curl --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics/under_replicated_partitions"
 GET /service/kafka/v1/topics/under_replicated_partitions HTTP/1.1
-[...]
 
 {
     "exit_code": 0,
@@ -1086,9 +1120,8 @@ $ dcos kafka --framework-name=kafka topic unavailable_partitions
 ```
 
 ``` bash
-$ curl "$DCOS_URI/service/kafka/v1/topics/unavailable_partitions"
+$ curl --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics/unavailable_partitions"
 GET /service/kafka/v1/topics/unavailable_partitions HTTP/1.1
-[...]
 
 {
     "exit_code": 0,
@@ -1102,9 +1135,8 @@ GET /service/kafka/v1/topics/unavailable_partitions HTTP/1.1
 #### View Plan Status
 
 ``` bash
-$ curl "$DCOS_URI/service/kafka/v1/plan"
+$ curl --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan"
 GET /service/kafka/v1/plan HTTP/1.1
-[...]
 
 {
     "errors": [],
@@ -1161,7 +1193,7 @@ GET /service/kafka/v1/plan HTTP/1.1
 
 ### Configurations
 
-The “disk” configuration value is denominated in MB. We recommend you set the configuration value `log_retention_bytes` to a value smaller than the indicated “disk” configuration.
+The "disk" configuration value is denominated in MB. We recommend you set the configuration value `log_retention_bytes` to a value smaller than the indicated "disk" configuration. See [instructions for customizing these values](#configure-kafka-broker-properties).
 
 #### Pitfalls of Managing Configurations Outside of the Framework
 

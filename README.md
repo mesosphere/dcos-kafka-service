@@ -18,22 +18,13 @@ DCOS Kafka Service Guide
 
 [Configuring](#configuring)
 - [Changing Configuration at Runtime](#changing-configuration-at-runtime)
-  - [Configuration Deployment Strategy](#configuration-deployment-strategy)
-  - [Configuration Update Plans](#configuration-update-plans)
-  - [Configuration Update REST API](#configuration-update-rest-api)
 - [Configuration Options](#configuration-options)
-  - [Framework Name](#framework-name)
-  - [Broker Count](#broker-count)
-  - [Configure Broker Placement Strategy](#configure-broker-placement-strategy)
-  - [Configure Kafka Broker Properties](#configure-kafka-broker-properties)
 
 [Connecting Clients](#connecting-clients)
 - [Connection Info Using the CLI](#connection-info-using-the-cli)
 - [Connection Info Using the API](#connection-info-using-the-api)
 - [Connection Info Response](#connection-info-response)
 - [Configuring the Kafka Client Library](#configuring-the-kafka-client-library)
-  - [Adding the Kafka Client Library to Your Application](#adding-the-kafka-client-library-to-your-application)
-  - [Connecting the Kafka Client Library](#connecting-the-kafka-client-library)
 - [Configuring the Kafka Test Scripts](#configuring-the-kafka-test-scripts)
 
 [Managing](#managing)
@@ -48,25 +39,11 @@ DCOS Kafka Service Guide
 [API Reference](#api-reference)
 - [Connection Information](#connection-information)
 - [Broker Operations](#broker-operations)
-  - [Add Broker](#add-broker)
-  - [List All Brokers](#list-all-brokers)
-  - [Restart Single Broker](#restart-single-broker)
 - [Topic Operations](#topic-operations)
-  - [List Topics](#list-topics)
-  - [Create Topic](#create-topic)
-  - [View Topic Offsets](#view-topic-offsets)
-  - [Alter Topic Partition Count](#alter-topic-partition-count)
-  - [Run Producer Test on Topic](#run-producer-test-on-topic)
-  - [Delete Topic](#delete-topic)
-  - [List Under Replicated Partitions](#list-under-replicated-partitions)
-  - [List Unavailable Partitions](#list-unavailable-partitions)
 - [Config Updates](#config-updates)
-  - [View Plan Status](#view-plan-status)
-    - [View Plan](#view-plan)
 
 [Limitations](#limitations)
 - [Configurations](#configurations)
-  - [Pitfalls of Managing Configurations Outside of the Framework](#pitfalls-of-managing-configurations-outside-of-the-framework)
 - [Brokers](#brokers)
 
 [Development](#development)
@@ -1119,8 +1096,6 @@ GET /service/kafka/v1/topics/unavailable_partitions HTTP/1.1
 ### Config Updates
 
 #### View Plan Status
-
-##### View Plan
 
 ``` bash
 $ curl -X GET "$DCOS_URI/service/kafka/v1/plan"

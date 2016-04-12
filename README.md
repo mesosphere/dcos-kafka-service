@@ -962,9 +962,7 @@ GET /service/kafka/v1/topics HTTP/1.1
 ``` bash
 $ dcos kafka --framework-name=kafka topic create topic1 --partitions=3 --replication=3
 {
-    "exit_code": 0,
-    "stderr": "",
-    "stdout": "Created topic \"topic1\".\n"
+    "message": "Output: Created topic \"topic1\".\n"
 }
 ```
 
@@ -973,9 +971,7 @@ $ curl -X POST --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/ka
 POST /service/kafka/v1/topics?replication=3&name=topic1&partitions=3 HTTP/1.1
 
 {
-    "exit_code": 0,
-    "stderr": "",
-    "stdout": "Created topic \"topic1\".\n"
+    "message": "Output: Created topic \"topic1\".\n"
 }
 ```
 
@@ -1019,11 +1015,8 @@ GET /service/kafka/v1/topics/topic1/offsets HTTP/1.1
 
 ``` bash
 $ dcos kafka --framework-name=kafka topic partitions topic1 2
-
 {
-    "exit_code": 0,
-    "stderr": "",
-    "stdout": "WARNING: If partitions are increased for a topic that has a key, the partition logic or ordering of the messages will be affected\nAdding partitions succeeded!\n"
+    "message": "Output: WARNING: If partitions are increased for a topic that has a key, the partition logic or ordering of the messages will be affected\nAdding partitions succeeded!\n"
 }
 ```
 
@@ -1032,9 +1025,7 @@ $ curl -X PUT --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kaf
 PUT /service/kafka/v1/topics/topic1?operation=partitions&partitions=2 HTTP/1.1
 
 {
-    "exit_code": 0,
-    "stderr": "",
-    "stdout": "WARNING: If partitions are increased for a topic that has a key, the partition logic or ordering of the messages will be affected\nAdding partitions succeeded!\n"
+    "message": "Output: WARNING: If partitions are increased for a topic that has a key, the partition logic or ordering of the messages will be affected\nAdding partitions succeeded!\n"
 }
 ```
 
@@ -1044,9 +1035,7 @@ PUT /service/kafka/v1/topics/topic1?operation=partitions&partitions=2 HTTP/1.1
 $ dcos kafka --framework-name=kafka topic producer_test topic1 10
 
 {
-    "exit_code": 0,
-    "stderr": "",
-    "stdout": "10 records sent, 70.422535 records/sec (0.07 MB/sec), 24.20 ms avg latency, 133.00 ms max latency, 13 ms 50th, 133 ms 95th, 133 ms 99th, 133 ms 99.9th.\n"
+    "message": "10 records sent, 70.422535 records/sec (0.07 MB/sec), 24.20 ms avg latency, 133.00 ms max latency, 13 ms 50th, 133 ms 95th, 133 ms 99th, 133 ms 99.9th.\n"
 }
 ```
 
@@ -1055,9 +1044,7 @@ $ curl -X PUT --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kaf
 PUT /service/kafka/v1/topics/topic1?operation=producer-test&messages=10 HTTP/1.1
 
 {
-    "exit_code": 0,
-    "stderr": "",
-    "stdout": "10 records sent, 70.422535 records/sec (0.07 MB/sec), 24.20 ms avg latency, 133.00 ms max latency, 13 ms 50th, 133 ms 95th, 133 ms 99th, 133 ms 99.9th.\n"
+    "message": "10 records sent, 70.422535 records/sec (0.07 MB/sec), 24.20 ms avg latency, 133.00 ms max latency, 13 ms 50th, 133 ms 95th, 133 ms 99th, 133 ms 99.9th.\n"
 }
 ```
 
@@ -1067,9 +1054,7 @@ PUT /service/kafka/v1/topics/topic1?operation=producer-test&messages=10 HTTP/1.1
 $ dcos kafka --framework-name=kafka topic delete topic1
 
 {
-    "exit_code": 0,
-    "stderr": "",
-    "stdout": "Topic topic1 is marked for deletion.\nNote: This will have no impact if delete.topic.enable is not set to true.\n"
+    "message": "Topic topic1 is marked for deletion.\nNote: This will have no impact if delete.topic.enable is not set to true.\n"
 }
 ```
 
@@ -1078,9 +1063,7 @@ $ curl -X DELETE --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/
 DELETE /service/kafka/v1/topics/topic1?operation=delete HTTP/1.1
 
 {
-    "exit_code": 0,
-    "stderr": "",
-    "stdout": "Topic topic1 is marked for deletion.\nNote: This will have no impact if delete.topic.enable is not set to true.\n"
+    "message": "Topic topic1 is marked for deletion.\nNote: This will have no impact if delete.topic.enable is not set to true.\n"
 }
 ```
 
@@ -1092,9 +1075,7 @@ Note the warning in the output from the commands above. You can change the indic
 $ dcos kafka --framework-name=kafka topic under_replicated_partitions
 
 {
-    "exit_code": 0,
-    "stderr": "",
-    "stdout": ""
+    "message": ""
 }
 ```
 
@@ -1103,9 +1084,7 @@ $ curl --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/t
 GET /service/kafka/v1/topics/under_replicated_partitions HTTP/1.1
 
 {
-    "exit_code": 0,
-    "stderr": "",
-    "stdout": ""
+    "message": ""
 }
 ```
 
@@ -1115,9 +1094,7 @@ GET /service/kafka/v1/topics/under_replicated_partitions HTTP/1.1
 $ dcos kafka --framework-name=kafka topic unavailable_partitions
 
 {
-    "exit_code": 0,
-    "stderr": "",
-    "stdout": ""
+    "message": ""
 }
 ```
 
@@ -1126,9 +1103,7 @@ $ curl --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/t
 GET /service/kafka/v1/topics/unavailable_partitions HTTP/1.1
 
 {
-    "exit_code": 0,
-    "stderr": "",
-    "stdout": ""
+    "message": ""
 }
 ```
 

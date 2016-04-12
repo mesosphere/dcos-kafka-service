@@ -21,8 +21,8 @@ DCOS Kafka Service Guide
 - [Configuration Options](#configuration-options)
 
 [Connecting Clients](#connecting-clients)
-- [Connection Info Using the CLI](#connection-info-using-the-cli)
-- [Connection Info Using the API](#connection-info-using-the-api)
+- [Using the DCOS CLI](#using-the-dcos-cli)
+- [Using the REST API](#using-the-rest-api)
 - [Connection Info Response](#connection-info-response)
 - [Configuring the Kafka Client Library](#configuring-the-kafka-client-library)
 - [Configuring the Kafka Test Scripts](#configuring-the-kafka-test-scripts)
@@ -108,7 +108,7 @@ $ dcos kafka connection
 }
 ```
 
-Step 4. Produce and consume data.
+- Step 4. Produce and consume data.
 
 ``` bash
 $ dcos node ssh --master-proxy --leader
@@ -253,9 +253,10 @@ After specifying that an update should continue, one block representing one brok
 
 There are two phases in the update plans for Kafka: Mesos task reconciliation and update. Mesos task reconciliation is always executed without need for human interaction.
 
-Make the REST request below to view the current plan:
+Make the REST request below to view the current plan. See [API authentication](#api-authentication) for information on how this request must be authenticated:
 
 ``` bash
+$ curl "$DCOS_URI/service/kafka/v1/plan"
 GET $DCOS_URI/service/kafka/v1/plan HTTP/1.1
 Accept: */*
 Accept-Encoding: gzip, deflate
@@ -315,6 +316,7 @@ Accept-Encoding: gzip, deflate
 When using the `STAGE` deployment strategy, an update plan will initially pause without doing any update to ensure the plan is correct. It will look like this:
 
 ``` bash
+$ curl "$DCOS_URI/service/kafka/v1/plan"
 GET $DCOS_URI/service/kafka/v1/plan HTTP/1.1
 Accept: */*
 Accept-Encoding: gzip, deflate
@@ -376,6 +378,7 @@ Accept-Encoding: gzip, deflate
 Enter the `continue` command to execute the first block:
 
 ``` bash
+$ curl -X PUT "$DCOS_URI/service/kafka/v1/plan?cmd=continue"
 PUT $DCOS_URI/service/kafka/v1/plan?cmd=continue HTTP/1.1
 Accept: */*
 Accept-Encoding: gzip, deflate
@@ -389,6 +392,7 @@ Accept-Encoding: gzip, deflate
 After you execute the continue operation, the plan will look like this:
 
 ``` bash
+$ curl "$DCOS_URI/service/kafka/v1/plan"
 GET $DCOS_URI/service/kafka/v1/plan HTTP/1.1
 Accept: */*
 Accept-Encoding: gzip, deflate
@@ -448,6 +452,7 @@ Accept-Encoding: gzip, deflate
 If you enter `continue` a second time, the rest of the plan will be executed without further interruption. If you want to interrupt a configuration update that is in progress, enter the `interrupt` command:
 
 ``` bash
+$ curl -X PUT "$DCOS_URI/service/kafka/v1/plan?cmd=interrupt"
 PUT $DCOS_URI/service/kafka/v1/plan?cmd=interrupt HTTP/1.1
 Accept: */*
 Accept-Encoding: gzip, deflate
@@ -516,7 +521,7 @@ These same values are also represented as environment variables for the Schedule
 
 The only supported client library is the official Kafka Java library, ie `org.apache.kafka.clients.consumer.KafkaConsumer` and `org.apache.kafka.clients.producer.KafkaProducer`. Other clients are at the user's risk.
 
-### Connection Info Using the CLI
+### Using the DCOS CLI
 
 The following command can be executed from the cli in order to retrieve a set of brokers to connect to.
 
@@ -524,13 +529,27 @@ The following command can be executed from the cli in order to retrieve a set of
 dcos kafka --framework-name=<framework-name> connection
 ```
 
-### Connection Info Using the API
+### Using the REST API
 
 The following curl example demonstrates how to retrive connection a set of brokers to connect to using the REST API.
 
 ``` bash
-curl http://<dcos_url>/service/kafka/v1/connection
+$ curl "$DCOS_URI/service/kafka/v1/connection"
 ```
+
+#### API Authentication
+
+Commands using the REST API must be authenticated using one of the following methods, depending on how the cluster is configured:
+
+##### User token authentication
+
+TODO link to EE docs
+
+##### OAuth token authentication
+
+TODO link to OAuth docs.. once they exist
+
+#### 
 
 ### Connection Info Response
 
@@ -646,6 +665,7 @@ $ dcos kafka connection
     "zookeeper": "master.mesos:2181/kafka",
     "zookeeper_convenience": "--zookeeper master.mesos:2181/kafka"
 }
+
 $ dcos node ssh --master-proxy --leader
 core@ip-10-0-6-153 ~ $ docker run -it mesosphere/kafka-client
 root@7bc0e88cfa52:/kafka_2.10-0.8.2.2/bin# ./kafka-console-producer.sh --broker-list ip-10-0-3-230.us-west-2.compute.internal:9092 --topic test
@@ -682,7 +702,7 @@ Increase the `BROKER_COUNT` value via Marathon as in any other configuration upd
 4. Install the latest version of Kafka:
 
 ``` bash
-dcos package install kafka -—options=options.json
+$ dcos package install kafka -—options=options.json
 ```
 
 5. Rollout the new version of Kafka in the same way as a configuration update is rolled out.  See Configuration Update Plans.
@@ -699,13 +719,9 @@ The bolded entries below indicate the necessary changes needed to create a valid
 
 <pre>
 ``` json
-$ curl -X GET "$DCOS_URI/service/kafka/v1/plan"
-HTTP/1.1 200 OK
-Connection: keep-alive
-Content-Length: 952
-Content-Type: application/json
-Date: Tue, 15 Mar 2016 19:17:16 GMT
-Server: openresty/1.7.10.2
+$ curl "$DCOS_URI/service/kafka/v1/plan"
+GET /service/kafka/v1/plan HTTP/1.1
+[...]
 
 {
     <b>"errors": [
@@ -791,7 +807,7 @@ $ dcos config set kafka.framework_name new_default_name
 Kafka comes with many useful tools of its own that often require either Zookeeper connection information or the list of broker endpoints. This information can be retrieved in an easily consumable format from the `/connection` endpoint:
 
 ``` bash
-$ curl -X GET "$DCOS_URI/service/kafka/v1/connection"
+$ curl "$DCOS_URI/service/kafka/v1/connection"
 GET /service/kafka/v1/connection HTTP/1.1
 [...]
 
@@ -807,7 +823,7 @@ GET /service/kafka/v1/connection HTTP/1.1
 }
 ```
 
-The same information can be retrieved through the CLI:
+The same information can be retrieved through the DCOS CLI:
 
 ``` bash
 $ dcos kafka connection
@@ -820,18 +836,6 @@ $ dcos kafka connection
     "zookeeper": "master.mesos:2181/kafka",
     "zookeeper_convenience": "--zookeeper master.mesos:2181/kafka"
 }
-
-$ dcos node ssh --master-proxy --leader
-
-core@ip-10-0-6-153 ~ $ docker run -it mesosphere/kafka-client
-
-root@7bc0e88cfa52:/kafka_2.10-0.8.2.2/bin# ./kafka-console-producer.sh --broker-list ip-10-0-3-230.us-west-2.compute.internal:9092 --topic test
-This is a message
-This is another message
-
-root@7bc0e88cfa52:/kafka_2.10-0.8.2.2/bin# ./kafka-console-consumer.sh --zookeeper master.mesos:2181/kafka --topic test --from-beginning
-This is a message
-This is another message
 ```
 
 ### Broker Operations
@@ -854,7 +858,7 @@ $ dcos kafka --framework-name=kafka broker list
 ```
 
 ``` bash
-$ curl -X GET "$DCOS_URI/service/kafka/v1/brokers"
+$ curl "$DCOS_URI/service/kafka/v1/brokers"
 GET /service/kafka/v1/brokers HTTP/1.1
 [...]
 
@@ -901,7 +905,7 @@ $ dcos kafka --framework-name=kafka topic list
 ```
 
 ``` bash
-$ curl -X GET "$DCOS_URI/service/kafka/v1/topics"
+$ curl "$DCOS_URI/service/kafka/v1/topics"
 GET /service/kafka/v1/topics HTTP/1.1
 [...]
 
@@ -954,7 +958,7 @@ $ dcos kafka --framework-name=kafka topic offsets topic1
 ```
 
 ``` bash
-$ curl -X "$DCOS_URI/service/kafka/v1/topics/topic1/offsets"
+$ curl "$DCOS_URI/service/kafka/v1/topics/topic1/offsets"
 GET /service/kafka/v1/topics/topic1/offsets HTTP/1.1
 [...]
 
@@ -1058,7 +1062,7 @@ $ dcos kafka --framework-name=kafka topic under_replicated_partitions
 ```
 
 ``` bash
-$ curl -X "$DCOS_URI/service/kafka/v1/topics/under_replicated_partitions"
+$ curl "$DCOS_URI/service/kafka/v1/topics/under_replicated_partitions"
 GET /service/kafka/v1/topics/under_replicated_partitions HTTP/1.1
 [...]
 
@@ -1082,7 +1086,7 @@ $ dcos kafka --framework-name=kafka topic unavailable_partitions
 ```
 
 ``` bash
-$ curl -X "$DCOS_URI/service/kafka/v1/topics/unavailable_partitions"
+$ curl "$DCOS_URI/service/kafka/v1/topics/unavailable_partitions"
 GET /service/kafka/v1/topics/unavailable_partitions HTTP/1.1
 [...]
 
@@ -1098,8 +1102,8 @@ GET /service/kafka/v1/topics/unavailable_partitions HTTP/1.1
 #### View Plan Status
 
 ``` bash
-$ curl -X GET "$DCOS_URI/service/kafka/v1/plan"
-HTTP/1.1 200 OK
+$ curl "$DCOS_URI/service/kafka/v1/plan"
+GET /service/kafka/v1/plan HTTP/1.1
 [...]
 
 {

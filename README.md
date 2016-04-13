@@ -257,7 +257,7 @@ There are two phases in the update plans for Kafka: Mesos task reconciliation an
 Make the REST request below to view the current plan. See [REST API authentication](#rest-api-authentication) for information on how this request must be authenticated.
 
 ``` bash
-$ curl --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan"
+$ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan"
 GET $DCOS_URI/service/kafka/v1/plan HTTP/1.1
 
 {
@@ -314,7 +314,7 @@ GET $DCOS_URI/service/kafka/v1/plan HTTP/1.1
 When using the `STAGE` deployment strategy, an update plan will initially pause without doing any update to ensure the plan is correct. It will look like this:
 
 ``` bash
-$ curl --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan"
+$ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan"
 GET $DCOS_URI/service/kafka/v1/plan HTTP/1.1
 
 {
@@ -373,7 +373,7 @@ GET $DCOS_URI/service/kafka/v1/plan HTTP/1.1
 Enter the `continue` command to execute the first block:
 
 ``` bash
-$ curl -X PUT --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan?cmd=continue"
+$ curl -X PUT -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan?cmd=continue"
 PUT $DCOS_URI/service/kafka/v1/plan?cmd=continue HTTP/1.1
 
 {
@@ -384,7 +384,7 @@ PUT $DCOS_URI/service/kafka/v1/plan?cmd=continue HTTP/1.1
 After you execute the continue operation, the plan will look like this:
 
 ``` bash
-$ curl --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan"
+$ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan"
 GET $DCOS_URI/service/kafka/v1/plan HTTP/1.1
 
 {
@@ -441,7 +441,7 @@ GET $DCOS_URI/service/kafka/v1/plan HTTP/1.1
 If you enter `continue` a second time, the rest of the plan will be executed without further interruption. If you want to interrupt a configuration update that is in progress, enter the `interrupt` command:
 
 ``` bash
-$ curl -X PUT --header "Authorization: token=$AUTH_TOKEN"  "$DCOS_URI/service/kafka/v1/plan?cmd=interrupt"
+$ curl -X PUT -H "Authorization: token=$AUTH_TOKEN"  "$DCOS_URI/service/kafka/v1/plan?cmd=interrupt"
 PUT $DCOS_URI/service/kafka/v1/plan?cmd=interrupt HTTP/1.1
 
 {
@@ -521,7 +521,7 @@ dcos kafka --framework-name=<framework-name> connection
 The following `curl` example demonstrates how to retrive connection a set of brokers to connect to using the REST API. See [REST API authentication](#rest-api-authentication) for information on how this request must be authenticated.
 
 ``` bash
-$ curl --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/connection"
+$ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/connection"
 ```
 
 ### REST API Authentication
@@ -537,7 +537,7 @@ DCOS Enterprise Edition comes with support for [user ACLs](https://docs.mesosphe
 First, we retrieve `uSeR_t0k3n` with our user credentials, and store the token as an environment variable:
 
 ``` bash
-$ curl --data '{"uid":"username", "password":"password"}' --header "Content-Type:application/json" "$DCOS_URI/acs/api/v1/auth/login"
+$ curl --data '{"uid":"username", "password":"password"}' -H "Content-Type:application/json" "$DCOS_URI/acs/api/v1/auth/login"
 POST /acs/api/v1/auth/login HTTP/1.1
 
 {
@@ -550,7 +550,7 @@ $ export AUTH_TOKEN=uSeR_t0k3n
 This token is then used to authenticate requests to the Kafka Framework:
 
 ``` bash
-$ curl --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/connection"
+$ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/connection"
 GET /service/kafka/v1/connection HTTP/1.1
 
 {
@@ -583,7 +583,7 @@ $ export AUTH_TOKEN=uSeR_t0k3n
 This token is then used to authenticate requests to the Kafka Framework:
 
 ``` bash
-$ curl --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/connection"
+$ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/connection"
 GET /service/kafka/v1/connection HTTP/1.1
 
 {
@@ -766,7 +766,7 @@ The bolded entries below indicate the necessary changes needed to create a valid
 
 <pre>
 ``` json
-$ curl --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan"
+$ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan"
 GET /service/kafka/v1/plan HTTP/1.1
 
 {
@@ -853,7 +853,7 @@ $ dcos config set kafka.framework_name new_default_name
 Kafka comes with many useful tools of its own that often require either Zookeeper connection information or the list of broker endpoints. This information can be retrieved in an easily consumable format from the `/connection` endpoint:
 
 ``` bash
-$ curl --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/connection"
+$ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/connection"
 GET /service/kafka/v1/connection HTTP/1.1
 
 {
@@ -903,7 +903,7 @@ $ dcos kafka --framework-name=kafka broker list
 ```
 
 ``` bash
-$ curl --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/brokers"
+$ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/brokers"
 GET /service/kafka/v1/brokers HTTP/1.1
 
 {
@@ -925,7 +925,7 @@ $ dcos kafka --framework-name=kafka broker restart 0
 ```
 
 ``` bash
-$ curl -X PUT --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/brokers/0"
+$ curl -X PUT -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/brokers/0"
 PUT /service/kafka/v1/brokers/0 HTTP/1.1
 
 [
@@ -948,7 +948,7 @@ $ dcos kafka --framework-name=kafka topic list
 ```
 
 ``` bash
-$ curl --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics"
+$ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics"
 GET /service/kafka/v1/topics HTTP/1.1
 
 [
@@ -967,7 +967,7 @@ $ dcos kafka --framework-name=kafka topic create topic1 --partitions=3 --replica
 ```
 
 ``` bash
-$ curl -X POST --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics?name=topic1&partitions=3&replication=3"
+$ curl -X POST -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics?name=topic1&partitions=3&replication=3"
 POST /service/kafka/v1/topics?replication=3&name=topic1&partitions=3 HTTP/1.1
 
 {
@@ -995,7 +995,7 @@ $ dcos kafka --framework-name=kafka topic offsets topic1
 ```
 
 ``` bash
-$ curl --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics/topic1/offsets"
+$ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics/topic1/offsets"
 GET /service/kafka/v1/topics/topic1/offsets HTTP/1.1
 
 [
@@ -1021,7 +1021,7 @@ $ dcos kafka --framework-name=kafka topic partitions topic1 2
 ```
 
 ``` bash
-$ curl -X PUT --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics/topic1?operation=partitions&partitions=2"
+$ curl -X PUT -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics/topic1?operation=partitions&partitions=2"
 PUT /service/kafka/v1/topics/topic1?operation=partitions&partitions=2 HTTP/1.1
 
 {
@@ -1040,7 +1040,7 @@ $ dcos kafka --framework-name=kafka topic producer_test topic1 10
 ```
 
 ``` bash
-$ curl -X PUT --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics/topic1?operation=producer-test&messages=10"
+$ curl -X PUT -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics/topic1?operation=producer-test&messages=10"
 PUT /service/kafka/v1/topics/topic1?operation=producer-test&messages=10 HTTP/1.1
 
 {
@@ -1059,7 +1059,7 @@ $ dcos kafka --framework-name=kafka topic delete topic1
 ```
 
 ``` bash
-$ curl -X DELETE --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics/topic1"
+$ curl -X DELETE -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics/topic1"
 DELETE /service/kafka/v1/topics/topic1?operation=delete HTTP/1.1
 
 {
@@ -1080,7 +1080,7 @@ $ dcos kafka --framework-name=kafka topic under_replicated_partitions
 ```
 
 ``` bash
-$ curl --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics/under_replicated_partitions"
+$ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics/under_replicated_partitions"
 GET /service/kafka/v1/topics/under_replicated_partitions HTTP/1.1
 
 {
@@ -1099,7 +1099,7 @@ $ dcos kafka --framework-name=kafka topic unavailable_partitions
 ```
 
 ``` bash
-$ curl --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics/unavailable_partitions"
+$ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics/unavailable_partitions"
 GET /service/kafka/v1/topics/unavailable_partitions HTTP/1.1
 
 {
@@ -1112,7 +1112,7 @@ GET /service/kafka/v1/topics/unavailable_partitions HTTP/1.1
 #### View Plan Status
 
 ``` bash
-$ curl --header "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan"
+$ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan"
 GET /service/kafka/v1/plan HTTP/1.1
 
 {

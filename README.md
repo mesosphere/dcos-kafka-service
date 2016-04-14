@@ -1128,10 +1128,6 @@ The Kafka framework's core responsibility is to deploy and maintain the deployme
 
 The number of deployable brokers is constrained by two factors. First, brokers have specified required resources, so brokers may not be placed if the DCOS cluster lacks the requisite resources. Second, the specified "PLACEMENT_STRATEGY" environment variable may affect how many brokers can be created in a Kafka cluster. By default the value is "ANY," so brokers are placed anywhere and are only constrained by the resources of the cluster. A second option is "NODE." In this case only one broker may be placed on a given DCOS agent.
 
-# Development
-
-See [CONTRIBUTING.md][17] for the development guide.
-
  [1]: http://kafka.apache.org/documentation.html
  [2]: https://docs.mesosphere.com/manage-service/spark
  [3]: #connecting-clients

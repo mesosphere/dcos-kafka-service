@@ -41,6 +41,7 @@ DCOS Kafka Service Guide
 - [Connection Information](#connection-information)
 - [Broker Operations](#broker-operations)
 - [Topic Operations](#topic-operations)
+- [Config History](#config-history)
 - [Config Updates](#config-updates)
 
 [Limitations](#limitations)
@@ -83,12 +84,12 @@ DCOS Kafka provides the following features:
 *   Step 1. Install a Kafka cluster.
 
     $ dcos package install kafka # framework name defaults to 'kafka'
-    
+
 
 *   Step 2. Create a new topic.
 
     $ dcos kafka topic create topic1 --partitions 3 --replication 3
-    
+
 
 *   Step 3. Find connection information.
 
@@ -102,22 +103,22 @@ DCOS Kafka provides the following features:
         "zookeeper": "master.mesos:2181/kafka",
         "zookeeper_convenience": "--zookeeper master.mesos:2181/kafka"
     }
-    
+
 
 *   Step 4. Produce and consume data.
 
     $ dcos node ssh --master-proxy --leader
-    
+
     core@ip-10-0-6-153 ~ $ docker run -it mesosphere/kafka-client
-    
+
     root@7bc0e88cfa52:/kafka_2.10-0.8.2.2/bin# ./kafka-console-producer.sh --broker-list ip-10-0-3-230.us-west-2.compute.internal:9092 --topic test
     This is a message
     This is another message
-    
+
     root@7bc0e88cfa52:/kafka_2.10-0.8.2.2/bin# ./kafka-console-consumer.sh --zookeeper master.mesos:2181/kafka --topic test --from-beginning
     This is a message
     This is another message
-    
+
 
 See also [Connecting clients][3].
 
@@ -128,14 +129,14 @@ See also [Connecting clients][3].
 To start a basic test cluster with three brokers, run the following command on the DCOS CLI:
 
     $ dcos package install kafka
-    
+
 
 This command creates a new Kafka cluster with the default name `kafka`. Two clusters cannot share the same name, so installing additional clusters beyond the default cluster requires [customizing the `framework-name` at install time][4] for each additional instance.
 
 All `dcos kafka` CLI commands have a `--framework-name` argument allowing the user to specify which Kafka instance to query. If you do not specify a framework name, the CLI assumes the default value, `kafka`. The default value for `--framework-name` can be customized via the DCOS CLI configuration:
 
     $ dcos kafka --framework-name kafka-dev <cmd>
-    
+
 
 ## Minimal Installation
 
@@ -150,12 +151,12 @@ To start a minimal cluster with a single broker, create a JSON options file name
             "disk": 1000
         }
     }
-    
+
 
 The command below creates a cluster using `sample-kafka-minimal.json`:
 
     $ dcos package install --options=sample-kafka-minimal.json kafka
-    
+
 
 ## Custom Installation
 
@@ -176,12 +177,12 @@ Sample JSON options file named `sample-kafka-custom.json`:
             "log_retention_hours": 128
         }
     }
-    
+
 
 The command below creates a cluster using `sample-kafka.json`:
 
     $ dcos package install --options=sample-kafka-custom.json kafka
-    
+
 
 See [Configuration Options][6] for a list of fields that can be customized via an options JSON file when the Kafka cluster is created.
 
@@ -195,16 +196,16 @@ Installing multiple Kafka clusters is identical to installing Kafka clusters wit
             "name": "kafka1"
         }
     }
-    
+
     $ dcos package install kafka --options=kafka1.json
-    
+
 
 ## Uninstall
 
 Uninstalling a cluster is also straightforward. Replace `name` with the name of the kafka instance to be uninstalled.
 
     $ dcos package uninstall --app-id=name kafka
-    
+
 
 Then, use the [framework cleaner script][7] to remove your Kafka instance from Zookeeper and to destroy all data associated with it. The script require several arguments, the values for which are derived from your framework name:
 
@@ -247,7 +248,7 @@ Make the REST request below to view the current plan. See [REST API authenticati
 
     $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan"
     GET $DCOS_URI/service/kafka/v1/plan HTTP/1.1
-    
+
     {
         "errors": [],
         "phases": [
@@ -296,14 +297,14 @@ Make the REST request below to view the current plan. See [REST API authenticati
         ],
         "status": "Complete"
     }
-    
-    
+
+
 
 When using the `STAGE` deployment strategy, an update plan will initially pause without doing any update to ensure the plan is correct. It will look like this:
 
     $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan"
     GET $DCOS_URI/service/kafka/v1/plan HTTP/1.1
-    
+
     {
         "errors": [],
         "phases": [
@@ -352,8 +353,8 @@ When using the `STAGE` deployment strategy, an update plan will initially pause 
         ],
         "status": "Waiting"
     }
-    
-    
+
+
 
 **Note:** After a configuration update, you may see an error from Mesos-DNS; this will go away 10 seconds after the update.
 
@@ -361,17 +362,17 @@ Enter the `continue` command to execute the first block:
 
     $ curl -X PUT -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan?cmd=continue"
     PUT $DCOS_URI/service/kafka/v1/plan?cmd=continue HTTP/1.1
-    
+
     {
         "Result": "Received cmd: continue"
     }
-    
+
 
 After you execute the continue operation, the plan will look like this:
 
     $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan"
     GET $DCOS_URI/service/kafka/v1/plan HTTP/1.1
-    
+
     {
         "errors": [],
         "phases": [
@@ -420,18 +421,18 @@ After you execute the continue operation, the plan will look like this:
         ],
         "status": "InProgress"
     }
-    
-    
+
+
 
 If you enter `continue` a second time, the rest of the plan will be executed without further interruption. If you want to interrupt a configuration update that is in progress, enter the `interrupt` command:
 
     $ curl -X PUT -H "Authorization: token=$AUTH_TOKEN"  "$DCOS_URI/service/kafka/v1/plan?cmd=interrupt"
     PUT $DCOS_URI/service/kafka/v1/plan?cmd=interrupt HTTP/1.1
-    
+
     {
         "Result": "Received cmd: interrupt"
     }
-    
+
 
 **Note:** The interrupt command can’t stop a block that is `InProgress`, but it will stop the change on the subsequent blocks.
 
@@ -472,9 +473,9 @@ Kafka Brokers are configured through settings in a server.properties file deploy
         "type": "integer",
         "default": 168
     },
-    
-    
-    
+
+
+
 
 The defaults can be overridden at install time by specifying an options.json file with a format like this:
 
@@ -483,7 +484,7 @@ The defaults can be overridden at install time by specifying an options.json fil
             "log_retention_hours": 100
         }
     }
-    
+
 
 These same values are also represented as environment variables for the Scheduler in the form `KAFKA_OVERRIDE_LOG_RETENTION_HOURS` and may be modified through Marathon and deployed during a rolling upgrade as [described here][12].
 
@@ -496,14 +497,14 @@ The only supported client library is the official Kafka Java library, ie `org.ap
 The following command can be executed from the cli in order to retrieve a set of brokers to connect to.
 
     dcos kafka --framework-name=<framework-name> connection
-    
+
 
 ## Using the REST API
 
 The following `curl` example demonstrates how to retrive connection a set of brokers to connect to using the REST API. See [REST API authentication][10] for information on how this request must be authenticated.
 
     $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/connection"
-    
+
 
 ## REST API Authentication
 
@@ -519,19 +520,19 @@ First, we retrieve `uSeR_t0k3n` with our user credentials and store the token as
 
     $ curl --data '{"uid":"username", "password":"password"}' -H "Content-Type:application/json" "$DCOS_URI/acs/api/v1/auth/login"
     POST /acs/api/v1/auth/login HTTP/1.1
-    
+
     {
       "token": "uSeR_t0k3n"
     }
-    
+
     $ export AUTH_TOKEN=uSeR_t0k3n
-    
+
 
 Then, use this token to authenticate requests to the Kafka Framework:
 
     $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/connection"
     GET /service/kafka/v1/connection HTTP/1.1
-    
+
     {
         "broker_list_convenience": "--broker-list 10.0.0.26:9318, 10.0.0.23:9505, 10.0.0.24:9989",
         "brokers": [
@@ -542,7 +543,7 @@ Then, use this token to authenticate requests to the Kafka Framework:
         "zookeeper": "hostname:2181/kafka",
         "zookeeper_convenience": "--zookeeper hostname:2181/kafka"
     }
-    
+
 
 You do not need the token to access the Kafka brokers themselves.
 
@@ -593,7 +594,7 @@ The response, for both the CLI and the REST API is as below.
         "zookeeper": "hostname:2181/kafka",
         "zookeeper_convenience": "--zookeeper hostname:2181/kafka"
     }
-    
+
 
 This JSON array contains a list of valid brokers that the client can use to connect to the Kafka cluster. For availability reasons, it is best to specify multiple brokers in configuration of the client.
 
@@ -606,7 +607,7 @@ This JSON array contains a list of valid brokers that the client can use to conn
       <artifactId>kafka-clients</artifactId>
       <version>0.9.0.1</version>
     </dependency>
-    
+
 
 The above is the correct dependency for the Kafka Client Library to use with the DCOS Cassandra service. After adding this dependency to your project, you should have access to the correct binary dependencies to interface with the Kafka Cluster.
 
@@ -617,7 +618,7 @@ The code snippet below demonstrates how to connect a Kafka Producer to the clust
     import org.apache.kafka.clients.producer.KafkaProducer;
     import org.apache.kafka.clients.producer.ProducerRecord;
     import org.apache.kafka.common.serialization.ByteArraySerializer;
-    
+
     Map<String, Object> producerConfig = new HashMap<>();
     producerConfig.put("bootstrap.servers", "10.0.0.26:9318,10.0.0.23:9505,10.0.0.24:9989");
     // optional:
@@ -626,7 +627,7 @@ The code snippet below demonstrates how to connect a Kafka Producer to the clust
     // ... other options: http://kafka.apache.org/documentation.html#producerconfigs
     ByteArraySerializer serializer = new ByteArraySerializer();
     KafkaProducer<byte[], byte[]> kafkaProducer = new KafkaProducer<>(producerConfig, serializer, serializer);
-    
+
     byte[] message = new byte[1024];
     for (int i = 0; i < message.length; ++i) {
       if (i % 2 == 0) {
@@ -640,7 +641,7 @@ The code snippet below demonstrates how to connect a Kafka Producer to the clust
       kafkaProducer.send(record).get();
       Thread.sleep(1000);
     }
-    
+
 
 The code snippet below demonstrates how to connect a Kafka Consumer to the cluster and perform a simple retrievals.
 
@@ -648,7 +649,7 @@ The code snippet below demonstrates how to connect a Kafka Consumer to the clust
     import org.apache.kafka.clients.consumer.ConsumerRecords;
     import org.apache.kafka.clients.consumer.KafkaConsumer;
     import org.apache.kafka.common.serialization.ByteArrayDeserializer;
-    
+
     Map<String, Object> consumerConfig = new HashMap<>();
     consumerConfig.put("bootstrap.servers", "10.0.0.26:9318,10.0.0.23:9505,10.0.0.24:9989");
     // optional:
@@ -656,7 +657,7 @@ The code snippet below demonstrates how to connect a Kafka Consumer to the clust
     // ... other options: http://kafka.apache.org/documentation.html#consumerconfigs
     ByteArrayDeserializer deserializer = new ByteArrayDeserializer();
     KafkaConsumer<byte[], byte[]> kafkaConsumer = new KafkaConsumer<>(consumerConfig, deserializer, deserializer);
-    
+
     List<String> topics = new ArrayList<>();
     topics.add("test-topic");
     kafkaConsumer.subscribe(topics);
@@ -672,7 +673,7 @@ The code snippet below demonstrates how to connect a Kafka Consumer to the clust
       System.out.println(String.format("Got %d messages (%d bytes)", records.count(), bytes));
     }
     kafkaConsumer.close();
-    
+
 
 ## Configuring the Kafka Test Scripts
 
@@ -688,17 +689,17 @@ The following code connects to a DCOS-hosted Kafka instance using `bin/kafka-con
         "zookeeper": "master.mesos:2181/kafka",
         "zookeeper_convenience": "--zookeeper master.mesos:2181/kafka"
     }
-    
+
     $ dcos node ssh --master-proxy --leader
     core@ip-10-0-6-153 ~ $ docker run -it mesosphere/kafka-client
     root@7bc0e88cfa52:/kafka_2.10-0.8.2.2/bin# ./kafka-console-producer.sh --broker-list ip-10-0-3-230.us-west-2.compute.internal:9092 --topic test
     This is a message
     This is another message
-    
+
     root@7bc0e88cfa52:/kafka_2.10-0.8.2.2/bin# ./kafka-console-consumer.sh --zookeeper master.mesos:2181/kafka --topic test --from-beginning
     This is a message
     This is another message
-    
+
 
 # Managing
 
@@ -719,12 +720,12 @@ Increase the `BROKER_COUNT` value via Marathon as in any other configuration upd
             "phase_strategy": "STAGE"
         }
     }
-    
+
 
 1.  Install the latest version of Kafka:
 
     $ dcos package install kafka -—options=options.json
-    
+
 
 1.  Rollout the new version of Kafka in the same way as a configuration update is rolled out. See Configuration Update Plans.
 
@@ -802,7 +803,7 @@ If a machine has permanently failed, manual intervention is required to replace 
 In the example below, the broker with id `0` will be replaced on new machine as long as cluster resources are sufficient to satisfy the service’s placement constraints and resource requirements.
 
     $ dcos kafka broker replace 0
-    
+
 
 ## Security
 
@@ -817,7 +818,7 @@ The examples here provide equivalent commands using both `[dcos-cli](https://git
 The `dcos kafka` CLI commands have a `--framework-name` argument, allowing the user to specify which Kafka instance to query. The value defaults to `kafka`, so it's technically redundant to specify `--framework-name=kafka` in these examples. The default value for `--framework-name` can be customized via the DCOS CLI configuration:
 
     $ dcos config set kafka.framework_name new_default_name
-    
+
 
 ## Connection Information
 
@@ -825,7 +826,7 @@ Kafka comes with many useful tools of its own that often require either Zookeepe
 
     $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/connection"
     GET /service/kafka/v1/connection HTTP/1.1
-    
+
     {
         "broker_list_convenience": "--broker-list 10.0.0.1:9092, 10.0.0.2:9093, 10.0.0.3:9094",
         "brokers": [
@@ -836,13 +837,13 @@ Kafka comes with many useful tools of its own that often require either Zookeepe
         "zookeeper": "master.mesos:2181/kafka",
         "zookeeper_convenience": "--zookeeper master.mesos:2181/kafka"
     }
-    
+
 
 The same information can be retrieved through the DCOS CLI:
 
     $ dcos kafka connection
     {
-        "broker_list_convenience": "--broker-list ip-10-0-3-230.us-west-2.compute.internal:9092, ip-10-0-3-231.us-west-2.compute.internal:9093",
+        "broker_list_convenience": "--broker-list 10.0.0.1:9092, 10.0.0.2:9093, 10.0.0.3:9094",
         "brokers": [
             "ip-10-0-3-230.us-west-2.compute.internal:9092",
             "ip-10-0-3-231.us-west-2.compute.internal:9093"
@@ -850,7 +851,7 @@ The same information can be retrieved through the DCOS CLI:
         "zookeeper": "master.mesos:2181/kafka",
         "zookeeper_convenience": "--zookeeper master.mesos:2181/kafka"
     }
-    
+
 
 ## Broker Operations
 
@@ -868,11 +869,11 @@ Increase the `BROKER_COUNT` value via Marathon. This should be rolled as in any 
             "2"
         ]
     }
-    
+
 
     $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/brokers"
     GET /service/kafka/v1/brokers HTTP/1.1
-    
+
     {
         "brokers": [
             "0",
@@ -880,23 +881,43 @@ Increase the `BROKER_COUNT` value via Marathon. This should be rolled as in any 
             "2"
         ]
     }
-    
+
 
 ### Restart Single Broker
+
+Restarts the broker in-place.
 
     $ dcos kafka --framework-name=kafka broker restart 0
     [
         "broker-0__9c426c50-1087-475c-aa36-cd00d24ccebb"
     ]
-    
+
 
     $ curl -X PUT -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/brokers/0"
     PUT /service/kafka/v1/brokers/0 HTTP/1.1
-    
+
     [
         "broker-0__9c426c50-1087-475c-aa36-cd00d24ccebb"
     ]
-    
+
+
+### Replace Single Broker
+
+Restarts the broker and replaces its existing resource/volume allocations. The new broker instance may also be placed on a different machine.
+
+    $ dcos kafka --framework-name=kafka broker replace 0
+    [
+        "broker-0__9c426c50-1087-475c-aa36-cd00d24ccebb"
+    ]
+
+
+    $ curl -X PUT -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/brokers/0?replace=true"
+    PUT /service/kafka/v1/brokers/0 HTTP/1.1
+
+    [
+        "broker-0__9c426c50-1087-475c-aa36-cd00d24ccebb"
+    ]
+
 
 ## Topic Operations
 
@@ -909,16 +930,111 @@ These operations mirror what is available with `bin/kafka-topics.sh`.
         "topic1",
         "topic0"
     ]
-    
+
 
     $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics"
     GET /service/kafka/v1/topics HTTP/1.1
-    
+
     [
         "topic1",
         "topic0"
     ]
-    
+
+### Describe Topic
+
+    $ dcos kafka --framework-name=kafka topic describe topic1
+    {
+        "partitions": [
+            {
+                "0": {
+                    "controller_epoch": 1,
+                    "isr": [
+                        0,
+                        1,
+                        2
+                    ],
+                    "leader": 0,
+                    "leader_epoch": 0,
+                    "version": 1
+                }
+            },
+            {
+                "1": {
+                    "controller_epoch": 1,
+                    "isr": [
+                        1,
+                        2,
+                        0
+                    ],
+                    "leader": 1,
+                    "leader_epoch": 0,
+                    "version": 1
+                }
+            },
+            {
+                "2": {
+                    "controller_epoch": 1,
+                    "isr": [
+                        2,
+                        0,
+                        1
+                    ],
+                    "leader": 2,
+                    "leader_epoch": 0,
+                    "version": 1
+                }
+            }
+        ]
+    }
+
+
+    $ curl -X POST -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics/topic1"
+    GET /service/kafka/v1/topics/topic1 HTTP/1.1
+
+    {
+        "partitions": [
+            {
+                "0": {
+                    "controller_epoch": 1,
+                    "isr": [
+                        0,
+                        1,
+                        2
+                    ],
+                    "leader": 0,
+                    "leader_epoch": 0,
+                    "version": 1
+                }
+            },
+            {
+                "1": {
+                    "controller_epoch": 1,
+                    "isr": [
+                        1,
+                        2,
+                        0
+                    ],
+                    "leader": 1,
+                    "leader_epoch": 0,
+                    "version": 1
+                }
+            },
+            {
+                "2": {
+                    "controller_epoch": 1,
+                    "isr": [
+                        2,
+                        0,
+                        1
+                    ],
+                    "leader": 2,
+                    "leader_epoch": 0,
+                    "version": 1
+                }
+            }
+        ]
+    }
+
 
 ### Create Topic
 
@@ -926,21 +1042,21 @@ These operations mirror what is available with `bin/kafka-topics.sh`.
     {
         "message": "Output: Created topic \"topic1\".\n"
     }
-    
+
 
     $ curl -X POST -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics?name=topic1&partitions=3&replication=3"
     POST /service/kafka/v1/topics?replication=3&name=topic1&partitions=3 HTTP/1.1
-    
+
     {
         "message": "Output: Created topic \"topic1\".\n"
     }
-    
+
 
 ### View Topic Offsets
 
-There is an optional --time parameter which may be set to either "first", "last", or a timestamp in milliseconds as [described in the Kafka documentation][15].
+There is an optional `--time` parameter which may be set to either "first", "last", or a timestamp in milliseconds as [described in the Kafka documentation][15].
 
-    $ dcos kafka --framework-name=kafka topic offsets topic1
+    $ dcos kafka --framework-name=kafka topic offsets topic1 --time=last
     [
         {
             "2": "334"
@@ -952,11 +1068,11 @@ There is an optional --time parameter which may be set to either "first", "last"
             "0": "333"
         }
     ]
-    
 
-    $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics/topic1/offsets"
-    GET /service/kafka/v1/topics/topic1/offsets HTTP/1.1
-    
+
+    $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics/topic1/offsets?time=last"
+    GET /service/kafka/v1/topics/topic1/offsets?time=last HTTP/1.1
+
     [
         {
             "2": "334"
@@ -968,7 +1084,7 @@ There is an optional --time parameter which may be set to either "first", "last"
             "0": "333"
         }
     ]
-    
+
 
 ### Alter Topic Partition Count
 
@@ -976,93 +1092,247 @@ There is an optional --time parameter which may be set to either "first", "last"
     {
         "message": "Output: WARNING: If partitions are increased for a topic that has a key, the partition logic or ordering of the messages will be affected\nAdding partitions succeeded!\n"
     }
-    
+
 
     $ curl -X PUT -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics/topic1?operation=partitions&partitions=2"
     PUT /service/kafka/v1/topics/topic1?operation=partitions&partitions=2 HTTP/1.1
-    
+
     {
         "message": "Output: WARNING: If partitions are increased for a topic that has a key, the partition logic or ordering of the messages will be affected\nAdding partitions succeeded!\n"
     }
-    
+
 
 ### Run Producer Test on Topic
 
     $ dcos kafka --framework-name=kafka topic producer_test topic1 10
-    
+
     {
         "message": "10 records sent, 70.422535 records/sec (0.07 MB/sec), 24.20 ms avg latency, 133.00 ms max latency, 13 ms 50th, 133 ms 95th, 133 ms 99th, 133 ms 99.9th.\n"
     }
-    
+
 
     $ curl -X PUT -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics/topic1?operation=producer-test&messages=10"
     PUT /service/kafka/v1/topics/topic1?operation=producer-test&messages=10 HTTP/1.1
-    
+
     {
         "message": "10 records sent, 70.422535 records/sec (0.07 MB/sec), 24.20 ms avg latency, 133.00 ms max latency, 13 ms 50th, 133 ms 95th, 133 ms 99th, 133 ms 99.9th.\n"
     }
-    
+
+Runs the equivalent of the following command from the machine running the Kafka Scheduler:
+
+    kafka-producer-perf-test.sh \
+        --topic <topic> \
+        --num-records <messages> \
+        --throughput 100000 \
+        --record-size 1024 \
+        --producer-props bootstrap.servers=<current broker endpoints>
 
 ### Delete Topic
 
     $ dcos kafka --framework-name=kafka topic delete topic1
-    
+
     {
         "message": "Topic topic1 is marked for deletion.\nNote: This will have no impact if delete.topic.enable is not set to true.\n"
     }
-    
+
 
     $ curl -X DELETE -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics/topic1"
-    DELETE /service/kafka/v1/topics/topic1?operation=delete HTTP/1.1
-    
+    DELETE /service/kafka/v1/topics/topic1 HTTP/1.1
+
     {
         "message": "Topic topic1 is marked for deletion.\nNote: This will have no impact if delete.topic.enable is not set to true.\n"
     }
-    
+
 
 Note the warning in the output from the commands above. You can change the indicated "delete.topic.enable" configuration value as a configuration change.
 
 ### List Under Replicated Partitions
 
     $ dcos kafka --framework-name=kafka topic under_replicated_partitions
-    
+
     {
         "message": ""
     }
-    
+
 
     $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics/under_replicated_partitions"
     GET /service/kafka/v1/topics/under_replicated_partitions HTTP/1.1
-    
+
     {
         "message": ""
     }
-    
+
 
 ### List Unavailable Partitions
 
     $ dcos kafka --framework-name=kafka topic unavailable_partitions
-    
+
     {
         "message": ""
     }
-    
+
 
     $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics/unavailable_partitions"
     GET /service/kafka/v1/topics/unavailable_partitions HTTP/1.1
-    
+
     {
         "message": ""
     }
-    
+
+
+## Config History
+
+These operations relate to viewing the service's configuration history.
+
+### List Configuration IDs
+
+    $ dcos kafka --framework-name=kafka config list
+
+    [
+        "319ebe89-42e2-40e2-9169-8568e2421023",
+        "294235f2-8504-4194-b43d-664443f2132b"
+    ]
+
+
+    $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/configurations"
+    GET /service/kafka/v1/configurations HTTP/1.1
+
+    [
+        "319ebe89-42e2-40e2-9169-8568e2421023",
+        "294235f2-8504-4194-b43d-664443f2132b"
+    ]
+
+### Describe Configuration
+
+This configuration shows a default per-broker memory allocation of 2048 (configured via the `BROKER_MEM` parameter):
+
+    $ dcos kafka --framework-name=kafka config describe 319ebe89-42e2-40e2-9169-8568e2421023
+
+    {
+        "brokerConfiguration": {
+            "containerHookUri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/container-hook-0.2.5.tgz",
+            "cpus": 1,
+            "disk": 5000,
+            "diskType": "ROOT",
+            "javaUri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/jre-8u72-linux-x64.tar.gz",
+            "kafkaUri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/kafka_2.10-0.9.0.1.tgz",
+            "mem": 2048, // <<--
+            "overriderUri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/overrider.zip"
+        },
+        "kafkaConfiguration": {
+            [...]
+        },
+        "serviceConfiguration": {
+            "count": 3,
+            "name": "kafka",
+            "phaseStrategy": "INSTALL",
+            "placementStrategy": "NODE",
+            "principal": "kafka-principal",
+            "role": "kafka-role",
+            "user": ""
+        }
+    }
+
+
+    $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/configurations/319ebe89-42e2-40e2-9169-8568e2421023"
+    GET /service/kafka/v1/configurations/319ebe89-42e2-40e2-9169-8568e2421023 HTTP/1.1
+
+    {
+        "brokerConfiguration": {
+            "containerHookUri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/container-hook-0.2.5.tgz",
+            "cpus": 1,
+            "disk": 5000,
+            "diskType": "ROOT",
+            "javaUri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/jre-8u72-linux-x64.tar.gz",
+            "kafkaUri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/kafka_2.10-0.9.0.1.tgz",
+            "mem": 2048, // <<--
+            "overriderUri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/overrider.zip"
+        },
+        "kafkaConfiguration": {
+            [...]
+        },
+        "serviceConfiguration": {
+            "count": 3,
+            "name": "kafka",
+            "phaseStrategy": "INSTALL",
+            "placementStrategy": "NODE",
+            "principal": "kafka-principal",
+            "role": "kafka-role",
+            "user": ""
+        }
+    }
+
+### Describe Target Configuration
+
+The target configuration, meanwhile, shows an increase of configured per-broker memory from 2048 to 4096 (again, configured as `BROKER_MEM`):
+
+    $ dcos kafka --framework-name=kafka config target
+
+    {
+        "brokerConfiguration": {
+            "containerHookUri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/container-hook-0.2.5.tgz",
+            "cpus": 1,
+            "disk": 5000,
+            "diskType": "ROOT",
+            "javaUri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/jre-8u72-linux-x64.tar.gz",
+            "kafkaUri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/kafka_2.10-0.9.0.1.tgz",
+            "mem": 4096, // <<--
+            "overriderUri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/overrider.zip"
+        },
+        "kafkaConfiguration": {
+            [...]
+        },
+        "serviceConfiguration": {
+            "count": 3,
+            "name": "kafka",
+            "phaseStrategy": "INSTALL",
+            "placementStrategy": "NODE",
+            "principal": "kafka-principal",
+            "role": "kafka-role",
+            "user": ""
+        }
+    }
+
+
+    $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/configurations/target"
+    GET /service/kafka/v1/configurations/target HTTP/1.1
+
+    {
+        "brokerConfiguration": {
+            "containerHookUri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/container-hook-0.2.5.tgz",
+            "cpus": 1,
+            "disk": 5000,
+            "diskType": "ROOT",
+            "javaUri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/jre-8u72-linux-x64.tar.gz",
+            "kafkaUri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/kafka_2.10-0.9.0.1.tgz",
+            "mem": 4096, // <<--
+            "overriderUri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/overrider.zip"
+        },
+        "kafkaConfiguration": {
+            [...]
+        },
+        "serviceConfiguration": {
+            "count": 3,
+            "name": "kafka",
+            "phaseStrategy": "INSTALL",
+            "placementStrategy": "NODE",
+            "principal": "kafka-principal",
+            "role": "kafka-role",
+            "user": ""
+        }
+    }
 
 ## Config Updates
 
+These options relate to viewing and controlling rollouts and configuration updates.
+
 ### View Plan Status
 
-    $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan"
+Displays all Phases and Blocks in the service Plan. If a rollout is currently in progress, this returns a 503 HTTP code with response content otherwise unchanged.
+
+    $ dcos kafka --framework-name=kafka plan show
     GET /service/kafka/v1/plan HTTP/1.1
-    
+
     {
         "errors": [],
         "phases": [
@@ -1111,8 +1381,159 @@ Note the warning in the output from the commands above. You can change the indic
         ],
         "status": "Complete"
     }
-    
-    
+
+
+    $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan"
+    GET /service/kafka/v1/plan HTTP/1.1
+
+    {
+        "errors": [],
+        "phases": [
+            {
+                "blocks": [
+                    {
+                        "hasDecisionPoint": false,
+                        "id": "019eaab4-4082-4e38-ab01-a5d2a825cf8d",
+                        "message": "Reconciliation complete",
+                        "name": "Reconciliation",
+                        "status": "Complete"
+                    }
+                ],
+                "id": "a58d1e15-15b8-47a3-84d7-ae36b13a5ba8",
+                "name": "Reconciliation",
+                "status": "Complete"
+            },
+            {
+                "blocks": [
+                    {
+                        "hasDecisionPoint": false,
+                        "id": "8a727290-062a-44bf-87ba-3ebfe005aa18",
+                        "message": "Broker-0 is Complete",
+                        "name": "broker-0",
+                        "status": "Complete"
+                    },
+                    {
+                        "hasDecisionPoint": false,
+                        "id": "5d2aa9d9-5eda-4a13-aea1-9d98e4cf7ea7",
+                        "message": "Broker-1 is Complete",
+                        "name": "broker-1",
+                        "status": "Complete"
+                    },
+                    {
+                        "hasDecisionPoint": false,
+                        "id": "7f6762b6-7a51-4df2-bb4d-b82b75623938",
+                        "message": "Broker-2 is Complete",
+                        "name": "broker-2",
+                        "status": "Complete"
+                    }
+                ],
+                "id": "e442fd2e-8f6b-4ddb-ac9f-78cd1da2c422",
+                "name": "Update to: d5c33781-a2b8-4426-86d7-3c6e23d89633",
+                "status": "Complete"
+            }
+        ],
+        "status": "Complete"
+    }
+
+### View Active Plan Entries
+
+When a configuration change is in progresss, this command shows the Block/Phase/Stage which are currently active.
+
+    $ dcos kafka --framework-name=kafka plan active
+
+    {
+        "block": {
+            "has_decision_point": false,
+            "id": "498d30f5-248d-4e8d-a857-305d3d709c83",
+            "message": "Broker-0 is InProgress",
+            "name": "broker-0",
+            "status": "InProgress"
+        },
+        "phase": {
+            "block_count": 3,
+            "id": "0d3cb059-d94b-4d73-8c8a-586ba3f4c75f",
+            "name": "Update to: 5e56ff27-94c3-415d-aae8-a24f6ed5b42d",
+            "status": "InProgress"
+        },
+        "stage": {
+            "errors": [],
+            "phase_count": 2,
+            "status": "InProgress"
+        }
+    }
+
+
+    $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan/status"
+    GET /service/kafka/v1/plan/status HTTP/1.1
+
+    {
+        "block": {
+            "has_decision_point": false,
+            "id": "498d30f5-248d-4e8d-a857-305d3d709c83",
+            "message": "Broker-0 is InProgress",
+            "name": "broker-0",
+            "status": "InProgress"
+        },
+        "phase": {
+            "block_count": 3,
+            "id": "0d3cb059-d94b-4d73-8c8a-586ba3f4c75f",
+            "name": "Update to: 5e56ff27-94c3-415d-aae8-a24f6ed5b42d",
+            "status": "InProgress"
+        },
+        "stage": {
+            "errors": [],
+            "phase_count": 2,
+            "status": "InProgress"
+        }
+    }
+
+If no upgrade is in progress, then the `block` and `phase` entries are omitted and the `stage` is shown as `Complete`.
+
+    $ dcos kafka --framework-name=kafka plan active
+
+    {
+        "stage": {
+            "errors": [],
+            "phase_count": 2,
+            "status": "Complete"
+        }
+    }
+
+
+    $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan/status"
+    GET /service/kafka/v1/plan/status HTTP/1.1
+
+    {
+        "stage": {
+            "errors": [],
+            "phase_count": 2,
+            "status": "Complete"
+        }
+    }
+
+### Upgrade Interaction
+
+These operations are only applicable when `PHASE_STRATEGY` is set to `STAGE`, they have no effect when it is set to `INSTALL`. See [Changing Configuration at Runtime](#changing-configuration-at-runtime) for more information.
+
+#### Continue
+
+    $ dcos kafka --framework-name=kafka plan continue
+    $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan/continue"
+
+#### Interrupt
+
+    $ dcos kafka --framework-name=kafka plan interrupt
+    $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan/interrupt"
+
+#### Force Complete
+
+    $ dcos kafka --framework-name=kafka plan force
+    $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan/forceComplete"
+
+#### Restart
+
+    $ dcos kafka --framework-name=kafka plan restart
+    $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan/restart"
 
 # Limitations
 

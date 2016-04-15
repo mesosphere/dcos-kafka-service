@@ -10,7 +10,7 @@
 #   container-hook/libs/java-dogstatsd-client-2.0.13.jar
 #   container-hook/libs/... any other libraries to include in Kafka's classpath ...
 
-CONTAINER_HOOK_VERSION="0.2.4"
+CONTAINER_HOOK_VERSION="0.2.5"
 CONTAINER_HOOK_BASE_DIR="container-hook"
 CONTAINER_HOOK_PACKAGE_FILENAME="${CONTAINER_HOOK_BASE_DIR}-${CONTAINER_HOOK_VERSION}.tgz"
 CONTAINER_HOOK_SCRIPT="container-hook.sh"

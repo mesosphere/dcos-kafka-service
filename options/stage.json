@@ -1,5 +1,5 @@
 {
   "kafka": {
-    "plan_strategy": "STAGE"
+    "phase_strategy": "STAGE"
   }
 }

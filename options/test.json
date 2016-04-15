@@ -2,7 +2,7 @@
   "service": {
     "name": "kafkatest",
     "placement_strategy": "ANY",
-    "plan_strategy": "INSTALL"
+    "phase_strategy": "INSTALL"
   },
   "brokers": {
     "count": 2

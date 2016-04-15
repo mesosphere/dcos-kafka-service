@@ -173,22 +173,6 @@ public class KafkaStateService implements Observer, TaskStatusProvider {
     return endpoints;
   }
 
-  public List<String> getBrokerDNSEndpoints(String frameworkName) throws Exception {
-    String brokerPath = zkRoot + "/brokers/ids";
-    List<String> endpoints = new ArrayList<String>();
-
-    List<String> ids = zkClient.getChildren().forPath(brokerPath);
-    for (String id : ids) {
-      byte[] bytes = zkClient.getData().forPath(brokerPath + "/" + id);
-      JSONObject broker = new JSONObject(new String(bytes, "UTF-8"));
-      String host = "broker-" + id + "." + frameworkName + ".mesos";
-      Integer port = (Integer) broker.get("port");
-      endpoints.add(host + ":" + port);
-    }
-
-    return endpoints;
-  }
-
   public JSONArray getTopics() throws Exception {
     return getIds(zkRoot + "/brokers/topics");
   }

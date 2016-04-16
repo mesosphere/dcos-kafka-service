@@ -110,14 +110,12 @@ schedulerConfiguration:
       compressionType: ${KAFKA_OVERRIDE_COMPRESSION_TYPE}
 
 server:
-  adminContextPath: /
+  type: simple
+  adminContextPath: /admin
   applicationContextPath: /
-  applicationConnectors:
-    - type: http
-      port: ${PORT0:-8080}
-  adminConnectors:
-    - type: http
-      port: ${PORT1:-8081}
+  connector:
+    type: http
+    port: ${PORT0:-8080}
 
 logging:
   level: INFO

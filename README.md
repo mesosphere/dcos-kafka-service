@@ -83,22 +83,23 @@ DCOS Kafka provides the following features:
 
 *   Step 1. Install a Kafka cluster.
 
-    $ dcos package install kafka # framework name defaults to 'kafka'
+    $ dcos package install kafka
 
 
 *   Step 2. Create a new topic.
 
-    $ dcos kafka topic create topic1 --partitions 3 --replication 3
+    $ dcos kafka topic create topic1
 
 
 *   Step 3. Find connection information.
 
     $ dcos kafka connection
     {
-        "broker_list_convenience": "--broker-list ip-10-0-3-230.us-west-2.compute.internal:9092, ip-10-0-3-231.us-west-2.compute.internal:9093",
+        "broker_list_convenience": "--broker-list 10.0.0.211:9843, 10.0.0.217:10056, 10.0.0.214:9689",
         "brokers": [
-            "ip-10-0-3-230.us-west-2.compute.internal:9092",
-            "ip-10-0-3-231.us-west-2.compute.internal:9093"
+            "10.0.0.211:9843",
+            "10.0.0.217:10056",
+            "10.0.0.214:9689"
         ],
         "zookeeper": "master.mesos:2181/kafka",
         "zookeeper_convenience": "--zookeeper master.mesos:2181/kafka"
@@ -109,15 +110,12 @@ DCOS Kafka provides the following features:
 
     $ dcos node ssh --master-proxy --leader
 
-    core@ip-10-0-6-153 ~ $ docker run -it mesosphere/kafka-client
+    core@ip-10-0-6-153 ~ $ docker run -it keithchambers/kafka-client
 
-    root@7bc0e88cfa52:/kafka_2.10-0.8.2.2/bin# ./kafka-console-producer.sh --broker-list ip-10-0-3-230.us-west-2.compute.internal:9092 --topic test
-    This is a message
-    This is another message
+    root@7d0aed75e582:/bin# echo "Hello, World." | ./kafka-console-producer.sh --broker-list 10.0.0.211:9843, 10.0.0.217:10056, 10.0.0.214:9689 --topic topic1
 
-    root@7bc0e88cfa52:/kafka_2.10-0.8.2.2/bin# ./kafka-console-consumer.sh --zookeeper master.mesos:2181/kafka --topic test --from-beginning
-    This is a message
-    This is another message
+    root@7d0aed75e582:/bin# ./kafka-console-consumer.sh --zookeeper master.mesos:2181/kafka --topic topic1 --from-beginning
+    Hello, World.
 
 
 See also [Connecting clients][3].

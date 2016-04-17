@@ -42,12 +42,40 @@ public class ClusterController {
     try {
       JSONObject connectionInfo = new JSONObject();
       connectionInfo.put("zookeeper", zookeeperEndpoint);
-      connectionInfo.put("brokers", getBrokerList());
+      connectionInfo.put("address", getBrokerList());
+      connectionInfo.put("dns", getBrokerDNSList());
       connectionInfo.put("zookeeper_convenience", getConvenientZookeeper(zookeeperEndpoint));
       connectionInfo.put("broker_list_convenience", getConvenientBrokerList());
 
       return Response.ok(connectionInfo.toString(), MediaType.APPLICATION_JSON).build();
+    } catch (Exception ex) {
+      log.error("Failed to fetch topics with exception: " + ex);
+      return Response.serverError().build();
+    }
+  }
 
+  @Path("/connection/address")
+  @GET
+  public Response getConnectionAddressInfo() {
+    try {
+      JSONObject connectionInfo = new JSONObject();
+      connectionInfo.put("address", getBrokerList());
+
+      return Response.ok(connectionInfo.toString(), MediaType.APPLICATION_JSON).build();
+    } catch (Exception ex) {
+      log.error("Failed to fetch topics with exception: " + ex);
+      return Response.serverError().build();
+    }
+  }
+
+  @Path("/connection/dns")
+  @GET
+  public Response getConnectionDNSInfo() {
+    try {
+      JSONObject connectionInfo = new JSONObject();
+      connectionInfo.put("dns", getBrokerDNSList());
+
+      return Response.ok(connectionInfo.toString(), MediaType.APPLICATION_JSON).build();
     } catch (Exception ex) {
       log.error("Failed to fetch topics with exception: " + ex);
       return Response.serverError().build();
@@ -111,6 +139,11 @@ public class ClusterController {
     return new JSONArray(state.getBrokerEndpoints());
   }
 
+  private JSONArray getBrokerDNSList() throws Exception {
+    final String frameworkName = configState.getTargetConfig().getServiceConfiguration().getName();
+    return new JSONArray(state.getBrokerDNSEndpoints(frameworkName));
+  }
+
   private String getConvenientZookeeper(String zookeeperEndpoint) {
     return "--zookeeper " + zookeeperEndpoint;
   }
@@ -120,6 +153,20 @@ public class ClusterController {
 
     try {
       String brokers = String.join(", ", state.getBrokerEndpoints());
+      return brokerList + brokers;
+    } catch (Exception ex) {
+      log.error("Failed to fetch broker endpoints for convenience with exception : " + ex);
+    }
+
+    return brokerList;
+  }
+
+  private String getConvenientBrokerDNSList() {
+    final String frameworkName = configState.getTargetConfig().getServiceConfiguration().getName();
+    String brokerList = "--broker-list ";
+
+    try {
+      String brokers = String.join(", ", state.getBrokerDNSEndpoints(frameworkName));
       return brokerList + brokers;
     } catch (Exception ex) {
       log.error("Failed to fetch broker endpoints for convenience with exception : " + ex);

@@ -83,22 +83,23 @@ DCOS Kafka provides the following features:
 
 *   Step 1. Install a Kafka cluster.
 
-    $ dcos package install kafka # framework name defaults to 'kafka'
+    $ dcos package install kafka
 
 
 *   Step 2. Create a new topic.
 
-    $ dcos kafka topic create topic1 --partitions 3 --replication 3
+    $ dcos kafka topic create topic1
 
 
 *   Step 3. Find connection information.
 
     $ dcos kafka connection
     {
-        "broker_list_convenience": "--broker-list ip-10-0-3-230.us-west-2.compute.internal:9092, ip-10-0-3-231.us-west-2.compute.internal:9093",
+        "broker_list_convenience": "--broker-list 10.0.0.211:9843, 10.0.0.217:10056, 10.0.0.214:9689",
         "brokers": [
-            "ip-10-0-3-230.us-west-2.compute.internal:9092",
-            "ip-10-0-3-231.us-west-2.compute.internal:9093"
+            "10.0.0.211:9843",
+            "10.0.0.217:10056",
+            "10.0.0.214:9689"
         ],
         "zookeeper": "master.mesos:2181/kafka",
         "zookeeper_convenience": "--zookeeper master.mesos:2181/kafka"
@@ -109,15 +110,12 @@ DCOS Kafka provides the following features:
 
     $ dcos node ssh --master-proxy --leader
 
-    core@ip-10-0-6-153 ~ $ docker run -it mesosphere/kafka-client
+    core@ip-10-0-6-153 ~ $ docker run -it keithchambers/kafka-client
 
-    root@7bc0e88cfa52:/kafka_2.10-0.8.2.2/bin# ./kafka-console-producer.sh --broker-list ip-10-0-3-230.us-west-2.compute.internal:9092 --topic test
-    This is a message
-    This is another message
+    root@7d0aed75e582:/bin# echo "Hello, World." | ./kafka-console-producer.sh --broker-list 10.0.0.211:9843, 10.0.0.217:10056, 10.0.0.214:9689 --topic topic1
 
-    root@7bc0e88cfa52:/kafka_2.10-0.8.2.2/bin# ./kafka-console-consumer.sh --zookeeper master.mesos:2181/kafka --topic test --from-beginning
-    This is a message
-    This is another message
+    root@7d0aed75e582:/bin# ./kafka-console-consumer.sh --zookeeper master.mesos:2181/kafka --topic topic1 --from-beginning
+    Hello, World.
 
 
 See also [Connecting clients][3].
@@ -133,9 +131,9 @@ To start a basic test cluster with three brokers, run the following command on t
 
 This command creates a new Kafka cluster with the default name `kafka`. Two clusters cannot share the same name, so installing additional clusters beyond the default cluster requires [customizing the `framework-name` at install time][4] for each additional instance.
 
-All `dcos kafka` CLI commands have a `--framework-name` argument allowing the user to specify which Kafka instance to query. If you do not specify a framework name, the CLI assumes the default value, `kafka`. The default value for `--framework-name` can be customized via the DCOS CLI configuration:
+All `dcos kafka` CLI commands have a `--name` argument allowing the user to specify which Kafka instance to query. If you do not specify a framework name, the CLI assumes the default value, `kafka`. The default value for `--name` can be customized via the DCOS CLI configuration:
 
-    $ dcos kafka --framework-name kafka-dev <cmd>
+    $ dcos kafka --name kafka-dev <cmd>
 
 
 ## Minimal Installation
@@ -496,7 +494,7 @@ The only supported client library is the official Kafka Java library, ie `org.ap
 
 The following command can be executed from the cli in order to retrieve a set of brokers to connect to.
 
-    dcos kafka --framework-name=<framework-name> connection
+    dcos kafka --name=<service-name> connection
 
 
 ## Using the REST API
@@ -815,10 +813,7 @@ For ongoing maintenance of the Kafka cluster itself, the Kafka framework exposes
 
 The examples here provide equivalent commands using both `[dcos-cli](https://github.com/mesosphere/dcos-cli)` (with the `kafka` CLI module installed) and `curl`. These examples assume a service named `kafka` (the default), and the `curl` examples assume a DCOS cluster path of `$DCOS_URI`. Replace these with appropriate values as needed.
 
-The `dcos kafka` CLI commands have a `--framework-name` argument, allowing the user to specify which Kafka instance to query. The value defaults to `kafka`, so it's technically redundant to specify `--framework-name=kafka` in these examples. The default value for `--framework-name` can be customized via the DCOS CLI configuration:
-
-    $ dcos config set kafka.framework_name new_default_name
-
+The `dcos kafka` CLI commands have a `--name` argument, allowing the user to specify which Kafka instance to query. The value defaults to `kafka`, so it's technically redundant to specify `--name=kafka` in these examples. 
 
 ## Connection Information
 
@@ -861,7 +856,7 @@ Increase the `BROKER_COUNT` value via Marathon. This should be rolled as in any 
 
 ### List All Brokers
 
-    $ dcos kafka --framework-name=kafka broker list
+    $ dcos kafka --name=kafka broker list
     {
         "brokers": [
             "0",
@@ -887,7 +882,7 @@ Increase the `BROKER_COUNT` value via Marathon. This should be rolled as in any 
 
 Restarts the broker in-place.
 
-    $ dcos kafka --framework-name=kafka broker restart 0
+    $ dcos kafka --name=kafka broker restart 0
     [
         "broker-0__9c426c50-1087-475c-aa36-cd00d24ccebb"
     ]
@@ -905,7 +900,7 @@ Restarts the broker in-place.
 
 Restarts the broker and replaces its existing resource/volume allocations. The new broker instance may also be placed on a different machine.
 
-    $ dcos kafka --framework-name=kafka broker replace 0
+    $ dcos kafka --name=kafka broker replace 0
     [
         "broker-0__9c426c50-1087-475c-aa36-cd00d24ccebb"
     ]
@@ -925,7 +920,7 @@ These operations mirror what is available with `bin/kafka-topics.sh`.
 
 ### List Topics
 
-    $ dcos kafka --framework-name=kafka topic list
+    $ dcos kafka --name=kafka topic list
     [
         "topic1",
         "topic0"
@@ -942,7 +937,7 @@ These operations mirror what is available with `bin/kafka-topics.sh`.
 
 ### Describe Topic
 
-    $ dcos kafka --framework-name=kafka topic describe topic1
+    $ dcos kafka --name=kafka topic describe topic1
     {
         "partitions": [
             {
@@ -1038,7 +1033,7 @@ These operations mirror what is available with `bin/kafka-topics.sh`.
 
 ### Create Topic
 
-    $ dcos kafka --framework-name=kafka topic create topic1 --partitions=3 --replication=3
+    $ dcos kafka --name=kafka topic create topic1 --partitions=3 --replication=3
     {
         "message": "Output: Created topic \"topic1\".\n"
     }
@@ -1056,7 +1051,7 @@ These operations mirror what is available with `bin/kafka-topics.sh`.
 
 There is an optional `--time` parameter which may be set to either "first", "last", or a timestamp in milliseconds as [described in the Kafka documentation][15].
 
-    $ dcos kafka --framework-name=kafka topic offsets topic1 --time=last
+    $ dcos kafka --name=kafka topic offsets topic1 --time=last
     [
         {
             "2": "334"
@@ -1088,7 +1083,7 @@ There is an optional `--time` parameter which may be set to either "first", "las
 
 ### Alter Topic Partition Count
 
-    $ dcos kafka --framework-name=kafka topic partitions topic1 2
+    $ dcos kafka --name=kafka topic partitions topic1 2
     {
         "message": "Output: WARNING: If partitions are increased for a topic that has a key, the partition logic or ordering of the messages will be affected\nAdding partitions succeeded!\n"
     }
@@ -1104,7 +1099,7 @@ There is an optional `--time` parameter which may be set to either "first", "las
 
 ### Run Producer Test on Topic
 
-    $ dcos kafka --framework-name=kafka topic producer_test topic1 10
+    $ dcos kafka --name=kafka topic producer_test topic1 10
 
     {
         "message": "10 records sent, 70.422535 records/sec (0.07 MB/sec), 24.20 ms avg latency, 133.00 ms max latency, 13 ms 50th, 133 ms 95th, 133 ms 99th, 133 ms 99.9th.\n"
@@ -1129,7 +1124,7 @@ Runs the equivalent of the following command from the machine running the Kafka 
 
 ### Delete Topic
 
-    $ dcos kafka --framework-name=kafka topic delete topic1
+    $ dcos kafka --name=kafka topic delete topic1
 
     {
         "message": "Topic topic1 is marked for deletion.\nNote: This will have no impact if delete.topic.enable is not set to true.\n"
@@ -1148,7 +1143,7 @@ Note the warning in the output from the commands above. You can change the indic
 
 ### List Under Replicated Partitions
 
-    $ dcos kafka --framework-name=kafka topic under_replicated_partitions
+    $ dcos kafka --name=kafka topic under_replicated_partitions
 
     {
         "message": ""
@@ -1165,7 +1160,7 @@ Note the warning in the output from the commands above. You can change the indic
 
 ### List Unavailable Partitions
 
-    $ dcos kafka --framework-name=kafka topic unavailable_partitions
+    $ dcos kafka --name=kafka topic unavailable_partitions
 
     {
         "message": ""
@@ -1186,7 +1181,7 @@ These operations relate to viewing the service's configuration history.
 
 ### List Configuration IDs
 
-    $ dcos kafka --framework-name=kafka config list
+    $ dcos kafka --name=kafka config list
 
     [
         "319ebe89-42e2-40e2-9169-8568e2421023",
@@ -1206,7 +1201,7 @@ These operations relate to viewing the service's configuration history.
 
 This configuration shows a default per-broker memory allocation of 2048 (configured via the `BROKER_MEM` parameter):
 
-    $ dcos kafka --framework-name=kafka config describe 319ebe89-42e2-40e2-9169-8568e2421023
+    $ dcos kafka --name=kafka config describe 319ebe89-42e2-40e2-9169-8568e2421023
 
     {
         "brokerConfiguration": {
@@ -1266,7 +1261,7 @@ This configuration shows a default per-broker memory allocation of 2048 (configu
 
 The target configuration, meanwhile, shows an increase of configured per-broker memory from 2048 to 4096 (again, configured as `BROKER_MEM`):
 
-    $ dcos kafka --framework-name=kafka config target
+    $ dcos kafka --name=kafka config target
 
     {
         "brokerConfiguration": {
@@ -1330,7 +1325,7 @@ These options relate to viewing and controlling rollouts and configuration updat
 
 Displays all Phases and Blocks in the service Plan. If a rollout is currently in progress, this returns a 503 HTTP code with response content otherwise unchanged.
 
-    $ dcos kafka --framework-name=kafka plan show
+    $ dcos kafka --name=kafka plan show
     GET /service/kafka/v1/plan HTTP/1.1
 
     {
@@ -1439,7 +1434,7 @@ Displays all Phases and Blocks in the service Plan. If a rollout is currently in
 
 When a configuration change is in progresss, this command shows the Block/Phase/Stage which are currently active.
 
-    $ dcos kafka --framework-name=kafka plan active
+    $ dcos kafka --name=kafka plan active
 
     {
         "block": {
@@ -1489,7 +1484,7 @@ When a configuration change is in progresss, this command shows the Block/Phase/
 
 If no upgrade is in progress, then the `block` and `phase` entries are omitted and the `stage` is shown as `Complete`.
 
-    $ dcos kafka --framework-name=kafka plan active
+    $ dcos kafka --name=kafka plan active
 
     {
         "stage": {
@@ -1517,22 +1512,22 @@ These operations are only applicable when `PHASE_STRATEGY` is set to `STAGE`, th
 
 #### Continue
 
-    $ dcos kafka --framework-name=kafka plan continue
+    $ dcos kafka --name=kafka plan continue
     $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan/continue"
 
 #### Interrupt
 
-    $ dcos kafka --framework-name=kafka plan interrupt
+    $ dcos kafka --name=kafka plan interrupt
     $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan/interrupt"
 
 #### Force Complete
 
-    $ dcos kafka --framework-name=kafka plan force
+    $ dcos kafka --name=kafka plan force
     $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan/forceComplete"
 
 #### Restart
 
-    $ dcos kafka --framework-name=kafka plan restart
+    $ dcos kafka --name=kafka plan restart
     $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan/restart"
 
 # Limitations

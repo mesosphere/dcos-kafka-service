@@ -132,9 +132,9 @@ To start a basic test cluster with three brokers, run the following command on t
     $ dcos package install kafka
 
 
-This command creates a new Kafka cluster with the default name `kafka`. Two clusters cannot share the same name, so installing additional clusters beyond the default cluster requires [customizing the `framework-name` at install time][4] for each additional instance.
+This command creates a new Kafka cluster with the default name `kafka`. Two clusters cannot share the same name, so installing additional clusters beyond the default cluster requires [customizing the `name` at install time][4] for each additional instance.
 
-All `dcos kafka` CLI commands have a `--name` argument allowing the user to specify which Kafka instance to query. If you do not specify a framework name, the CLI assumes the default value, `kafka`. The default value for `--name` can be customized via the DCOS CLI configuration:
+All `dcos kafka` CLI commands have a `--name` argument allowing the user to specify which Kafka instance to query. If you do not specify a service name, the CLI assumes the default value, `kafka`. The default value for `--name` can be customized via the DCOS CLI configuration:
 
     $ dcos kafka --name kafka-dev <cmd>
 
@@ -189,7 +189,7 @@ See [Configuration Options][6] for a list of fields that can be customized via a
 
 ## Multiple Kafka cluster installation
 
-Installing multiple Kafka clusters is identical to installing Kafka clusters with custom configurations as described above. The only requirement on the operator is that a unique `framework-name` is specified for each installation. For example:
+Installing multiple Kafka clusters is identical to installing Kafka clusters with custom configurations as described above. The only requirement on the operator is that a unique `name` is specified for each installation. For example:
 
     $ cat kafka1.json
     {
@@ -205,14 +205,14 @@ Installing multiple Kafka clusters is identical to installing Kafka clusters wit
 
 Uninstalling a cluster is also straightforward. Replace `name` with the name of the kafka instance to be uninstalled.
 
-    $ dcos package uninstall --app-id=name kafka
+    $ dcos package uninstall --app-id=<service.name> kafka
 
 
-Then, use the [framework cleaner script][7] to remove your Kafka instance from Zookeeper and to destroy all data associated with it. The script require several arguments, the values for which are derived from your framework name:
+Then, use the [framework cleaner script][7] to remove your Kafka instance from Zookeeper and to destroy all data associated with it. The script require several arguments, the values for which are derived from your service name:
 
-*   `framework-role` is `<framework-name>-role`.
-*   `framework-principal` is `<framework-name>-principal`.
-*   `zk_path` is `<framework-name>`.
+*   `framework-role` is `<name>-role`.
+*   `framework-principal` is `<name>-principal`.
+*   `zk_path` is `<name>`.
 
 # Configuring
 
@@ -223,11 +223,11 @@ You can customize your cluster in-place when it is up and running.
 The Kafka scheduler runs as a Marathon process and can be reconfigured by changing values within Marathon. These are the general steps to follow:
 
 1.  View your Marathon dashboard at `http://$DCOS_URI/marathon`
-2.  In the list of `Applications`, click the name of the Kafka framework to be updated.
+2.  In the list of `Applications`, click the name of the Kafka service to be updated.
 3.  Within the Kafka instance details view, click the `Configuration` tab, then click the `Edit` button.
 4.  In the dialog that appears, expand the `Environment Variables` section and update any field(s) to their desired value(s). For example, to [increase the number of Brokers][8], edit the value for `BROKER_COUNT`. Do not edit the value for `FRAMEWORK_NAME` or `BROKER_DISK` or `PLACEMENT_STRATEGY`.
 5.  A `PHASE_STRATEGY` of `STAGE` should also be set. See "Configuration Deployment Strategy" below for more details.
-6.  Click `Change and deploy configuration` to apply any changes and cleanly reload the Kafka Framework scheduler. The Kafka cluster itself will persist across the change.
+6.  Click `Change and deploy configuration` to apply any changes and cleanly reload the Kafka service scheduler. The Kafka cluster itself will persist across the change.
 
 ### Configuration Deployment Strategy
 
@@ -439,16 +439,16 @@ If you enter `continue` a second time, the rest of the plan will be executed wit
 
 ## Configuration Options
 
-The following describes the most commonly used features of the Kafka framework and how to configure them via dcos-cli and in Marathon. View the [default `config.json` in DCOS Universe][11] to see all possible configuration options.
+The following describes the most commonly used features of the Kafka service and how to configure them via dcos-cli and in Marathon. View the [default `config.json` in DCOS Universe][11] to see all possible configuration options.
 
 **Note:** To get the latest version of `config.json`, make sure that you are accessing the file from the highest number folder in the `https://github.com/mesosphere/universe/tree/kafka_0_9_0_1__0_2_3/repo/packages/K/kafka/` directory.
 
-### Framework Name
+### Service Name
 
 The name of this Kafka instance in DCOS. This is an option that cannot be changed once the Kafka cluster is started: it can only be configured via the `dcos-cli --options` flag when the Kafka instance is created.
 
-*   **In dcos-cli options.json**: `framework-name` = string (default: `kafka`)
-*   **In Marathon**: The framework name cannot be changed after the cluster has started.
+*   **In dcos-cli options.json**: `name` = string (default: `kafka`)
+*   **In Marathon**: The service name cannot be changed after the cluster has started.
 
 ### Broker Count
 
@@ -497,7 +497,7 @@ The only supported client library is the official Kafka Java library, ie `org.ap
 
 The following command can be executed from the cli in order to retrieve a set of brokers to connect to.
 
-    dcos kafka --name=<service-name> connection
+    dcos kafka --name=<service.name> connection
 
 
 ## Using the REST API
@@ -529,7 +529,7 @@ First, we retrieve `uSeR_t0k3n` with our user credentials and store the token as
     $ export AUTH_TOKEN=uSeR_t0k3n
 
 
-Then, use this token to authenticate requests to the Kafka Framework:
+Then, use this token to authenticate requests to the Kafka Service:
 
     $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/connection"
     GET /service/kafka/v1/connection HTTP/1.1
@@ -565,11 +565,12 @@ $ TODO command for getting an OAuth token.. once docs describing OAuth exist
 $ export AUTH_TOKEN=uSeR_t0k3n
 ~~~
 
-This token is then used to authenticate requests to the Kafka Framework:
+This token is then used to authenticate requests to the Kafka Service:
 
 ~~~
 $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/connection"
 GET /service/kafka/v1/connection HTTP/1.1
+
 {
     "address": [
         "10.0.0.211:9843",
@@ -823,7 +824,7 @@ The security features introduced in Apache Kafka 0.9 are not supported at this t
 
 # API Reference
 
-For ongoing maintenance of the Kafka cluster itself, the Kafka framework exposes an HTTP API whose structure is designed to roughly match the tools provided by the Kafka distribution, such as `bin/kafka-topics.sh`.
+For ongoing maintenance of the Kafka cluster itself, the Kafka service exposes an HTTP API whose structure is designed to roughly match the tools provided by the Kafka distribution, such as `bin/kafka-topics.sh`.
 
 The examples here provide equivalent commands using both `[dcos-cli](https://github.com/mesosphere/dcos-cli)` (with the `kafka` CLI module installed) and `curl`. These examples assume a service named `kafka` (the default), and the `curl` examples assume a DCOS cluster path of `$DCOS_URI`. Replace these with appropriate values as needed.
 
@@ -1557,9 +1558,9 @@ These operations are only applicable when `PHASE_STRATEGY` is set to `STAGE`, th
 
 The "disk" configuration value is denominated in MB. We recommend you set the configuration value `log_retention_bytes` to a value smaller than the indicated "disk" configuration. See [instructions for customizing these values][16].
 
-### Pitfalls of Managing Configurations Outside of the Framework
+### Managing Configurations Outside of the Service
 
-The Kafka framework's core responsibility is to deploy and maintain the deployment of a Kafka cluster whose configuration has been specified. In order to do this the framework makes the assumption that it has ownership of broker configuration. If an end-user makes modifications to individual brokers through out-of-band configuration operations, the framework will almost certainly override those modifications at a later time. If a broker crashes, it will be restarted with the configuration known to the scheduler, not one modified out-of-band. If a configuration update is initiated, all out-of-band modifications will be overwritten during the rolling update.
+The Kafka service's core responsibility is to deploy and maintain the deployment of a Kafka cluster whose configuration has been specified. In order to do this the service makes the assumption that it has ownership of broker configuration. If an end-user makes modifications to individual brokers through out-of-band configuration operations, the service will almost certainly override those modifications at a later time. If a broker crashes, it will be restarted with the configuration known to the scheduler, not one modified out-of-band. If a configuration update is initiated, all out-of-band modifications will be overwritten during the rolling update.
 
 ## Brokers
 

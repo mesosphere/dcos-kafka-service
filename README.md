@@ -95,14 +95,17 @@ DCOS Kafka provides the following features:
 
     $ dcos kafka connection
     {
-        "broker_list_convenience": "--broker-list 10.0.0.211:9843, 10.0.0.217:10056, 10.0.0.214:9689",
-        "brokers": [
+        "address": [
             "10.0.0.211:9843",
             "10.0.0.217:10056",
             "10.0.0.214:9689"
         ],
-        "zookeeper": "master.mesos:2181/kafka",
-        "zookeeper_convenience": "--zookeeper master.mesos:2181/kafka"
+        "dns": [
+            "broker-0.kafka.mesos:9843",
+            "broker-1.kafka.mesos:10056",
+            "broker-2.kafka.mesos:9689"
+        ],
+        "zookeeper": "master.mesos:2181/kafka"
     }
 
 
@@ -438,8 +441,6 @@ If you enter `continue` a second time, the rest of the plan will be executed wit
 
 The following describes the most commonly used features of the Kafka framework and how to configure them via dcos-cli and in Marathon. View the [default `config.json` in DCOS Universe][11] to see all possible configuration options.
 
-**Note:** To get the latest version of `config.json`, make sure that you are accessing the file from the highest number folder in the `https://github.com/mesosphere/universe/tree/kafka_0_9_0_1__0_2_3/repo/packages/K/kafka/` directory.
-
 ### Framework Name
 
 The name of this Kafka instance in DCOS. This is an option that cannot be changed once the Kafka cluster is started: it can only be configured via the `dcos-cli --options` flag when the Kafka instance is created.
@@ -532,14 +533,17 @@ Then, use this token to authenticate requests to the Kafka Framework:
     GET /service/kafka/v1/connection HTTP/1.1
 
     {
-        "broker_list_convenience": "--broker-list 10.0.0.26:9318, 10.0.0.23:9505, 10.0.0.24:9989",
-        "brokers": [
-            "10.0.0.26:9318",
-            "10.0.0.23:9505",
-            "10.0.0.24:9989"
+        "address": [
+            "10.0.0.211:9843",
+            "10.0.0.217:10056",
+            "10.0.0.214:9689"
         ],
-        "zookeeper": "hostname:2181/kafka",
-        "zookeeper_convenience": "--zookeeper hostname:2181/kafka"
+        "dns": [
+            "broker-0.kafka.mesos:9843",
+            "broker-1.kafka.mesos:10056",
+            "broker-2.kafka.mesos:9689"
+        ],
+        "zookeeper": "master.mesos:2181/kafka"
     }
 
 
@@ -564,16 +568,18 @@ This token is then used to authenticate requests to the Kafka Framework:
 ~~~
 $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/connection"
 GET /service/kafka/v1/connection HTTP/1.1
-
 {
-    "broker_list_convenience": "--broker-list 10.0.0.26:9318, 10.0.0.23:9505, 10.0.0.24:9989",
-    "brokers": [
-        "10.0.0.26:9318",
-        "10.0.0.23:9505",
-        "10.0.0.24:9989"
+    "address": [
+        "10.0.0.211:9843",
+        "10.0.0.217:10056",
+        "10.0.0.214:9689"
     ],
-    "zookeeper": "hostname:2181/kafka",
-    "zookeeper_convenience": "--zookeeper hostname:2181/kafka"
+    "dns": [
+        "broker-0.kafka.mesos:9843",
+        "broker-1.kafka.mesos:10056",
+        "broker-2.kafka.mesos:9689"
+    ],
+    "zookeeper": "master.mesos:2181/kafka"
 }
 ~~~
 -->
@@ -583,14 +589,17 @@ GET /service/kafka/v1/connection HTTP/1.1
 The response, for both the CLI and the REST API is as below.
 
     {
-        "broker_list_convenience": "--broker-list 10.0.0.26:9318, 10.0.0.23:9505, 10.0.0.24:9989",
-        "brokers": [
-            "10.0.0.26:9318",
-            "10.0.0.23:9505",
-            "10.0.0.24:9989"
+        "address": [
+            "10.0.0.211:9843",
+            "10.0.0.217:10056",
+            "10.0.0.214:9689"
         ],
-        "zookeeper": "hostname:2181/kafka",
-        "zookeeper_convenience": "--zookeeper hostname:2181/kafka"
+        "dns": [
+            "broker-0.kafka.mesos:9843",
+            "broker-1.kafka.mesos:10056",
+            "broker-2.kafka.mesos:9689"
+        ],
+        "zookeeper": "master.mesos:2181/kafka"
     }
 
 
@@ -618,7 +627,7 @@ The code snippet below demonstrates how to connect a Kafka Producer to the clust
     import org.apache.kafka.common.serialization.ByteArraySerializer;
 
     Map<String, Object> producerConfig = new HashMap<>();
-    producerConfig.put("bootstrap.servers", "10.0.0.26:9318,10.0.0.23:9505,10.0.0.24:9989");
+    producerConfig.put("bootstrap.servers", "10.0.0.211:9843,10.0.0.217:10056,10.0.0.214:9689");
     // optional:
     producerConfig.put("metadata.fetch.timeout.ms": "3000");
     producerConfig.put("request.timeout.ms", "3000");
@@ -649,7 +658,7 @@ The code snippet below demonstrates how to connect a Kafka Consumer to the clust
     import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 
     Map<String, Object> consumerConfig = new HashMap<>();
-    consumerConfig.put("bootstrap.servers", "10.0.0.26:9318,10.0.0.23:9505,10.0.0.24:9989");
+    consumerConfig.put("bootstrap.servers", "10.0.0.211:9843,10.0.0.217:10056,10.0.0.214:9689");
     // optional:
     consumerConfig.put("group.id", "test-client-consumer")
     // ... other options: http://kafka.apache.org/documentation.html#consumerconfigs
@@ -679,24 +688,27 @@ The following code connects to a DCOS-hosted Kafka instance using `bin/kafka-con
 
     $ dcos kafka connection
     {
-        "broker_list_convenience": "--broker-list ip-10-0-3-230.us-west-2.compute.internal:9092, ip-10-0-3-231.us-west-2.compute.internal:9093",
-        "brokers": [
-            "ip-10-0-3-230.us-west-2.compute.internal:9092",
-            "ip-10-0-3-231.us-west-2.compute.internal:9093"
+        "address": [
+            "10.0.0.211:9843",
+            "10.0.0.217:10056",
+            "10.0.0.214:9689"
         ],
-        "zookeeper": "master.mesos:2181/kafka",
-        "zookeeper_convenience": "--zookeeper master.mesos:2181/kafka"
+        "dns": [
+            "broker-0.kafka.mesos:9843",
+            "broker-1.kafka.mesos:10056",
+            "broker-2.kafka.mesos:9689"
+        ],
+        "zookeeper": "master.mesos:2181/kafka"
     }
 
     $ dcos node ssh --master-proxy --leader
-    core@ip-10-0-6-153 ~ $ docker run -it mesosphere/kafka-client
-    root@7bc0e88cfa52:/kafka_2.10-0.8.2.2/bin# ./kafka-console-producer.sh --broker-list ip-10-0-3-230.us-west-2.compute.internal:9092 --topic test
-    This is a message
-    This is another message
 
-    root@7bc0e88cfa52:/kafka_2.10-0.8.2.2/bin# ./kafka-console-consumer.sh --zookeeper master.mesos:2181/kafka --topic test --from-beginning
-    This is a message
-    This is another message
+    core@ip-10-0-6-153 ~ $ docker run -it keithchambers/kafka-client
+
+    root@7d0aed75e582:/bin# echo "Hello, World." | ./kafka-console-producer.sh --broker-list 10.0.0.211:9843, 10.0.0.217:10056, 10.0.0.214:9689 --topic topic1
+
+    root@7d0aed75e582:/bin# ./kafka-console-consumer.sh --zookeeper master.mesos:2181/kafka --topic topic1 --from-beginning
+    Hello, World.
 
 
 # Managing
@@ -823,14 +835,17 @@ Kafka comes with many useful tools of its own that often require either Zookeepe
     GET /service/kafka/v1/connection HTTP/1.1
 
     {
-        "broker_list_convenience": "--broker-list 10.0.0.1:9092, 10.0.0.2:9093, 10.0.0.3:9094",
-        "brokers": [
-            "10.0.0.1:9092",
-            "10.0.0.2:9093",
-            "10.0.0.3:9094"
+        "address": [
+            "10.0.0.211:9843",
+            "10.0.0.217:10056",
+            "10.0.0.214:9689"
         ],
-        "zookeeper": "master.mesos:2181/kafka",
-        "zookeeper_convenience": "--zookeeper master.mesos:2181/kafka"
+        "dns": [
+            "broker-0.kafka.mesos:9843",
+            "broker-1.kafka.mesos:10056",
+            "broker-2.kafka.mesos:9689"
+        ],
+        "zookeeper": "master.mesos:2181/kafka"
     }
 
 
@@ -838,13 +853,17 @@ The same information can be retrieved through the DCOS CLI:
 
     $ dcos kafka connection
     {
-        "broker_list_convenience": "--broker-list 10.0.0.1:9092, 10.0.0.2:9093, 10.0.0.3:9094",
-        "brokers": [
-            "ip-10-0-3-230.us-west-2.compute.internal:9092",
-            "ip-10-0-3-231.us-west-2.compute.internal:9093"
+        "address": [
+            "10.0.0.211:9843",
+            "10.0.0.217:10056",
+            "10.0.0.214:9689"
         ],
-        "zookeeper": "master.mesos:2181/kafka",
-        "zookeeper_convenience": "--zookeeper master.mesos:2181/kafka"
+        "dns": [
+            "broker-0.kafka.mesos:9843",
+            "broker-1.kafka.mesos:10056",
+            "broker-2.kafka.mesos:9689"
+        ],
+        "zookeeper": "master.mesos:2181/kafka"
     }
 
 

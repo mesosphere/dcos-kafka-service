@@ -113,7 +113,7 @@ DCOS Kafka provides the following features:
 
     $ dcos node ssh --master-proxy --leader
 
-    core@ip-10-0-6-153 ~ $ docker run -it keithchambers/kafka-client
+    core@ip-10-0-6-153 ~ $ docker run -it mesosphere/kafka-client
 
     root@7d0aed75e582:/bin# echo "Hello, World." | ./kafka-console-producer.sh --broker-list 10.0.0.211:9843, 10.0.0.217:10056, 10.0.0.214:9689 --topic topic1
 

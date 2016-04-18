@@ -113,7 +113,7 @@ DCOS Kafka provides the following features:
 
     $ dcos node ssh --master-proxy --leader
 
-    core@ip-10-0-6-153 ~ $ docker run -it keithchambers/kafka-client
+    core@ip-10-0-6-153 ~ $ docker run -it mesosphere/kafka-client
 
     root@7d0aed75e582:/bin# echo "Hello, World." | ./kafka-console-producer.sh --broker-list 10.0.0.211:9843, 10.0.0.217:10056, 10.0.0.214:9689 --topic topic1
 
@@ -440,8 +440,6 @@ If you enter `continue` a second time, the rest of the plan will be executed wit
 ## Configuration Options
 
 The following describes the most commonly used features of the Kafka service and how to configure them via dcos-cli and in Marathon. View the [default `config.json` in DCOS Universe][11] to see all possible configuration options.
-
-**Note:** To get the latest version of `config.json`, make sure that you are accessing the file from the highest number folder in the `https://github.com/mesosphere/universe/tree/kafka_0_9_0_1__0_2_3/repo/packages/K/kafka/` directory.
 
 ### Service Name
 
@@ -828,7 +826,7 @@ For ongoing maintenance of the Kafka cluster itself, the Kafka service exposes a
 
 The examples here provide equivalent commands using both `[dcos-cli](https://github.com/mesosphere/dcos-cli)` (with the `kafka` CLI module installed) and `curl`. These examples assume a service named `kafka` (the default), and the `curl` examples assume a DCOS cluster path of `$DCOS_URI`. Replace these with appropriate values as needed.
 
-The `dcos kafka` CLI commands have a `--name` argument, allowing the user to specify which Kafka instance to query. The value defaults to `kafka`, so it's technically redundant to specify `--name=kafka` in these examples. 
+The `dcos kafka` CLI commands have a `--name` argument, allowing the user to specify which Kafka instance to query. The value defaults to `kafka`, so it's technically redundant to specify `--name=kafka` in these examples.
 
 ## Connection Information
 

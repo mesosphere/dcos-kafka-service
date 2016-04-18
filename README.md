@@ -441,8 +441,6 @@ If you enter `continue` a second time, the rest of the plan will be executed wit
 
 The following describes the most commonly used features of the Kafka framework and how to configure them via dcos-cli and in Marathon. View the [default `config.json` in DCOS Universe][11] to see all possible configuration options.
 
-**Note:** To get the latest version of `config.json`, make sure that you are accessing the file from the highest number folder in the `https://github.com/mesosphere/universe/tree/kafka_0_9_0_1__0_2_3/repo/packages/K/kafka/` directory.
-
 ### Framework Name
 
 The name of this Kafka instance in DCOS. This is an option that cannot be changed once the Kafka cluster is started: it can only be configured via the `dcos-cli --options` flag when the Kafka instance is created.

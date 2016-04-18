@@ -205,7 +205,7 @@ Installing multiple Kafka clusters is identical to installing Kafka clusters wit
 
 Uninstalling a cluster is also straightforward. Replace `name` with the name of the kafka instance to be uninstalled.
 
-    $ dcos package uninstall --app-id=<service.name> kafka
+    $ dcos package uninstall --app-id=<name> kafka
 
 
 Then, use the [framework cleaner script][7] to remove your Kafka instance from Zookeeper and to destroy all data associated with it. The script require several arguments, the values for which are derived from your service name:
@@ -497,7 +497,7 @@ The only supported client library is the official Kafka Java library, ie `org.ap
 
 The following command can be executed from the cli in order to retrieve a set of brokers to connect to.
 
-    dcos kafka --name=<service.name> connection
+    dcos kafka --name=<name> connection
 
 
 ## Using the REST API

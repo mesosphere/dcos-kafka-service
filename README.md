@@ -35,7 +35,6 @@ DCOS Kafka Service Guide
 [Troubleshooting](#troubleshooting)
 - [Configuration Update Errors](#configuration-update-errors)
 - [Replacing a Permanently Failed Server](#replacing-a-permanently-failed-server)
-- [Security](#security)
 
 [API Reference](#api-reference)
 - [Connection Information](#connection-information)
@@ -816,10 +815,6 @@ In the example below, the broker with id `0` will be replaced on new machine as 
     $ dcos kafka broker replace 0
 
 
-## Security
-
-The security features introduced in Apache Kafka 0.9 are not supported at this time.
-
 # API Reference
 
 For ongoing maintenance of the Kafka cluster itself, the Kafka service exposes an HTTP API whose structure is designed to roughly match the tools provided by the Kafka distribution, such as `bin/kafka-topics.sh`.
@@ -1556,13 +1551,17 @@ These operations are only applicable when `PHASE_STRATEGY` is set to `STAGE`, th
 
 The "disk" configuration value is denominated in MB. We recommend you set the configuration value `log_retention_bytes` to a value smaller than the indicated "disk" configuration. See [instructions for customizing these values][16].
 
-### Managing Configurations Outside of the Service
+## Managing Configurations Outside of the Service
 
 The Kafka service's core responsibility is to deploy and maintain the deployment of a Kafka cluster whose configuration has been specified. In order to do this the service makes the assumption that it has ownership of broker configuration. If an end-user makes modifications to individual brokers through out-of-band configuration operations, the service will almost certainly override those modifications at a later time. If a broker crashes, it will be restarted with the configuration known to the scheduler, not one modified out-of-band. If a configuration update is initiated, all out-of-band modifications will be overwritten during the rolling update.
 
 ## Brokers
 
 The number of deployable brokers is constrained by two factors. First, brokers have specified required resources, so brokers may not be placed if the DCOS cluster lacks the requisite resources. Second, the specified "PLACEMENT_STRATEGY" environment variable may affect how many brokers can be created in a Kafka cluster. By default the value is "ANY," so brokers are placed anywhere and are only constrained by the resources of the cluster. A second option is "NODE." In this case only one broker may be placed on a given DCOS agent.
+
+## Security
+
+The security features introduced in Apache Kafka 0.9 are not supported at this time.
 
  [1]: http://kafka.apache.org/documentation.html
  [2]: https://docs.mesosphere.com/manage-service/spark

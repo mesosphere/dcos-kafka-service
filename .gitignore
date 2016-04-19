@@ -14,7 +14,7 @@ out/
 .classpath
 .project
 .settings/
-bin/
+kafka-*/bin/
 
 # gradle
 .gradle

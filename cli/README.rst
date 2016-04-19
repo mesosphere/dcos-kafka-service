@@ -7,11 +7,11 @@ Setup
 #. Make sure you meet requirements for installing packages_
 #. Clone git repo for the dcos kafka cli::
 
-    git clone git@github.com:mesosphere/dcos-kafka.git
+    git clone git@github.com:mesosphere/kafka-private.git
 
 #. Change directory to the repo directory::
 
-    cd dcos-kafka
+    cd kafka-private/cli
 
 #. Make sure that you have virtualenv installed. If not type::
 
@@ -21,19 +21,13 @@ Setup
 
     make env
 
-Configure Environment and Run
------------------------------
-
-#. TODO: Talk about how to configure the root dcos cli
-
-#. :code:`source` the setup file to add the :code:`dcos-kafka` command line interface to your
-   :code:`PATH`::
+#. Enter the project env::
 
     source env/bin/activate
 
-#. Get started by calling the DCOS Kafka CLI's help::
+#. Call the CLI code directly::
 
-    dcos kafka help
+    python dcos_kafka/cli.py kafka broker list
 
 Running Tests:
 --------------

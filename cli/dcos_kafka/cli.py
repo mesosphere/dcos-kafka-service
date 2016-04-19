@@ -14,11 +14,12 @@
 # limitations under the License.
 """DCOS Kafka"""
 import os
-import pkg_resources
+from operator import xor
+
 import click
 import dcos_kafka.kafka_utils as ku
+import pkg_resources
 from dcos_kafka import broker_api, cluster_api, plan_api, topic_api
-from operator import xor
 
 
 @click.group()
@@ -29,7 +30,8 @@ def cli():
 @cli.group(invoke_without_command=True)
 @click.option('--info/--no-info', default=False)
 @click.option('--name', help='Name of the Kafka instance to query')
-@click.option('--config-schema', help='Prints the config schema for kafka.', is_flag=True)
+@click.option('--config-schema',
+              help='Prints the config schema for kafka.', is_flag=True)
 def kafka(info, name, config_schema):
     """CLI Module for interaction with a DCOS Kafka service"""
     if info:
@@ -38,7 +40,7 @@ def kafka(info, name, config_schema):
         ku.set_fwk_name(name)
     if config_schema:
         print_schema()
-        
+
 
 def print_schema():
     schema = pkg_resources.resource_string(

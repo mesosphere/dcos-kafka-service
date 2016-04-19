@@ -18,11 +18,14 @@ from dcos_kafka import kafka_utils as ku
 def connection():
     ku.http_get_json("/connection")
 
+
 def connection_address():
     ku.http_get_json("/connection/address")
 
+
 def connection_dns():
     ku.http_get_json("/connection/dns")
+
 
 def list_configurations():
     ku.http_get_json("/configurations")

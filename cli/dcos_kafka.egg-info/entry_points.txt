@@ -1,3 +1,0 @@
-[console_scripts]
-dcos-kafka = dcos_kafka.cli:main
-

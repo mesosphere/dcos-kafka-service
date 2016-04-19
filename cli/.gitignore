@@ -1,0 +1,13 @@
+.tox
+build
+dist
+env
+**/*.pyc
+dcos_kafka.egg-info/
+
+dcos-kafka.iml
+.DS_Store
+.cache
+*.swp
+*.py.swp
+

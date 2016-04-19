@@ -1,0 +1,17 @@
+README.rst
+setup.cfg
+setup.py
+dcos_kafka/__init__.py
+dcos_kafka/broker_api.py
+dcos_kafka/cli.py
+dcos_kafka/cluster_api.py
+dcos_kafka/constants.py
+dcos_kafka/kafka_utils.py
+dcos_kafka/plan_api.py
+dcos_kafka/topic_api.py
+dcos_kafka.egg-info/PKG-INFO
+dcos_kafka.egg-info/SOURCES.txt
+dcos_kafka.egg-info/dependency_links.txt
+dcos_kafka.egg-info/entry_points.txt
+dcos_kafka.egg-info/requires.txt
+dcos_kafka.egg-info/top_level.txt

@@ -44,8 +44,6 @@ public class ClusterController {
       connectionInfo.put("zookeeper", zookeeperEndpoint);
       connectionInfo.put("address", getBrokerList());
       connectionInfo.put("dns", getBrokerDNSList());
-      connectionInfo.put("zookeeper_convenience", getConvenientZookeeper(zookeeperEndpoint));
-      connectionInfo.put("broker_list_convenience", getConvenientBrokerList());
 
       return Response.ok(connectionInfo.toString(), MediaType.APPLICATION_JSON).build();
     } catch (Exception ex) {

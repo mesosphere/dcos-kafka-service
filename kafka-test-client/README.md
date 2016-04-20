@@ -10,15 +10,29 @@ Basic usage looks like this:
 $ pip install -r requirements.txt
 $ python launcher.py http://your-dcos-cluster.com
 or...
-$ DCOS_URI=http://your-dcos-cluster.com python launcher.py
+$ export DCOS_URI=http://your-dcos-cluster.com
+$ python launcher.py
 ```
 
-On EE, a username and password should be provided, or else 401 errors will result:
+On DC/OS, a raw auth token should be provided, or else 401 errors will result:
+
+```
+$ python launcher.py --auth_token=osnethuoesnud http://your-dcos-cluster.com
+or...
+$ export DCOS_URI=http://your-dcos-cluster.com
+$ export AUTH_TOKEN=osnethuoesnud
+$ python launcher.py
+```
+
+On DC/OS EE, a username and password can instead be provided:
 
 ```
 $ python launcher.py --username=foo --password=bar http://your-dcos-cluster.com
 or...
-$ DCOS_URI=http://your-dcos-cluster.com DCOS_USERNAME=foo DCOS_PASSWORD=bar python launcher.py
+$ export DCOS_URI=http://your-dcos-cluster.com
+$ export DCOS_USERNAME=foo
+$ export DCOS_PASSWORD=bar
+$ python launcher.py
 ```
 
 See `python launcher.py --help` for a list of available options, but keep in mind that this is not an exhaustive list of all possible configuration:

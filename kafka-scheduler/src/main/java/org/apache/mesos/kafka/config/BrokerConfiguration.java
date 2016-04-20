@@ -16,8 +16,6 @@ public class BrokerConfiguration {
     private String diskType;
     @JsonProperty("kafkaUri")
     private String kafkaUri;
-    @JsonProperty("containerHookUri")
-    private String containerHookUri;
     @JsonProperty("javaUri")
     private String javaUri;
     @JsonProperty("overriderUri")
@@ -30,7 +28,6 @@ public class BrokerConfiguration {
             @JsonProperty("disk")double disk,
             @JsonProperty("diskType")String diskType,
             @JsonProperty("kafkaUri")String kafkaUri,
-            @JsonProperty("containerHookUri")String containerHookUri,
             @JsonProperty("javaUri")String javaUri,
             @JsonProperty("overriderUri")String overriderUri) {
         this.cpus = cpus;
@@ -38,7 +35,6 @@ public class BrokerConfiguration {
         this.disk = disk;
         this.diskType = diskType;
         this.kafkaUri = kafkaUri;
-        this.containerHookUri = containerHookUri;
         this.javaUri = javaUri;
         this.overriderUri = overriderUri;
     }
@@ -88,15 +84,6 @@ public class BrokerConfiguration {
         this.kafkaUri = kafkaUri;
     }
 
-    public String getContainerHookUri() {
-        return containerHookUri;
-    }
-
-    @JsonProperty("containerHookUri")
-    public void setContainerHookUri(String containerHookUri) {
-        this.containerHookUri = containerHookUri;
-    }
-
     public String getJavaUri() {
         return javaUri;
     }
@@ -131,14 +118,13 @@ public class BrokerConfiguration {
                 Double.compare(that.disk, disk) == 0 &&
                 Objects.equals(diskType, that.diskType) &&
                 Objects.equals(kafkaUri, that.kafkaUri) &&
-                Objects.equals(containerHookUri, that.containerHookUri) &&
                 Objects.equals(javaUri, that.javaUri) &&
                 Objects.equals(overriderUri, that.overriderUri);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(cpus, mem, disk, diskType, kafkaUri, containerHookUri, javaUri, overriderUri);
+        return Objects.hash(cpus, mem, disk, diskType, kafkaUri, javaUri, overriderUri);
     }
 
     @Override
@@ -149,7 +135,6 @@ public class BrokerConfiguration {
                 ", disk=" + disk +
                 ", diskType='" + diskType + '\'' +
                 ", kafkaUri='" + kafkaUri + '\'' +
-                ", containerHookUri='" + containerHookUri + '\'' +
                 ", javaUri='" + javaUri + '\'' +
                 ", overriderUri='" + overriderUri + '\'' +
                 '}';

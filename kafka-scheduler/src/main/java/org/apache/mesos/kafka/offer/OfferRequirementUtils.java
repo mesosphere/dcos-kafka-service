@@ -20,8 +20,7 @@ public class OfferRequirementUtils {
   public static String getKafkaStartCmd(KafkaSchedulerConfiguration config) {
     return String.format(
         "$MESOS_SANDBOX/%1$s/bin/kafka-server-start.sh " +
-        "$MESOS_SANDBOX/%1$s/config/server.properties " +
-        "$CONTAINER_HOOK_FLAGS",
+        "$MESOS_SANDBOX/%1$s/config/server.properties ",
         config.getKafkaConfiguration().getKafkaVerName());
   }
 
@@ -36,9 +35,6 @@ public class OfferRequirementUtils {
 
     String brokerName = OfferUtils.idToName(brokerId);
     List<String> commands = new ArrayList<>();
-
-    // Do not use the /bin/bash-specific "source"
-    commands.add(". $MESOS_SANDBOX/container-hook/container-hook.sh");
 
     // Export the JRE and log the environment
     commands.add("export PATH=$PATH:$MESOS_SANDBOX/jre/bin");
@@ -74,7 +70,6 @@ public class OfferRequirementUtils {
     commandInfoBuilder.addUri(brokerConfiguration.getJavaUri());
     commandInfoBuilder.addUri(brokerConfiguration.getKafkaUri());
     commandInfoBuilder.addUri(brokerConfiguration.getOverriderUri());
-    commandInfoBuilder.addUri(brokerConfiguration.getContainerHookUri());
 
     return new TaskInfoBuilder(taskId, brokerName, "" /* slaveId */)
       .addAllResources(resources)

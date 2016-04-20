@@ -16,7 +16,6 @@ schedulerConfiguration:
     javaUri: ${JAVA_URI}
     kafkaUri: ${KAFKA_URI}
     overriderUri: ${OVERRIDER_URI}
-    containerHookUri: ${CONTAINER_HOOK_URI}
 
   kafka:
     kafkaAdvertiseHostIp: ${KAFKA_ADVERTISE_HOST_IP}

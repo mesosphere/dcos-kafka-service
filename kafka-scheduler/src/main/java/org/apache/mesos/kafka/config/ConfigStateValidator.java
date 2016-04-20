@@ -75,25 +75,50 @@ public class ConfigStateValidator {
           throws ValidationException {
     List<ValidationError> errors = new ArrayList<>();
 
+    errors.addAll(validateServiceConfigChange(newConfig.getServiceConfiguration()));
+    errors.addAll(validateBrokerConfigChange(oldConfig.getBrokerConfiguration(), newConfig.getBrokerConfiguration()));
+
+    if (!errors.isEmpty()) {
+      throw new ValidationException(errors);
+    }
+  }
+
+  private List<ValidationError> validateServiceConfigChange(ServiceConfiguration newConfig) throws ValidationException {
+
+    List<ValidationError> errors = new ArrayList<>();
     int currBrokerCount = Integer.MAX_VALUE;
+
     try {
       currBrokerCount = state.getTaskInfos().size();
     } catch (Exception ex) {
       log.error("Failed to retrieve Broker count with exception: " + ex);
     }
 
-    final int newBrokerCount = newConfig.getServiceConfiguration().getCount();
+    final int newBrokerCount = newConfig.getCount();
 
     if (newBrokerCount < currBrokerCount) {
       errors.add(new ValidationError("BROKER_COUNT",
               "Decreasing this value (from " + currBrokerCount + " to " + newBrokerCount + ") is not supported."));
     }
 
-    // ... any other in-framework change validation goes here ...
+    return errors;
+  }
 
+  private List<ValidationError> validateBrokerConfigChange(
+      BrokerConfiguration oldConfig,
+      BrokerConfiguration newConfig)
+          throws ValidationException {
 
-    if (!errors.isEmpty()) {
-      throw new ValidationException(errors);
+    List<ValidationError> errors = new ArrayList<>();
+
+    double oldDisk = oldConfig.getDisk();
+    double newDisk = newConfig.getDisk();
+
+    if (oldDisk != newDisk) {
+      errors.add(new ValidationError("disk",
+              "Changing this value (from " + oldDisk + " to " + newDisk + ") is not supported."));
     }
+
+    return errors;
   }
 }

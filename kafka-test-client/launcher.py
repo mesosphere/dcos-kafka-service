@@ -93,10 +93,12 @@ JRE_JAVA_PATH = "jre/bin/java" # relative to MESOS_SANDBOX
 @click.option("--stats-print-period-ms", show_default=True, default=500,
               help="how frequently to print throughput stats to stdout")
 @click.option("--username", envvar="DCOS_USERNAME",
-              help="username to use when making requests to the DCOS cluster (if the cluster requires auth)")
+              help="username to use for generating an auth token")
 @click.option("--password", envvar="DCOS_PASSWORD",
-              help="password to use when making requests to the DCOS cluster (if the cluster requires auth)")
-@click.option("--jar-url", show_default=True, default="https://s3-us-west-2.amazonaws.com/infinity-artifacts/kafka/kafka-test-client-0.2.5-uber.jar",
+              help="password to use for generating an auth token")
+@click.option("--auth-token", envvar="AUTH_TOKEN",
+              help="raw auth token to use when making requests to the DCOS cluster")
+@click.option("--jar-url", show_default=True, default="https://s3-us-west-2.amazonaws.com/infinity-artifacts/kafka/kafka-test-client-uber.jar",
               help="url of the kafka test client package")
 @click.option("--jre-url", show_default=True, default="https://s3-eu-west-1.amazonaws.com/downloads.mesosphere.com/kafka/jre-8u72-linux-x64.tar.gz",
               help="url of the jre package")
@@ -115,6 +117,7 @@ def main(
         stats_print_period_ms,
         username,
         password,
+        auth_token,
         jar_url,
         jre_url,
         topic_override,
@@ -135,8 +138,6 @@ def main(
     producer_app_id = "kafkatest-" + topic_rand_id + "-producer"
     consumer_app_id = "kafkatest-" + topic_rand_id + "-consumer"
 
-    auth_token = ""
-    headers = {}
     if username and password:
         post_json = {
             "uid": username,
@@ -144,11 +145,10 @@ def main(
         }
         tok_response = __post(__urljoin(cluster_url, "acs/api/v1/auth/login"), json=post_json)
         auth_token = tok_response["token"]
-        headers = {"Authorization": "token={}".format(auth_token)}
+    headers = {"Authorization": "token={}".format(auth_token)}
 
     common_env = {
         "THREADS": thread_count,
-        "MASTER_HOST": urlparse(cluster_url).netloc, # http://example.com/ -> example.com
         "STATS_PRINT_PERIOD_MS": stats_print_period_ms,
     }
     if topic_override:
@@ -161,8 +161,6 @@ def main(
     else:
         # default to letting the framework scheduler provide the list of servers
         common_env["FRAMEWORK_NAME"] = framework_name
-        if auth_token:
-            common_env["FRAMEWORK_AUTH_TOKEN"] = auth_token
 
     producer_env = {
         "KAFKA_OVERRIDE_METADATA_FETCH_TIMEOUT_MS": "3000",

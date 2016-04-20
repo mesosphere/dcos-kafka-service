@@ -40,29 +40,23 @@ public class ClientConfigs {
    * POJO containing broker lookup options.
    */
   public static class BrokerLookupConfig {
-    public final String masterHost;
     public final String frameworkName;
-    public final String frameworkAuthToken;
 
     /**
      * Returns {@code null} if parsing fails.
      */
     public static BrokerLookupConfig parseFrom(Map<String, String> testClientConfig) {
       try {
-        String masterHost = get(testClientConfig, "MASTER_HOST", "master.mesos");
         String frameworkName = get(testClientConfig, "FRAMEWORK_NAME", "kafka");
-        String authToken = get(testClientConfig, "FRAMEWORK_AUTH_TOKEN", "");
-        return new BrokerLookupConfig(masterHost, frameworkName, authToken);
+        return new BrokerLookupConfig(frameworkName);
       } catch (Throwable e) {
         printFlagParseFailure(e);
         return null;
       }
     }
 
-    private BrokerLookupConfig(String masterHost, String frameworkName, String authToken) {
-      this.masterHost = masterHost;
+    private BrokerLookupConfig(String frameworkName) {
       this.frameworkName = frameworkName;
-      this.frameworkAuthToken = authToken;
     }
   }
 

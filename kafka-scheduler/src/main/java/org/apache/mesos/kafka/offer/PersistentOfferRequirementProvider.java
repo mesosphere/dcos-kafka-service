@@ -1,27 +1,29 @@
 package org.apache.mesos.kafka.offer;
 
-import java.util.ArrayList;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import org.apache.mesos.kafka.config.*;
-import org.apache.mesos.kafka.state.KafkaStateService;
-import org.apache.mesos.offer.OfferRequirement;
-import org.apache.mesos.offer.OfferRequirement.VolumeMode;
-import org.apache.mesos.offer.PlacementStrategy;
-import org.apache.mesos.offer.ResourceUtils;
-import org.apache.mesos.protobuf.ResourceBuilder;
 import org.apache.mesos.Protos.Resource;
 import org.apache.mesos.Protos.Resource.DiskInfo;
 import org.apache.mesos.Protos.Resource.DiskInfo.Persistence;
 import org.apache.mesos.Protos.SlaveID;
 import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.Protos.Volume;
+import org.apache.mesos.kafka.config.BrokerConfiguration;
+import org.apache.mesos.kafka.config.KafkaConfigState;
+import org.apache.mesos.kafka.config.KafkaSchedulerConfiguration;
+import org.apache.mesos.kafka.config.ServiceConfiguration;
+import org.apache.mesos.kafka.state.KafkaStateService;
+import org.apache.mesos.offer.OfferRequirement;
+import org.apache.mesos.offer.PlacementStrategy;
+import org.apache.mesos.offer.ResourceUtils;
+import org.apache.mesos.offer.VolumeRequirement;
+import org.apache.mesos.protobuf.ResourceBuilder;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class PersistentOfferRequirementProvider implements KafkaOfferRequirementProvider {
   private final Log log = LogFactory.getLog(PersistentOfferRequirementProvider.class);
@@ -92,6 +94,11 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     log.info("Avoiding agents       : " + avoidAgents);
     log.info("Colocating with agents: " + colocateAgents);
 
+    final VolumeRequirement volumeRequirement = VolumeRequirement.create();
+    volumeRequirement.setVolumeMode(VolumeRequirement.VolumeMode.CREATE);
+    volumeRequirement.setVolumeType(VolumeRequirement.VolumeType.
+            valueOf(this.configState.getTargetConfig().getBrokerConfiguration().getDiskType()));
+
     final ServiceConfiguration serviceConfiguration = config.getServiceConfiguration();
     return new OfferRequirement(
         serviceConfiguration.getRole(),
@@ -99,7 +106,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
         Arrays.asList(taskInfo),
         avoidAgents,
         colocateAgents,
-        VolumeMode.CREATE);
+        volumeRequirement);
   }
 
   private OfferRequirement getExistingOfferRequirement(TaskInfo taskInfo) {
@@ -115,6 +122,11 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
 
     TaskInfo newTaskInfo = getTaskInfo(configName, config, persistenceId, brokerId, taskId, port);
 
+    final VolumeRequirement volumeRequirement = VolumeRequirement.create();
+    volumeRequirement.setVolumeMode(VolumeRequirement.VolumeMode.EXISTING);
+    volumeRequirement.setVolumeType(VolumeRequirement.VolumeType.
+            valueOf(this.configState.getTargetConfig().getBrokerConfiguration().getDiskType()));
+
     final ServiceConfiguration serviceConfiguration = config.getServiceConfiguration();
     return new OfferRequirement(
         serviceConfiguration.getRole(),
@@ -122,7 +134,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
         Arrays.asList(newTaskInfo),
         null,
         null,
-        VolumeMode.EXISTING);
+        volumeRequirement);
   }
 
   private KafkaSchedulerConfiguration getConfigService(TaskInfo taskInfo) {

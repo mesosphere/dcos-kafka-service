@@ -159,21 +159,20 @@ public final class Overrider extends Application<DropwizardConfiguration> {
       KafkaSchedulerConfiguration configuration) {
     String statsdHost = System.getenv("STATSD_UDP_HOST");
     String statsdPort = System.getenv("STATSD_UDP_PORT");
-    Map<String, String> config = new TreeMap<>();
-
     if (StringUtils.isBlank(statsdHost) || StringUtils.isBlank(statsdPort)) {
       log.info("No metrics env found, skipping metrics setup");
-      return config;
+      return new TreeMap<>();
     }
-
     log.info("Found env-provided metrics endpoint, configuring Kafka output: " + statsdHost + ":" + statsdPort);
 
     try {
       copyMetricsLibsIntoClasspath(configuration);
     } catch (Exception e) {
       log.warn("Failed to copy metrics libraries to classpath, skipping metrics config.", e);
+      return new TreeMap<>();
     }
 
+    Map<String, String> config = new TreeMap<>();
     config.put("kafka.metrics.reporters", "com.airbnb.kafka.KafkaStatsdMetricsReporter");
     config.put("external.kafka.statsd.reporter.enabled", "true");
     config.put("external.kafka.statsd.host", statsdHost);

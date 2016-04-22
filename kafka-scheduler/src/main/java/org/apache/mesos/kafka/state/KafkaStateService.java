@@ -281,7 +281,8 @@ public class KafkaStateService implements Observer, TaskStatusProvider {
 
   public void deleteTask(String taskId) {
     try {
-      String pathToDelete = getTaskRootPath(taskId);
+      String taskName = OfferUtils.getTaskName(taskId);
+      String pathToDelete = getTaskRootPath(taskName);
       log.info("Deleting path: " + pathToDelete);
       zkClient.delete().deletingChildrenIfNeeded().forPath(pathToDelete);
     } catch (Exception ex) {

@@ -99,6 +99,19 @@ public class KafkaStateService implements Observer, TaskStatusProvider {
     return taskInfos;
   }
 
+  public int getRunningBrokersCount() throws Exception {
+    int count = 0;
+
+    for (String taskName : getTaskNames()) {
+      TaskStatus taskStatus = getTaskStatus(taskName);
+      if (isRunning(taskStatus)) {
+        count++;
+      }
+    }
+
+    return count;
+  }
+
   public TaskStatus getTaskStatus(String taskName) throws Exception {
     String path = getTaskStatusPath(taskName);
     byte[] bytes = zkClient.getData().forPath(path);
@@ -232,6 +245,11 @@ public class KafkaStateService implements Observer, TaskStatusProvider {
       taskState.equals(TaskState.TASK_KILLED) ||
       taskState.equals(TaskState.TASK_LOST) ||
       taskState.equals(TaskState.TASK_ERROR);
+  }
+
+  private boolean isRunning(TaskStatus taskStatus) {
+    TaskState taskState = taskStatus.getState();
+    return taskState.equals(TaskState.TASK_RUNNING);
   }
 
   public List<String> getTaskNames() throws Exception {

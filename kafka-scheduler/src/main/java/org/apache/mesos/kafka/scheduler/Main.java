@@ -10,6 +10,7 @@ import org.apache.commons.lang3.text.StrSubstitutor;
 import org.apache.mesos.kafka.cmd.CmdExecutor;
 import org.apache.mesos.kafka.config.DropwizardConfiguration;
 import org.apache.mesos.kafka.state.KafkaStateService;
+import org.apache.mesos.kafka.web.BrokerCheck;
 import org.apache.mesos.kafka.web.BrokerController;
 import org.apache.mesos.kafka.web.ClusterController;
 import org.apache.mesos.kafka.web.TopicController;
@@ -61,6 +62,7 @@ public final class Main extends Application<DropwizardConfiguration> {
     final KafkaScheduler kafkaScheduler = new KafkaScheduler(configuration.getSchedulerConfiguration(), environment);
 
     registerJerseyResources(kafkaScheduler, environment, configuration);
+    registerHealthChecks(kafkaScheduler, environment);
 
     kafkaSchedulerExecutorService = environment.lifecycle().
             executorService("KafkaScheduler")
@@ -70,7 +72,7 @@ public final class Main extends Application<DropwizardConfiguration> {
     kafkaSchedulerExecutorService.submit(kafkaScheduler);
   }
 
-  public void registerJerseyResources(
+  private void registerJerseyResources(
           KafkaScheduler kafkaScheduler,
           Environment environment,
           DropwizardConfiguration configuration) {
@@ -82,5 +84,16 @@ public final class Main extends Application<DropwizardConfiguration> {
     environment.jersey().register(
             new TopicController(new CmdExecutor(configuration.getSchedulerConfiguration(), kafkaState), kafkaState));
     environment.jersey().register(new StageResource(kafkaScheduler.getStageManager()));
+  }
+
+  private void registerHealthChecks(
+          KafkaScheduler kafkaScheduler,
+          Environment environment) {
+
+    environment.healthChecks().register(
+        BrokerCheck.NAME,
+        new BrokerCheck(
+          kafkaScheduler.getStageManager(),
+          kafkaScheduler.getKafkaState()));
   }
 }

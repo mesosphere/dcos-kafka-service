@@ -132,10 +132,7 @@ def main(
     requests_log.setLevel(logging.DEBUG)
     requests_log.propagate = True
 
-    topic_rand_id = get_random_id() # reused for topic, unless --topic-override is specified
-    producer_app_id = "kafkatest-" + topic_rand_id + "-producer"
-    consumer_app_id = "kafkatest-" + topic_rand_id + "-consumer"
-
+    # get auth token from EE creds
     if username and password:
         post_json = {
             "uid": username,
@@ -145,10 +142,12 @@ def main(
         auth_token = tok_response["token"]
     headers = {"Authorization": "token={}".format(auth_token)}
 
+    # common settings
     common_env = {
         "THREADS": thread_count,
         "STATS_PRINT_PERIOD_MS": stats_print_period_ms,
     }
+    topic_rand_id = get_random_id() # reused for topic, unless --topic-override is specified
     if topic_override:
         common_env["TOPIC"] = topic_override
     else:
@@ -160,6 +159,12 @@ def main(
         # default to letting the framework scheduler provide the list of servers
         common_env["FRAMEWORK_NAME"] = framework_name
 
+    marathon_url = __urljoin(cluster_url, "marathon/v2/apps")
+    cmd = "env && ${MESOS_SANDBOX}/%s -jar ${MESOS_SANDBOX}/%s" % (
+        JRE_JAVA_PATH, jar_url.split('/')[-1]), # get jar filename
+
+    # configure/launch producers
+    producer_app_id = "kafkatest-" + topic_rand_id + "-producer"
     producer_env = {
         "MODE": "PRODUCER",
         "KAFKA_OVERRIDE_METADATA_FETCH_TIMEOUT_MS": "3000",
@@ -168,36 +173,33 @@ def main(
         "MESSAGE_SIZE_BYTES": producer_msg_size,
     }
     producer_env.update(common_env)
+    if producer_count and not marathon_launch_app(
+            marathon_url = marathon_url,
+            app_id = producer_app_id,
+            cmd = cmd,
+            instances = producer_count,
+            packages = [jre_url, jar_url],
+            env = producer_env,
+            headers = headers):
+        print("Starting producers failed, skipping launch of consumers")
+        return 1
+
+    # configure/launch consumers
+    consumer_app_id = "kafkatest-" + topic_rand_id + "-consumer"
     consumer_env = {
         "MODE": "CONSUMER",
         "KAFKA_OVERRIDE_GROUP_ID": consumer_app_id,
     }
     consumer_env.update(common_env)
-
-    jar_filename = jar_url.split('/')[-1]
-
-    marathon_url = __urljoin(cluster_url, "marathon/v2/apps")
     if consumer_count and not marathon_launch_app(
             marathon_url = marathon_url,
             app_id = consumer_app_id,
-            cmd = "env && ${MESOS_SANDBOX}/%s -jar ${MESOS_SANDBOX}/%s" % (
-                JRE_JAVA_PATH, jar_filename),
+            cmd = cmd,
             instances = consumer_count,
             packages = [jre_url, jar_url],
             env = consumer_env,
             headers = headers):
-        print("Starting consumers failed, skipping launch of producers")
-        return 1
-    if producer_count and not marathon_launch_app(
-            marathon_url = marathon_url,
-            app_id = producer_app_id,
-            cmd = "env && ${MESOS_SANDBOX}/%s -jar ${MESOS_SANDBOX}/%s" % (
-                JRE_JAVA_PATH, jar_filename),
-            instances = producer_count,
-            packages = [jre_url, jar_url],
-            env = producer_env,
-            headers = headers):
-        print("Starting producers failed")
+        print("Starting consumers failed")
         return 1
 
     curl_headers = ""

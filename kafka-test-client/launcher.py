@@ -72,8 +72,6 @@ def marathon_launch_app(marathon_url, app_id, cmd, instances=1, packages=[], env
 def get_random_id(length=8):
     return ''.join([random.choice(string.ascii_lowercase) for _ in range(length)])
 
-CONSUMER_CLASS = "org.apache.mesos.kafka.testclient.ConsumerMain"
-PRODUCER_CLASS = "org.apache.mesos.kafka.testclient.ProducerMain"
 JRE_JAVA_PATH = "jre/bin/java" # relative to MESOS_SANDBOX
 
 @click.command()
@@ -163,6 +161,7 @@ def main(
         common_env["FRAMEWORK_NAME"] = framework_name
 
     producer_env = {
+        "MODE": "PRODUCER",
         "KAFKA_OVERRIDE_METADATA_FETCH_TIMEOUT_MS": "3000",
         "KAFKA_OVERRIDE_REQUEST_TIMEOUT_MS": "3000",
         "QPS_LIMIT": producer_qps_limit,
@@ -170,18 +169,19 @@ def main(
     }
     producer_env.update(common_env)
     consumer_env = {
+        "MODE": "CONSUMER",
         "KAFKA_OVERRIDE_GROUP_ID": consumer_app_id,
     }
     consumer_env.update(common_env)
 
-    package_filename = jar_url.split('/')[-1]
+    jar_filename = jar_url.split('/')[-1]
 
     marathon_url = __urljoin(cluster_url, "marathon/v2/apps")
     if consumer_count and not marathon_launch_app(
             marathon_url = marathon_url,
             app_id = consumer_app_id,
-            cmd = "env && ${MESOS_SANDBOX}/%s -cp ${MESOS_SANDBOX}/%s %s" % (
-                JRE_JAVA_PATH, package_filename, CONSUMER_CLASS),
+            cmd = "env && ${MESOS_SANDBOX}/%s -jar ${MESOS_SANDBOX}/%s" % (
+                JRE_JAVA_PATH, jar_filename),
             instances = consumer_count,
             packages = [jre_url, jar_url],
             env = consumer_env,
@@ -191,8 +191,8 @@ def main(
     if producer_count and not marathon_launch_app(
             marathon_url = marathon_url,
             app_id = producer_app_id,
-            cmd = "env && ${MESOS_SANDBOX}/%s -cp ${MESOS_SANDBOX}/%s %s" % (
-                JRE_JAVA_PATH, package_filename, PRODUCER_CLASS),
+            cmd = "env && ${MESOS_SANDBOX}/%s -jar ${MESOS_SANDBOX}/%s" % (
+                JRE_JAVA_PATH, jar_filename),
             instances = producer_count,
             packages = [jre_url, jar_url],
             env = producer_env,

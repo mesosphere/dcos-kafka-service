@@ -16,7 +16,7 @@ dependencies {
 }
 
 shadowJar {
-  classifier = "uber"
+  classifier = 'uber'
 
   mergeServiceFiles()
 
@@ -31,8 +31,9 @@ task wrapper(type: Wrapper) {
 
 distributions {
   main {
+    mainClassName = 'org.apache.mesos.kafka.testclient.Main'
     baseName = 'kafka-test-client'
-    version = ""
+    version = ''
   }
 }
 

@@ -12,6 +12,45 @@ public class ClientConfigs {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ClientConfigs.class);
 
+  public enum ClientMode {
+    NONE,
+    PRODUCER,
+    CONSUMER,
+  }
+
+  /**
+   * POJO containing client bootstrap options.
+   */
+  public static class StartupConfig {
+    public static final String FRAMEWORK_NAME = "FRAMEWORK_NAME";
+
+    public final ClientMode clientMode;
+    public final String frameworkName;
+
+    /**
+     * Returns {@code null} if parsing fails.
+     */
+    public static StartupConfig parseFrom(Map<String, String> testClientConfig) {
+      try {
+        String frameworkName = get(testClientConfig, FRAMEWORK_NAME, null);
+        ClientMode clientMode = ClientMode.valueOf(get(testClientConfig, "MODE", "NONE"));
+        if (clientMode == ClientMode.NONE) {
+          throw new Exception("MODE argument is required. "
+              + "Must be either " + ClientMode.PRODUCER.toString() + " or " + ClientMode.CONSUMER.toString());
+        }
+        return new StartupConfig(clientMode, frameworkName);
+      } catch (Throwable e) {
+        printFlagParseFailure(e);
+        return null;
+      }
+    }
+
+    private StartupConfig(ClientMode clientMode, String frameworkName) {
+      this.clientMode = clientMode;
+      this.frameworkName = frameworkName;
+    }
+  }
+
   /**
    * POJO containing stats emitter options.
    */
@@ -33,30 +72,6 @@ public class ClientConfigs {
 
     private StatsConfig(long printPeriodMs) {
       this.printPeriodMs = printPeriodMs;
-    }
-  }
-
-  /**
-   * POJO containing broker lookup options.
-   */
-  public static class BrokerLookupConfig {
-    public final String frameworkName;
-
-    /**
-     * Returns {@code null} if parsing fails.
-     */
-    public static BrokerLookupConfig parseFrom(Map<String, String> testClientConfig) {
-      try {
-        String frameworkName = get(testClientConfig, "FRAMEWORK_NAME", "kafka");
-        return new BrokerLookupConfig(frameworkName);
-      } catch (Throwable e) {
-        printFlagParseFailure(e);
-        return null;
-      }
-    }
-
-    private BrokerLookupConfig(String frameworkName) {
-      this.frameworkName = frameworkName;
     }
   }
 

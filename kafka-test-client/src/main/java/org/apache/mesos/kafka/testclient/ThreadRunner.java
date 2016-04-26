@@ -29,11 +29,7 @@ public class ThreadRunner {
     }
   }
 
-  public void exit() {
-    if (values.isFatalError()) {
-      System.exit(1);
-    } else {
-      System.exit(0);
-    }
+  public boolean isFatalError() {
+    return values.isFatalError();
   }
 }

@@ -22,14 +22,23 @@ public class ConfigParser {
   public static class Config {
     private final Map<String, Object> kafkaConfig;
     private final Map<String, String> envConfig;
+    private final ClientConfigs.ClientMode clientMode;
 
-    private Config(Map<String, Object> kafkaConfig, Map<String, String> envConfig) {
+    private Config(
+        Map<String, Object> kafkaConfig,
+        Map<String, String> envConfig,
+        ClientConfigs.ClientMode clientMode) {
       this.kafkaConfig = kafkaConfig;
       this.envConfig = envConfig;
+      this.clientMode = clientMode;
     }
 
     public Map<String, Object> getKafkaConfig() {
       return kafkaConfig;
+    }
+
+    public ClientConfigs.ClientMode getClientMode() {
+      return clientMode;
     }
 
     public ClientConfigs.StatsConfig getStatsConfig() {
@@ -74,15 +83,20 @@ public class ConfigParser {
 
     // special case: get the bootstrap endpoints from the Kafka framework.
     // this can be overridden by providing "KAFKA_OVERRIDE_BOOTSTRAP_SERVERS=..." in env.
+    ClientConfigs.StartupConfig startupConfig = ClientConfigs.StartupConfig.parseFrom(testClientConfig);
+    if (startupConfig == null) {
+      LOGGER.error("Failed to parse startup config, exiting");
+      return null;
+    }
     if (!kafkaConfig.containsKey(KAFKA_BOOTSTRAP_SERVERS_KEY)) {
+      // Bootstrap servers aren't provided by user. Fetch bootstrap servers from the framework.
       LOGGER.info("{} not provided in env, querying framework for broker list.", ENV_KAFKA_BOOTSTRAP_SERVERS_KEY);
-      ClientConfigs.BrokerLookupConfig brokerLookupConfig = ClientConfigs.BrokerLookupConfig.parseFrom(testClientConfig);
-      if (brokerLookupConfig == null) {
+      if (startupConfig.frameworkName == null) {
         LOGGER.error(
-            "Unable to proceed without broker lookup config, or {}", ENV_KAFKA_BOOTSTRAP_SERVERS_KEY);
+            "Unable to proceed without {} or {}", ClientConfigs.StartupConfig.FRAMEWORK_NAME, ENV_KAFKA_BOOTSTRAP_SERVERS_KEY);
         return null;
       }
-      BrokerLookup serverLookup = new BrokerLookup(brokerLookupConfig);
+      BrokerLookup serverLookup = new BrokerLookup(startupConfig.frameworkName);
 
       List<String> bootstrapServers;
       try {
@@ -101,6 +115,6 @@ public class ConfigParser {
       }
     }
 
-    return new Config(kafkaConfig, testClientConfig);
+    return new Config(kafkaConfig, testClientConfig, startupConfig.clientMode);
   }
 }

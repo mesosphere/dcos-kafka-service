@@ -1,7 +1,6 @@
 package org.apache.mesos.kafka.testclient;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.mesos.kafka.testclient.ClientConfigs.BrokerLookupConfig;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -21,17 +20,17 @@ public class BrokerLookup {
   private static final String MARATHON_LOOKUP_TEMPLATE = "http://master.mesos:8080/v2/apps/%s";
   private static final String SCHEDULER_CONNECTION_TEMPLATE = "http://%s.mesos:%d/v1/connection";
 
-  private BrokerLookupConfig config;
+  private final String frameworkName;
 
-  public BrokerLookup(BrokerLookupConfig config) {
-    this.config = config;
+  public BrokerLookup(String frameworkName) {
+    this.frameworkName = frameworkName;
   }
 
   public List<String> getBootstrapServers() throws IOException {
 
     // First, query marathon to get the scheduler's port
     // (too lazy to figure out SRV record lookup in Java)
-    URL url = new URL(String.format(MARATHON_LOOKUP_TEMPLATE, config.frameworkName));
+    URL url = new URL(String.format(MARATHON_LOOKUP_TEMPLATE, frameworkName));
     LOGGER.info("Connecting to {} for scheduler port lookup", url.toString());
     JSONObject responseObj = getAndLogResponse(url);
 
@@ -43,7 +42,7 @@ public class BrokerLookup {
         .getJSONArray("ports")
         .getInt(0);
 
-    url = new URL(String.format(SCHEDULER_CONNECTION_TEMPLATE, config.frameworkName, schedulerPort));
+    url = new URL(String.format(SCHEDULER_CONNECTION_TEMPLATE, frameworkName, schedulerPort));
     LOGGER.info("Connecting to {} for broker lookup", url.toString());
     responseObj = getAndLogResponse(url);
 

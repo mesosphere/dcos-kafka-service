@@ -1,5 +1,6 @@
 package org.apache.mesos.kafka.config;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -117,6 +118,14 @@ public class ConfigStateValidator {
     if (oldDisk != newDisk) {
       errors.add(new ValidationError("disk",
               "Changing this value (from " + oldDisk + " to " + newDisk + ") is not supported."));
+    }
+
+    final String oldDiskType = oldConfig.getDiskType();
+    final String newDiskType = newConfig.getDiskType();
+
+    if (!StringUtils.equals(oldDiskType, newDiskType)) {
+      errors.add(new ValidationError("diskType",
+              "Changing this value (from " + oldDiskType + " to " + newDiskType + ") is not supported."));
     }
 
     return errors;

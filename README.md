@@ -76,52 +76,54 @@ DCOS Kafka provides the following features:
 
 *   [DCOS Spark][2]
 
+<a name="getting-started"></a>
 # Getting Started
 
 ## Quick Start
 
 *   Step 1. Install a Kafka cluster.
 
-    $ dcos package install kafka
+        $ dcos package install kafka
 
 
 *   Step 2. Create a new topic.
 
-    $ dcos kafka topic create topic1
+        $ dcos kafka topic create topic1
 
 
 *   Step 3. Find connection information.
 
-    $ dcos kafka connection
-    {
-        "address": [
-            "10.0.0.211:9843",
-            "10.0.0.217:10056",
-            "10.0.0.214:9689"
-        ],
-        "dns": [
-            "broker-0.kafka.mesos:9843",
-            "broker-1.kafka.mesos:10056",
-            "broker-2.kafka.mesos:9689"
-        ],
-        "zookeeper": "master.mesos:2181/kafka"
-    }
+        $ dcos kafka connection
+        {
+            "address": [
+                "10.0.0.211:9843",
+                "10.0.0.217:10056",
+                "10.0.0.214:9689"
+            ],
+            "dns": [
+                "broker-0.kafka.mesos:9843",
+                "broker-1.kafka.mesos:10056",
+                "broker-2.kafka.mesos:9689"
+            ],
+            "zookeeper": "master.mesos:2181/kafka"
+        }
 
 
 *   Step 4. Produce and consume data.
 
-    $ dcos node ssh --master-proxy --leader
-
-    core@ip-10-0-6-153 ~ $ docker run -it mesosphere/kafka-client
-
-    root@7d0aed75e582:/bin# echo "Hello, World." | ./kafka-console-producer.sh --broker-list 10.0.0.211:9843, 10.0.0.217:10056, 10.0.0.214:9689 --topic topic1
-
-    root@7d0aed75e582:/bin# ./kafka-console-consumer.sh --zookeeper master.mesos:2181/kafka --topic topic1 --from-beginning
-    Hello, World.
+        $ dcos node ssh --master-proxy --leader
+    
+        core@ip-10-0-6-153 ~ $ docker run -it mesosphere/kafka-client
+    
+        root@7d0aed75e582:/bin# echo "Hello, World." | ./kafka-console-producer.sh --broker-list 10.0.0.211:9843, 10.0.0.217:10056, 10.0.0.214:9689 --topic topic1
+    
+        root@7d0aed75e582:/bin# ./kafka-console-consumer.sh --zookeeper master.mesos:2181/kafka --topic topic1 --from-beginning
+        Hello, World.
 
 
 See also [Connecting clients][3].
 
+<a name="install-and-customize"></a>
 # Install and Customize
 
 ## Default Installation
@@ -213,6 +215,7 @@ Then, use the [framework cleaner script][7] to remove your Kafka instance from Z
 *   `framework-principal` is `<name>-principal`.
 *   `zk_path` is `<name>`.
 
+<a name="configuring"></a>
 # Configuring
 
 ## Changing Configuration at Runtime
@@ -486,6 +489,7 @@ The defaults can be overridden at install time by specifying an options.json fil
 
 These same values are also represented as environment variables for the Scheduler in the form `KAFKA_OVERRIDE_LOG_RETENTION_HOURS` and may be modified through Marathon and deployed during a rolling upgrade as [described here][12].
 
+<a name="connecting-clients"></a>
 # Connecting Clients
 
 The only supported client library is the official Kafka Java library, ie `org.apache.kafka.clients.consumer.KafkaConsumer` and `org.apache.kafka.clients.producer.KafkaProducer`. Other clients are at the user's risk.
@@ -710,7 +714,7 @@ The following code connects to a DCOS-hosted Kafka instance using `bin/kafka-con
     root@7d0aed75e582:/bin# ./kafka-console-consumer.sh --zookeeper master.mesos:2181/kafka --topic topic1 --from-beginning
     Hello, World.
 
-
+<a name="managing"></a>
 # Managing
 
 ## Add a Broker
@@ -725,20 +729,21 @@ Increase the `BROKER_COUNT` value via Marathon as in any other configuration upd
 
 3.  If you are using the enterprise edition, create an JSON options file with your latest configuration and set your plan strategy to "STAGE"
 
-    {
-        "service": {
-            "phase_strategy": "STAGE"
+        {
+            "service": {
+                "phase_strategy": "STAGE"
+            }
         }
-    }
 
 
 1.  Install the latest version of Kafka:
 
-    $ dcos package install kafka -—options=options.json
+        $ dcos package install kafka -—options=options.json
 
 
 1.  Rollout the new version of Kafka in the same way as a configuration update is rolled out. See Configuration Update Plans.
 
+<a name="troubleshooting"></a>
 # Troubleshooting
 
 The Kafka service will be listed as "Unhealthy" when it detects any underreplicated partitions. This error condition usually indicates a malfunctioning broker. Use the `dcos kafka topic under_replicated_partitions` and `dcos kafka topic describe <topic-name>` commands to find the problem broker and determine what actions are required.
@@ -814,7 +819,7 @@ In the example below, the broker with id `0` will be replaced on new machine as 
 
     $ dcos kafka broker replace 0
 
-
+<a name="api-reference"></a>
 # API Reference
 
 For ongoing maintenance of the Kafka cluster itself, the Kafka service exposes an HTTP API whose structure is designed to roughly match the tools provided by the Kafka distribution, such as `bin/kafka-topics.sh`.
@@ -1545,6 +1550,7 @@ These operations are only applicable when `PHASE_STRATEGY` is set to `STAGE`, th
     $ dcos kafka --name=kafka plan restart
     $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan/restart"
 
+<a name="limitations"></a>
 # Limitations
 
 ## Configurations
@@ -1579,4 +1585,3 @@ The security features introduced in Apache Kafka 0.9 are not supported at this t
  [14]: https://docs.mesosphere.com/administration/security-and-authentication/auth-api/
  [15]: https://cwiki.apache.org/confluence/display/KAFKA/System+Tools#SystemTools-GetOffsetShell
  [16]: #configure-kafka-broker-properties
- [17]: https://github.com/mesosphere/kafka-private/blob/master/CONTRIBUTING.md

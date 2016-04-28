@@ -1,4 +1,4 @@
-DCOS Kafka Service Guide
+DC/OS Kafka Service Guide
 ======================
 
 [Overview](#overview)
@@ -21,7 +21,7 @@ DCOS Kafka Service Guide
 - [Configuration Options](#configuration-options)
 
 [Connecting Clients](#connecting-clients)
-- [Using the DCOS CLI](#using-the-dcos-cli)
+- [Using the DC/OS CLI](#using-the-dcos-cli)
 - [Using the REST API](#using-the-rest-api)
 - [REST API Authentication](#rest-api-authentication)
 - [Connection Info Response](#connection-info-response)
@@ -49,11 +49,11 @@ DCOS Kafka Service Guide
 
 # Overview
 
-DCOS Kafka is an automated service that makes it easy to deploy and manage Apache Kafka on Mesosphere DCOS, eliminating nearly all of the complexity traditionally associated with managing a Kafka cluster. Apache Kafka is a distributed high-throughput publish-subscribe messaging system with strong ordering guarantees. Kafka clusters are highly available, fault tolerant, and very durable. For more information on Apache Kafka, see the Apache Kafka [documentation][1]. DCOS Kafka gives you direct access to the Kafka API so that existing producers and consumers can interoperate. You can configure and install DCOS Kafka in moments. Multiple Kafka clusters can be installed on DCOS and managed independently, so you can offer Kafka as a managed service to your organization.
+DC/OS Kafka is an automated service that makes it easy to deploy and manage Apache Kafka on Mesosphere DC/OS, eliminating nearly all of the complexity traditionally associated with managing a Kafka cluster. Apache Kafka is a distributed high-throughput publish-subscribe messaging system with strong ordering guarantees. Kafka clusters are highly available, fault tolerant, and very durable. For more information on Apache Kafka, see the Apache Kafka [documentation][1]. DC/OS Kafka gives you direct access to the Kafka API so that existing producers and consumers can interoperate. You can configure and install DC/OS Kafka in moments. Multiple Kafka clusters can be installed on DC/OS and managed independently, so you can offer Kafka as a managed service to your organization.
 
 ## Benefits
 
-DCOS Kafka offers the following benefits of a semi-managed service:
+DC/OS Kafka offers the following benefits of a semi-managed service:
 
 *   Easy installation
 *   Multiple Kafka clusters
@@ -63,10 +63,10 @@ DCOS Kafka offers the following benefits of a semi-managed service:
 
 ## Features
 
-DCOS Kafka provides the following features:
+DC/OS Kafka provides the following features:
 
 *   Single-command installation for rapid provisioning
-*   Multiple clusters for multiple tenancy with DCOS
+*   Multiple clusters for multiple tenancy with DC/OS
 *   High availability runtime configuration and software updates
 *   Storage volumes for enhanced data durability, known as Mesos Dynamic Reservations and Persistent Volumes
 *   Integration with syslog-compatible logging services for diagnostics and troubleshooting
@@ -74,7 +74,7 @@ DCOS Kafka provides the following features:
 
 ## Related Services
 
-*   [DCOS Spark][2]
+*   [DC/OS Spark][2]
 
 <a name="getting-started"></a>
 # Getting Started
@@ -128,21 +128,21 @@ See also [Connecting clients][3].
 
 ## Default Installation
 
-To start a basic test cluster with three brokers, run the following command on the DCOS CLI:
+To start a basic test cluster with three brokers, run the following command on the DC/OS CLI:
 
     $ dcos package install kafka
 
 
 This command creates a new Kafka cluster with the default name `kafka`. Two clusters cannot share the same name, so installing additional clusters beyond the default cluster requires [customizing the `name` at install time][4] for each additional instance.
 
-All `dcos kafka` CLI commands have a `--name` argument allowing the user to specify which Kafka instance to query. If you do not specify a service name, the CLI assumes the default value, `kafka`. The default value for `--name` can be customized via the DCOS CLI configuration:
+All `dcos kafka` CLI commands have a `--name` argument allowing the user to specify which Kafka instance to query. If you do not specify a service name, the CLI assumes the default value, `kafka`. The default value for `--name` can be customized via the DC/OS CLI configuration:
 
     $ dcos kafka --name kafka-dev <cmd>
 
 
 ## Minimal Installation
 
-For development purposes, you may wish to install Kafka on a local DCOS cluster. For this, you can use [dcos-vagrant][5].
+For development purposes, you may wish to install Kafka on a local DC/OS cluster. For this, you can use [dcos-vagrant][5].
 
 To start a minimal cluster with a single broker, create a JSON options file named `sample-kafka-minimal.json`:
 
@@ -441,11 +441,11 @@ If you enter `continue` a second time, the rest of the plan will be executed wit
 
 ## Configuration Options
 
-The following describes the most commonly used features of the Kafka service and how to configure them via dcos-cli and in Marathon. View the [default `config.json` in DCOS Universe][11] to see all possible configuration options.
+The following describes the most commonly used features of the Kafka service and how to configure them via dcos-cli and in Marathon. View the [default `config.json` in DC/OS Universe][11] to see all possible configuration options.
 
 ### Service Name
 
-The name of this Kafka instance in DCOS. This is an option that cannot be changed once the Kafka cluster is started: it can only be configured via the `dcos-cli --options` flag when the Kafka instance is created.
+The name of this Kafka instance in DC/OS. This is an option that cannot be changed once the Kafka cluster is started: it can only be configured via the `dcos-cli --options` flag when the Kafka instance is created.
 
 *   **In dcos-cli options.json**: `name` = string (default: `kafka`)
 *   **In Marathon**: The service name cannot be changed after the cluster has started.
@@ -466,7 +466,7 @@ Configure the number of brokers running in a given Kafka cluster. The default co
 
 ### Configure Kafka Broker Properties
 
-Kafka Brokers are configured through settings in a server.properties file deployed with each Broker. The settings here can be specified at installation time or during a post-deployment configuration update. They are set in the DCOS Universe's config.json as options such as:
+Kafka Brokers are configured through settings in a server.properties file deployed with each Broker. The settings here can be specified at installation time or during a post-deployment configuration update. They are set in the DC/OS Universe's config.json as options such as:
 
     "log_retention_hours": {
         "title": "log.retention.hours",
@@ -494,7 +494,7 @@ These same values are also represented as environment variables for the Schedule
 
 The only supported client library is the official Kafka Java library, ie `org.apache.kafka.clients.consumer.KafkaConsumer` and `org.apache.kafka.clients.producer.KafkaProducer`. Other clients are at the user's risk.
 
-## Using the DCOS CLI
+## Using the DC/OS CLI
 
 The following command can be executed from the cli in order to retrieve a set of brokers to connect to.
 
@@ -516,7 +516,7 @@ All `curl` examples in this document assume that an auth token has already been 
 
 #### User token authentication
 
-DCOS Enterprise Edition comes with support for [user ACLs][13]. To interact with the Kafka REST API you must first retrieve an auth token from the [auth HTTP endpoint][14], then provide this token in following requests.
+DC/OS Enterprise Edition comes with support for [user ACLs][13]. To interact with the Kafka REST API you must first retrieve an auth token from the [auth HTTP endpoint][14], then provide this token in following requests.
 
 First, we retrieve `uSeR_t0k3n` with our user credentials and store the token as an environment variable:
 
@@ -620,7 +620,7 @@ This JSON array contains a list of valid brokers that the client can use to conn
     </dependency>
 
 
-The above is the correct dependency for the Kafka Client Library to use with the DCOS Cassandra service. After adding this dependency to your project, you should have access to the correct binary dependencies to interface with the Kafka Cluster.
+The above is the correct dependency for the Kafka Client Library to use with the DC/OS Cassandra service. After adding this dependency to your project, you should have access to the correct binary dependencies to interface with the Kafka Cluster.
 
 ### Connecting the Kafka Client Library
 
@@ -688,7 +688,7 @@ The code snippet below demonstrates how to connect a Kafka Consumer to the clust
 
 ## Configuring the Kafka Test Scripts
 
-The following code connects to a DCOS-hosted Kafka instance using `bin/kafka-console-producer.sh` and `bin/kafka-console-consumer.sh` as an example:
+The following code connects to a DC/OS-hosted Kafka instance using `bin/kafka-console-producer.sh` and `bin/kafka-console-consumer.sh` as an example:
 
     $ dcos kafka connection
     {
@@ -725,7 +725,7 @@ Increase the `BROKER_COUNT` value via Marathon as in any other configuration upd
 
 1.  In the Marathon web interface, destroy the Kafka scheduler to be updated.
 
-2.  Verify that you no longer see it in the DCOS web interface.
+2.  Verify that you no longer see it in the DC/OS web interface.
 
 3.  If you are using the enterprise edition, create an JSON options file with your latest configuration and set your plan strategy to "STAGE"
 
@@ -813,7 +813,7 @@ GET /service/kafka/v1/plan HTTP/1.1
 
 ## Replacing a Permanently Failed Server
 
-If a machine has permanently failed, manual intervention is required to replace the broker or brokers that resided on that machine. Because DCOS Kafka uses persistent volumes, the service continuously attempts to replace brokers where their data has been persisted. In the case where a machine has permanently failed, use the Kafka CLI to replace the brokers.
+If a machine has permanently failed, manual intervention is required to replace the broker or brokers that resided on that machine. Because DC/OS Kafka uses persistent volumes, the service continuously attempts to replace brokers where their data has been persisted. In the case where a machine has permanently failed, use the Kafka CLI to replace the brokers.
 
 In the example below, the broker with id `0` will be replaced on new machine as long as cluster resources are sufficient to satisfy the service’s placement constraints and resource requirements.
 
@@ -824,7 +824,7 @@ In the example below, the broker with id `0` will be replaced on new machine as 
 
 For ongoing maintenance of the Kafka cluster itself, the Kafka service exposes an HTTP API whose structure is designed to roughly match the tools provided by the Kafka distribution, such as `bin/kafka-topics.sh`.
 
-The examples here provide equivalent commands using both `[dcos-cli](https://github.com/mesosphere/dcos-cli)` (with the `kafka` CLI module installed) and `curl`. These examples assume a service named `kafka` (the default), and the `curl` examples assume a DCOS cluster path of `$DCOS_URI`. Replace these with appropriate values as needed.
+The examples here provide equivalent commands using both `[dcos-cli](https://github.com/mesosphere/dcos-cli)` (with the `kafka` CLI module installed) and `curl`. These examples assume a service named `kafka` (the default), and the `curl` examples assume a DC/OS cluster path of `$DCOS_URI`. Replace these with appropriate values as needed.
 
 The `dcos kafka` CLI commands have a `--name` argument, allowing the user to specify which Kafka instance to query. The value defaults to `kafka`, so it's technically redundant to specify `--name=kafka` in these examples.
 
@@ -850,7 +850,7 @@ Kafka comes with many useful tools of its own that often require either Zookeepe
     }
 
 
-The same information can be retrieved through the DCOS CLI:
+The same information can be retrieved through the DC/OS CLI:
 
     $ dcos kafka connection
     {
@@ -1563,7 +1563,7 @@ The Kafka service's core responsibility is to deploy and maintain the deployment
 
 ## Brokers
 
-The number of deployable brokers is constrained by two factors. First, brokers have specified required resources, so brokers may not be placed if the DCOS cluster lacks the requisite resources. Second, the specified "PLACEMENT_STRATEGY" environment variable may affect how many brokers can be created in a Kafka cluster. By default the value is "ANY," so brokers are placed anywhere and are only constrained by the resources of the cluster. A second option is "NODE." In this case only one broker may be placed on a given DCOS agent.
+The number of deployable brokers is constrained by two factors. First, brokers have specified required resources, so brokers may not be placed if the DC/OS cluster lacks the requisite resources. Second, the specified "PLACEMENT_STRATEGY" environment variable may affect how many brokers can be created in a Kafka cluster. By default the value is "ANY," so brokers are placed anywhere and are only constrained by the resources of the cluster. A second option is "NODE." In this case only one broker may be placed on a given DC/OS agent.
 
 ## Security
 

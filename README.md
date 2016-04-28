@@ -489,6 +489,29 @@ The defaults can be overridden at install time by specifying an options.json fil
 
 These same values are also represented as environment variables for the Scheduler in the form `KAFKA_OVERRIDE_LOG_RETENTION_HOURS` and may be modified through Marathon and deployed during a rolling upgrade as [described here][12].
 
+<a name="disk-type"></a>
+### Disk Type 
+
+The type of disks that can be used for storing broker data are: `ROOT` (default) and `MOUNT`.
+
+* `ROOT`: Broker data is stored on the same volume as the agent work directory. And, the Broker tasks will use the configured amount of disk space.
+* `MOUNT`: Broker data will be stored on a dedicated volume attached to the agent. Dedicated MOUNT volumes have performance advantages and a disk error on these MOUNT volumes will be correctly reported to Kafka.
+
+Here's how you can configure Kafka service to use dedicated disk volumes:
+* **DC/OS cli options.json**: 
+    
+```json
+    {
+        "brokers": {
+            "disk_type": "MOUNT"
+        }
+    }
+```
+
+* **Marathon**: Set the environment variable `DISK_TYPE` = `MOUNT`
+
+When configured to `MOUNT` disk type, the scheduler selects a disk on agent whose capacity is equal to or greater than the configured `disk` value.
+
 <a name="connecting-clients"></a>
 # Connecting Clients
 

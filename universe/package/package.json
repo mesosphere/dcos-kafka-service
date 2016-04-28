@@ -3,10 +3,10 @@
   "name": "kafka",
   "version": "stub-universe",
   "maintainer": "support@mesosphere.io",
-  "description": "Apache Kafka running on DCOS",
+  "description": "Apache Kafka running on DC/OS",
   "selected": true,
   "framework": true,
   "tags": ["message", "broker", "pubsub"],
-  "postInstallNotes": "DCOS Kafka has been successfully installed!\n\n\tDocumentation: https://docs.mesosphere.com/usage/services/kafka/\n\tIssues: https://docs.mesosphere.com/support/",
-  "postUninstallNotes": "DCOS Kafka Service has been uninstalled. Please run the framework_cleaner to remove any persistent state if required."
+  "postInstallNotes": "DC/OS Kafka Service is being installed.\n\n\tDocumentation: https://docs.mesosphere.com/kafka-1-7/\n\tIssues: https://docs.mesosphere.com/support/",
+  "postUninstallNotes": "DC/OS Kafka Service has been uninstalled.\nPlease follow the instructions at https://docs.mesosphere.com/kafka-1-7/#uninstall to remove any persistent state if required."
 }

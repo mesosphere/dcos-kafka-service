@@ -3,6 +3,7 @@
     "properties":{
       "service":{
         "type":"object",
+        "description": "DC/OS service configuration properties",
         "properties":{
           "name" : {
             "description":"The name of the Kafka service instance",
@@ -26,7 +27,7 @@
         ]
       },
       "brokers":{
-        "description":"Kafka broker sizing properties",
+        "description":"Kafka broker configuration properties",
         "type":"object",
         "properties":{
           "cpus":{
@@ -173,7 +174,7 @@
             "title":"min.insync.replicas",
             "description":"define the minimum number of replicas in ISR needed to satisfy a produce request with required.acks=-1 (or all)",
             "type":"integer",
-            "default":1000012
+            "default":1
           },
           "num_io_threads":{
             "title":"num.io.thread",

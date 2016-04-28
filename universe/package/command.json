@@ -1,5 +1,5 @@
 {
   "pip": [
-    "{{artifact-dir}}/dcos-kafka-0.2.5.tar.gz"
+    "{{artifact-dir}}/dcos-kafka-0.2.5.zip"
   ]
 }

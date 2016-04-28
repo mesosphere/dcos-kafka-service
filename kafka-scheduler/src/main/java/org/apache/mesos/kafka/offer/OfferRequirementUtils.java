@@ -36,8 +36,8 @@ public class OfferRequirementUtils {
     String brokerName = OfferUtils.idToName(brokerId);
     List<String> commands = new ArrayList<>();
 
-    // Export the JRE and log the environment
-    commands.add("export PATH=$PATH:$MESOS_SANDBOX/jre/bin");
+    // Configure and log the environment.
+    commands.add("export PATH=$(ls -d $MESOS_SANDBOX/jre*/bin):$PATH"); // find directory that starts with "jre" containing "bin"
     commands.add("export CONFIG_ID=" + configName);
     commands.add("env");
     commands.add("$MESOS_SANDBOX/overrider/bin/kafka-config-overrider server $MESOS_SANDBOX/overrider/conf/scheduler.yml");

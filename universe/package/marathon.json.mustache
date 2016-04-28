@@ -3,7 +3,7 @@
   "cpus": 1.0,
   "mem": 1230,
   "instances": 1,
-  "cmd": "export PATH=$PATH:$MESOS_SANDBOX/jre/bin && ./scheduler/bin/kafka-scheduler server ./scheduler/conf/scheduler.yml",
+  "cmd": "export PATH=$(ls -d $MESOS_SANDBOX/jre*/bin):$PATH && ./scheduler/bin/kafka-scheduler server ./scheduler/conf/scheduler.yml",
   "labels": {
     "DCOS_PACKAGE_FRAMEWORK_NAME": "{{service.name}}",
     "DCOS_MIGRATION_API_VERSION": "v1",
@@ -116,12 +116,13 @@
   ],
   "healthChecks": [
     {
-      "protocol": "COMMAND",
-      "command": { "value": "export PATH=$PATH:$MESOS_SANDBOX/jre/bin && ./kafka_2.10-0.9.0.1/bin/kafka-topics.sh --zookeeper master.mesos:2181/{{service.name}} --describe --under-replicated-partitions | wc -l | { read count; echo Under replicated partition count = $count; exit $count; }" },
-      "gracePeriodSeconds": 300,
-      "intervalSeconds": 60,
-      "timeoutSeconds": 60,
-      "maxConsecutiveFailures": 3
+      "gracePeriodSeconds": 120,
+      "intervalSeconds": 30,
+      "maxConsecutiveFailures": 0,
+      "path": "/admin/healthcheck",
+      "portIndex": 0,
+      "protocol": "HTTP",
+      "timeoutSeconds": 5
     }
   ],
   "readinessChecks": [

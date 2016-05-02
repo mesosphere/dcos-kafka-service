@@ -55,7 +55,7 @@ public class OfferRequirementUtils {
     taskEnv.put("KAFKA_VER_NAME", config.getKafkaConfiguration().getKafkaVerName());
     taskEnv.put(overridePrefix + "ZOOKEEPER_CONNECT", config.getKafkaConfiguration().getZkAddress() + "/" + frameworkName);
     taskEnv.put(overridePrefix + "BROKER_ID", Integer.toString(brokerId));
-    taskEnv.put(overridePrefix + "LOG_DIRS", containerPath);
+    taskEnv.put(overridePrefix + "LOG_DIRS", containerPath + "/" + brokerName);
     taskEnv.put(overridePrefix + "PORT", Long.toString(port));
     taskEnv.put(overridePrefix + "LISTENERS", "PLAINTEXT://:" + port);
 

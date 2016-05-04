@@ -1,6 +1,8 @@
 DC/OS Kafka Service Guide
 ======================
 
+[![Build Status](http://velocity.mesosphere.com/service/velocity/buildStatus/icon?job=infinity-kafka)](http://velocity.mesosphere.com/service/velocity/job/infinity-kafka/)
+
 [Overview](#overview)
 - [Benefits](#benefits)
 - [Features](#features)

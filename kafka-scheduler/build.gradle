@@ -11,7 +11,7 @@ ext {
 }
 
 dependencies {
-  compile project(':dcos-commons-ee')
+  compile "mesosphere:dcos-commons-ee:0.1.0"
   compile "org.apache.mesos:mesos:${mesosVer}"
   compile "io.dropwizard:dropwizard-core:${dropwizardVer}"
   compile "io.dropwizard:dropwizard-client:${dropwizardVer}"

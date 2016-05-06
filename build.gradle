@@ -32,5 +32,8 @@ subprojects {
   repositories {
     mavenLocal()
     mavenCentral()
+    maven {
+      url "https://downloads.mesosphere.com/maven/"
+    }
   }
 }

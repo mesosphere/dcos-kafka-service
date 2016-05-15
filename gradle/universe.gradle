@@ -35,4 +35,3 @@ task universeDist(type: Zip, dependsOn: universe) {
   baseName = "universe"
   destinationDir = file("$buildDir/universe/")
 }
-// aws s3 cp scheduler.zip "s3://downloads.mesosphere.io/hdfs/test.zip" --acl public-read

@@ -8,7 +8,7 @@ allprojects {
 }
 
 ext {
-  cliVersion = "0.2.6"
+  cliVersion = "0.2.5"
 }
 
 idea {

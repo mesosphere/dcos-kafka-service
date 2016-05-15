@@ -14,7 +14,9 @@ task universe(dependsOn: packageVersion) {
   // incremental builds might be nice but need to research multiple inputs
   // outputs.dir "$buildDir/universe"
   doLast {
-    if( !(packageVer ==~ /^\d+\.\d+\.\d+\-\d+\.\d+\.\d+/) )
+    // supports kafka 4 digit version 0.9.0.1
+    if( !((packageVer ==~ /^\d+\.\d+\.\d+\-\d+\.\d+\.\d+/) ||
+    (packageVer ==~ /^\d+\.\d+\.\d+\-\d+\.\d+\.\d+\.\d+/)))
       throw new GradleException("Invalid Release Version: $packageVer")
 
     copy {

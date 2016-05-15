@@ -4,7 +4,11 @@ allprojects {
   apply plugin: 'idea'
   apply plugin: 'eclipse'
   group = "com.apache.mesos.kafka"
-  version = "0.2.6"
+  version = "1.0.8"
+}
+
+ext {
+  cliVersion = "0.2.6"
 }
 
 idea {
@@ -38,4 +42,8 @@ subprojects {
       url "https://downloads.mesosphere.com/maven/"
     }
   }
+}
+
+task cliVersion << {
+    print cliVersion
 }

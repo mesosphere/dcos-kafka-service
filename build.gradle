@@ -1,3 +1,5 @@
+apply from: "$rootDir/gradle/universe.gradle"
+
 allprojects {
   apply plugin: 'idea'
   apply plugin: 'eclipse'

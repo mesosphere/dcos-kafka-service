@@ -5,12 +5,17 @@ ext {
   cliBase = "dcos-kafka-"
 }
 
-task packageVersion  << {
+task packageVersion (
+  group: "universe",
+  description: "Provides the release version for the package")  << {
   packageVer = "git describe --tags".execute().text.trim()
   println packageVer
 }
 
-task universe(dependsOn: packageVersion) {
+task universe(
+  dependsOn: packageVersion,
+  group: "universe",
+  description: "Copies universe files to build and modifies there artifact dir") {
   inputs.file file("universe/package")
   // incremental builds might be nice but need to research multiple inputs
   // outputs.dir "$buildDir/universe"
@@ -37,7 +42,9 @@ task universe(dependsOn: packageVersion) {
   }
 }
 
-task universeDist(type: Zip, dependsOn: universe) {
+task universeDist(type: Zip, dependsOn: universe,
+  group: "universe",
+  description: "Creates a zip of the universe") {
   from "$buildDir/universe"
   baseName = "universe"
   destinationDir = file("$buildDir/universe/")

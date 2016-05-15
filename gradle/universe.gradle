@@ -2,6 +2,7 @@ ext {
   aws = "http://downloads.mesosphere.io/"
   basePath = "kafka/assets/"
   packageVer = "stub-universe" // is replaced
+  cliBase = "dcos-kafka-"
 }
 
 task packageVersion  << {
@@ -27,6 +28,10 @@ task universe(dependsOn: packageVersion) {
       }
       filter{
         String line -> line.replaceAll("stub-universe", packageVer)
+      }
+      // future proof the client
+      filter{
+        String line -> line.replaceAll("dcos-kafka-0.2.5.tar.gz", cliBase + cliVersion + ".tar.gz")
       }
     }
   }

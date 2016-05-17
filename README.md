@@ -1600,7 +1600,7 @@ The security features introduced in Apache Kafka 0.9 are not supported at this t
  [4]: #custom-install-configuration
  [5]: https://github.com/mesosphere/dcos-vagrant
  [6]: #configuration-options
- [7]: https://github.com/mesosphere/framework-cleaner
+ [7]: https://docs.mesosphere.com/framework_cleaner/
  [8]: #broker-count
  [9]: #using-the-rest-api
  [10]: #rest-api-authentication

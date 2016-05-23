@@ -177,7 +177,7 @@ public final class Overrider extends Application<DropwizardConfiguration> {
     config.put("external.kafka.statsd.reporter.enabled", "true");
     config.put("external.kafka.statsd.host", statsdHost);
     config.put("external.kafka.statsd.port", statsdPort);
-    config.put("external.kafka.statsd.tag.enabled", "false");
+    config.put("external.kafka.statsd.tag.enabled", "true");
     config.put("external.kafka.statsd.metrics.exclude_regex", "");
     return config;
   }

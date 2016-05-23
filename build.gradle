@@ -42,6 +42,9 @@ subprojects {
     maven {
       url "https://downloads.mesosphere.com/maven/"
     }
+    maven {
+     url "https://downloads.mesosphere.com/maven-snapshot/"
+    }
   }
 }
 

@@ -152,6 +152,9 @@ To start a minimal cluster with a single broker, create a JSON options file name
         "brokers": {
             "count": 1,
             "mem": 512,
+            "heap": {
+                "size": 500
+            },                                                                                  
             "disk": 1000
         }
     }
@@ -513,6 +516,26 @@ Here's how you can configure Kafka service to use dedicated disk volumes:
 * **Marathon**: Set the environment variable `DISK_TYPE` = `MOUNT`
 
 When configured to `MOUNT` disk type, the scheduler selects a disk on agent whose capacity is equal to or greater than the configured `disk` value.
+
+### JVM Heap Size
+
+Kafka Service allows configuration of JVM Heap Size for the broker JVM process. Here's how you can configure it:
+* **DC/OS cli options.json**:
+
+```json
+    {
+        "brokers": {
+            "heap": {
+                "size": 2000
+            }
+        }
+    }
+```
+
+* **Marathon**: Set the environment variable `BROKER_HEAP_MB` = 2000
+
+**Note**: The total memory allocated for the Mesos task is specified by the `BROKER_MEM` configuration parameter. The value for `BROKER_HEAP_MB` should not be greater than `BROKER_MEM` value. Also, if `BROKER_MEM` is greater than `BROKER_HEAP_MB` then the Linux operating system will use `BROKER_MEM` - `BROKER_HEAP_MB` for [PageCache](https://en.wikipedia.org/wiki/Page_cache).
+
 
 <a name="connecting-clients"></a>
 # Connecting Clients

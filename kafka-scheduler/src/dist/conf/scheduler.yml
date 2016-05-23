@@ -10,7 +10,9 @@ schedulerConfiguration:
 
   broker:
     cpus: ${BROKER_CPUS}
-    mem: ${BROKER_MEM}
+    mem: ${BROKER_MEM:-2304}
+    heap:
+      size_mb: ${BROKER_HEAP_MB:-2048}
     disk: ${BROKER_DISK}
     diskType: ${DISK_TYPE:-ROOT}
     javaUri: ${JAVA_URI}

@@ -19,9 +19,11 @@ public class OfferRequirementUtils {
 
   public static String getKafkaStartCmd(KafkaSchedulerConfiguration config) {
     return String.format(
+        "export KAFKA_HEAP_OPTS='-Xms%2$dM -Xmx%2$dM';" +
         "$MESOS_SANDBOX/%1$s/bin/kafka-server-start.sh " +
         "$MESOS_SANDBOX/%1$s/config/server.properties ",
-        config.getKafkaConfiguration().getKafkaVerName());
+        config.getKafkaConfiguration().getKafkaVerName(),
+        config.getBrokerConfiguration().getHeap().getSizeMb());
   }
 
   public static TaskInfo getTaskInfo(

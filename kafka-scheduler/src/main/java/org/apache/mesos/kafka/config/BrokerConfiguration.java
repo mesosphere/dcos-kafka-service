@@ -10,6 +10,8 @@ public class BrokerConfiguration {
     private double cpus;
     @JsonProperty("mem")
     private double mem;
+    @JsonProperty("heap")
+    private HeapConfig heap;
     @JsonProperty("disk")
     private double disk;
     @JsonProperty("diskType")
@@ -25,6 +27,7 @@ public class BrokerConfiguration {
     public BrokerConfiguration(
             @JsonProperty("cpus")double cpus,
             @JsonProperty("mem")double mem,
+            @JsonProperty("heap")HeapConfig heap,
             @JsonProperty("disk")double disk,
             @JsonProperty("diskType")String diskType,
             @JsonProperty("kafkaUri")String kafkaUri,
@@ -32,6 +35,7 @@ public class BrokerConfiguration {
             @JsonProperty("overriderUri")String overriderUri) {
         this.cpus = cpus;
         this.mem = mem;
+        this.heap = heap;
         this.disk = disk;
         this.diskType = diskType;
         this.kafkaUri = kafkaUri;
@@ -55,6 +59,15 @@ public class BrokerConfiguration {
     @JsonProperty("mem")
     public void setMem(double mem) {
         this.mem = mem;
+    }
+
+    public HeapConfig getHeap() {
+        return heap;
+    }
+
+    @JsonProperty("heap")
+    public void setHeap(HeapConfig heap) {
+        this.heap = heap;
     }
 
     public double getDisk() {
@@ -115,6 +128,7 @@ public class BrokerConfiguration {
         BrokerConfiguration that = (BrokerConfiguration) o;
         return Double.compare(that.cpus, cpus) == 0 &&
                 Double.compare(that.mem, mem) == 0 &&
+                Objects.equals(that.heap, heap) &&
                 Double.compare(that.disk, disk) == 0 &&
                 Objects.equals(diskType, that.diskType) &&
                 Objects.equals(kafkaUri, that.kafkaUri) &&
@@ -124,7 +138,7 @@ public class BrokerConfiguration {
 
     @Override
     public int hashCode() {
-        return Objects.hash(cpus, mem, disk, diskType, kafkaUri, javaUri, overriderUri);
+        return Objects.hash(cpus, mem, heap, disk, diskType, kafkaUri, javaUri, overriderUri);
     }
 
     @Override
@@ -132,6 +146,7 @@ public class BrokerConfiguration {
         return "BrokerConfiguration{" +
                 "cpus=" + cpus +
                 ", mem=" + mem +
+                ", heap=" + heap +
                 ", disk=" + disk +
                 ", diskType='" + diskType + '\'' +
                 ", kafkaUri='" + kafkaUri + '\'' +

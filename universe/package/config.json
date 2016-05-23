@@ -38,7 +38,22 @@
           "mem":{
             "description":"Broker mem requirements",
             "type":"integer",
-            "default":2048
+            "default":2304
+          },
+          "heap":{
+            "description":"The Kafka process JVM heap configuration object",
+            "type":"object",
+            "properties":{
+              "size": {
+                "type":"integer",
+                "description":"The amound of JVM heap, in MB, allocated to the Kafka broker process.",
+                "default": 2048
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "size"
+            ]
           },
           "disk":{
             "description":"Broker disk requirements (only respected with persistent volumes)",

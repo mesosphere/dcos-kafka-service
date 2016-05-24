@@ -1,25 +1,30 @@
 package org.apache.mesos.kafka.state;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.mesos.Protos.FrameworkID;
-import org.apache.mesos.Protos.TaskID;
-import org.apache.mesos.Protos.TaskInfo;
-import org.apache.mesos.Protos.TaskState;
-import org.apache.mesos.Protos.TaskStatus;
-import org.apache.mesos.kafka.offer.OfferUtils;
-import org.apache.mesos.reconciliation.TaskStatusProvider;
-import org.apache.zookeeper.KeeperException.NoNodeException;
-import org.json.JSONArray;
-import org.json.JSONObject;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Set;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.mesos.Protos.FrameworkID;
+import org.apache.mesos.Protos.Resource;
+import org.apache.mesos.Protos.TaskID;
+import org.apache.mesos.Protos.TaskInfo;
+import org.apache.mesos.Protos.TaskState;
+import org.apache.mesos.Protos.TaskStatus;
+
+import org.apache.mesos.kafka.offer.OfferUtils;
+import org.apache.mesos.offer.ResourceUtils;
+import org.apache.mesos.reconciliation.TaskStatusProvider;
+
+import org.apache.zookeeper.KeeperException.NoNodeException;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 /**
  * Read/write interface for storing and retrieving information about Kafka tasks.
@@ -152,6 +157,52 @@ public class KafkaStateService implements Observer, TaskStatusProvider {
     }
 
     return taskIds;
+  }
+
+  public List<String> getExpectedResourceIds() throws Exception {
+    List<String> resourceIds = new ArrayList<String>();
+
+    for (TaskInfo taskInfo : getTaskInfos()) {
+      resourceIds.addAll(getExpectedResourceIds(taskInfo));
+    }
+
+    return resourceIds;
+  }
+
+  public List<String> getExpectedPersistenceIds() throws Exception {
+    List<String> persistenceIds = new ArrayList<String>();
+
+    for (TaskInfo taskInfo : getTaskInfos()) {
+      persistenceIds.addAll(getExpectedPersistenceIds(taskInfo));
+    }
+
+    return persistenceIds;
+  }
+
+  private List<String> getExpectedResourceIds(TaskInfo taskInfo) {
+    List<String> resourceIds = new ArrayList<String>();
+
+    for (Resource resource : taskInfo.getResourcesList()) {
+      String resourceId = ResourceUtils.getResourceId(resource);
+      if (resourceId != null) {
+        resourceIds.add(resourceId);
+      }
+    }
+
+    return resourceIds;
+  }
+
+  private List<String> getExpectedPersistenceIds(TaskInfo taskInfo) {
+    List<String> persistenceIds = new ArrayList<String>();
+
+    for (Resource resource : taskInfo.getResourcesList()) {
+      String persistenceId = ResourceUtils.getPersistenceId(resource);
+      if (persistenceId != null) {
+        persistenceIds.add(persistenceId);
+      }
+    }
+
+    return persistenceIds;
   }
 
   public String getTaskIdForBroker(Integer brokerId) throws Exception {

@@ -194,10 +194,7 @@ public class KafkaUpdateBlock implements Block {
 
   private void setPendingTasks(OfferRequirement offerReq) {
     pendingTasks = new ArrayList<TaskID>();
-
-    for (TaskInfo taskInfo : offerReq.getTaskInfos()) {
-      pendingTasks.add(taskInfo.getTaskId());
-    }
+    pendingTasks.add(offerReq.getTaskInfo().getTaskId());
   }
 
   private List<String> taskIdsToStrings(List<TaskID> taskIds) {
@@ -208,17 +205,6 @@ public class KafkaUpdateBlock implements Block {
     }
 
     return taskIdStrings;
-  }
-
-  public List<TaskID> getUpdateIds() {
-    List<TaskID> taskIds = new ArrayList<TaskID>();
-    TaskInfo taskInfo = getTaskInfo();
-
-    if (taskInfo != null) {
-      taskIds.add(taskInfo.getTaskId());
-    }
-
-    return taskIds;
   }
 
 
@@ -280,5 +266,16 @@ public class KafkaUpdateBlock implements Block {
       || taskStatus.getState().equals(TaskState.TASK_KILLED)
       || taskStatus.getState().equals(TaskState.TASK_LOST)
       || taskStatus.getState().equals(TaskState.TASK_ERROR);
+  }
+
+  private List<TaskID> getUpdateIds() {
+    List<TaskID> taskIds = new ArrayList<TaskID>();
+    TaskInfo taskInfo = getTaskInfo();
+
+    if (taskInfo != null) {
+      taskIds.add(taskInfo.getTaskId());
+    }
+
+    return taskIds;
   }
 }

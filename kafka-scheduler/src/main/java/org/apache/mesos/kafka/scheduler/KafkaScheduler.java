@@ -1,33 +1,39 @@
 package org.apache.mesos.kafka.scheduler;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Observable;
+
 import io.dropwizard.setup.Environment;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
 import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos.*;
 import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
+
 import org.apache.mesos.kafka.config.ConfigStateUpdater;
 import org.apache.mesos.kafka.config.ConfigStateValidator.ValidationError;
 import org.apache.mesos.kafka.config.ConfigStateValidator.ValidationException;
 import org.apache.mesos.kafka.config.KafkaConfigState;
 import org.apache.mesos.kafka.config.KafkaSchedulerConfiguration;
 import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
-import org.apache.mesos.kafka.offer.LogOperationRecorder;
 import org.apache.mesos.kafka.offer.PersistentOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.PersistentOperationRecorder;
 import org.apache.mesos.kafka.plan.KafkaStageManager;
 import org.apache.mesos.kafka.plan.KafkaUpdatePhase;
 import org.apache.mesos.kafka.state.KafkaStateService;
+
 import org.apache.mesos.offer.OfferAccepter;
+import org.apache.mesos.offer.ResourceCleaner;
+import org.apache.mesos.offer.ResourceCleanerScheduler;
+
 import org.apache.mesos.reconciliation.DefaultReconciler;
 import org.apache.mesos.reconciliation.Reconciler;
 import org.apache.mesos.scheduler.plan.*;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Observable;
 
 /**
  * Kafka Framework Scheduler.
@@ -40,8 +46,10 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
   private final KafkaConfigState configState;
   private final KafkaSchedulerConfiguration envConfig;
   private final KafkaStateService kafkaState;
+
   private final DefaultStageScheduler stageScheduler;
   private final KafkaRepairScheduler repairScheduler;
+
   private final OfferAccepter offerAccepter;
   private final Reconciler reconciler;
   private final KafkaStageManager stageManager;
@@ -81,9 +89,7 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
     addObserver(kafkaState);
 
     offerAccepter =
-      new OfferAccepter(Arrays.asList(
-            new LogOperationRecorder(),
-            new PersistentOperationRecorder(kafkaState)));
+      new OfferAccepter(Arrays.asList(new PersistentOperationRecorder(kafkaState)));
 
     KafkaOfferRequirementProvider offerRequirementProvider =
       new PersistentOfferRequirementProvider(kafkaState, configState);
@@ -104,7 +110,6 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
     addObserver(stageManager);
 
     stageScheduler = new DefaultStageScheduler(offerAccepter);
-
     repairScheduler = new KafkaRepairScheduler(
         configState.getTargetName(),
         kafkaState,
@@ -203,9 +208,26 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
       acceptedOffers = stageScheduler.resourceOffers(driver, offers, block);
       List<Offer> unacceptedOffers = filterAcceptedOffers(offers, acceptedOffers);
       acceptedOffers.addAll(repairScheduler.resourceOffers(driver, unacceptedOffers, block));
+
+      ResourceCleanerScheduler cleanerScheduler = getCleanerScheduler();
+      if (cleanerScheduler != null) {
+        acceptedOffers.addAll(getCleanerScheduler().resourceOffers(driver, offers)); 
+      }
     }
 
     declineOffers(driver, acceptedOffers, offers);
+  }
+
+  private ResourceCleanerScheduler getCleanerScheduler() {
+    try {
+      ResourceCleaner cleaner = new ResourceCleaner(
+          kafkaState.getExpectedResourceIds(),
+          kafkaState.getExpectedPersistenceIds());
+      return new ResourceCleanerScheduler(cleaner, offerAccepter);
+    } catch (Exception ex) {
+      log.error("Failed to construct ResourceCleaner with exception:", ex);
+      return null;
+    }
   }
 
   private List<Offer> filterAcceptedOffers(List<Offer> offers, List<OfferID> acceptedOfferIds) {

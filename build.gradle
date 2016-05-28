@@ -9,7 +9,7 @@ allprojects {
 
 ext {
   cliVersion = "0.2.5"
-  serviceVersion = "0.9.0.1"
+  serviceVersion = "0.10.0.0"
 }
 
 idea {

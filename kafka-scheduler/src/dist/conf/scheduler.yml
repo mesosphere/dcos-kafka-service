@@ -35,6 +35,7 @@ schedulerConfiguration:
       maxConnectionsPerIpOverrides: ${KAFKA_OVERRIDE_MAX_CONNECTIONS_PER_IP_OVERRIDES}
       leaderImbalanceCheckIntervalSeconds: ${KAFKA_OVERRIDE_LEADER_IMBALANCE_CHECK_INTERVAL_SECONDS}
       interBrokerProtocolVersion: ${KAFKA_OVERRIDE_INTER_BROKER_PROTOCOL_VERSION}
+      logMessageFormatVersion: ${KAFKA_OVERRIDE_LOG_MESSAGE_FORMAT_VERSION}
       replicaSocketTimeoutMs: ${KAFKA_OVERRIDE_REPLICA_SOCKET_TIMEOUT_MS}
       groupMaxSessionTimeoutMs: ${KAFKA_OVERRIDE_GROUP_MAX_SESSION_TIMEOUT_MS}
       metricsNumSamples: ${KAFKA_OVERRIDE_METRICS_NUM_SAMPLES}

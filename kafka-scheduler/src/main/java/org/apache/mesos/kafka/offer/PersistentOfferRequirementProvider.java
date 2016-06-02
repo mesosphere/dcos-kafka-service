@@ -1,42 +1,25 @@
 package org.apache.mesos.kafka.offer;
 
 import com.google.common.base.Joiner;
-
-import java.util.Arrays;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import org.apache.mesos.Protos.CommandInfo;
+import org.apache.mesos.Protos.*;
 import org.apache.mesos.Protos.Environment.Variable;
-import org.apache.mesos.Protos.Label;
-import org.apache.mesos.Protos.Labels;
-import org.apache.mesos.Protos.Resource;
-import org.apache.mesos.Protos.SlaveID;
-import org.apache.mesos.Protos.TaskID;
-import org.apache.mesos.Protos.TaskInfo;
-import org.apache.mesos.Protos.Value;
 import org.apache.mesos.Protos.Value.Range;
-
 import org.apache.mesos.kafka.config.BrokerConfiguration;
 import org.apache.mesos.kafka.config.KafkaConfigState;
 import org.apache.mesos.kafka.config.KafkaSchedulerConfiguration;
 import org.apache.mesos.kafka.state.KafkaStateService;
-
 import org.apache.mesos.offer.OfferRequirement;
 import org.apache.mesos.offer.PlacementStrategy;
 import org.apache.mesos.offer.ResourceUtils;
-
 import org.apache.mesos.protobuf.CommandInfoBuilder;
 import org.apache.mesos.protobuf.EnvironmentBuilder;
 import org.apache.mesos.protobuf.LabelBuilder;
 import org.apache.mesos.protobuf.ValueBuilder;
+
+import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class PersistentOfferRequirementProvider implements KafkaOfferRequirementProvider {
   private final Log log = LogFactory.getLog(PersistentOfferRequirementProvider.class);
@@ -180,6 +163,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     taskEnv.put(overridePrefix + "LOG_DIRS", containerPath + "/" + brokerName);
     taskEnv.put(overridePrefix + "PORT", Long.toString(port));
     taskEnv.put(overridePrefix + "LISTENERS", "PLAINTEXT://:" + port);
+    taskEnv.put("KAFKA_HEAP_OPTS", String.format("-Xms%1$dM -Xmx%1$dM", config.getBrokerConfiguration().getHeap().getSizeMb()));
 
     List<String> commands = new ArrayList<>();
     commands.add("export PATH=$(ls -d $MESOS_SANDBOX/jre*/bin):$PATH"); // find directory that starts with "jre" containing "bin"

@@ -160,26 +160,38 @@ public class PersistentOfferRequirementProviderTest {
     Assert.assertEquals(testKafkaUri, cmd.getUrisList().get(1).getValue());
     Assert.assertEquals(testOverriderUri, cmd.getUrisList().get(2).getValue());
 
+    final Environment environment = cmd.getEnvironment();
     String portString = String.valueOf(portsResource.getRanges().getRangeList().get(0).getBegin());
-    Assert.assertEquals(8, cmd.getEnvironment().getVariablesList().size());
-    Assert.assertEquals("KAFKA_OVERRIDE_ZOOKEEPER_CONNECT", cmd.getEnvironment().getVariablesList().get(0).getName());
-    Assert.assertEquals(testKafkaZkAddress + "/" + testFrameworkName, cmd.getEnvironment().getVariablesList().get(0).getValue());
-    Assert.assertEquals("FRAMEWORK_NAME", cmd.getEnvironment().getVariablesList().get(1).getName());
-    Assert.assertEquals(testFrameworkName, cmd.getEnvironment().getVariablesList().get(1).getValue());
-    Assert.assertEquals("KAFKA_OVERRIDE_LOG_DIRS", cmd.getEnvironment().getVariablesList().get(2).getName());
-    Assert.assertTrue(cmd.getEnvironment().getVariablesList().get(2).getValue().contains("kafka-volume"));
-    Assert.assertTrue(cmd.getEnvironment().getVariablesList().get(2).getValue().contains(testTaskName));
-    Assert.assertEquals("KAFKA_OVERRIDE_LISTENERS", cmd.getEnvironment().getVariablesList().get(3).getName());
-    Assert.assertTrue(cmd.getEnvironment().getVariablesList().get(3).getValue().contains("PLAINTEXT"));
-    Assert.assertTrue(cmd.getEnvironment().getVariablesList().get(3).getValue().contains(portString));
-    Assert.assertEquals("KAFKA_VER_NAME", cmd.getEnvironment().getVariablesList().get(4).getName());
-    Assert.assertEquals(testKafkaVerName, cmd.getEnvironment().getVariablesList().get(4).getValue());
-    Assert.assertEquals("CONFIG_ID", cmd.getEnvironment().getVariablesList().get(5).getName());
-    Assert.assertEquals(testConfigName, cmd.getEnvironment().getVariablesList().get(5).getValue());
-    Assert.assertEquals("KAFKA_OVERRIDE_PORT", cmd.getEnvironment().getVariablesList().get(6).getName());
-    Assert.assertEquals(portString, cmd.getEnvironment().getVariablesList().get(6).getValue());
-    Assert.assertEquals("KAFKA_OVERRIDE_BROKER_ID", cmd.getEnvironment().getVariablesList().get(7).getName());
-    Assert.assertEquals(String.valueOf(0), cmd.getEnvironment().getVariablesList().get(7).getValue());
+    Assert.assertEquals(9, environment.getVariablesList().size());
+    Map<String, String> expectedEnvMap = new HashMap<>();
+    expectedEnvMap.put("KAFKA_OVERRIDE_ZOOKEEPER_CONNECT", testKafkaZkAddress + "/" + testFrameworkName);
+    expectedEnvMap.put("FRAMEWORK_NAME", testFrameworkName);
+    expectedEnvMap.put("KAFKA_OVERRIDE_LOG_DIRS", "kafka-volume-9a67ba10-644c-4ef2-b764-e7df6e6a66e5/broker-0");
+    expectedEnvMap.put("KAFKA_OVERRIDE_LISTENERS", "PLAINTEXT://:123a");
+    expectedEnvMap.put("KAFKA_VER_NAME", testKafkaVerName);
+    expectedEnvMap.put("CONFIG_ID", testConfigName);
+    expectedEnvMap.put("KAFKA_OVERRIDE_PORT", portString);
+    expectedEnvMap.put("KAFKA_OVERRIDE_BROKER_ID", String.valueOf(0));
+    expectedEnvMap.put("KAFKA_HEAP_OPTS", "-Xms500M -Xmx500M");
+
+    System.out.println(expectedEnvMap);
+
+    for (int i = 0; i < 9; i++) {
+      final String envVarName = environment.getVariablesList().get(i).getName();
+      Assert.assertTrue("Cannot find env key: " + envVarName, expectedEnvMap.containsKey(envVarName));
+
+      if ("KAFKA_OVERRIDE_LOG_DIRS".equals(envVarName)) {
+        Assert.assertTrue(environment.getVariablesList().get(i).getValue().contains("kafka-volume"));
+        Assert.assertTrue(environment.getVariablesList().get(i).getValue().contains(testTaskName));
+      } else if ("KAFKA_OVERRIDE_LISTENERS".equals(envVarName)) {
+        Assert.assertTrue(environment.getVariablesList().get(i).getValue().contains("PLAINTEXT"));
+        Assert.assertTrue(environment.getVariablesList().get(i).getValue().contains(portString));
+      } else {
+        final String envVarValue = environment.getVariablesList().get(i).getValue();
+        Assert.assertTrue("Cannot find env value: " + envVarValue, expectedEnvMap.containsValue(envVarValue));
+      }
+    }
+
 
     Assert.assertEquals(288, cmd.getValue().length());
   }

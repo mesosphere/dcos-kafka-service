@@ -7,6 +7,7 @@ import org.apache.mesos.Protos.*;
 import org.apache.mesos.Protos.Environment.Variable;
 import org.apache.mesos.Protos.Value.Range;
 import org.apache.mesos.kafka.config.BrokerConfiguration;
+import org.apache.mesos.kafka.config.HeapConfig;
 import org.apache.mesos.kafka.config.KafkaConfigState;
 import org.apache.mesos.kafka.config.KafkaSchedulerConfiguration;
 import org.apache.mesos.kafka.state.KafkaStateService;
@@ -63,11 +64,49 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     taskBuilder = updateMem(taskBuilder, brokerConfig);
     taskBuilder = updateDisk(taskBuilder, brokerConfig);
     taskBuilder = updateCmd(taskBuilder, configName);
+    taskBuilder = updateKafkaHeapOpts(taskBuilder, brokerConfig);
 
     OfferRequirement offerRequirement = new OfferRequirement(taskBuilder.build(), null, null);
     log.info("Got updated OfferRequirement with TaskInfo: " + offerRequirement.getTaskInfo());
 
     return offerRequirement;
+  }
+
+  private String getKafkaHeapOpts(HeapConfig heapConfig) {
+    return String.format("-Xms%1$dM -Xmx%1$dM", heapConfig.getSizeMb());
+  }
+
+  private TaskInfo.Builder updateKafkaHeapOpts(TaskInfo.Builder taskBuilder, BrokerConfiguration brokerConfig) {
+    final CommandInfo oldCommand = taskBuilder.getCommand();
+    final Environment oldEnvironment = oldCommand.getEnvironment();
+
+    final Map<String, String> newEnvMap = fromEnvironmentToMap(oldEnvironment);
+    newEnvMap.put("KAFKA_HEAP_OPTS", getKafkaHeapOpts(brokerConfig.getHeap()));
+
+    final CommandInfo.Builder newCommandBuilder = CommandInfo.newBuilder(oldCommand);
+    newCommandBuilder.clearEnvironment();
+
+    final List<Variable> newEnvironmentVariables = EnvironmentBuilder.createEnvironment(newEnvMap);
+    newCommandBuilder.setEnvironment(Environment.newBuilder().addAllVariables(newEnvironmentVariables));
+
+    taskBuilder.clearCommand();
+    taskBuilder.setCommand(newCommandBuilder);
+
+    log.info("Updated env map:" + newEnvMap);
+
+    return taskBuilder;
+  }
+
+  private Map<String, String> fromEnvironmentToMap(Environment environment) {
+    Map<String, String> map = new HashMap<>();
+
+    final List<Variable> variablesList = environment.getVariablesList();
+
+    for (Variable variable : variablesList) {
+      map.put(variable.getName(), variable.getValue());
+    }
+
+    return map;
   }
 
   private TaskInfo.Builder updateCpu(TaskInfo.Builder taskBuilder, BrokerConfiguration brokerConfig) {
@@ -163,7 +202,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     taskEnv.put(overridePrefix + "LOG_DIRS", containerPath + "/" + brokerName);
     taskEnv.put(overridePrefix + "PORT", Long.toString(port));
     taskEnv.put(overridePrefix + "LISTENERS", "PLAINTEXT://:" + port);
-    taskEnv.put("KAFKA_HEAP_OPTS", String.format("-Xms%1$dM -Xmx%1$dM", config.getBrokerConfiguration().getHeap().getSizeMb()));
+    taskEnv.put("KAFKA_HEAP_OPTS", getKafkaHeapOpts(brokerConfig.getHeap()));
 
     List<String> commands = new ArrayList<>();
     commands.add("export PATH=$(ls -d $MESOS_SANDBOX/jre*/bin):$PATH"); // find directory that starts with "jre" containing "bin"

@@ -201,8 +201,11 @@ public class PersistentOfferRequirementProviderTest {
     when(configState.fetch(anyString())).thenReturn(schedulerConfig);
     Resource oldCpu = ResourceBuilder.reservedCpus(0.5, testRole, testPrincipal, testResourceId); 
     Resource oldMem = ResourceBuilder.reservedMem(500, testRole, testPrincipal, testResourceId); 
-    Resource oldDisk = ResourceBuilder.reservedDisk(2500, testRole, testPrincipal, testResourceId); 
+    Resource oldDisk = ResourceBuilder.reservedDisk(2500, testRole, testPrincipal, testResourceId);
+    final HeapConfig oldHeapConfig = new HeapConfig(256);
+
     TaskInfo oldTaskInfo = getTaskInfo(Arrays.asList(oldCpu, oldMem, oldDisk));
+    oldTaskInfo = configKafkaHeapOpts(oldTaskInfo, oldHeapConfig);
 
     PersistentOfferRequirementProvider provider = new PersistentOfferRequirementProvider(state, configState);
     OfferRequirement req = provider.getUpdateOfferRequirement(testConfigName, oldTaskInfo);
@@ -219,6 +222,12 @@ public class PersistentOfferRequirementProviderTest {
     Resource updatedDisk = getResource(req.getTaskInfo(), "disk");
     Assert.assertEquals("disk", updatedDisk.getName());
     Assert.assertEquals(5000, updatedDisk.getScalar().getValue(), 0.0);
+
+    final Environment environment = req.getTaskInfo().getCommand().getEnvironment();
+    final List<Environment.Variable> variablesList = environment.getVariablesList();
+    Assert.assertTrue(variablesList.size() == 1);
+    Assert.assertEquals("KAFKA_HEAP_OPTS", variablesList.get(0).getName());
+    Assert.assertEquals("-Xms500M -Xmx500M", variablesList.get(0).getValue());
   }
 
   private Resource getResource(TaskInfo taskInfo, String name) {
@@ -232,8 +241,19 @@ public class PersistentOfferRequirementProviderTest {
   }
    
 
-  private TaskInfo getTaskInfo(Resource resource) {
-    return getTaskInfo(Arrays.asList(resource));
+  private TaskInfo configKafkaHeapOpts(TaskInfo taskInfo, HeapConfig heapConfig) {
+    final CommandInfo oldCommand = taskInfo.getCommand();
+    final TaskInfo.Builder taskBuilder = TaskInfo.newBuilder(taskInfo);
+
+    final CommandInfo newCommand = CommandInfo.newBuilder(oldCommand)
+            .setEnvironment(Environment.newBuilder()
+                    .addVariables(Environment.Variable
+                            .newBuilder()
+                            .setName("KAFKA_HEAP_OPTS")
+                            .setValue("-Xms" + heapConfig.getSizeMb() + "M -Xmx" + heapConfig.getSizeMb() + "M")))
+            .build();
+    taskBuilder.setCommand(newCommand);
+    return taskBuilder.build();
   }
 
   private TaskInfo getTaskInfo(List<Resource> resources) {

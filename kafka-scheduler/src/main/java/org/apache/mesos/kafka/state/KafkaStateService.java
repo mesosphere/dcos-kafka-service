@@ -19,6 +19,7 @@ import org.apache.mesos.Protos.TaskStatus;
 
 import org.apache.mesos.kafka.offer.OfferUtils;
 import org.apache.mesos.offer.ResourceUtils;
+import org.apache.mesos.offer.TaskUtils;
 import org.apache.mesos.reconciliation.TaskStatusProvider;
 
 import org.apache.zookeeper.KeeperException.NoNodeException;
@@ -96,7 +97,7 @@ public class KafkaStateService implements Observer, TaskStatusProvider {
 
     for (String taskName : getTaskNames()) {
       TaskStatus taskStatus = getTaskStatus(taskName);
-      if (isTerminated(taskStatus)) {
+      if (TaskUtils.isTerminated(taskStatus)) {
         taskInfos.add(getTaskInfo(taskName));
       }
     }
@@ -287,15 +288,6 @@ public class KafkaStateService implements Observer, TaskStatusProvider {
     byte[] bytes = zkClient.getData().forPath(path);
     String element = new String(bytes, "UTF-8");
     return new JSONObject(element);
-  }
-
-  private boolean isTerminated(TaskStatus taskStatus) {
-    TaskState taskState = taskStatus.getState();
-    return taskState.equals(TaskState.TASK_FINISHED) ||
-      taskState.equals(TaskState.TASK_FAILED) ||
-      taskState.equals(TaskState.TASK_KILLED) ||
-      taskState.equals(TaskState.TASK_LOST) ||
-      taskState.equals(TaskState.TASK_ERROR);
   }
 
   private boolean isRunning(TaskStatus taskStatus) {

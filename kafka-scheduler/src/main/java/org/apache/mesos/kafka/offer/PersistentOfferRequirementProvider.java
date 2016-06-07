@@ -14,6 +14,7 @@ import org.apache.mesos.kafka.state.KafkaStateService;
 import org.apache.mesos.offer.OfferRequirement;
 import org.apache.mesos.offer.PlacementStrategy;
 import org.apache.mesos.offer.ResourceUtils;
+import org.apache.mesos.offer.TaskRequirement.InvalidTaskRequirementException;
 import org.apache.mesos.protobuf.CommandInfoBuilder;
 import org.apache.mesos.protobuf.EnvironmentBuilder;
 import org.apache.mesos.protobuf.LabelBuilder;
@@ -39,18 +40,20 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
 
   @Override
   public OfferRequirement getNewOfferRequirement(String configName, int brokerId) {
-    OfferRequirement offerRequirement = getNewOfferRequirementInternal(configName, brokerId);
-    log.info("Got new OfferRequirement with TaskInfo: " + offerRequirement.getTaskInfo());
-
-    return offerRequirement;
+    return getNewOfferRequirementInternal(configName, brokerId);
   }
 
   @Override
   public OfferRequirement getReplacementOfferRequirement(TaskInfo taskInfo) {
-    OfferRequirement offerRequirement = new OfferRequirement(taskInfo, null, null);
-    log.info("Got replacement OfferRequirement with TaskInfo: " + offerRequirement.getTaskInfo());
-
-    return offerRequirement;
+    try {
+      OfferRequirement offerRequirement =
+        new OfferRequirement(Arrays.asList(taskInfo), null, null, null);
+      log.info("Got replacement OfferRequirement with TaskInfo: " + taskInfo);
+      return offerRequirement;
+    } catch (InvalidTaskRequirementException e) {
+      log.warn("Failed to create replacement OfferRequirement with TaskInfo: " + taskInfo, e);
+      return null;
+    }
   }
 
   @Override
@@ -65,11 +68,18 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     taskBuilder = updateDisk(taskBuilder, brokerConfig);
     taskBuilder = updateCmd(taskBuilder, configName);
     taskBuilder = updateKafkaHeapOpts(taskBuilder, brokerConfig);
+    TaskInfo updatedTaskInfo = taskBuilder.build();
 
-    OfferRequirement offerRequirement = new OfferRequirement(taskBuilder.build(), null, null);
-    log.info("Got updated OfferRequirement with TaskInfo: " + offerRequirement.getTaskInfo());
-
-    return offerRequirement;
+    try {
+      OfferRequirement offerRequirement =
+          new OfferRequirement(Arrays.asList(updatedTaskInfo), null, null, null);
+      log.info("Got updated OfferRequirement with TaskInfo: " + updatedTaskInfo);
+      return offerRequirement;
+    } catch (InvalidTaskRequirementException e) {
+      log.warn("Failed to create update OfferRequirement with "
+          + "OrigTaskInfo[" + taskInfo + "] NewTaskInfo[" + updatedTaskInfo + "]", e);
+      return null;
+    }
   }
 
   private String getKafkaHeapOpts(HeapConfig heapConfig) {
@@ -145,17 +155,17 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
 
   private TaskInfo.Builder updateConfigTarget(TaskInfo.Builder taskBuilder, String configName) {
     LabelBuilder labelBuilder = new LabelBuilder();
- 
-    // Copy everything except config target label 
+
+    // Copy everything except config target label
     for (Label label : taskBuilder.getLabels().getLabelsList()) {
       String key = label.getKey();
       String value = label.getValue();
- 
+
       if (!key.equals(CONFIG_TARGET_KEY)) {
         labelBuilder.addLabel(key, value);
       }
     }
- 
+
     labelBuilder.addLabel(CONFIG_TARGET_KEY, configName);
     taskBuilder.setLabels(labelBuilder.build());
     return taskBuilder;
@@ -263,7 +273,14 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     PlacementStrategy placementStrategy = placementStrategyManager.getPlacementStrategy(config);
     List<SlaveID> avoidAgents = placementStrategy.getAgentsToAvoid(taskInfo);
     List<SlaveID> colocateAgents = placementStrategy.getAgentsToColocate(taskInfo);
-
-    return new OfferRequirement(taskInfo, avoidAgents, colocateAgents);
+    try {
+      OfferRequirement offerRequirement = new OfferRequirement(
+          Arrays.asList(taskInfo), null /* execInfo */, avoidAgents, colocateAgents);
+      log.info("Got new OfferRequirement with TaskInfo: " + taskInfo);
+      return offerRequirement;
+    } catch (InvalidTaskRequirementException e) {
+      log.warn("Failed to create new OfferRequirement with TaskInfo: " + taskInfo, e);
+      return null;
+    }
   }
 }

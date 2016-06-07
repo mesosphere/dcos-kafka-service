@@ -11,6 +11,7 @@ import org.apache.mesos.kafka.offer.OfferUtils;
 import org.apache.mesos.kafka.scheduler.KafkaScheduler;
 import org.apache.mesos.kafka.state.KafkaStateService;
 import org.apache.mesos.offer.OfferRequirement;
+import org.apache.mesos.offer.TaskRequirement;
 import org.apache.mesos.scheduler.plan.Block;
 import org.apache.mesos.scheduler.plan.Status;
 
@@ -194,7 +195,10 @@ public class KafkaUpdateBlock implements Block {
 
   private void setPendingTasks(OfferRequirement offerReq) {
     pendingTasks = new ArrayList<TaskID>();
-    pendingTasks.add(offerReq.getTaskInfo().getTaskId());
+    // in practice there should only be one TaskRequirement, see PersistentOfferRequirementProvider
+    for (TaskRequirement taskRequirement : offerReq.getTaskRequirements()) {
+      pendingTasks.add(taskRequirement.getTaskInfo().getTaskId());
+    }
   }
 
   private List<String> taskIdsToStrings(List<TaskID> taskIds) {

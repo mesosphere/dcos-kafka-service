@@ -6,9 +6,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import org.apache.mesos.kafka.config.KafkaConfigState;
 import org.apache.mesos.kafka.config.KafkaSchedulerConfiguration;
 import org.apache.mesos.kafka.state.KafkaStateService;
@@ -17,7 +14,6 @@ import org.apache.mesos.kafka.config.BrokerConfiguration;
 import org.apache.mesos.kafka.config.HeapConfig;
 import org.apache.mesos.kafka.config.KafkaConfiguration;
 import org.apache.mesos.offer.OfferRequirement;
-
 import org.apache.mesos.Protos.*;
 import org.apache.mesos.protobuf.*;
 
@@ -26,7 +22,6 @@ import org.mockito.MockitoAnnotations;
 import static org.mockito.Mockito.*;
 
 public class PersistentOfferRequirementProviderTest {
-  private final Log log = LogFactory.getLog(getClass());
 
   private final String testRole = "test-role";
   private final String testPrincipal = "test-principal";
@@ -99,7 +94,8 @@ public class PersistentOfferRequirementProviderTest {
     PersistentOfferRequirementProvider provider = new PersistentOfferRequirementProvider(state, configState);
     OfferRequirement req = provider.getNewOfferRequirement(testConfigName, 0);
 
-    TaskInfo taskInfo = req.getTaskInfo();
+    Assert.assertEquals(1, req.getTaskRequirements().size());
+    TaskInfo taskInfo = req.getTaskRequirements().iterator().next().getTaskInfo();
     Assert.assertEquals(taskInfo.getName(), "broker-0");
     Assert.assertTrue(taskInfo.getTaskId().getValue().contains("broker-0"));
     Assert.assertEquals(taskInfo.getSlaveId().getValue(), "");
@@ -199,8 +195,8 @@ public class PersistentOfferRequirementProviderTest {
   @Test
   public void testUpdateRequirement() {
     when(configState.fetch(anyString())).thenReturn(schedulerConfig);
-    Resource oldCpu = ResourceBuilder.reservedCpus(0.5, testRole, testPrincipal, testResourceId); 
-    Resource oldMem = ResourceBuilder.reservedMem(500, testRole, testPrincipal, testResourceId); 
+    Resource oldCpu = ResourceBuilder.reservedCpus(0.5, testRole, testPrincipal, testResourceId);
+    Resource oldMem = ResourceBuilder.reservedMem(500, testRole, testPrincipal, testResourceId);
     Resource oldDisk = ResourceBuilder.reservedDisk(2500, testRole, testPrincipal, testResourceId);
     final HeapConfig oldHeapConfig = new HeapConfig(256);
 
@@ -211,26 +207,30 @@ public class PersistentOfferRequirementProviderTest {
     OfferRequirement req = provider.getUpdateOfferRequirement(testConfigName, oldTaskInfo);
     Assert.assertNotNull(req);
 
-    Resource updatedCpus = getResource(req.getTaskInfo(), "cpus");
+    Resource updatedCpus = getResource(req, "cpus");
     Assert.assertEquals("cpus", updatedCpus.getName());
     Assert.assertEquals(1, updatedCpus.getScalar().getValue(), 0.0);
 
-    Resource updatedMem = getResource(req.getTaskInfo(), "mem");
+    Resource updatedMem = getResource(req, "mem");
     Assert.assertEquals("mem", updatedMem.getName());
     Assert.assertEquals(1000, updatedMem.getScalar().getValue(), 0.0);
 
-    Resource updatedDisk = getResource(req.getTaskInfo(), "disk");
+    Resource updatedDisk = getResource(req, "disk");
     Assert.assertEquals("disk", updatedDisk.getName());
     Assert.assertEquals(5000, updatedDisk.getScalar().getValue(), 0.0);
 
-    final Environment environment = req.getTaskInfo().getCommand().getEnvironment();
+    Assert.assertEquals(1, req.getTaskRequirements().size());
+    final TaskInfo taskInfo = req.getTaskRequirements().iterator().next().getTaskInfo();
+    final Environment environment = taskInfo.getCommand().getEnvironment();
     final List<Environment.Variable> variablesList = environment.getVariablesList();
     Assert.assertTrue(variablesList.size() == 1);
     Assert.assertEquals("KAFKA_HEAP_OPTS", variablesList.get(0).getName());
     Assert.assertEquals("-Xms500M -Xmx500M", variablesList.get(0).getValue());
   }
 
-  private Resource getResource(TaskInfo taskInfo, String name) {
+  private static Resource getResource(OfferRequirement req, String name) {
+    Assert.assertEquals(1, req.getTaskRequirements().size());
+    TaskInfo taskInfo = req.getTaskRequirements().iterator().next().getTaskInfo();
     for (Resource resource : taskInfo.getResourcesList()) {
       if (name.equals(resource.getName())) {
         return resource;
@@ -239,7 +239,6 @@ public class PersistentOfferRequirementProviderTest {
 
     return null;
   }
-   
 
   private TaskInfo configKafkaHeapOpts(TaskInfo taskInfo, HeapConfig heapConfig) {
     final CommandInfo oldCommand = taskInfo.getCommand();

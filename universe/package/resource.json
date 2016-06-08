@@ -11,5 +11,33 @@
     "icon-small": "https://d1vubr0evspla.cloudfront.net/img/icon-small.png",
     "icon-medium": "https://d1vubr0evspla.cloudfront.net/img/icon-medium.png",
     "icon-large": "https://d1vubr0evspla.cloudfront.net/img/icon-large.png"
+  },
+  "cli":{
+    "binaries":{
+      "darwin":{
+        "x86-64":{
+          "contentHash":[
+            {
+              "algo":"sha256",
+              "value":"{{cli-darwin-sha256}}"
+            }
+          ],
+          "kind":"executable",
+          "url":"{{artifact-dir}}/cli/darwin/dcos-kafka"
+        }
+      },
+      "linux":{
+        "x86-64":{
+          "contentHash":[
+            {
+              "algo":"sha256",
+              "value":"{{cli-linux-sha256}}"
+            }
+          ],
+          "kind":"executable",
+          "url":"{{artifact-dir}}/cli/linux/dcos-kafka"
+        }
+      }
+    }
   }
 }

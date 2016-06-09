@@ -27,8 +27,7 @@ echo Running with dcos-tests rev: $(git --git-dir=dcos-tests/.git rev-parse HEAD
 
 if [ -n "$JENKINS_HOME" ]; then
     # we're in a CI build. send outcomes to github.
-    export GITHUB_COMMIT_STATUS_URL="http://velocity.mesosphere.com/service/velocity/job/${JOB_NAME}/${BUILD_ID}/console"
-    export GIT_REPOSITORY_ROOT=$(pwd)
+    # note: we expect upstream to specify GITHUB_COMMIT_STATUS_URL and GIT_REPOSITORY_ROOT in this case
     _notify_github() {
         ./dcos-tests/build/update-github-status.sh $1 $2 $3
     }

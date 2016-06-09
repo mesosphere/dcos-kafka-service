@@ -11,6 +11,11 @@ if [ -z "$AWS_ACCESS_KEY_ID" -o -z "$AWS_SECRET_ACCESS_KEY" ]; then
     exit 1
 fi
 
+case ${PWD} in
+    *\ * ) echo "PWD=$PWD has at least one space char. This will break pip. Please move to a directory without spaces :)" ;;
+    * )  ;;
+esac
+
 # In theory, we could use Jenkins' "Multi SCM" script, but good luck with getting auto-build to work with that
 # Instead, clone the secondary 'dcos-tests' repo manually.
 if [ ! -d dcos-tests ]; then

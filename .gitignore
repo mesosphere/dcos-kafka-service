@@ -25,3 +25,7 @@ build/
 
 # OS X
 .DS_Store
+
+# created by build scripts (see build.sh/build-docker.sh)
+/Dockerfile
+/dcos-tests/

@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# This script does a full build/upload of Kafka artifacts.
+# This script is invoked by Jenkins CI, as well as by build-docker.sh.
+
 # Prevent jenkins from immediately killing the script when a step fails, allowing us to notify github:
 set +e
 
@@ -19,6 +22,8 @@ echo Running with dcos-tests rev: $(git --git-dir=dcos-tests/.git rev-parse HEAD
 
 if [ -n "$JENKINS_HOME" ]; then
     # we're in a CI build. send outcomes to github.
+    export GITHUB_COMMIT_STATUS_URL="http://velocity.mesosphere.com/service/velocity/job/${JOB_NAME}/${BUILD_ID}/console"
+    export GIT_REPOSITORY_ROOT=$(pwd)
     _notify_github() {
         ./dcos-tests/build/update-github-status.sh $1 $2 $3
     }
@@ -28,9 +33,6 @@ else
         echo "[STATUS:build.sh] $2 $1: $3"
     }
 fi
-
-export GITHUB_COMMIT_STATUS_URL="http://velocity.mesosphere.com/service/velocity/job/${JOB_NAME}/${BUILD_ID}/console"
-export GIT_REPOSITORY_ROOT=$(pwd)
 
 # Build steps for Kafka-private
 

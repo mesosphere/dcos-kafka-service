@@ -19,7 +19,7 @@
 ``` bash
 git clone https://github.com/mesosphere/kafka-private
 cd kafka-private
-./gradlew shadowjar # creates kafka-scheduler/build/libs/kafka-scheduler-uber.jar
+./gradlew clean check build
 ```
 
 ### Unit Test

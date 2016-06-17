@@ -1,0 +1,17 @@
+dependencies {
+    compile project(':kafka-commons')
+    compile "ch.qos.logback:logback-classic:1.1.3"
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.3'
+}
+
+distributions {
+    main {
+        baseName = 'executor'
+        version = ""
+    }
+}
+
+mainClassName = 'com.mesosphere.dcos.kafka.executor.Main'

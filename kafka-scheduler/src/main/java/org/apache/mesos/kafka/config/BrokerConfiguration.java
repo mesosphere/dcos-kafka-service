@@ -23,6 +23,10 @@ public class BrokerConfiguration {
     @JsonProperty("overriderUri")
     private String overriderUri;
 
+    public BrokerConfiguration() {
+
+    }
+
     @JsonCreator
     public BrokerConfiguration(
             @JsonProperty("cpus")double cpus,

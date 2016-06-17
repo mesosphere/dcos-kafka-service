@@ -18,7 +18,6 @@ import org.apache.mesos.Protos.TaskState;
 import org.apache.mesos.Protos.TaskStatus;
 
 import org.apache.mesos.kafka.offer.OfferUtils;
-import org.apache.mesos.offer.ResourceUtils;
 import org.apache.mesos.offer.TaskUtils;
 import org.apache.mesos.reconciliation.TaskStatusProvider;
 
@@ -160,50 +159,22 @@ public class KafkaStateService implements Observer, TaskStatusProvider {
     return taskIds;
   }
 
-  public List<String> getExpectedResourceIds() throws Exception {
-    List<String> resourceIds = new ArrayList<String>();
+  public List<Resource> getExpectedResources() {
+    List<Resource> resources = new ArrayList<>();
 
-    for (TaskInfo taskInfo : getTaskInfos()) {
-      resourceIds.addAll(getExpectedResourceIds(taskInfo));
-    }
-
-    return resourceIds;
-  }
-
-  public List<String> getExpectedPersistenceIds() throws Exception {
-    List<String> persistenceIds = new ArrayList<String>();
-
-    for (TaskInfo taskInfo : getTaskInfos()) {
-      persistenceIds.addAll(getExpectedPersistenceIds(taskInfo));
-    }
-
-    return persistenceIds;
-  }
-
-  private List<String> getExpectedResourceIds(TaskInfo taskInfo) {
-    List<String> resourceIds = new ArrayList<String>();
-
-    for (Resource resource : taskInfo.getResourcesList()) {
-      String resourceId = ResourceUtils.getResourceId(resource);
-      if (resourceId != null) {
-        resourceIds.add(resourceId);
+    try {
+      for (TaskInfo taskInfo : getTaskInfos()) {
+        resources.addAll(taskInfo.getResourcesList());
+        if (taskInfo.hasExecutor()) {
+          resources.addAll(taskInfo.getExecutor().getResourcesList());
+        }
       }
+    } catch (Exception ex) {
+      log.error("Failed to retrieve all Task information with exception: ", ex);
+      return null;
     }
 
-    return resourceIds;
-  }
-
-  private List<String> getExpectedPersistenceIds(TaskInfo taskInfo) {
-    List<String> persistenceIds = new ArrayList<String>();
-
-    for (Resource resource : taskInfo.getResourcesList()) {
-      String persistenceId = ResourceUtils.getPersistenceId(resource);
-      if (persistenceId != null) {
-        persistenceIds.add(persistenceId);
-      }
-    }
-
-    return persistenceIds;
+    return resources;
   }
 
   public String getTaskIdForBroker(Integer brokerId) throws Exception {

@@ -68,4 +68,5 @@ _notify_github success build "Build succeeded"
   universe/package/ \
   kafka-scheduler/build/distributions/*.zip \
   kafka-config-overrider/build/distributions/*zip \
-  cli/dist/dcos-kafka-*.tar.gz
+  cli/dist/dcos-kafka-*.tar.gz \
+  kafka-executor/build/distributions/*.zip 

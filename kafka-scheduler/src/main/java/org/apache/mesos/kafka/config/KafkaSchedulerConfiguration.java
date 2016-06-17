@@ -2,10 +2,19 @@ package org.apache.mesos.kafka.config;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.dataformat.yaml.snakeyaml.Yaml;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.mesos.config.ConfigStoreException;
+import org.apache.mesos.config.Configuration;
 
 import java.util.Objects;
 
-public class KafkaSchedulerConfiguration {
+@JsonSerialize
+public class KafkaSchedulerConfiguration implements Configuration {
+    private static final Log LOGGER = LogFactory.getLog(KafkaSchedulerConfiguration.class);
+
     public static final String KAFKA_OVERRIDE_PREFIX = "KAFKA_OVERRIDE_";
 
     @JsonProperty("service")
@@ -17,14 +26,22 @@ public class KafkaSchedulerConfiguration {
     @JsonProperty("kafka")
     private KafkaConfiguration kafkaConfiguration;
 
+    @JsonProperty("executor")
+    private ExecutorConfiguration executorConfiguration;
+
+    public KafkaSchedulerConfiguration() {
+    }
+
     @JsonCreator
     public KafkaSchedulerConfiguration(
             @JsonProperty("service")ServiceConfiguration serviceConfiguration,
             @JsonProperty("broker")BrokerConfiguration brokerConfiguration,
-            @JsonProperty("kafka")KafkaConfiguration kafkaConfiguration) {
+            @JsonProperty("kafka")KafkaConfiguration kafkaConfiguration,
+            @JsonProperty("executor")ExecutorConfiguration executorConfiguration) {
         this.serviceConfiguration = serviceConfiguration;
         this.brokerConfiguration = brokerConfiguration;
         this.kafkaConfiguration = kafkaConfiguration;
+        this.executorConfiguration = executorConfiguration;
     }
 
     public ServiceConfiguration getServiceConfiguration() {
@@ -54,12 +71,22 @@ public class KafkaSchedulerConfiguration {
         this.kafkaConfiguration = kafkaConfiguration;
     }
 
+    public ExecutorConfiguration getExecutorConfiguration() {
+        return executorConfiguration;
+    }
+
+    @JsonProperty("executor")
+    public void setExecutorConfiguration(ExecutorConfiguration executorConfiguration) {
+        this.executorConfiguration = executorConfiguration;
+    }
+
     @Override
     public String toString() {
         return "KafkaSchedulerConfiguration{" +
                 "serviceConfiguration=" + serviceConfiguration +
                 ", brokerConfiguration=" + brokerConfiguration +
                 ", kafkaConfiguration=" + kafkaConfiguration +
+                ", executorConfiguration=" + executorConfiguration +
                 '}';
     }
 
@@ -76,11 +103,27 @@ public class KafkaSchedulerConfiguration {
         KafkaSchedulerConfiguration that = (KafkaSchedulerConfiguration) o;
         return Objects.equals(serviceConfiguration, that.serviceConfiguration) &&
                 Objects.equals(brokerConfiguration, that.brokerConfiguration) &&
+                Objects.equals(executorConfiguration, that.executorConfiguration) &&
                 Objects.equals(kafkaConfiguration, that.kafkaConfiguration);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(serviceConfiguration, brokerConfiguration, kafkaConfiguration);
+        return Objects.hash(serviceConfiguration, brokerConfiguration, kafkaConfiguration, executorConfiguration);
+    }
+
+    @Override
+    public byte[] getBytes() throws ConfigStoreException {
+        try {
+            final Yaml yaml = new Yaml();
+            return yaml.dump(this).getBytes();
+//            final YAMLFactory yamlFactory = new YAMLFactory();
+//            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+//            yamlFactory.createGenerator(baos).writeObject(this);
+//            return baos.toByteArray();
+        } catch (Exception e) {
+            LOGGER.error("Error occured while serializing the object: " + e);
+            throw new ConfigStoreException(e);
+        }
     }
 }

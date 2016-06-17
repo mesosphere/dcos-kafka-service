@@ -1,25 +1,26 @@
 package org.apache.mesos.kafka.offer;
 
-import java.util.*;
-
+import com.google.protobuf.InvalidProtocolBufferException;
+import com.mesosphere.dcos.kafka.common.KafkaTask;
+import org.apache.mesos.Protos.*;
+import org.apache.mesos.kafka.config.*;
+import org.apache.mesos.kafka.state.KafkaStateService;
+import org.apache.mesos.offer.OfferRequirement;
+import org.apache.mesos.offer.TaskRequirement;
+import org.apache.mesos.offer.TaskUtils;
+import org.apache.mesos.protobuf.CommandInfoBuilder;
+import org.apache.mesos.protobuf.ExecutorInfoBuilder;
+import org.apache.mesos.protobuf.ResourceBuilder;
+import org.apache.mesos.protobuf.TaskInfoBuilder;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import org.apache.mesos.kafka.config.KafkaConfigState;
-import org.apache.mesos.kafka.config.KafkaSchedulerConfiguration;
-import org.apache.mesos.kafka.state.KafkaStateService;
-import org.apache.mesos.kafka.config.ServiceConfiguration;
-import org.apache.mesos.kafka.config.BrokerConfiguration;
-import org.apache.mesos.kafka.config.HeapConfig;
-import org.apache.mesos.kafka.config.KafkaConfiguration;
-import org.apache.mesos.offer.OfferRequirement;
-import org.apache.mesos.Protos.*;
-import org.apache.mesos.protobuf.*;
-
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import static org.mockito.Mockito.*;
+
+import java.util.*;
+
+import static org.mockito.Mockito.when;
 
 public class PersistentOfferRequirementProviderTest {
 
@@ -29,7 +30,7 @@ public class PersistentOfferRequirementProviderTest {
   private final String testTaskName = "broker-0";
   private final String testTaskId = "test-task-id";
   private final String testSlaveId = "test-slave-id";
-  private final String testConfigName = "test-config-name";
+  private final String testConfigName = UUID.randomUUID().toString();
   private final String testFrameworkName = "test-framework-name";
   private final String testUser = "test-user";
   private final String testPlacementStrategy = "test-placement-strategy";
@@ -38,6 +39,7 @@ public class PersistentOfferRequirementProviderTest {
   private final String testKafkaUri = "test-kafka-uri";
   private final String testJavaUri = "test-java-uri";
   private final String testOverriderUri = "test-overrider-uri";
+  private final String testExecutorUri = "test-executor-uri";
   private final String testKafkaVerName = "test-kafka-ver-name";
   private final String testKafkaSandboxPath = "test-kafka-sandbox-path";
   private final String testKafkaZkUri = "test-kafka-zk-uri";
@@ -49,6 +51,7 @@ public class PersistentOfferRequirementProviderTest {
   private ServiceConfiguration serviceConfig;
   private BrokerConfiguration brokerConfig;
   private KafkaConfiguration kafkaConfig;
+  private ExecutorConfiguration executorConfig;
 
   @Before public void initMocks() {
     MockitoAnnotations.initMocks(this);
@@ -76,10 +79,17 @@ public class PersistentOfferRequirementProviderTest {
         testKafkaZkUri,
         testKafkaZkAddress,
         null);
+    executorConfig = new ExecutorConfiguration(
+        1,
+        256,
+        0,
+        testExecutorUri
+    );
     schedulerConfig = new KafkaSchedulerConfiguration(
         serviceConfig,
         brokerConfig,
-        kafkaConfig);
+        kafkaConfig,
+        executorConfig);
   }
 
   @Test
@@ -89,12 +99,12 @@ public class PersistentOfferRequirementProviderTest {
   }
 
   @Test
-  public void testNewRequirement() {
-    when(configState.fetch(anyString())).thenReturn(schedulerConfig);
+  public void testNewRequirement() throws TaskRequirement.InvalidTaskRequirementException, InvalidProtocolBufferException {
+    when(configState.fetch(UUID.fromString(testConfigName))).thenReturn(schedulerConfig);
+    when(state.getFrameworkId()).thenReturn(FrameworkID.newBuilder().setValue("abcd").build());
     PersistentOfferRequirementProvider provider = new PersistentOfferRequirementProvider(state, configState);
     OfferRequirement req = provider.getNewOfferRequirement(testConfigName, 0);
 
-    Assert.assertEquals(1, req.getTaskRequirements().size());
     TaskInfo taskInfo = req.getTaskRequirements().iterator().next().getTaskInfo();
     Assert.assertEquals(taskInfo.getName(), "broker-0");
     Assert.assertTrue(taskInfo.getTaskId().getValue().contains("broker-0"));
@@ -148,17 +158,24 @@ public class PersistentOfferRequirementProviderTest {
 
     Labels labels = taskInfo.getLabels();
     Assert.assertEquals("config_target", labels.getLabelsList().get(0).getKey());
-    Assert.assertEquals("test-config-name", labels.getLabelsList().get(0).getValue());
+    Assert.assertEquals(testConfigName, labels.getLabelsList().get(0).getValue());
 
-    CommandInfo cmd = taskInfo.getCommand();
-    Assert.assertEquals(3, cmd.getUrisList().size());
+    final ExecutorInfo executorInfo = req.getExecutorRequirement().getExecutorInfo();
+
+    CommandInfo cmd = executorInfo.getCommand();
+    Assert.assertEquals(4, cmd.getUrisList().size());
     Assert.assertEquals(testJavaUri, cmd.getUrisList().get(0).getValue());
     Assert.assertEquals(testKafkaUri, cmd.getUrisList().get(1).getValue());
     Assert.assertEquals(testOverriderUri, cmd.getUrisList().get(2).getValue());
+    Assert.assertEquals(testExecutorUri, cmd.getUrisList().get(3).getValue());
 
-    final Environment environment = cmd.getEnvironment();
     String portString = String.valueOf(portsResource.getRanges().getRangeList().get(0).getBegin());
-    Assert.assertEquals(9, environment.getVariablesList().size());
+
+    final CommandInfo kafkaTaskData = CommandInfo.parseFrom(taskInfo.getData());
+    final Map<String, String> envFromTask = TaskUtils.fromEnvironmentToMap(kafkaTaskData.getEnvironment());
+
+    Assert.assertEquals(10, envFromTask.size());
+
     Map<String, String> expectedEnvMap = new HashMap<>();
     expectedEnvMap.put("KAFKA_OVERRIDE_ZOOKEEPER_CONNECT", testKafkaZkAddress + "/" + testFrameworkName);
     expectedEnvMap.put("FRAMEWORK_NAME", testFrameworkName);
@@ -169,35 +186,40 @@ public class PersistentOfferRequirementProviderTest {
     expectedEnvMap.put("KAFKA_OVERRIDE_PORT", portString);
     expectedEnvMap.put("KAFKA_OVERRIDE_BROKER_ID", String.valueOf(0));
     expectedEnvMap.put("KAFKA_HEAP_OPTS", "-Xms500M -Xmx500M");
+    expectedEnvMap.put("TASK_TYPE", KafkaTask.BROKER.name());
+    expectedEnvMap.put("JMX_PORT", "11500");
 
     System.out.println(expectedEnvMap);
 
-    for (int i = 0; i < 9; i++) {
-      final String envVarName = environment.getVariablesList().get(i).getName();
+    final Set<String> envVarNames = envFromTask.keySet();
+    for (String envVarName:envVarNames) {
       Assert.assertTrue("Cannot find env key: " + envVarName, expectedEnvMap.containsKey(envVarName));
 
+      final String envVarValue = envFromTask.get(envVarName);
       if ("KAFKA_OVERRIDE_LOG_DIRS".equals(envVarName)) {
-        Assert.assertTrue(environment.getVariablesList().get(i).getValue().contains("kafka-volume"));
-        Assert.assertTrue(environment.getVariablesList().get(i).getValue().contains(testTaskName));
+        Assert.assertTrue(envVarValue.contains("kafka-volume"));
+        Assert.assertTrue(envVarValue.contains(testTaskName));
       } else if ("KAFKA_OVERRIDE_LISTENERS".equals(envVarName)) {
-        Assert.assertTrue(environment.getVariablesList().get(i).getValue().contains("PLAINTEXT"));
-        Assert.assertTrue(environment.getVariablesList().get(i).getValue().contains(portString));
+        Assert.assertTrue(envVarValue.contains("PLAINTEXT"));
+        Assert.assertTrue(envVarValue.contains(portString));
+      } else if ("JMX_PORT".equals(envVarName)) {
+        final int port = Integer.parseInt(envVarValue);
+        Assert.assertTrue(port >= 11000 && port <= 12000);
       } else {
-        final String envVarValue = environment.getVariablesList().get(i).getValue();
         Assert.assertTrue("Cannot find env value: " + envVarValue, expectedEnvMap.containsValue(envVarValue));
       }
     }
 
-
-    Assert.assertEquals(288, cmd.getValue().length());
+    Assert.assertEquals(286, kafkaTaskData.getValue().length());
+    Assert.assertEquals(83, cmd.getValue().length());
   }
 
   @Test
-  public void testUpdateRequirement() {
-    when(configState.fetch(anyString())).thenReturn(schedulerConfig);
-    Resource oldCpu = ResourceBuilder.reservedCpus(0.5, testRole, testPrincipal, testResourceId);
-    Resource oldMem = ResourceBuilder.reservedMem(500, testRole, testPrincipal, testResourceId);
-    Resource oldDisk = ResourceBuilder.reservedDisk(2500, testRole, testPrincipal, testResourceId);
+  public void testUpdateRequirement() throws TaskRequirement.InvalidTaskRequirementException, InvalidProtocolBufferException {
+    when(configState.fetch(UUID.fromString(testConfigName))).thenReturn(schedulerConfig);
+    Resource oldCpu = ResourceBuilder.reservedCpus(0.5, testRole, testPrincipal, testResourceId); 
+    Resource oldMem = ResourceBuilder.reservedMem(500, testRole, testPrincipal, testResourceId); 
+    Resource oldDisk = ResourceBuilder.reservedDisk(2500, testRole, testPrincipal, testResourceId); 
     final HeapConfig oldHeapConfig = new HeapConfig(256);
 
     TaskInfo oldTaskInfo = getTaskInfo(Arrays.asList(oldCpu, oldMem, oldDisk));
@@ -221,7 +243,7 @@ public class PersistentOfferRequirementProviderTest {
 
     Assert.assertEquals(1, req.getTaskRequirements().size());
     final TaskInfo taskInfo = req.getTaskRequirements().iterator().next().getTaskInfo();
-    final Environment environment = taskInfo.getCommand().getEnvironment();
+    final Environment environment = CommandInfo.parseFrom(taskInfo.getData()).getEnvironment();
     final List<Environment.Variable> variablesList = environment.getVariablesList();
     Assert.assertTrue(variablesList.size() == 1);
     Assert.assertEquals("KAFKA_HEAP_OPTS", variablesList.get(0).getName());
@@ -261,6 +283,14 @@ public class PersistentOfferRequirementProviderTest {
     for (Resource resource : resources) {
       builder.addResource(resource);
     }
+
+    final CommandInfo fakeCommand = CommandInfoBuilder.createCmdInfo("/bin/true", Arrays.asList(), Arrays.asList());
+    builder.setCommand(fakeCommand);
+
+    builder.setExecutorInfo(ExecutorInfoBuilder.createExecutorInfoBuilder()
+            .setCommand(fakeCommand)
+            .setExecutorId(ExecutorID.newBuilder().setValue(""))
+            .build());
 
     return builder.build();
   }

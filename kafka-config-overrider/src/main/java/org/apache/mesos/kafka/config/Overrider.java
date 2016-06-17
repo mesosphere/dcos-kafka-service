@@ -19,11 +19,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.TreeMap;
+import java.util.*;
 
 /**
  * Overrides Kafka properties files.
@@ -71,7 +67,7 @@ public final class Overrider extends Application<DropwizardConfiguration> {
     configId = System.getenv("CONFIG_ID");
 
     configState = new KafkaConfigState(
-            configuration.getServiceConfiguration().getName(), configuration.getKafkaConfiguration().getZkAddress(), "/");
+            configuration.getServiceConfiguration().getName(), configuration.getKafkaConfiguration().getZkAddress());
 
     if (StringUtils.isBlank(configId)) {
       log.error("Require configId. Please set CONFIG_ID env var correctly.");
@@ -130,7 +126,7 @@ public final class Overrider extends Application<DropwizardConfiguration> {
 
   private KafkaSchedulerConfiguration fetchConfig(String configName) {
     log.info("Fetching configuration: " + configName);
-    return configState.fetch(configName);
+    return configState.fetch(UUID.fromString(configName));
   }
 
   private static Map<String, String> getOverrides(

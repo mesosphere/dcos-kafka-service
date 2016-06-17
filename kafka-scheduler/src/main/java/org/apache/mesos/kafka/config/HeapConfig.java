@@ -10,9 +10,14 @@ import java.util.Objects;
  * broker.
  */
 public class HeapConfig {
-    @JsonProperty("size_mb")
-    private final int sizeMb;
+    @JsonProperty("sizeMb")
+    private int sizeMb;
 
+    public HeapConfig() {
+
+    }
+
+    @JsonCreator
     public HeapConfig(final int sizeMb) {
         this.sizeMb = sizeMb;
     }
@@ -21,10 +26,9 @@ public class HeapConfig {
         return sizeMb;
     }
 
-    @JsonCreator
-    public static HeapConfig create(
-            @JsonProperty("size_mb") final int sizeMb) {
-        return new HeapConfig(sizeMb);
+    @JsonProperty("sizeMb")
+    public void setSizeMb(int sizeMb) {
+        this.sizeMb = sizeMb;
     }
 
     @Override

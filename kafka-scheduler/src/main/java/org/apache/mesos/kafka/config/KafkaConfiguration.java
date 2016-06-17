@@ -25,6 +25,10 @@ public class KafkaConfiguration {
     @JsonProperty("overrides")
     private Map<String, String> overrides;
 
+    public KafkaConfiguration() {
+
+    }
+
     @JsonCreator
     public KafkaConfiguration(
             @JsonProperty("kafkaAdvertiseHostIp")boolean kafkaAdvertiseHostIp,

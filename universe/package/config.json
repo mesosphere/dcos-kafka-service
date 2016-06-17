@@ -78,6 +78,32 @@
           "count"
         ]
       },
+      "executor":{
+        "description":"Kafka executor configuration properties",
+        "type":"object",
+        "properties":{
+          "cpus":{
+            "description":"Executor cpu requirements",
+            "type":"number",
+            "default":0.5
+          },
+          "mem":{
+            "description":"Executor mem requirements",
+            "type":"integer",
+            "default":256
+          },
+          "disk":{
+            "description":"Executor disk requirements",
+            "type":"integer",
+            "default":0
+          }
+        },
+        "required":[
+          "cpus",
+          "mem",
+          "disk"
+        ]
+      },
       "kafka":{
         "description":"Kafka service configuration properties",
         "type":"object",

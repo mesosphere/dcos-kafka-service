@@ -1,23 +1,19 @@
 package org.apache.mesos.kafka.web;
 
-import java.util.List;
-
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
-import javax.ws.rs.GET;
-
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.mesos.kafka.config.KafkaConfigState;
 import org.apache.mesos.kafka.state.KafkaStateService;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
+
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import java.util.Collection;
+import java.util.UUID;
 
 
 @Path("/v1")
@@ -84,7 +80,7 @@ public class ClusterController {
   @GET
   public Response getConfigurations() {
     try {
-      List<String> configNames = configState.getConfigNames();
+      Collection<UUID> configNames = configState.getConfigNames();
       JSONArray configArray = new JSONArray(configNames);
       return Response.ok(configArray.toString(), MediaType.APPLICATION_JSON).build();
 
@@ -100,7 +96,7 @@ public class ClusterController {
     try {
       log.info("Attempting to fetch config: " + configurationName);
 
-      for (String configName : configState.getConfigNames()) {
+      for (UUID configName : configState.getConfigNames()) {
         if (configName.equals(configurationName)) {
           JSONObject configObj = new JSONObject(configState.fetch(configName));
           return Response.ok(configObj.toString(), MediaType.APPLICATION_JSON).build();

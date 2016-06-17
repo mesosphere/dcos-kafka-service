@@ -9,10 +9,7 @@ import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.OfferUtils;
 import org.apache.mesos.kafka.state.KafkaStateService;
-import org.apache.mesos.offer.OfferAccepter;
-import org.apache.mesos.offer.OfferEvaluator;
-import org.apache.mesos.offer.OfferRecommendation;
-import org.apache.mesos.offer.OfferRequirement;
+import org.apache.mesos.offer.*;
 import org.apache.mesos.scheduler.plan.Block;
 
 import java.util.ArrayList;
@@ -38,7 +35,7 @@ public class KafkaRepairScheduler {
     this.offerAccepter = offerAccepter;
   }
 
-  public List<OfferID> resourceOffers(SchedulerDriver driver, List<Offer> offers, Block block) {
+  public List<OfferID> resourceOffers(SchedulerDriver driver, List<Offer> offers, Block block) throws TaskRequirement.InvalidTaskRequirementException {
     List<OfferID> acceptedOffers = new ArrayList<OfferID>();
     List<TaskInfo> terminatedTasks = getTerminatedTasks(block);
 
@@ -57,8 +54,8 @@ public class KafkaRepairScheduler {
     }
 
     if (offerReq != null) {
-      OfferEvaluator offerEvaluator = new OfferEvaluator(offerReq);
-      List<OfferRecommendation> recommendations = offerEvaluator.evaluate(offers);
+      OfferEvaluator offerEvaluator = new OfferEvaluator();
+      List<OfferRecommendation> recommendations = offerEvaluator.evaluate(offerReq, offers);
       acceptedOffers = offerAccepter.accept(driver, recommendations);
     }
 

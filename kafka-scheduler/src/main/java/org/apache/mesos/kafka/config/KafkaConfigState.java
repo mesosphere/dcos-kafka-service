@@ -2,83 +2,54 @@ package org.apache.mesos.kafka.config;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.mesos.Protos.Label;
 import org.apache.mesos.Protos.Labels;
 import org.apache.mesos.Protos.TaskInfo;
-import org.apache.mesos.config.state.ConfigState;
+import org.apache.mesos.config.ConfigStore;
+import org.apache.mesos.config.ConfigStoreException;
+import org.apache.mesos.config.CuratorConfigStore;
 import org.apache.mesos.kafka.offer.OfferUtils;
+import org.apache.mesos.kafka.offer.PersistentOfferRequirementProvider;
 import org.apache.mesos.kafka.state.KafkaStateService;
-import org.apache.mesos.kafka.state.KafkaStateUtils;
 import org.apache.mesos.protobuf.LabelBuilder;
 import org.apache.mesos.state.StateStoreException;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Stores and manages multiple Kafka framework configurations in persistent storage.
- * Each configuration is in the form of a {@link KafkaConfigService}.
+ * Each configuration is in the form of a {@link KafkaSchedulerConfiguration}.
  */
 public class KafkaConfigState {
   private final Log log = LogFactory.getLog(KafkaConfigState.class);
 
-  private final CuratorFramework zkClient;
-  private final String configTargetPath;
-  private final String CONFIG_KEY = "config_target";
-  private String zkConfigRootPath;
-  private String zkVersionPath;
-  private ConfigState configState;
-
+  private ConfigStore configStore;
+  private KafkaConfigurationFactory kafkaConfigurationFactory;
   /**
    * Creates a new Kafka config state manager based on the provided bootstrap information.
    */
-  public KafkaConfigState(String frameworkName, String zkHost, String zkPathPrefix) {
-    configTargetPath = zkPathPrefix + frameworkName + "/config_target";
-    zkClient = KafkaStateUtils.createZkClient(zkHost);
-    //TODO(nick): Just pass full ZK path (ie KafkaConfigService.getZkRoot()) to ConfigState?
-    configState = new ConfigState(frameworkName, zkPathPrefix, zkClient);
-    zkConfigRootPath = zkPathPrefix + frameworkName + "/configurations/";
-    zkVersionPath = zkConfigRootPath + "versions";
+  public KafkaConfigState(String frameworkName, String zkHost) {
+    this.configStore = new CuratorConfigStore("/" + frameworkName, zkHost, new ExponentialBackoffRetry(1000, 3));
+    this.kafkaConfigurationFactory = new KafkaConfigurationFactory();
+
   }
 
-  public KafkaSchedulerConfiguration fetch(String version) throws StateStoreException {
-    return fetchForPath(getVersionPath(version));
-  }
-
-  private String getVersionPath(String version) {
-    return zkVersionPath + "/" + version;
-  }
-
-  private void logDataSize(byte[] data) {
-    log.info(String.format("Size of config to serialize: %s b.", data.length));
-  }
-
-  private KafkaSchedulerConfiguration fetchForPath(String path) {
+  public KafkaSchedulerConfiguration fetch(UUID version) throws StateStoreException {
     try {
-      byte[] data = zkClient.getData().forPath(path);
-      if (data == null) {
-        return null;
-      } else {
-        logDataSize(data);
-        return JSONSerializer.fromBytes(data, KafkaSchedulerConfiguration.class);
-      }
-    } catch (Exception e) {
-      String msg = "Failure to fetch configurations.";
-      log.error(msg);
-      throw new StateStoreException(msg, e);
+      return (KafkaSchedulerConfiguration) configStore.fetch(version, this.kafkaConfigurationFactory);
+    } catch (ConfigStoreException e) {
+      log.error("Unable to fetch version: " + version + " Reason: " + e);
+      throw new StateStoreException(e);
     }
   }
-
 
   /**
    * Returns whether a current target configuration exists.
    */
   public boolean hasTarget() {
     try {
-      return null != zkClient.checkExists().forPath(configTargetPath);
+      return configStore.getTargetConfig() != null;
     } catch (Exception ex) {
       log.error("Failed to determine existence of target config with exception: " + ex);
       return false;
@@ -88,10 +59,9 @@ public class KafkaConfigState {
   /**
    * Returns the name of the current target configuration.
    */
-  public String getTargetName() {
+  public UUID getTargetName() {
     try {
-      byte[] bytes = zkClient.getData().forPath(configTargetPath);
-      return new String(bytes, "UTF-8");
+      return configStore.getTargetConfig();
     } catch (Exception ex) {
       log.error("Failed to retrieve config target name with exception: " + ex);
       return null;
@@ -108,22 +78,22 @@ public class KafkaConfigState {
   /**
    * Returns a list of all available configuration names.
    */
-  public List<String> getConfigNames() {
-    return configState.getVersions();
+  public Collection<UUID> getConfigNames() {
+    try {
+      return configStore.list();
+    } catch (ConfigStoreException e) {
+      return Collections.EMPTY_LIST;
+    }
   }
 
   /**
    * Stores the provided configuration against the provided version label.
-   * The configuration may then be marked as the target configuration with {@link #setTargetName(String)}.
    *
    * @throws StateStoreException if the underlying storage failed to write
    */
-  public void store(KafkaSchedulerConfiguration configuration, String version) throws StateStoreException {
-    ensurePath(getVersionPath(version));
+  public UUID store(KafkaSchedulerConfiguration configuration) throws StateStoreException {
     try {
-      final byte[] data = JSONSerializer.toBytes(configuration);
-      logDataSize(data);
-      zkClient.setData().forPath(getVersionPath(version), data);
+      return configStore.store(configuration);
     } catch (Exception e) {
       String msg = "Failure to store configurations.";
       log.error(msg);
@@ -131,27 +101,12 @@ public class KafkaConfigState {
     }
   }
 
-  private void ensurePath(String path) {
-    try {
-      zkClient.create().creatingParentsIfNeeded().forPath(path);
-    } catch (Exception e) {
-      log.debug(String.format("Path for %s already exists!", path));
-    }
-  }
-
   /**
    * Sets the name of the target configuration to be used in the future.
-   * The name must match a 'version' previously passed to {@link #store(KafkaSchedulerConfiguration, String)}.
    */
-  public void setTargetName(String targetConfigName) {
+  public void setTargetName(UUID targetConfigName) {
     try {
-      byte[] bytes = targetConfigName.getBytes("UTF-8");
-
-      if (!hasTarget()) {
-        zkClient.create().creatingParentsIfNeeded().forPath(configTargetPath, bytes);
-      } else {
-        zkClient.setData().forPath(configTargetPath, bytes);
-      }
+      configStore.setTargetConfig(targetConfigName);
     } catch (Exception ex) {
       log.error("Failed to set target config with exception: " + ex);
     }
@@ -159,7 +114,7 @@ public class KafkaConfigState {
 
   public void syncConfigs(KafkaStateService state) {
     try {
-      String targetName = getTargetName();
+      UUID targetName = getTargetName();
       List<String> duplicateConfigs = getDuplicateConfigs();
 
       List<TaskInfo> taskInfos = state.getTaskInfos();
@@ -172,29 +127,33 @@ public class KafkaConfigState {
   }
 
   public void cleanConfigs(KafkaStateService state) {
-    Set<String> activeConfigs = new HashSet<String>();
+    Set<UUID> activeConfigs = new HashSet<>();
     activeConfigs.add(getTargetName());
     activeConfigs.addAll(getTaskConfigs(state));
 
     log.info("Cleaning all configs which are NOT in the active list: " + activeConfigs); 
 
-    for (String configName : getConfigNames()) {
+    for (UUID configName : getConfigNames()) {
       if (!activeConfigs.contains(configName)) {
-        log.info("Removing config: " + configName);
-        configState.clear(configName);
+        try {
+          log.info("Removing config: " + configName);
+          configStore.clear(configName);
+        } catch (ConfigStoreException e) {
+          log.error("Unable to clear config: " + configName + " Reason: " + e);
+        }
       }
     }
   }
 
-  private Set<String> getTaskConfigs(KafkaStateService state) {
-    Set<String> activeConfigs = new HashSet<String>();
+  private Set<UUID> getTaskConfigs(KafkaStateService state) {
+    Set<UUID> activeConfigs = new HashSet<>();
 
     try {
       for (TaskInfo taskInfo : state.getTaskInfos()) {
         Labels labels = taskInfo.getLabels();
         for (Label label : labels.getLabelsList()) {
-          if (label.getKey().equals(CONFIG_KEY)) {
-            activeConfigs.add(label.getValue());
+          if (label.getKey().equals(PersistentOfferRequirementProvider.CONFIG_TARGET_KEY)) {
+            activeConfigs.add(UUID.fromString(label.getValue()));
           }
         }
       }
@@ -205,14 +164,14 @@ public class KafkaConfigState {
     return activeConfigs;
   }
 
-  private void replaceDuplicateConfig(KafkaStateService state, TaskInfo taskInfo, List<String> duplicateConfigs, String targetName) {
+  private void replaceDuplicateConfig(KafkaStateService state, TaskInfo taskInfo, List<String> duplicateConfigs, UUID targetName) {
     try {
       String taskConfig = OfferUtils.getConfigName(taskInfo);
 
       for (String duplicateConfig : duplicateConfigs) {
         if (taskConfig.equals(duplicateConfig)) {
           Labels labels = new LabelBuilder()
-            .addLabel(CONFIG_KEY, targetName)
+            .addLabel(PersistentOfferRequirementProvider.CONFIG_TARGET_KEY, targetName.toString())
             .build();
 
           TaskInfo newTaskInfo = TaskInfo.newBuilder(taskInfo).setLabels(labels).build();
@@ -232,7 +191,8 @@ public class KafkaConfigState {
     KafkaSchedulerConfiguration newTargetConfig = getTargetConfig();
 
     List<String> duplicateConfigs = new ArrayList<String>();
-    for (String configName : configState.getVersions()) {
+    final Collection<UUID> configNames = getConfigNames();
+    for (UUID configName : configNames) {
       KafkaSchedulerConfiguration currTargetConfig = fetch(configName);
 
       final BrokerConfiguration currBrokerConfig = currTargetConfig.getBrokerConfiguration();
@@ -244,7 +204,7 @@ public class KafkaConfigState {
       if (currBrokerConfig.equals(newBrokerConfig) &&
           currKafkaConfig.equals(newKafkaConfig)) {
         log.info("Duplicate config detected: " + configName);
-        duplicateConfigs.add(configName);
+        duplicateConfigs.add(configName.toString());
       }
     }
 

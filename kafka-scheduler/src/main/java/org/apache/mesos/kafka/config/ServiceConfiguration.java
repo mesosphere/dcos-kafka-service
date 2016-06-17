@@ -21,6 +21,10 @@ public class ServiceConfiguration {
     @JsonProperty("principal")
     private String principal;
 
+    public ServiceConfiguration() {
+
+    }
+
     @JsonCreator
     public ServiceConfiguration(
             @JsonProperty("count")int count,

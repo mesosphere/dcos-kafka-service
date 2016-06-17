@@ -1,5 +1,11 @@
 apply from: "$rootDir/gradle/universe.gradle"
 
+buildscript {
+  repositories {
+    mavenCentral()
+  }
+}
+
 allprojects {
   apply plugin: 'idea'
   apply plugin: 'eclipse'

@@ -27,8 +27,7 @@ public class ConfigStateUpdater {
     // We must bootstrap config management with some values from the new config:
     this.kafkaConfigState = new KafkaConfigState(
             frameworkName,
-        kafkaConfiguration.getZkAddress(),
-        "/");
+        kafkaConfiguration.getZkAddress());
     this.kafkaStateService = new KafkaStateService(
         kafkaConfiguration.getZkAddress(),
         "/" + frameworkName);
@@ -84,8 +83,7 @@ public class ConfigStateUpdater {
   }
 
   private void setTargetConfig(KafkaSchedulerConfiguration newTargetConfig) throws StateStoreException {
-    String targetConfigName = UUID.randomUUID().toString();
-    kafkaConfigState.store(newTargetConfig, targetConfigName);
+    UUID targetConfigName = kafkaConfigState.store(newTargetConfig);
     kafkaConfigState.setTargetName(targetConfigName);
     log.info("Set new target config: " + targetConfigName);
   }

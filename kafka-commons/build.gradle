@@ -1,0 +1,12 @@
+ext {
+    mesosVer = "0.28.0"
+}
+
+dependencies {
+    compile "mesosphere:dcos-commons:0.4.7-SNAPSHOT"
+    compile "org.apache.mesos:mesos:${mesosVer}"
+}
+
+idea.module {
+    sourceDirs += file("$projectDir/src/generated/main/java")
+}

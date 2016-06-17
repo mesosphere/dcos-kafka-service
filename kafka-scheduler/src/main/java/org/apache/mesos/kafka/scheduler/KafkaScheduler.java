@@ -23,7 +23,6 @@ import org.apache.mesos.kafka.config.KafkaSchedulerConfiguration;
 import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.PersistentOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.PersistentOperationRecorder;
-import org.apache.mesos.kafka.plan.KafkaStageManager;
 import org.apache.mesos.kafka.plan.KafkaUpdatePhase;
 import org.apache.mesos.kafka.state.KafkaStateService;
 
@@ -31,6 +30,7 @@ import org.apache.mesos.offer.OfferAccepter;
 import org.apache.mesos.offer.ResourceCleaner;
 import org.apache.mesos.offer.ResourceCleanerScheduler;
 
+import org.apache.mesos.offer.TaskRequirement;
 import org.apache.mesos.reconciliation.DefaultReconciler;
 import org.apache.mesos.reconciliation.Reconciler;
 import org.apache.mesos.scheduler.plan.*;
@@ -52,20 +52,14 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
 
   private final OfferAccepter offerAccepter;
   private final Reconciler reconciler;
-  private final KafkaStageManager stageManager;
+  private final StageManager stageManager;
   private MesosSchedulerDriver driver;
   private static final Integer restartLock = 0;
   private static List<String> tasksToRestart = new ArrayList<String>();
   private static final Integer rescheduleLock = 0;
   private static List<String> tasksToReschedule = new ArrayList<String>();
 
-  private Environment environment;
-  private KafkaSchedulerConfiguration configuration;
-
   public KafkaScheduler(KafkaSchedulerConfiguration configuration, Environment environment) {
-    this.configuration = configuration;
-    this.environment = environment;
-
     ConfigStateUpdater configStateUpdater = new ConfigStateUpdater(configuration);
     List<String> stageErrors = new ArrayList<>();
     KafkaSchedulerConfiguration targetConfigToUse;
@@ -95,9 +89,9 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
       new PersistentOfferRequirementProvider(kafkaState, configState);
 
     List<Phase> phases = Arrays.asList(
-        new ReconciliationPhase(reconciler, kafkaState),
+        ReconciliationPhase.create(reconciler, kafkaState),
         new KafkaUpdatePhase(
-            configState.getTargetName(),
+            configState.getTargetName().toString(),
             envConfig,
             kafkaState,
             offerRequirementProvider));
@@ -106,12 +100,12 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
         ? DefaultStage.fromList(phases)
         : DefaultStage.withErrors(phases, stageErrors);
 
-    stageManager = new KafkaStageManager(stage, getPhaseStrategyFactory(envConfig), kafkaState);
+    stageManager = new DefaultStageManager(stage, getPhaseStrategyFactory(envConfig));
     addObserver(stageManager);
 
     stageScheduler = new DefaultStageScheduler(offerAccepter);
     repairScheduler = new KafkaRepairScheduler(
-        configState.getTargetName(),
+        configState.getTargetName().toString(),
         kafkaState,
         offerRequirementProvider,
         offerAccepter);
@@ -197,32 +191,39 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
 
   @Override
   public void resourceOffers(SchedulerDriver driver, List<Offer> offers) {
-    logOffers(offers);
-    reconciler.reconcile(driver);
-    processTaskOperations(driver);
+    try {
+      logOffers(offers);
+      reconciler.reconcile(driver);
+      processTaskOperations(driver);
 
-    List<OfferID> acceptedOffers = new ArrayList<OfferID>();
+      List<OfferID> acceptedOffers = new ArrayList<>();
 
-    if (reconciler.isReconciled()) {
-      Block block = stageManager.getCurrentBlock();
-      acceptedOffers = stageScheduler.resourceOffers(driver, offers, block);
-      List<Offer> unacceptedOffers = filterAcceptedOffers(offers, acceptedOffers);
-      acceptedOffers.addAll(repairScheduler.resourceOffers(driver, unacceptedOffers, block));
+      if (reconciler.isReconciled()) {
+        Block block = stageManager.getCurrentBlock();
+        acceptedOffers = stageScheduler.resourceOffers(driver, offers, block);
+        List<Offer> unacceptedOffers = filterAcceptedOffers(offers, acceptedOffers);
+        try {
+          acceptedOffers.addAll(repairScheduler.resourceOffers(driver, unacceptedOffers, block));
+        } catch (TaskRequirement.InvalidTaskRequirementException e) {
+          log.error("Error repairing block: " + block + " Reason: " + e);
+        }
 
-      ResourceCleanerScheduler cleanerScheduler = getCleanerScheduler();
-      if (cleanerScheduler != null) {
-        acceptedOffers.addAll(getCleanerScheduler().resourceOffers(driver, offers)); 
+        ResourceCleanerScheduler cleanerScheduler = getCleanerScheduler();
+        if (cleanerScheduler != null) {
+          acceptedOffers.addAll(getCleanerScheduler().resourceOffers(driver, offers));
+        }
       }
-    }
 
-    declineOffers(driver, acceptedOffers, offers);
+      log.info("Accepted offers: " + acceptedOffers);
+      declineOffers(driver, acceptedOffers, offers);
+    } catch (Exception ex) {
+      log.error("Unexpected exception encountered when processing offers: ", ex);
+    }
   }
 
   private ResourceCleanerScheduler getCleanerScheduler() {
     try {
-      ResourceCleaner cleaner = new ResourceCleaner(
-          kafkaState.getExpectedResourceIds(),
-          kafkaState.getExpectedPersistenceIds());
+      ResourceCleaner cleaner = new ResourceCleaner(kafkaState.getExpectedResources());
       return new ResourceCleanerScheduler(cleaner, offerAccepter);
     } catch (Exception ex) {
       log.error("Failed to construct ResourceCleaner with exception:", ex);
@@ -308,7 +309,7 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
     Block recBlock = getReconciliationBlock();
 
     if (recBlock != null) {
-      recBlock.setStatus(org.apache.mesos.scheduler.plan.Status.Pending);
+      recBlock.restart();
     } else {
       log.error("Failed to reconcile because unable to find the Reconciliation Block");
     }
@@ -360,6 +361,7 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
   private void declineOffers(SchedulerDriver driver, List<OfferID> acceptedOffers, List<Offer> offers) {
     for (Offer offer : offers) {
       if (!acceptedOffers.contains(offer.getId())) {
+        log.info("Declining offer: " + offer.getId());
         declineOffer(driver, offer);
       }
     }
@@ -398,7 +400,7 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
     return kafkaState;
   }
 
-  public KafkaStageManager getStageManager() {
+  public StageManager getStageManager() {
     return stageManager;
   }
 }

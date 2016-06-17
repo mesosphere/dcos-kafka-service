@@ -16,6 +16,7 @@ import org.apache.mesos.scheduler.plan.Block;
 import org.apache.mesos.scheduler.plan.Status;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -45,17 +46,11 @@ public class KafkaUpdateBlock implements Block {
     this.blockId = UUID.randomUUID();
     this.cachedTaskInfo = getTaskInfo();
 
-    pendingTasks = getUpdateIds();
+    setPendingTasks(getUpdateIds());
     initializeStatus();
   }
 
-  @Override
-  public Status getStatus() {
-    return status;
-  }
-
-  @Override
-  public void setStatus(Status newStatus) {
+  private void setStatus(Status newStatus) {
     Status oldStatus = status;
     status = newStatus;
     log.info(getName() + ": changed status from: " + oldStatus + " to: " + status);
@@ -78,9 +73,10 @@ public class KafkaUpdateBlock implements Block {
 
   @Override
   public OfferRequirement start() {
-    log.info("Starting block: " + getName() + " with status: " + getStatus());
+    log.info("Starting block: " + getName() + " with status: " + Block.getStatus(this));
 
     if (!isPending()) {
+      log.warn("Block is not pending.  start() should not be called.");
       return null;
     }
 
@@ -90,10 +86,41 @@ public class KafkaUpdateBlock implements Block {
       return null;
     }
 
-    setStatus(Status.InProgress);
-    OfferRequirement offerReq = getOfferRequirement();
-    setPendingTasks(offerReq);
-    return offerReq;
+    try {
+      OfferRequirement offerReq = getOfferRequirement();
+      setPendingTasks(offerReq);
+      return offerReq;
+    } catch (TaskRequirement.InvalidTaskRequirementException e) {
+      log.error("Error getting offerRequirement: " + e);
+    }
+
+    return null;
+  }
+
+  @Override
+  public void updateOfferStatus(boolean accepted) {
+    if (accepted) {
+      setStatus(Status.InProgress);
+    } else {
+      setStatus(Status.Pending);
+    }
+  }
+
+  @Override
+  public void restart() {
+    setStatus(Status.Pending);
+  }
+
+  @Override
+  public void forceComplete() {
+    try {
+      List<String> taskIds =
+              Arrays.asList(state.getTaskIdForBroker(brokerId));
+      KafkaScheduler.rescheduleTasks(taskIds);
+    } catch (Exception ex) {
+      log.error("Failed to force completion of Block: " + getId() + "with exception: ", ex);
+      return;
+    }
   }
 
   @Override
@@ -114,7 +141,7 @@ public class KafkaUpdateBlock implements Block {
           }
         }
 
-        pendingTasks = updatedPendingTasks;
+        setPendingTasks(updatedPendingTasks);
       } else if (isInProgress() && isTerminalState(taskStatus)) {
         log.info("Received terminal while InProgress TaskStatus: " + taskStatus);
         setStatus(Status.Pending);
@@ -136,7 +163,7 @@ public class KafkaUpdateBlock implements Block {
 
   @Override
   public String getMessage() {
-    return "Broker-" + getBrokerId() + " is " + getStatus();
+    return "Broker-" + getBrokerId() + " is " + Block.getStatus(this);
   }
 
   @Override
@@ -163,7 +190,7 @@ public class KafkaUpdateBlock implements Block {
       }
     }
 
-    log.info("Status initialized as " + getStatus() + " for block: " + getName());
+    log.info("Status initialized as " + Block.getStatus(this) + " for block: " + getName());
   }
 
   private synchronized TaskInfo getTaskInfo() {
@@ -183,7 +210,7 @@ public class KafkaUpdateBlock implements Block {
     return cachedTaskInfo;
   }
 
-  private OfferRequirement getOfferRequirement() {
+  private OfferRequirement getOfferRequirement() throws TaskRequirement.InvalidTaskRequirementException {
     TaskInfo taskInfo = getTaskInfo();
 
     if (taskInfo == null) {
@@ -194,11 +221,17 @@ public class KafkaUpdateBlock implements Block {
   }
 
   private void setPendingTasks(OfferRequirement offerReq) {
-    pendingTasks = new ArrayList<TaskID>();
+    List<TaskID> newPendingTasks = new ArrayList<TaskID>();
     // in practice there should only be one TaskRequirement, see PersistentOfferRequirementProvider
     for (TaskRequirement taskRequirement : offerReq.getTaskRequirements()) {
-      pendingTasks.add(taskRequirement.getTaskInfo().getTaskId());
+      newPendingTasks.add(taskRequirement.getTaskInfo().getTaskId());
     }
+
+    setPendingTasks(newPendingTasks);
+  }
+
+  private synchronized void setPendingTasks(List<TaskID> taskIds) {
+      pendingTasks = taskIds;
   }
 
   private List<String> taskIdsToStrings(List<TaskID> taskIds) {

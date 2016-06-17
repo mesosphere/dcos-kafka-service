@@ -8,11 +8,17 @@ schedulerConfiguration:
     principal: "${FRAMEWORK_NAME}-principal"
     count: ${BROKER_COUNT:-3}
 
+  executor:
+    cpus: ${EXECUTOR_CPUS:-0.5}
+    mem: ${EXECUTOR_MEM:-256}
+    disk: ${EXECUTOR_DISK:-0}
+    executorUri: ${EXECUTOR_URI}
+
   broker:
     cpus: ${BROKER_CPUS}
     mem: ${BROKER_MEM:-2304}
     heap:
-      size_mb: ${BROKER_HEAP_MB:-2048}
+      sizeMb: ${BROKER_HEAP_MB:-2048}
     disk: ${BROKER_DISK}
     diskType: ${DISK_TYPE:-ROOT}
     javaUri: ${JAVA_URI}

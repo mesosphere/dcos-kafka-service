@@ -48,7 +48,7 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-./gradlew test
+./gradlew check
 if [ $? -ne 0 ]; then
   _notify_github failure build "Unit tests failed"
   exit 1

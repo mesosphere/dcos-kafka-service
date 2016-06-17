@@ -1,14 +1,21 @@
-apply from: "$rootDir/gradle/universe.gradle"
-
 buildscript {
   repositories {
     mavenCentral()
   }
 }
 
+plugins {
+  id 'com.github.ksoichiro.console.reporter' version '0.4.0'
+}
+
+apply from: "$rootDir/gradle/universe.gradle"
+
 allprojects {
   apply plugin: 'idea'
   apply plugin: 'eclipse'
+  apply plugin: 'jacoco'
+  apply plugin: 'com.github.ksoichiro.console.reporter'
+
   group = "com.apache.mesos.kafka"
   version = "1.0.8"
 }
@@ -50,6 +57,22 @@ subprojects {
     }
     maven {
       url "https://downloads.mesosphere.com/maven-snapshot/"
+    }
+  }
+
+  // Print results on the fly
+  test {
+    testLogging {
+      events "passed", "skipped", "failed"
+    }
+  }
+
+  // Include unit test report in 'check'
+  // (jacoco itself depends on 'test')
+  check.dependsOn jacocoTestReport
+  jacocoTestReport {
+    reports {
+      html.destination "${buildDir}/jacoco"
     }
   }
 }

@@ -149,16 +149,6 @@ public class KafkaStateService implements Observer, TaskStatusProvider {
     return taskInfos;
   }
 
-  public List<TaskID> getTaskIds() throws Exception {
-    List<TaskID> taskIds = new ArrayList<TaskID>();
-
-    for (TaskInfo taskInfo : getTaskInfos()) {
-      taskIds.add(taskInfo.getTaskId());
-    }
-
-    return taskIds;
-  }
-
   public List<Resource> getExpectedResources() {
     List<Resource> resources = new ArrayList<>();
 

@@ -10,13 +10,11 @@ import org.apache.mesos.kafka.state.KafkaStateService;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import javax.ws.rs.core.MultivaluedMap;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class CmdExecutor {
   private static final Log log = LogFactory.getLog(CmdExecutor.class);
@@ -77,17 +75,6 @@ public class CmdExecutor {
     cmd.addAll(cmds);
 
     return runCmd(cmd);
-  }
-
-  public List<String> getListOverrides(MultivaluedMap<String, String> overrides) {
-    List<String> output = new ArrayList<String>();
-
-    for (Map.Entry<String,List<String>> override : overrides.entrySet()) {
-      output.add("--" + override.getKey());
-      output.add(override.getValue().get(0));
-    }
-
-    return output;
   }
 
   public JSONObject producerTest(String topicName, int messages) throws Exception {

@@ -137,35 +137,4 @@ public class ClusterController {
     final String frameworkName = configState.getTargetConfig().getServiceConfiguration().getName();
     return new JSONArray(state.getBrokerDNSEndpoints(frameworkName));
   }
-
-  private String getConvenientZookeeper(String zookeeperEndpoint) {
-    return "--zookeeper " + zookeeperEndpoint;
-  }
-
-  private String getConvenientBrokerList() {
-    String brokerList = "--broker-list ";
-
-    try {
-      String brokers = String.join(", ", state.getBrokerEndpoints());
-      return brokerList + brokers;
-    } catch (Exception ex) {
-      log.error("Failed to fetch broker endpoints for convenience with exception : " + ex);
-    }
-
-    return brokerList;
-  }
-
-  private String getConvenientBrokerDNSList() {
-    final String frameworkName = configState.getTargetConfig().getServiceConfiguration().getName();
-    String brokerList = "--broker-list ";
-
-    try {
-      String brokers = String.join(", ", state.getBrokerDNSEndpoints(frameworkName));
-      return brokerList + brokers;
-    } catch (Exception ex) {
-      log.error("Failed to fetch broker endpoints for convenience with exception : " + ex);
-    }
-
-    return brokerList;
-  }
 }

@@ -13,9 +13,6 @@ public class BrokerCheck extends HealthCheck {
   public static final String NAME = "brokerCount";
   private final Log log = LogFactory.getLog(BrokerCheck.class);
 
-  private final int NO_UPDATE_PHASE_CODE = 512;
-  private final int NOT_ENOUGH_BROKERS_CODE = 513;
-
   private final StageManager stageManager;
   private final KafkaStateService state;
 

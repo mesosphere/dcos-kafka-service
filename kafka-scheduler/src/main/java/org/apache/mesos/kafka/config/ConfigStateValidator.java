@@ -111,6 +111,14 @@ public class ConfigStateValidator {
           throws ValidationException {
 
     List<ValidationError> errors = new ArrayList<>();
+    errors.addAll(validateBrokerDisk(oldConfig, newConfig));
+    errors.addAll(validateBrokerHeap(newConfig));
+
+    return errors;
+  }
+
+  private List<ValidationError> validateBrokerDisk(BrokerConfiguration oldConfig, BrokerConfiguration newConfig) {
+    List<ValidationError> errors = new ArrayList<>();
 
     double oldDisk = oldConfig.getDisk();
     double newDisk = newConfig.getDisk();
@@ -130,4 +138,20 @@ public class ConfigStateValidator {
 
     return errors;
   }
+
+  private List<ValidationError> validateBrokerHeap(BrokerConfiguration newConfig) {
+    List<ValidationError> errors = new ArrayList<>();
+
+    // Validate whether BROKER_HEAP_MB <= BROKER_MEM
+    final double mem = newConfig.getMem();
+    final int brokerHeapSize = newConfig.getHeap().getSizeMb();
+
+    if (mem < brokerHeapSize) {
+      errors.add(new ValidationError("mem",
+              "BROKER_MEM should be greater than or equal to BROKER_HEAP_MB"));
+    }
+
+    return errors;
+  }
+
 }

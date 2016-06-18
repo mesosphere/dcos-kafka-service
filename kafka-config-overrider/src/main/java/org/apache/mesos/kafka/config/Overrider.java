@@ -74,9 +74,12 @@ public final class Overrider extends Application<DropwizardConfiguration> {
       System.exit(1);
     }
 
-    log.info("" + configEnv);
+    log.info("Default config: " + configEnv);
 
     KafkaSchedulerConfiguration configZk = fetchConfig(configId);
+
+    log.info("Fetched config: " + configZk);
+
     Map<String, String> overrides = getOverrides(configZk, configuration);
     Map<String, String> statsdConfig = getStatsdConfig(configuration);
     updateProperties(overrides, statsdConfig);

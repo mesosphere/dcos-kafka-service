@@ -22,6 +22,8 @@ public class BrokerConfiguration {
     private String javaUri;
     @JsonProperty("overriderUri")
     private String overriderUri;
+    @JsonProperty("port")
+    private Long port;
 
     public BrokerConfiguration() {
 
@@ -36,7 +38,8 @@ public class BrokerConfiguration {
             @JsonProperty("diskType")String diskType,
             @JsonProperty("kafkaUri")String kafkaUri,
             @JsonProperty("javaUri")String javaUri,
-            @JsonProperty("overriderUri")String overriderUri) {
+            @JsonProperty("overriderUri")String overriderUri,
+            @JsonProperty("port")Long port) {
         this.cpus = cpus;
         this.mem = mem;
         this.heap = heap;
@@ -45,6 +48,7 @@ public class BrokerConfiguration {
         this.kafkaUri = kafkaUri;
         this.javaUri = javaUri;
         this.overriderUri = overriderUri;
+        this.port = port;
     }
 
     public double getCpus() {
@@ -119,6 +123,15 @@ public class BrokerConfiguration {
         this.overriderUri = overriderUri;
     }
 
+    public Long getPort() {
+        return port;
+    }
+
+    @JsonProperty("port")
+    public void setPort(Long port) {
+        this.port = port;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -137,12 +150,13 @@ public class BrokerConfiguration {
                 Objects.equals(diskType, that.diskType) &&
                 Objects.equals(kafkaUri, that.kafkaUri) &&
                 Objects.equals(javaUri, that.javaUri) &&
-                Objects.equals(overriderUri, that.overriderUri);
+                Objects.equals(overriderUri, that.overriderUri) &&
+                Objects.equals(port, that.port);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(cpus, mem, heap, disk, diskType, kafkaUri, javaUri, overriderUri);
+        return Objects.hash(cpus, mem, heap, disk, diskType, kafkaUri, javaUri, overriderUri, port);
     }
 
     @Override
@@ -156,6 +170,7 @@ public class BrokerConfiguration {
                 ", kafkaUri='" + kafkaUri + '\'' +
                 ", javaUri='" + javaUri + '\'' +
                 ", overriderUri='" + overriderUri + '\'' +
+                ", port='" + port + '\'' +
                 '}';
     }
 }

@@ -9,6 +9,7 @@ import org.apache.mesos.Protos;
 import org.apache.mesos.Protos.*;
 import org.apache.mesos.Protos.Environment.Variable;
 import org.apache.mesos.Protos.Value.Range;
+import org.apache.mesos.Protos.Value.Ranges;
 import org.apache.mesos.kafka.config.*;
 import org.apache.mesos.kafka.state.KafkaStateService;
 import org.apache.mesos.offer.OfferRequirement;
@@ -98,6 +99,42 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     taskBuilder.clearTaskId();
     taskBuilder.setTaskId(TaskID.newBuilder().setValue("").build()); // Set later
 
+    CommandInfo.Builder cmdBuilder;
+    try {
+      cmdBuilder = CommandInfo.newBuilder().mergeFrom(taskBuilder.getData());
+    } catch (InvalidProtocolBufferException e) {
+      throw new TaskRequirement.InvalidTaskRequirementException("Unable to rehydrate broker CommandInfo");
+    }
+    Map<String, String> environmentMap = fromEnvironmentToMap(cmdBuilder.getEnvironment());
+
+    String portVar = KafkaSchedulerConfiguration.KAFKA_OVERRIDE_PREFIX + "PORT";
+    String dynamicVar = "KAFKA_DYNAMIC_BROKER_PORT";
+    String dynamicValue = environmentMap.get(dynamicVar);
+    Long port = brokerConfig.getPort();
+
+    if (port == 0) {
+      if (dynamicValue != null && dynamicValue.equals(Boolean.toString(false))) {
+        // The previous configuration used a static port, so we should generate a new dynamic port.
+        port = getDynamicPort();
+        environmentMap.put(portVar, Long.toString(port));
+      } else {
+        port = Long.parseLong(environmentMap.get(portVar));
+      }
+
+      environmentMap.put(dynamicVar, Boolean.toString(true));
+      brokerConfig.setPort(port);
+    } else {
+      environmentMap.put(portVar, Long.toString(port));
+      environmentMap.put(dynamicVar, Boolean.toString(false));
+    }
+
+    taskBuilder = updatePort(taskBuilder, brokerConfig);
+
+    cmdBuilder.clearEnvironment();
+    final List<Variable> newEnvironmentVariables = EnvironmentBuilder.createEnvironment(environmentMap);
+    cmdBuilder.setEnvironment(Environment.newBuilder().addAllVariables(newEnvironmentVariables));
+    taskBuilder.setData(cmdBuilder.build().toByteString());
+
     TaskInfo updatedTaskInfo = taskBuilder.build();
 
     try {
@@ -173,6 +210,14 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     return updateValue(taskBuilder, "disk", valBuilder.build());
   }
 
+  private TaskInfo.Builder updatePort(TaskInfo.Builder taskBuilder, BrokerConfiguration brokerConfig) {
+    Range portRange = Range.newBuilder().setBegin(brokerConfig.getPort()).setEnd(brokerConfig.getPort()).build();
+    Ranges portRanges = Ranges.newBuilder().addRange(portRange).build();
+    ValueBuilder valBuilder = new ValueBuilder(Value.Type.RANGES).setRanges(portRanges);
+
+    return updateValue(taskBuilder, "ports", valBuilder.build());
+  }
+
   private TaskInfo.Builder updateValue(TaskInfo.Builder taskBuilder, String name, Value updatedValue) {
     List<Resource> updatedResources = new ArrayList<Resource>();
 
@@ -233,11 +278,14 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     }
   }
 
+  private Long getDynamicPort() {
+    return 9092 + ThreadLocalRandom.current().nextLong(0, 1000);
+  }
+
   private OfferRequirement getNewOfferRequirementInternal(String configName, int brokerId) throws TaskRequirement.InvalidTaskRequirementException {
     log.info("Getting new OfferRequirement for: " + configName);
     String overridePrefix = KafkaSchedulerConfiguration.KAFKA_OVERRIDE_PREFIX;
     String brokerName = OfferUtils.idToName(brokerId);
-    Long port = 9092 + ThreadLocalRandom.current().nextLong(0, 1000);
     Long jmxPort = 11000 + ThreadLocalRandom.current().nextLong(0, 1000);
 
     String containerPath = "kafka-volume-" + UUID.randomUUID();
@@ -246,21 +294,16 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     BrokerConfiguration brokerConfig = config.getBrokerConfiguration();
     ExecutorConfiguration executorConfig = config.getExecutorConfiguration();
 
+    Long port = brokerConfig.getPort();
+    Boolean isDynamicPort = false;
+    if (port == 0) {
+      port = getDynamicPort();
+      isDynamicPort = true;
+    }
+
     String role = config.getServiceConfiguration().getRole();
     String principal = config.getServiceConfiguration().getPrincipal();
     String frameworkName = config.getServiceConfiguration().getName();
-
-    // Construct Kafka launch command
-    Map<String, String> taskEnv = new HashMap<>();
-    taskEnv.put("FRAMEWORK_NAME", frameworkName);
-    taskEnv.put("KAFKA_VER_NAME", config.getKafkaConfiguration().getKafkaVerName());
-    taskEnv.put(CONFIG_ID_KEY, configName);
-    taskEnv.put(overridePrefix + "ZOOKEEPER_CONNECT", config.getKafkaConfiguration().getZkAddress() + "/" + frameworkName);
-    taskEnv.put(overridePrefix + "BROKER_ID", Integer.toString(brokerId));
-    taskEnv.put(overridePrefix + "LOG_DIRS", containerPath + "/" + brokerName);
-    taskEnv.put(overridePrefix + "PORT", Long.toString(port));
-    taskEnv.put(overridePrefix + "LISTENERS", "PLAINTEXT://:" + port);
-    taskEnv.put("KAFKA_HEAP_OPTS", getKafkaHeapOpts(brokerConfig.getHeap()));
 
     List<String> commands = new ArrayList<>();
     commands.add("export PATH=$(ls -d $MESOS_SANDBOX/jre*/bin):$PATH"); // find directory that starts with "jre" containing "bin"
@@ -286,6 +329,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
       .addEnvironmentVar(overridePrefix + "LOG_DIRS", containerPath + "/" + brokerName)
       .addEnvironmentVar(overridePrefix + "LISTENERS", "PLAINTEXT://:" + port)
       .addEnvironmentVar(overridePrefix + "PORT", Long.toString(port))
+      .addEnvironmentVar("KAFKA_DYNAMIC_BROKER_PORT", Boolean.toString(isDynamicPort))
       .addEnvironmentVar("JMX_PORT", Long.toString(jmxPort));
 
     // Launch command for custom executor

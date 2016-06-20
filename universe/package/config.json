@@ -69,6 +69,11 @@
             "description":"Number of brokers to run",
             "type":"number",
             "default":3
+          },
+          "port": {
+            "description": "Port for broker to listen on",
+            "type": "integer",
+            "default": 0
           }
         },
         "required":[

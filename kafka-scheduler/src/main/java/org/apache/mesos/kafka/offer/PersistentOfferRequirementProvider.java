@@ -10,6 +10,7 @@ import org.apache.mesos.Protos.*;
 import org.apache.mesos.Protos.Environment.Variable;
 import org.apache.mesos.Protos.Value.Range;
 import org.apache.mesos.Protos.Value.Ranges;
+import org.apache.mesos.config.ConfigStoreException;
 import org.apache.mesos.kafka.config.*;
 import org.apache.mesos.kafka.state.KafkaStateService;
 import org.apache.mesos.offer.OfferRequirement;
@@ -44,7 +45,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
 
   @Override
   public OfferRequirement getNewOfferRequirement(String configName, int brokerId)
-          throws TaskRequirement.InvalidTaskRequirementException {
+          throws TaskRequirement.InvalidTaskRequirementException, ConfigStoreException {
     OfferRequirement offerRequirement = getNewOfferRequirementInternal(configName, brokerId);
     log.info("Got new OfferRequirement with TaskRequirements: " + offerRequirement.getTaskRequirements());
 
@@ -77,7 +78,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
 
   @Override
   public OfferRequirement getUpdateOfferRequirement(String configName, TaskInfo taskInfo)
-          throws TaskRequirement.InvalidTaskRequirementException {
+          throws TaskRequirement.InvalidTaskRequirementException, ConfigStoreException {
     KafkaSchedulerConfiguration config = configState.fetch(UUID.fromString(configName));
     BrokerConfiguration brokerConfig = config.getBrokerConfiguration();
 
@@ -139,7 +140,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
 
     try {
       OfferRequirement offerRequirement =
-          new OfferRequirement(Arrays.asList(updatedTaskInfo), updatedExecutor.build(), null, null);
+              new OfferRequirement(Arrays.asList(updatedTaskInfo), updatedExecutor.build(), null, null);
 
       log.info("Update OfferRequirement with TaskRequirements: " + offerRequirement.getTaskRequirements());
       log.info("Update OfferRequirement with ExecutorRequirement: " + offerRequirement.getExecutorRequirement());
@@ -147,7 +148,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
       return offerRequirement;
     } catch (InvalidTaskRequirementException e) {
       log.warn("Failed to create update OfferRequirement with "
-          + "OrigTaskInfo[" + taskInfo + "] NewTaskInfo[" + updatedTaskInfo + "]", e);
+              + "OrigTaskInfo[" + taskInfo + "] NewTaskInfo[" + updatedTaskInfo + "]", e);
       return null;
     }
   }
@@ -282,7 +283,8 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     return 9092 + ThreadLocalRandom.current().nextLong(0, 1000);
   }
 
-  private OfferRequirement getNewOfferRequirementInternal(String configName, int brokerId) throws TaskRequirement.InvalidTaskRequirementException {
+  private OfferRequirement getNewOfferRequirementInternal(String configName, int brokerId)
+          throws TaskRequirement.InvalidTaskRequirementException, ConfigStoreException {
     log.info("Getting new OfferRequirement for: " + configName);
     String overridePrefix = KafkaSchedulerConfiguration.KAFKA_OVERRIDE_PREFIX;
     String brokerName = OfferUtils.idToName(brokerId);

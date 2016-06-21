@@ -1,12 +1,10 @@
 package org.apache.mesos.kafka.offer;
 
-import com.google.protobuf.InvalidProtocolBufferException;
 import com.mesosphere.dcos.kafka.common.KafkaTask;
 import org.apache.mesos.Protos.*;
 import org.apache.mesos.kafka.config.*;
 import org.apache.mesos.kafka.state.KafkaStateService;
 import org.apache.mesos.offer.OfferRequirement;
-import org.apache.mesos.offer.TaskRequirement;
 import org.apache.mesos.offer.TaskUtils;
 import org.apache.mesos.protobuf.CommandInfoBuilder;
 import org.apache.mesos.protobuf.ExecutorInfoBuilder;
@@ -101,7 +99,7 @@ public class PersistentOfferRequirementProviderTest {
   }
 
   @Test
-  public void testNewRequirement() throws TaskRequirement.InvalidTaskRequirementException, InvalidProtocolBufferException {
+  public void testNewRequirement() throws Exception {
     when(configState.fetch(UUID.fromString(testConfigName))).thenReturn(schedulerConfig);
     when(state.getFrameworkId()).thenReturn(FrameworkID.newBuilder().setValue("abcd").build());
     PersistentOfferRequirementProvider provider = new PersistentOfferRequirementProvider(state, configState);
@@ -218,7 +216,7 @@ public class PersistentOfferRequirementProviderTest {
   }
 
   @Test
-  public void testUpdateRequirement() throws TaskRequirement.InvalidTaskRequirementException, InvalidProtocolBufferException {
+  public void testUpdateRequirement() throws Exception {
     when(configState.fetch(UUID.fromString(testConfigName))).thenReturn(schedulerConfig);
     Resource oldCpu = ResourceBuilder.reservedCpus(0.5, testRole, testPrincipal, testResourceId); 
     Resource oldMem = ResourceBuilder.reservedMem(500, testRole, testPrincipal, testResourceId); 

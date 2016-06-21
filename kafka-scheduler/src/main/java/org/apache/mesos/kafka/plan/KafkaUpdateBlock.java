@@ -90,8 +90,8 @@ public class KafkaUpdateBlock implements Block {
       OfferRequirement offerReq = getOfferRequirement();
       setPendingTasks(offerReq);
       return offerReq;
-    } catch (TaskRequirement.InvalidTaskRequirementException e) {
-      log.error("Error getting offerRequirement: " + e);
+    } catch (Exception e) {
+      log.error("Error getting offerRequirement: ", e);
     }
 
     return null;
@@ -210,7 +210,7 @@ public class KafkaUpdateBlock implements Block {
     return cachedTaskInfo;
   }
 
-  private OfferRequirement getOfferRequirement() throws TaskRequirement.InvalidTaskRequirementException {
+  private OfferRequirement getOfferRequirement() throws Exception {
     TaskInfo taskInfo = getTaskInfo();
 
     if (taskInfo == null) {

@@ -3,7 +3,7 @@ package org.apache.mesos.kafka.plan;
 import org.apache.mesos.kafka.config.KafkaSchedulerConfiguration;
 import org.apache.mesos.kafka.config.ServiceConfiguration;
 import org.apache.mesos.kafka.offer.PersistentOfferRequirementProvider;
-import org.apache.mesos.kafka.state.KafkaStateService;
+import org.apache.mesos.kafka.state.FrameworkStateService;
 import org.apache.mesos.reconciliation.Reconciler;
 import org.apache.mesos.scheduler.plan.*;
 import org.junit.Assert;
@@ -20,20 +20,11 @@ import java.util.List;
  * This tests the construction of Kafka Stages.
  */
 public class KafkaStageTest {
-    @Mock
-    KafkaSchedulerConfiguration schedulerConfiguration;
-
-    @Mock
-    ServiceConfiguration serviceConfiguration;
-
-    @Mock
-    KafkaStateService kafkaState;
-
-    @Mock
-    PersistentOfferRequirementProvider offerRequirementProvider;
-
-    @Mock
-    Reconciler reconciler;
+    @Mock KafkaSchedulerConfiguration schedulerConfiguration;
+    @Mock ServiceConfiguration serviceConfiguration;
+    @Mock FrameworkStateService frameworkState;
+    @Mock PersistentOfferRequirementProvider offerRequirementProvider;
+    @Mock Reconciler reconciler;
 
     private Stage stage;
 
@@ -67,11 +58,11 @@ public class KafkaStageTest {
 
     private Stage getTestStage() {
         List<Phase> phases = Arrays.asList(
-                ReconciliationPhase.create(reconciler, kafkaState),
+                ReconciliationPhase.create(reconciler, frameworkState),
                 new KafkaUpdatePhase(
                         "target-config-name",
                         schedulerConfiguration,
-                        kafkaState,
+                        frameworkState,
                         offerRequirementProvider));
 
         return DefaultStage.fromList(phases);

@@ -4,9 +4,9 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import com.mesosphere.dcos.kafka.common.KafkaTask;
 import org.apache.mesos.Protos.*;
 import org.apache.mesos.kafka.config.*;
-import org.apache.mesos.kafka.state.KafkaStateService;
+import org.apache.mesos.kafka.state.FrameworkStateService;
+import org.apache.mesos.offer.InvalidRequirementException;
 import org.apache.mesos.offer.OfferRequirement;
-import org.apache.mesos.offer.TaskRequirement;
 import org.apache.mesos.offer.TaskUtils;
 import org.apache.mesos.protobuf.CommandInfoBuilder;
 import org.apache.mesos.protobuf.ExecutorInfoBuilder;
@@ -24,28 +24,29 @@ import static org.mockito.Mockito.when;
 
 public class PersistentOfferRequirementProviderTest {
 
-  private final String testRole = "test-role";
-  private final String testPrincipal = "test-principal";
-  private final String testResourceId = "test-resource-id";
-  private final String testTaskName = "broker-0";
-  private final String testTaskId = "test-task-id";
-  private final String testSlaveId = "test-slave-id";
-  private final String testConfigName = UUID.randomUUID().toString();
-  private final String testFrameworkName = "test-framework-name";
-  private final String testUser = "test-user";
-  private final String testPlacementStrategy = "test-placement-strategy";
-  private final String testPhaseStrategy = "test-phase-strategy";
-  private final String testDiskType = "test-disk-type";
-  private final String testKafkaUri = "test-kafka-uri";
-  private final String testJavaUri = "test-java-uri";
-  private final String testOverriderUri = "test-overrider-uri";
-  private final String testExecutorUri = "test-executor-uri";
-  private final String testKafkaVerName = "test-kafka-ver-name";
-  private final String testKafkaSandboxPath = "test-kafka-sandbox-path";
-  private final String testKafkaZkUri = "test-kafka-zk-uri";
-  private final String testKafkaZkAddress = "test-kafka-zk-address";
+  private static final String testRole = "test-role";
+  private static final String testPrincipal = "test-principal";
+  private static final String testResourceId = "test-resource-id";
+  private static final String testTaskName = "broker-0";
+  private static final TaskID testTaskId = TaskUtils.toTaskId(testTaskName);
+  private static final String testSlaveId = "test-slave-id";
+  private static final String testConfigName = UUID.randomUUID().toString();
+  private static final String testFrameworkName = "test-framework-name";
+  private static final String testUser = "test-user";
+  private static final String testPlacementStrategy = "test-placement-strategy";
+  private static final String testPhaseStrategy = "test-phase-strategy";
+  private static final String testDiskType = "test-disk-type";
+  private static final String testKafkaUri = "test-kafka-uri";
+  private static final String testJavaUri = "test-java-uri";
+  private static final String testOverriderUri = "test-overrider-uri";
+  private static final String testExecutorName = "test-executor-name";
+  private static final String testExecutorUri = "test-executor-uri";
+  private static final String testKafkaVerName = "test-kafka-ver-name";
+  private static final String testKafkaSandboxPath = "test-kafka-sandbox-path";
+  private static final String testKafkaZkUri = "test-kafka-zk-uri";
+  private static final String testKafkaZkAddress = "test-kafka-zk-address";
 
-  @Mock private KafkaStateService state;
+  @Mock private FrameworkStateService state;
   @Mock private KafkaConfigState configState;
   private KafkaSchedulerConfiguration schedulerConfig;
   private ServiceConfiguration serviceConfig;
@@ -99,7 +100,7 @@ public class PersistentOfferRequirementProviderTest {
   }
 
   @Test
-  public void testNewRequirement() throws TaskRequirement.InvalidTaskRequirementException, InvalidProtocolBufferException {
+  public void testNewRequirement() throws InvalidRequirementException, InvalidProtocolBufferException {
     when(configState.fetch(UUID.fromString(testConfigName))).thenReturn(schedulerConfig);
     when(state.getFrameworkId()).thenReturn(FrameworkID.newBuilder().setValue("abcd").build());
     PersistentOfferRequirementProvider provider = new PersistentOfferRequirementProvider(state, configState);
@@ -215,11 +216,11 @@ public class PersistentOfferRequirementProviderTest {
   }
 
   @Test
-  public void testUpdateRequirement() throws TaskRequirement.InvalidTaskRequirementException, InvalidProtocolBufferException {
+  public void testUpdateRequirement() throws InvalidRequirementException, InvalidProtocolBufferException {
     when(configState.fetch(UUID.fromString(testConfigName))).thenReturn(schedulerConfig);
-    Resource oldCpu = ResourceBuilder.reservedCpus(0.5, testRole, testPrincipal, testResourceId); 
-    Resource oldMem = ResourceBuilder.reservedMem(500, testRole, testPrincipal, testResourceId); 
-    Resource oldDisk = ResourceBuilder.reservedDisk(2500, testRole, testPrincipal, testResourceId); 
+    Resource oldCpu = ResourceBuilder.reservedCpus(0.5, testRole, testPrincipal, testResourceId);
+    Resource oldMem = ResourceBuilder.reservedMem(500, testRole, testPrincipal, testResourceId);
+    Resource oldDisk = ResourceBuilder.reservedDisk(2500, testRole, testPrincipal, testResourceId);
     final HeapConfig oldHeapConfig = new HeapConfig(256);
 
     TaskInfo oldTaskInfo = getTaskInfo(Arrays.asList(oldCpu, oldMem, oldDisk));
@@ -278,7 +279,7 @@ public class PersistentOfferRequirementProviderTest {
   }
 
   private TaskInfo getTaskInfo(List<Resource> resources) {
-    TaskInfoBuilder builder = new TaskInfoBuilder(testTaskId, testTaskName, testSlaveId);
+    TaskInfoBuilder builder = new TaskInfoBuilder(testTaskId.getValue(), testTaskName, testSlaveId);
 
     for (Resource resource : resources) {
       builder.addResource(resource);
@@ -289,6 +290,7 @@ public class PersistentOfferRequirementProviderTest {
 
     builder.setExecutorInfo(ExecutorInfoBuilder.createExecutorInfoBuilder()
             .setCommand(fakeCommand)
+            .setName(testExecutorName)
             .setExecutorId(ExecutorID.newBuilder().setValue(""))
             .build());
 

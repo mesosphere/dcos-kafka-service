@@ -6,7 +6,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.apache.mesos.kafka.plan.KafkaUpdatePhase;
-import org.apache.mesos.kafka.state.KafkaStateService;
+import org.apache.mesos.kafka.state.FrameworkStateService;
 import org.apache.mesos.scheduler.plan.*;
 
 public class BrokerCheck extends HealthCheck {
@@ -14,9 +14,9 @@ public class BrokerCheck extends HealthCheck {
   private final Log log = LogFactory.getLog(BrokerCheck.class);
 
   private final StageManager stageManager;
-  private final KafkaStateService state;
+  private final FrameworkStateService state;
 
-  public BrokerCheck(StageManager stageManager, KafkaStateService state) {
+  public BrokerCheck(StageManager stageManager, FrameworkStateService state) {
     this.stageManager = stageManager;
     this.state = state;
   }

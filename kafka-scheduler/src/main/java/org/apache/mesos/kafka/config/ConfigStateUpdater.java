@@ -5,6 +5,7 @@ import java.util.UUID;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.kafka.config.ConfigStateValidator.ValidationException;
+import org.apache.mesos.kafka.state.FrameworkStateService;
 import org.apache.mesos.kafka.state.KafkaStateService;
 import org.apache.mesos.state.StateStoreException;
 
@@ -17,6 +18,7 @@ public class ConfigStateUpdater {
   private final KafkaConfigState kafkaConfigState;
   private final ConfigStateValidator validator;
   private final KafkaSchedulerConfiguration newTargetConfig;
+  private final FrameworkStateService frameworkStateService;
   private final KafkaStateService kafkaStateService;
 
   public ConfigStateUpdater(KafkaSchedulerConfiguration newTargetConfig) {
@@ -25,14 +27,13 @@ public class ConfigStateUpdater {
     final String frameworkName = newTargetConfig.getServiceConfiguration().getName();
 
     // We must bootstrap config management with some values from the new config:
-    this.kafkaConfigState = new KafkaConfigState(
-            frameworkName,
-        kafkaConfiguration.getZkAddress());
+    this.kafkaConfigState = new KafkaConfigState(frameworkName, kafkaConfiguration.getZkAddress());
+    this.frameworkStateService = new FrameworkStateService(
+        kafkaConfiguration.getZkAddress(), "/" + frameworkName);
     this.kafkaStateService = new KafkaStateService(
-        kafkaConfiguration.getZkAddress(),
-        "/" + frameworkName);
+        kafkaConfiguration.getZkAddress(), "/" + frameworkName);
 
-    this.validator = new ConfigStateValidator(kafkaStateService);
+    this.validator = new ConfigStateValidator(frameworkStateService);
   }
 
   /**
@@ -58,8 +59,8 @@ public class ConfigStateUpdater {
       if (!currTargetConfig.equals(newTargetConfig)) {
         log.info("Config change detected!");
         setTargetConfig(newTargetConfig);
-        kafkaConfigState.syncConfigs(kafkaStateService);
-        kafkaConfigState.cleanConfigs(kafkaStateService);
+        kafkaConfigState.syncConfigs(frameworkStateService);
+        kafkaConfigState.cleanConfigs(frameworkStateService);
       } else {
         log.info("No config properties changes detected.");
       }
@@ -76,7 +77,14 @@ public class ConfigStateUpdater {
   }
 
   /**
-   * Returns the underlying kafka state storage to be used elsewhere.
+   * Returns the underlying Framework state storage to be used elsewhere.
+   */
+  public FrameworkStateService getFrameworkState() {
+    return frameworkStateService;
+  }
+
+  /**
+   * Returns the underlying Kafka state storage to be used elsewhere.
    */
   public KafkaStateService getKafkaState() {
     return kafkaStateService;

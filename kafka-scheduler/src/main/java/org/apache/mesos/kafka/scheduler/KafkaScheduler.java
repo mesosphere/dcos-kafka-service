@@ -10,7 +10,6 @@ import io.dropwizard.setup.Environment;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos.*;
 import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
@@ -24,15 +23,15 @@ import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.PersistentOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.PersistentOperationRecorder;
 import org.apache.mesos.kafka.plan.KafkaUpdatePhase;
+import org.apache.mesos.kafka.state.FrameworkStateService;
 import org.apache.mesos.kafka.state.KafkaStateService;
-
+import org.apache.mesos.offer.InvalidRequirementException;
 import org.apache.mesos.offer.OfferAccepter;
 import org.apache.mesos.offer.ResourceCleaner;
 import org.apache.mesos.offer.ResourceCleanerScheduler;
-
-import org.apache.mesos.offer.TaskRequirement;
 import org.apache.mesos.reconciliation.DefaultReconciler;
 import org.apache.mesos.reconciliation.Reconciler;
+import org.apache.mesos.scheduler.SchedulerDriverFactory;
 import org.apache.mesos.scheduler.plan.*;
 
 /**
@@ -45,6 +44,7 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
 
   private final KafkaConfigState configState;
   private final KafkaSchedulerConfiguration envConfig;
+  private final FrameworkStateService frameworkState;
   private final KafkaStateService kafkaState;
 
   private final DefaultStageScheduler stageScheduler;
@@ -53,7 +53,7 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
   private final OfferAccepter offerAccepter;
   private final Reconciler reconciler;
   private final StageManager stageManager;
-  private MesosSchedulerDriver driver;
+  private SchedulerDriver driver;
   private static final Integer restartLock = 0;
   private static List<String> tasksToRestart = new ArrayList<String>();
   private static final Integer rescheduleLock = 0;
@@ -79,21 +79,22 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
     reconciler = new DefaultReconciler();
 
     configState = configStateUpdater.getConfigState();
+    frameworkState = configStateUpdater.getFrameworkState();
     kafkaState = configStateUpdater.getKafkaState();
-    addObserver(kafkaState);
+    addObserver(frameworkState);
 
     offerAccepter =
-      new OfferAccepter(Arrays.asList(new PersistentOperationRecorder(kafkaState)));
+      new OfferAccepter(Arrays.asList(new PersistentOperationRecorder(frameworkState)));
 
     KafkaOfferRequirementProvider offerRequirementProvider =
-      new PersistentOfferRequirementProvider(kafkaState, configState);
+      new PersistentOfferRequirementProvider(frameworkState, configState);
 
     List<Phase> phases = Arrays.asList(
-        ReconciliationPhase.create(reconciler, kafkaState),
+        ReconciliationPhase.create(reconciler, frameworkState),
         new KafkaUpdatePhase(
             configState.getTargetName().toString(),
             envConfig,
-            kafkaState,
+            frameworkState,
             offerRequirementProvider));
     // If config validation had errors, expose them via the Stage.
     Stage stage = stageErrors.isEmpty()
@@ -106,7 +107,7 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
     stageScheduler = new DefaultStageScheduler(offerAccepter);
     repairScheduler = new KafkaRepairScheduler(
         configState.getTargetName().toString(),
-        kafkaState,
+        frameworkState,
         offerRequirementProvider,
         offerAccepter);
   }
@@ -168,7 +169,7 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
   @Override
   public void registered(SchedulerDriver driver, FrameworkID frameworkId, MasterInfo masterInfo) {
     log.info("Registered framework with frameworkId: " + frameworkId.getValue());
-    kafkaState.setFrameworkId(frameworkId);
+    frameworkState.setFrameworkId(frameworkId);
   }
 
   @Override
@@ -204,7 +205,7 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
         List<Offer> unacceptedOffers = filterAcceptedOffers(offers, acceptedOffers);
         try {
           acceptedOffers.addAll(repairScheduler.resourceOffers(driver, unacceptedOffers, block));
-        } catch (TaskRequirement.InvalidTaskRequirementException e) {
+        } catch (InvalidRequirementException e) {
           log.error("Error repairing block: " + block + " Reason: " + e);
         }
 
@@ -223,7 +224,7 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
 
   private ResourceCleanerScheduler getCleanerScheduler() {
     try {
-      ResourceCleaner cleaner = new ResourceCleaner(kafkaState.getExpectedResources());
+      ResourceCleaner cleaner = new ResourceCleaner(frameworkState.getExpectedResources());
       return new ResourceCleanerScheduler(cleaner, offerAccepter);
     } catch (Exception ex) {
       log.error("Failed to construct ResourceCleaner with exception:", ex);
@@ -278,7 +279,7 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
       for (String taskId : tasksToReschedule) {
         if (taskId != null) {
           log.info("Rescheduling task: " + taskId);
-          kafkaState.deleteTask(taskId);
+          frameworkState.deleteTask(taskId);
           driver.killTask(TaskID.newBuilder().setValue(taskId).build());
         } else {
           log.warn("Asked to reschedule null task.");
@@ -338,7 +339,7 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
       .setPrincipal(envConfig.getServiceConfiguration().getPrincipal())
       .setCheckpoint(true);
 
-    FrameworkID fwkId = kafkaState.getFrameworkId();
+    FrameworkID fwkId = frameworkState.getFrameworkId();
     if (fwkId != null) {
       fwkInfoBuilder.setId(fwkId);
     }
@@ -375,7 +376,7 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
 
   private void registerFramework(KafkaScheduler sched, FrameworkInfo frameworkInfo, String masterUri) {
     log.info("Registering without authentication");
-    driver = new MesosSchedulerDriver(sched, frameworkInfo, masterUri);
+    driver = new SchedulerDriverFactory().create(sched, frameworkInfo, masterUri);
     driver.run();
   }
 
@@ -394,6 +395,10 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
 
   public KafkaConfigState getConfigState() {
     return configState;
+  }
+
+  public FrameworkStateService getFrameworkState() {
+    return frameworkState;
   }
 
   public KafkaStateService getKafkaState() {

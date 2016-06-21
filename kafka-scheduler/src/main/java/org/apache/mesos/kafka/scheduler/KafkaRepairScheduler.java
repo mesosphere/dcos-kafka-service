@@ -8,7 +8,7 @@ import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.OfferUtils;
-import org.apache.mesos.kafka.state.KafkaStateService;
+import org.apache.mesos.kafka.state.FrameworkStateService;
 import org.apache.mesos.offer.*;
 import org.apache.mesos.scheduler.plan.Block;
 
@@ -20,22 +20,23 @@ public class KafkaRepairScheduler {
   private final Log log = LogFactory.getLog(KafkaRepairScheduler.class);
 
   private final String targetConfigName;
-  private final KafkaStateService state;
+  private final FrameworkStateService state;
   private final OfferAccepter offerAccepter;
   private final KafkaOfferRequirementProvider offerReqProvider;
 
   public KafkaRepairScheduler(
     String targetConfigName,
-    KafkaStateService kafkaStateService,
+    FrameworkStateService frameworkStateService,
     KafkaOfferRequirementProvider offerReqProvider,
     OfferAccepter offerAccepter) {
     this.targetConfigName = targetConfigName;
-    this.state = kafkaStateService;
+    this.state = frameworkStateService;
     this.offerReqProvider = offerReqProvider;
     this.offerAccepter = offerAccepter;
   }
 
-  public List<OfferID> resourceOffers(SchedulerDriver driver, List<Offer> offers, Block block) throws TaskRequirement.InvalidTaskRequirementException {
+  public List<OfferID> resourceOffers(SchedulerDriver driver, List<Offer> offers, Block block)
+      throws InvalidRequirementException {
     List<OfferID> acceptedOffers = new ArrayList<OfferID>();
     List<TaskInfo> terminatedTasks = getTerminatedTasks(block);
 

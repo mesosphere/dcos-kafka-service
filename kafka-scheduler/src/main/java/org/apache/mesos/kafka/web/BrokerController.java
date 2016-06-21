@@ -3,6 +3,7 @@ package org.apache.mesos.kafka.web;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.kafka.scheduler.KafkaScheduler;
+import org.apache.mesos.kafka.state.FrameworkStateService;
 import org.apache.mesos.kafka.state.KafkaStateService;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -23,16 +24,18 @@ import java.util.List;
 public class BrokerController {
   private final Log log = LogFactory.getLog(BrokerController.class);
 
-  private final KafkaStateService state;
+  private final KafkaStateService kafkaState;
+  private final FrameworkStateService frameworkState;
 
-  public BrokerController(KafkaStateService state) {
-    this.state = state;
+  public BrokerController(KafkaStateService kafkaState, FrameworkStateService frameworkState) {
+    this.kafkaState = kafkaState;
+    this.frameworkState = frameworkState;
   }
 
   @GET
   public Response listBrokers() {
     try {
-      JSONArray brokerIds = state.getBrokerIds();
+      JSONArray brokerIds = kafkaState.getBrokerIds();
       JSONObject obj = new JSONObject();
       obj.put("brokers", brokerIds);
       return Response.ok(obj.toString(), MediaType.APPLICATION_JSON).build();
@@ -50,7 +53,7 @@ public class BrokerController {
 
     try {
       List<String> taskIds =
-        Arrays.asList(state.getTaskIdForBroker(Integer.parseInt(id)));
+        Arrays.asList(frameworkState.getTaskIdForBroker(Integer.parseInt(id)));
       return killBrokers(taskIds, replace);
     } catch (Exception ex) {
       log.error("Failed to kill brokers with exception: " + ex);

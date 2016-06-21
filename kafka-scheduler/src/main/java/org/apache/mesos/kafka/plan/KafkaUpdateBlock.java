@@ -9,9 +9,11 @@ import org.apache.mesos.Protos.TaskStatus;
 import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.OfferUtils;
 import org.apache.mesos.kafka.scheduler.KafkaScheduler;
-import org.apache.mesos.kafka.state.KafkaStateService;
+import org.apache.mesos.kafka.state.FrameworkStateService;
+import org.apache.mesos.offer.InvalidRequirementException;
 import org.apache.mesos.offer.OfferRequirement;
 import org.apache.mesos.offer.TaskRequirement;
+import org.apache.mesos.offer.TaskUtils;
 import org.apache.mesos.scheduler.plan.Block;
 import org.apache.mesos.scheduler.plan.Status;
 
@@ -24,17 +26,17 @@ public class KafkaUpdateBlock implements Block {
   private final Log log = LogFactory.getLog(KafkaUpdateBlock.class);
 
   private Status status = Status.Pending;
-  private KafkaOfferRequirementProvider offerReqProvider;
-  private String targetConfigName = null;
-  private KafkaStateService state = null;
-  private int brokerId;
-  private UUID blockId;
+  private final KafkaOfferRequirementProvider offerReqProvider;
+  private final String targetConfigName;
+  private final FrameworkStateService state;
+  private final int brokerId;
+  private final UUID blockId;
   private final Object taskLock = new Object();
   private List<TaskID> pendingTasks;
   private TaskInfo cachedTaskInfo;
 
   public KafkaUpdateBlock(
-    KafkaStateService state,
+    FrameworkStateService state,
     KafkaOfferRequirementProvider offerReqProvider,
     String targetConfigName,
     int brokerId) {
@@ -90,7 +92,7 @@ public class KafkaUpdateBlock implements Block {
       OfferRequirement offerReq = getOfferRequirement();
       setPendingTasks(offerReq);
       return offerReq;
-    } catch (TaskRequirement.InvalidTaskRequirementException e) {
+    } catch (InvalidRequirementException e) {
       log.error("Error getting offerRequirement: " + e);
     }
 
@@ -142,7 +144,7 @@ public class KafkaUpdateBlock implements Block {
         }
 
         setPendingTasks(updatedPendingTasks);
-      } else if (isInProgress() && isTerminalState(taskStatus)) {
+      } else if (isInProgress() && TaskUtils.isTerminated(taskStatus)) {
         log.info("Received terminal while InProgress TaskStatus: " + taskStatus);
         setStatus(Status.Pending);
         return;
@@ -210,7 +212,7 @@ public class KafkaUpdateBlock implements Block {
     return cachedTaskInfo;
   }
 
-  private OfferRequirement getOfferRequirement() throws TaskRequirement.InvalidTaskRequirementException {
+  private OfferRequirement getOfferRequirement() throws InvalidRequirementException {
     TaskInfo taskInfo = getTaskInfo();
 
     if (taskInfo == null) {
@@ -295,14 +297,6 @@ public class KafkaUpdateBlock implements Block {
 
   public String getBrokerName() {
     return "broker-" + brokerId;
-  }
-
-  private boolean isTerminalState(TaskStatus taskStatus) {
-    return taskStatus.getState().equals(TaskState.TASK_FAILED)
-      || taskStatus.getState().equals(TaskState.TASK_FINISHED)
-      || taskStatus.getState().equals(TaskState.TASK_KILLED)
-      || taskStatus.getState().equals(TaskState.TASK_LOST)
-      || taskStatus.getState().equals(TaskState.TASK_ERROR);
   }
 
   private List<TaskID> getUpdateIds() {

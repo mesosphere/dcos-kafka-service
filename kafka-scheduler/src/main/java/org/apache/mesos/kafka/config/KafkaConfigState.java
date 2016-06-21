@@ -2,7 +2,6 @@ package org.apache.mesos.kafka.config;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.mesos.Protos.Label;
 import org.apache.mesos.Protos.Labels;
 import org.apache.mesos.Protos.TaskInfo;
@@ -11,7 +10,7 @@ import org.apache.mesos.config.ConfigStoreException;
 import org.apache.mesos.config.CuratorConfigStore;
 import org.apache.mesos.kafka.offer.OfferUtils;
 import org.apache.mesos.kafka.offer.PersistentOfferRequirementProvider;
-import org.apache.mesos.kafka.state.KafkaStateService;
+import org.apache.mesos.kafka.state.FrameworkStateService;
 import org.apache.mesos.protobuf.LabelBuilder;
 import org.apache.mesos.state.StateStoreException;
 
@@ -22,22 +21,23 @@ import java.util.*;
  * Each configuration is in the form of a {@link KafkaSchedulerConfiguration}.
  */
 public class KafkaConfigState {
-  private final Log log = LogFactory.getLog(KafkaConfigState.class);
+  private static final Log log = LogFactory.getLog(KafkaConfigState.class);
 
-  private ConfigStore configStore;
-  private KafkaConfigurationFactory kafkaConfigurationFactory;
+  private final ConfigStore<KafkaSchedulerConfiguration> configStore;
+
   /**
    * Creates a new Kafka config state manager based on the provided bootstrap information.
+   *
+   * @see CuratorConfigStore
    */
   public KafkaConfigState(String frameworkName, String zkHost) {
-    this.configStore = new CuratorConfigStore("/" + frameworkName, zkHost, new ExponentialBackoffRetry(1000, 3));
-    this.kafkaConfigurationFactory = new KafkaConfigurationFactory();
-
+    this.configStore =
+            new CuratorConfigStore<KafkaSchedulerConfiguration>("/" + frameworkName, zkHost);
   }
 
   public KafkaSchedulerConfiguration fetch(UUID version) throws StateStoreException {
     try {
-      return (KafkaSchedulerConfiguration) configStore.fetch(version, this.kafkaConfigurationFactory);
+      return configStore.fetch(version, KafkaSchedulerConfiguration.factoryInstance());
     } catch (ConfigStoreException e) {
       log.error("Unable to fetch version: " + version + " Reason: " + e);
       throw new StateStoreException(e);
@@ -82,7 +82,7 @@ public class KafkaConfigState {
     try {
       return configStore.list();
     } catch (ConfigStoreException e) {
-      return Collections.EMPTY_LIST;
+      return Collections.emptyList();
     }
   }
 
@@ -112,7 +112,7 @@ public class KafkaConfigState {
     }
   }
 
-  public void syncConfigs(KafkaStateService state) {
+  public void syncConfigs(FrameworkStateService state) {
     try {
       UUID targetName = getTargetName();
       List<String> duplicateConfigs = getDuplicateConfigs();
@@ -126,12 +126,12 @@ public class KafkaConfigState {
     }
   }
 
-  public void cleanConfigs(KafkaStateService state) {
+  public void cleanConfigs(FrameworkStateService state) {
     Set<UUID> activeConfigs = new HashSet<>();
     activeConfigs.add(getTargetName());
     activeConfigs.addAll(getTaskConfigs(state));
 
-    log.info("Cleaning all configs which are NOT in the active list: " + activeConfigs); 
+    log.info("Cleaning all configs which are NOT in the active list: " + activeConfigs);
 
     for (UUID configName : getConfigNames()) {
       if (!activeConfigs.contains(configName)) {
@@ -145,7 +145,7 @@ public class KafkaConfigState {
     }
   }
 
-  private Set<UUID> getTaskConfigs(KafkaStateService state) {
+  private Set<UUID> getTaskConfigs(FrameworkStateService state) {
     Set<UUID> activeConfigs = new HashSet<>();
 
     try {
@@ -164,7 +164,7 @@ public class KafkaConfigState {
     return activeConfigs;
   }
 
-  private void replaceDuplicateConfig(KafkaStateService state, TaskInfo taskInfo, List<String> duplicateConfigs, UUID targetName) {
+  private void replaceDuplicateConfig(FrameworkStateService state, TaskInfo taskInfo, List<String> duplicateConfigs, UUID targetName) {
     try {
       String taskConfig = OfferUtils.getConfigName(taskInfo);
 

@@ -80,7 +80,8 @@ public final class Main extends Application<DropwizardConfiguration> {
     environment.jersey().register(new ClusterController(
             configuration.getSchedulerConfiguration().getKafkaConfiguration().getKafkaZkUri(),
             kafkaScheduler.getConfigState(), kafkaState));
-    environment.jersey().register(new BrokerController(kafkaState));
+    environment.jersey().register(new BrokerController(
+            kafkaState, kafkaScheduler.getFrameworkState()));
     environment.jersey().register(
             new TopicController(new CmdExecutor(configuration.getSchedulerConfiguration(), kafkaState), kafkaState));
     environment.jersey().register(new StageResource(kafkaScheduler.getStageManager()));
@@ -92,8 +93,6 @@ public final class Main extends Application<DropwizardConfiguration> {
 
     environment.healthChecks().register(
         BrokerCheck.NAME,
-        new BrokerCheck(
-          kafkaScheduler.getStageManager(),
-          kafkaScheduler.getKafkaState()));
+        new BrokerCheck(kafkaScheduler.getStageManager(), kafkaScheduler.getFrameworkState()));
   }
 }

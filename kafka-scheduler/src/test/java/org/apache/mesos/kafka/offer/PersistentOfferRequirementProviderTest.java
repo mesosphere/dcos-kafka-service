@@ -26,6 +26,7 @@ public class PersistentOfferRequirementProviderTest {
   private final String testPrincipal = "test-principal";
   private final String testResourceId = "test-resource-id";
   private final String testTaskName = "broker-0";
+  private final String testExecutorName = "executor-0";
   private final String testTaskId = "test-task-id";
   private final String testSlaveId = "test-slave-id";
   private final String testConfigName = UUID.randomUUID().toString();
@@ -295,6 +296,7 @@ public class PersistentOfferRequirementProviderTest {
     builder.setCommand(fakeCommand);
 
     builder.setExecutorInfo(ExecutorInfoBuilder.createExecutorInfoBuilder()
+            .setName(testExecutorName)
             .setCommand(fakeCommand)
             .setExecutorId(ExecutorID.newBuilder().setValue(""))
             .build());

@@ -18,6 +18,7 @@ echo "Building wheel..."
 source env/bin/activate
 python setup.py bdist_wheel
 
-echo "Building egg..."
-python setup.py sdist
-
+# (TODO - mgummelt): I'm pretty sure we don't use this anywhere.
+#   Delete after some time.
+# echo "Building egg..."
+# python setup.py sdist

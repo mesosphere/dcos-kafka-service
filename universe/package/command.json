@@ -1,5 +1,5 @@
 {
   "pip": [
-    "{{artifact-dir}}/dcos-kafka-0.2.5.tar.gz"
+    "{{artifact-dir}}/cli/dcos_kafka-0.2.5-py2.py3-none-any.whl"
   ]
 }

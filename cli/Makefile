@@ -1,4 +1,4 @@
-all: env test packages
+all: env test packages binary
 
 clean:
 	bin/clean.sh
@@ -12,5 +12,7 @@ test:
 packages:
 	bin/packages.sh
 
-binary:  clean env packages
+binary: env
 	pyinstaller binary/binary.spec
+	mkdir -p dist/linux
+	mv dist/dcos-kafka dist/linux/dcos-kafka

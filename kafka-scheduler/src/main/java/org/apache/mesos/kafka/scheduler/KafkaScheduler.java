@@ -10,7 +10,6 @@ import io.dropwizard.setup.Environment;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos.*;
 import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
@@ -31,6 +30,7 @@ import org.apache.mesos.offer.*;
 
 import org.apache.mesos.reconciliation.DefaultReconciler;
 import org.apache.mesos.reconciliation.Reconciler;
+import org.apache.mesos.scheduler.SchedulerDriverFactory;
 import org.apache.mesos.scheduler.plan.*;
 
 /**
@@ -51,7 +51,7 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
   private final OfferAccepter offerAccepter;
   private final Reconciler reconciler;
   private final StageManager stageManager;
-  private MesosSchedulerDriver driver;
+  private SchedulerDriver driver;
   private static final Integer restartLock = 0;
   private static List<String> tasksToRestart = new ArrayList<String>();
   private static final Integer rescheduleLock = 0;
@@ -373,7 +373,7 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
 
   private void registerFramework(KafkaScheduler sched, FrameworkInfo frameworkInfo, String masterUri) {
     log.info("Registering without authentication");
-    driver = new MesosSchedulerDriver(sched, frameworkInfo, masterUri);
+    driver = new SchedulerDriverFactory().create(sched, frameworkInfo, masterUri);
     driver.run();
   }
 

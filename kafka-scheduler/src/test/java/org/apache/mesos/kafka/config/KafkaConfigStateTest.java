@@ -5,7 +5,7 @@ import org.apache.curator.retry.RetryNTimes;
 import org.apache.curator.test.TestingServer;
 
 import org.apache.mesos.config.ConfigStoreException;
-import org.apache.mesos.kafka.state.KafkaStateService;
+import org.apache.mesos.kafka.state.KafkaState;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,7 +28,7 @@ public class KafkaConfigStateTest {
     private KafkaSchedulerConfiguration config;
 
     @Mock
-    KafkaStateService state;
+    KafkaState state;
 
     @Before
     public void beforeEach() throws Exception {

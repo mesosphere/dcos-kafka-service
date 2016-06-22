@@ -30,12 +30,12 @@ import org.apache.mesos.state.StateStoreException;
  * Read/write interface for storing and retrieving information about Framework tasks.
  * The underlying data is stored against Executor IDs of "broker-0", "broker-1", etc.
  */
-public class FrameworkStateService implements Observer, TaskStatusProvider {
-    private static final Log log = LogFactory.getLog(FrameworkStateService.class);
+public class FrameworkState implements Observer, TaskStatusProvider {
+    private static final Log log = LogFactory.getLog(FrameworkState.class);
 
     private final StateStore stateStore;
 
-    public FrameworkStateService(String zkHost, String zkRoot) {
+    public FrameworkState(String zkRoot, String zkHost) {
         this.stateStore = new CuratorStateStore(zkRoot, zkHost);
     }
 

@@ -24,8 +24,8 @@ import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.PersistentOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.PersistentOperationRecorder;
 import org.apache.mesos.kafka.plan.KafkaUpdatePhase;
-import org.apache.mesos.kafka.state.FrameworkStateService;
-import org.apache.mesos.kafka.state.KafkaStateService;
+import org.apache.mesos.kafka.state.FrameworkState;
+import org.apache.mesos.kafka.state.KafkaState;
 
 import org.apache.mesos.offer.*;
 
@@ -44,8 +44,8 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
 
   private final KafkaConfigState configState;
   private final KafkaSchedulerConfiguration envConfig;
-  private final FrameworkStateService frameworkState;
-  private final KafkaStateService kafkaState;
+  private final FrameworkState frameworkState;
+  private final KafkaState kafkaState;
 
   private final DefaultStageScheduler stageScheduler;
   private final KafkaRepairScheduler repairScheduler;
@@ -397,11 +397,11 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
     return configState;
   }
 
-  public FrameworkStateService getFrameworkState() {
+  public FrameworkState getFrameworkState() {
     return frameworkState;
   }
 
-  public KafkaStateService getKafkaState() {
+  public KafkaState getKafkaState() {
     return kafkaState;
   }
 

@@ -3,7 +3,7 @@ package org.apache.mesos.kafka.web;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.kafka.config.KafkaConfigState;
-import org.apache.mesos.kafka.state.KafkaStateService;
+import org.apache.mesos.kafka.state.KafkaState;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -20,13 +20,13 @@ import java.util.UUID;
 public class ClusterController {
   private final Log log = LogFactory.getLog(ClusterController.class);
   private final String zookeeperEndpoint;
-  private final KafkaStateService state;
+  private final KafkaState state;
   private final KafkaConfigState configState;
 
   public ClusterController(
       String zookeeperEndpoint,
       KafkaConfigState configState,
-      KafkaStateService state) {
+      KafkaState state) {
     this.zookeeperEndpoint = zookeeperEndpoint;
     this.configState = configState;
     this.state = state;

@@ -6,7 +6,7 @@ import java.util.UUID;
 
 import org.apache.mesos.kafka.config.KafkaSchedulerConfiguration;
 import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
-import org.apache.mesos.kafka.state.FrameworkStateService;
+import org.apache.mesos.kafka.state.FrameworkState;
 import org.apache.mesos.scheduler.plan.Block;
 import org.apache.mesos.scheduler.plan.Phase;
 
@@ -19,7 +19,7 @@ public class KafkaUpdatePhase implements Phase {
   public KafkaUpdatePhase(
       String targetConfigName,
       KafkaSchedulerConfiguration targetConfig,
-      FrameworkStateService frameworkState,
+      FrameworkState frameworkState,
       KafkaOfferRequirementProvider offerReqProvider) {
     this.configName = targetConfigName;
     this.config = targetConfig;
@@ -73,7 +73,7 @@ public class KafkaUpdatePhase implements Phase {
   private static List<Block> createBlocks(
       String configName,
       int brokerCount,
-      FrameworkStateService frameworkState,
+      FrameworkState frameworkState,
       KafkaOfferRequirementProvider offerReqProvider) {
 
     List<Block> blocks = new ArrayList<Block>();

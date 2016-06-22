@@ -3,7 +3,7 @@ package org.apache.mesos.kafka.offer;
 import com.mesosphere.dcos.kafka.common.KafkaTask;
 import org.apache.mesos.Protos.*;
 import org.apache.mesos.kafka.config.*;
-import org.apache.mesos.kafka.state.FrameworkStateService;
+import org.apache.mesos.kafka.state.FrameworkState;
 import org.apache.mesos.offer.OfferRequirement;
 import org.apache.mesos.offer.TaskUtils;
 import org.apache.mesos.protobuf.CommandInfoBuilder;
@@ -45,7 +45,7 @@ public class PersistentOfferRequirementProviderTest {
   private static final String testKafkaZkUri = "test-kafka-zk-uri";
   private static final String testKafkaZkAddress = "test-kafka-zk-address";
 
-  @Mock private FrameworkStateService state;
+  @Mock private FrameworkState state;
   @Mock private KafkaConfigState configState;
   private KafkaSchedulerConfiguration schedulerConfig;
   private ServiceConfiguration serviceConfig;

@@ -11,7 +11,7 @@ import org.apache.mesos.config.ConfigStoreException;
 import org.apache.mesos.config.CuratorConfigStore;
 import org.apache.mesos.kafka.offer.OfferUtils;
 import org.apache.mesos.kafka.offer.PersistentOfferRequirementProvider;
-import org.apache.mesos.kafka.state.FrameworkStateService;
+import org.apache.mesos.kafka.state.FrameworkState;
 import org.apache.mesos.protobuf.LabelBuilder;
 
 import java.util.*;
@@ -30,9 +30,8 @@ public class KafkaConfigState {
    *
    * @see CuratorConfigStore
    */
-  public KafkaConfigState(String frameworkName, String zkHost) {
-    this.configStore = new CuratorConfigStore<KafkaSchedulerConfiguration>(
-            "/" + frameworkName, zkHost);
+  public KafkaConfigState(String zkRoot, String zkHost) {
+    this.configStore = new CuratorConfigStore<KafkaSchedulerConfiguration>(zkRoot, zkHost);
   }
 
   /**
@@ -127,7 +126,7 @@ public class KafkaConfigState {
     }
   }
 
-  public void syncConfigs(FrameworkStateService state) throws ConfigStoreException {
+  public void syncConfigs(FrameworkState state) throws ConfigStoreException {
     try {
       UUID targetName = getTargetName();
       List<String> duplicateConfigs = getDuplicateConfigs();
@@ -142,7 +141,7 @@ public class KafkaConfigState {
     }
   }
 
-  public void cleanConfigs(FrameworkStateService state) throws ConfigStoreException {
+  public void cleanConfigs(FrameworkState state) throws ConfigStoreException {
     Set<UUID> activeConfigs = new HashSet<>();
     activeConfigs.add(getTargetName());
     activeConfigs.addAll(getTaskConfigs(state));
@@ -161,7 +160,7 @@ public class KafkaConfigState {
     }
   }
 
-  private Set<UUID> getTaskConfigs(FrameworkStateService state) {
+  private Set<UUID> getTaskConfigs(FrameworkState state) {
     Set<UUID> activeConfigs = new HashSet<>();
 
     try {
@@ -180,7 +179,7 @@ public class KafkaConfigState {
     return activeConfigs;
   }
 
-  private void replaceDuplicateConfig(FrameworkStateService state, TaskInfo taskInfo, List<String> duplicateConfigs, UUID targetName)
+  private void replaceDuplicateConfig(FrameworkState state, TaskInfo taskInfo, List<String> duplicateConfigs, UUID targetName)
           throws ConfigStoreException {
     try {
       String taskConfig = OfferUtils.getConfigName(taskInfo);

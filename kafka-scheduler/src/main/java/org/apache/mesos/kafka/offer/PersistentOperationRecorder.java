@@ -2,16 +2,16 @@ package org.apache.mesos.kafka.offer;
 
 import org.apache.mesos.Protos.Offer;
 import org.apache.mesos.Protos.Offer.Operation;
-import org.apache.mesos.kafka.state.FrameworkStateService;
+import org.apache.mesos.kafka.state.FrameworkState;
 import org.apache.mesos.offer.OperationRecorder;
 
 /**
  * Records the state of accepted offers.
  */
 public class PersistentOperationRecorder implements OperationRecorder {
-  private final FrameworkStateService state;
+  private final FrameworkState state;
 
-  public PersistentOperationRecorder(FrameworkStateService state) {
+  public PersistentOperationRecorder(FrameworkState state) {
     this.state = state;
   }
 

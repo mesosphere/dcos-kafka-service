@@ -6,7 +6,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.kafka.config.KafkaConfiguration;
 import org.apache.mesos.kafka.config.KafkaSchedulerConfiguration;
-import org.apache.mesos.kafka.state.KafkaStateService;
+import org.apache.mesos.kafka.state.KafkaState;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -19,11 +19,11 @@ import java.util.List;
 public class CmdExecutor {
   private static final Log log = LogFactory.getLog(CmdExecutor.class);
 
-  private final KafkaStateService state;
+  private final KafkaState state;
   private final String binPath;
   private final String zkPath;
 
-  public CmdExecutor(KafkaSchedulerConfiguration configuration, KafkaStateService state) {
+  public CmdExecutor(KafkaSchedulerConfiguration configuration, KafkaState state) {
     this.state = state;
     final KafkaConfiguration kafkaConfiguration = configuration.getKafkaConfiguration();
     this.binPath = kafkaConfiguration.getKafkaSandboxPath() + "/bin/";

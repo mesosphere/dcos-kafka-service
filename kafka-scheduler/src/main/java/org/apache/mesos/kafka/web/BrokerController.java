@@ -4,8 +4,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.Protos.TaskID;
 import org.apache.mesos.kafka.scheduler.KafkaScheduler;
-import org.apache.mesos.kafka.state.FrameworkStateService;
-import org.apache.mesos.kafka.state.KafkaStateService;
+import org.apache.mesos.kafka.state.FrameworkState;
+import org.apache.mesos.kafka.state.KafkaState;
 import org.apache.mesos.offer.TaskUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -28,10 +28,10 @@ import java.util.List;
 public class BrokerController {
   private final Log log = LogFactory.getLog(BrokerController.class);
 
-  private final KafkaStateService kafkaState;
-  private final FrameworkStateService frameworkState;
+  private final KafkaState kafkaState;
+  private final FrameworkState frameworkState;
 
-  public BrokerController(KafkaStateService kafkaState, FrameworkStateService frameworkState) {
+  public BrokerController(KafkaState kafkaState, FrameworkState frameworkState) {
     this.kafkaState = kafkaState;
     this.frameworkState = frameworkState;
   }

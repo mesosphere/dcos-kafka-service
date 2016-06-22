@@ -9,7 +9,7 @@ import org.apache.mesos.Protos.TaskStatus;
 import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.OfferUtils;
 import org.apache.mesos.kafka.scheduler.KafkaScheduler;
-import org.apache.mesos.kafka.state.FrameworkStateService;
+import org.apache.mesos.kafka.state.FrameworkState;
 import org.apache.mesos.offer.OfferRequirement;
 import org.apache.mesos.offer.TaskRequirement;
 import org.apache.mesos.offer.TaskUtils;
@@ -27,7 +27,7 @@ public class KafkaUpdateBlock implements Block {
   private Status status = Status.Pending;
   private final KafkaOfferRequirementProvider offerReqProvider;
   private final String targetConfigName;
-  private final FrameworkStateService state;
+  private final FrameworkState state;
   private final int brokerId;
   private final UUID blockId;
   private final Object taskLock = new Object();
@@ -35,7 +35,7 @@ public class KafkaUpdateBlock implements Block {
   private TaskInfo cachedTaskInfo;
 
   public KafkaUpdateBlock(
-    FrameworkStateService state,
+    FrameworkState state,
     KafkaOfferRequirementProvider offerReqProvider,
     String targetConfigName,
     int brokerId) {

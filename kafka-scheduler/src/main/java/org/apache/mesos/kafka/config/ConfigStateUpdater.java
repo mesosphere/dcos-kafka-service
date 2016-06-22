@@ -6,8 +6,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.config.ConfigStoreException;
 import org.apache.mesos.kafka.config.ConfigStateValidator.ValidationException;
-import org.apache.mesos.kafka.state.FrameworkStateService;
-import org.apache.mesos.kafka.state.KafkaStateService;
+import org.apache.mesos.kafka.state.FrameworkState;
+import org.apache.mesos.kafka.state.KafkaState;
 
 /**
  * Retrieves and stores configurations in the state store.
@@ -18,8 +18,8 @@ public class ConfigStateUpdater {
   private final KafkaConfigState kafkaConfigState;
   private final ConfigStateValidator validator;
   private final KafkaSchedulerConfiguration newTargetConfig;
-  private final FrameworkStateService frameworkStateService;
-  private final KafkaStateService kafkaStateService;
+  private final FrameworkState frameworkState;
+  private final KafkaState kafkaState;
 
   public ConfigStateUpdater(KafkaSchedulerConfiguration newTargetConfig) {
     this.newTargetConfig = newTargetConfig;
@@ -27,13 +27,12 @@ public class ConfigStateUpdater {
     final String frameworkName = newTargetConfig.getServiceConfiguration().getName();
 
     // We must bootstrap config management with some values from the new config:
-    this.kafkaConfigState = new KafkaConfigState(frameworkName, kafkaConfiguration.getZkAddress());
-    this.frameworkStateService = new FrameworkStateService(
-        kafkaConfiguration.getZkAddress(), "/" + frameworkName);
-    this.kafkaStateService = new KafkaStateService(
-        kafkaConfiguration.getZkAddress(), "/" + frameworkName);
+    String zkRoot = "/" + frameworkName;
+    this.kafkaConfigState = new KafkaConfigState(zkRoot, kafkaConfiguration.getZkAddress());
+    this.frameworkState = new FrameworkState(zkRoot, kafkaConfiguration.getZkAddress());
+    this.kafkaState = new KafkaState(zkRoot, kafkaConfiguration.getZkAddress());
 
-    this.validator = new ConfigStateValidator(frameworkStateService);
+    this.validator = new ConfigStateValidator(frameworkState);
   }
 
   /**
@@ -59,8 +58,8 @@ public class ConfigStateUpdater {
       if (!currTargetConfig.equals(newTargetConfig)) {
         log.info("Config change detected!");
         setTargetConfig(newTargetConfig);
-        kafkaConfigState.syncConfigs(frameworkStateService);
-        kafkaConfigState.cleanConfigs(frameworkStateService);
+        kafkaConfigState.syncConfigs(frameworkState);
+        kafkaConfigState.cleanConfigs(frameworkState);
       } else {
         log.info("No config properties changes detected.");
       }
@@ -79,15 +78,15 @@ public class ConfigStateUpdater {
   /**
    * Returns the underlying Framework state storage to be used elsewhere.
    */
-  public FrameworkStateService getFrameworkState() {
-    return frameworkStateService;
+  public FrameworkState getFrameworkState() {
+    return frameworkState;
   }
 
   /**
    * Returns the underlying Kafka state storage to be used elsewhere.
    */
-  public KafkaStateService getKafkaState() {
-    return kafkaStateService;
+  public KafkaState getKafkaState() {
+    return kafkaState;
   }
 
   private void setTargetConfig(KafkaSchedulerConfiguration newTargetConfig) throws ConfigStoreException {

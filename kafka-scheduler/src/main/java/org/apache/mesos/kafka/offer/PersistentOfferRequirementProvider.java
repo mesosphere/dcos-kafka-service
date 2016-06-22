@@ -11,7 +11,7 @@ import org.apache.mesos.Protos.Value.Range;
 import org.apache.mesos.Protos.Value.Ranges;
 import org.apache.mesos.config.ConfigStoreException;
 import org.apache.mesos.kafka.config.*;
-import org.apache.mesos.kafka.state.FrameworkStateService;
+import org.apache.mesos.kafka.state.FrameworkState;
 import org.apache.mesos.offer.*;
 import org.apache.mesos.protobuf.CommandInfoBuilder;
 import org.apache.mesos.protobuf.EnvironmentBuilder;
@@ -28,14 +28,14 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
   public static final String CONFIG_TARGET_KEY = "config_target";
 
   private final KafkaConfigState configState;
-  private final FrameworkStateService frameworkStateService;
+  private final FrameworkState frameworkState;
   private final PlacementStrategyManager placementStrategyManager;
 
   public PersistentOfferRequirementProvider(
-      FrameworkStateService frameworkStateService, KafkaConfigState configState) {
+      FrameworkState frameworkState, KafkaConfigState configState) {
     this.configState = configState;
-    this.frameworkStateService = frameworkStateService;
-    this.placementStrategyManager = new PlacementStrategyManager(frameworkStateService);
+    this.frameworkState = frameworkState;
+    this.placementStrategyManager = new PlacementStrategyManager(frameworkState);
   }
 
   @Override
@@ -349,7 +349,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     executorBuilder
       .setName(brokerName)
       .setExecutorId(ExecutorID.newBuilder().setValue("").build()) // Set later by ExecutorRequirement
-      .setFrameworkId(frameworkStateService.getFrameworkId())
+      .setFrameworkId(frameworkState.getFrameworkId())
       .setCommand(executorCommandBuilder.build())
       .addResources(ResourceUtils.getDesiredScalar(role, principal, "cpus", executorConfig.getCpus()))
       .addResources(ResourceUtils.getDesiredScalar(role, principal, "mem", executorConfig.getMem()))

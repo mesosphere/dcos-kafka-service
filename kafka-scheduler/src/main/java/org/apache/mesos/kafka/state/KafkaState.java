@@ -15,8 +15,8 @@ import org.json.JSONObject;
 /**
  * Read-only interface for retrieving information stored by the Kafka brokers themselves.
  */
-public class KafkaStateService {
-    private static final Log log = LogFactory.getLog(KafkaStateService.class);
+public class KafkaState {
+    private static final Log log = LogFactory.getLog(KafkaState.class);
 
     private static final int POLL_DELAY_MS = 1000;
     private static final int CURATOR_MAX_RETRIES = 3;
@@ -24,7 +24,7 @@ public class KafkaStateService {
     private final String zkRoot;
     private final CuratorFramework zkClient;
 
-    public KafkaStateService(String zkHost, String zkRoot) {
+    public KafkaState(String zkRoot, String zkHost) {
         this.zkRoot = zkRoot;
         this.zkClient = CuratorFrameworkFactory.newClient(
                 zkHost, new ExponentialBackoffRetry(POLL_DELAY_MS, CURATOR_MAX_RETRIES));

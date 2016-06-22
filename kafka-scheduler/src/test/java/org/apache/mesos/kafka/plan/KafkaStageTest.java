@@ -3,7 +3,7 @@ package org.apache.mesos.kafka.plan;
 import org.apache.mesos.kafka.config.KafkaSchedulerConfiguration;
 import org.apache.mesos.kafka.config.ServiceConfiguration;
 import org.apache.mesos.kafka.offer.PersistentOfferRequirementProvider;
-import org.apache.mesos.kafka.state.FrameworkStateService;
+import org.apache.mesos.kafka.state.FrameworkState;
 import org.apache.mesos.reconciliation.Reconciler;
 import org.apache.mesos.scheduler.plan.*;
 import org.junit.Assert;
@@ -22,7 +22,7 @@ import java.util.List;
 public class KafkaStageTest {
     @Mock KafkaSchedulerConfiguration schedulerConfiguration;
     @Mock ServiceConfiguration serviceConfiguration;
-    @Mock FrameworkStateService frameworkState;
+    @Mock FrameworkState frameworkState;
     @Mock PersistentOfferRequirementProvider offerRequirementProvider;
     @Mock Reconciler reconciler;
 

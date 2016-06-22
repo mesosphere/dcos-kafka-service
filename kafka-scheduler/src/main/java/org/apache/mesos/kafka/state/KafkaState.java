@@ -37,34 +37,41 @@ public class KafkaState {
         return getIds(zkRoot + "/brokers/ids");
     }
 
-    public List<String> getBrokerEndpoints() throws Exception {
+    public List<String> getBrokerEndpoints() {
         String brokerPath = zkRoot + "/brokers/ids";
         List<String> endpoints = new ArrayList<String>();
 
-        List<String> ids = zkClient.getChildren().forPath(brokerPath);
-        for (String id : ids) {
-            byte[] bytes = zkClient.getData().forPath(brokerPath + "/" + id);
-            JSONObject broker = new JSONObject(new String(bytes, "UTF-8"));
-            String host = (String) broker.get("host");
-            Integer port = (Integer) broker.get("port");
-            endpoints.add(host + ":" + port);
+        try {
+            List<String> ids = zkClient.getChildren().forPath(brokerPath);
+            for (String id : ids) {
+                byte[] bytes = zkClient.getData().forPath(brokerPath + "/" + id);
+                JSONObject broker = new JSONObject(new String(bytes, "UTF-8"));
+                String host = (String) broker.get("host");
+                Integer port = (Integer) broker.get("port");
+                endpoints.add(host + ":" + port);
+            }
+        } catch (Exception ex) {
+            log.error("Failed to retrieve broker endpoints with exception: ", ex);
         }
 
         return endpoints;
     }
 
-    public List<String> getBrokerDNSEndpoints(String frameworkName)
-            throws Exception {
+    public List<String> getBrokerDNSEndpoints(String frameworkName) {
         String brokerPath = zkRoot + "/brokers/ids";
         List<String> endpoints = new ArrayList<String>();
 
-        List<String> ids = zkClient.getChildren().forPath(brokerPath);
-        for (String id : ids) {
-            byte[] bytes = zkClient.getData().forPath(brokerPath + "/" + id);
-            JSONObject broker = new JSONObject(new String(bytes, "UTF-8"));
-            String host = "broker-" + id + "." + frameworkName + ".mesos";
-            Integer port = (Integer) broker.get("port");
-            endpoints.add(host + ":" + port);
+        try {
+            List<String> ids = zkClient.getChildren().forPath(brokerPath);
+            for (String id : ids) {
+                byte[] bytes = zkClient.getData().forPath(brokerPath + "/" + id);
+                JSONObject broker = new JSONObject(new String(bytes, "UTF-8"));
+                String host = "broker-" + id + "." + frameworkName + ".mesos";
+                Integer port = (Integer) broker.get("port");
+                endpoints.add(host + ":" + port);
+            }
+        } catch (Exception ex) {
+            log.error("Failed to retrieve broker DNS endpoints with exception: ", ex);
         }
 
         return endpoints;

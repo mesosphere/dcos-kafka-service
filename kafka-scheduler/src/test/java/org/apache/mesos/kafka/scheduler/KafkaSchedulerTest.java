@@ -22,7 +22,7 @@ import static org.mockito.Mockito.*;
 public class KafkaSchedulerTest {
     private static KafkaSchedulerConfiguration kafkaSchedulerConfiguration;
     private static Environment environment;
-    private static final String testTaskId = "test-task-id";
+    private static final Protos.TaskID testTaskId = Protos.TaskID.newBuilder().setValue("test-task-id").build();
     private static final String testFrameworkId = "test-framework-id";
     private KafkaScheduler kafkaScheduler;
 
@@ -99,9 +99,9 @@ public class KafkaSchedulerTest {
 
     @Test
     public void testRegistered() {
-        Assert.assertNull(kafkaScheduler.getKafkaState().getFrameworkId());
+        Assert.assertNull(kafkaScheduler.getFrameworkState().getFrameworkId());
         kafkaScheduler.registered(driver, getTestFrameworkId(), null);
-        Assert.assertEquals(getTestFrameworkId(), kafkaScheduler.getKafkaState().getFrameworkId());
+        Assert.assertEquals(getTestFrameworkId(), kafkaScheduler.getFrameworkState().getFrameworkId());
     }
 
     @Test
@@ -126,7 +126,7 @@ public class KafkaSchedulerTest {
 
     private Protos.TaskStatus getTestTaskStatus() {
         return Protos.TaskStatus.newBuilder()
-                .setTaskId(Protos.TaskID.newBuilder().setValue(testTaskId))
+                .setTaskId(testTaskId)
                 .setState(Protos.TaskState.TASK_RUNNING)
                 .build();
     }

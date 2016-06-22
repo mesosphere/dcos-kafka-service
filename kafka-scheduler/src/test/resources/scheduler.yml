@@ -2,8 +2,8 @@ schedulerConfiguration:
   service:
     name: ${FRAMEWORK_NAME}
     user: ${USER}
-    placementStrategy: ${PLACEMENT_STRATEGY}
-    phaseStrategy: ${PHASE_STRATEGY}
+    placementStrategy: ${PLACEMENT_STRATEGY:-NODE}
+    phaseStrategy: ${PHASE_STRATEGY:-INSTALL}
     role: "${FRAMEWORK_NAME}-role"
     principal: "${FRAMEWORK_NAME}-principal"
     count: ${BROKER_COUNT:-3}

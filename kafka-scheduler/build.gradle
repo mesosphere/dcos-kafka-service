@@ -4,6 +4,7 @@ ext {
   dropwizardJava8Ver = '0.9.0-1'
   jsonVer = '20151123'
   loggingVer = "1.1.1"
+  powermockVer = "1.6.1"
 }
 
 dependencies {

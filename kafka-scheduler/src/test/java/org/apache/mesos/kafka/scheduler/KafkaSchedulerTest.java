@@ -4,12 +4,17 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.testing.ResourceHelpers;
+import org.apache.mesos.Protos;
+import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.kafka.config.DropwizardConfiguration;
 import org.apache.mesos.kafka.config.KafkaSchedulerConfiguration;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.*;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
+import java.util.Arrays;
+import java.util.Collections;
+import static org.mockito.Mockito.*;
 
 /**
  * This class tests the KafkaScheduler class.
@@ -17,11 +22,24 @@ import org.junit.Test;
 public class KafkaSchedulerTest {
     private static KafkaSchedulerConfiguration kafkaSchedulerConfiguration;
     private static Environment environment;
+    private static final String testTaskId = "test-task-id";
+    private static final String testFrameworkId = "test-framework-id";
+    private KafkaScheduler kafkaScheduler;
+
     public static Injector injector;
+
+    @Mock
+    private SchedulerDriver driver;
 
     @ClassRule
     public static KafkaDropwizardAppRule<DropwizardConfiguration> RULE =
             new KafkaDropwizardAppRule<>(Main.class, ResourceHelpers.resourceFilePath("scheduler.yml"));
+
+    @Before
+    public void beforeEach() throws Exception {
+        MockitoAnnotations.initMocks(this);
+        kafkaScheduler = getTestKafkaScheduler();
+    }
 
     @BeforeClass
     public static void before() {
@@ -32,7 +50,84 @@ public class KafkaSchedulerTest {
     }
 
     @Test
-    public void testKafkaSchedulerConstructor() throws Exception {
-       Assert.assertNotNull(new KafkaScheduler(kafkaSchedulerConfiguration, environment));
+    public void testResourceOffersEmpty() {
+        kafkaScheduler.resourceOffers(driver, Collections.emptyList());
+        verify(driver, times(1)).reconcileTasks(anyObject());
+    }
+
+    @Test
+    public void testRestartEmptyTasks() {
+        KafkaScheduler.restartTasks(Collections.emptyList());
+        kafkaScheduler.resourceOffers(driver, Collections.emptyList());
+        verify(driver, times(0)).killTask(anyObject());
+    }
+
+    @Test
+    public void testRestartOneTask() {
+        KafkaScheduler.restartTasks(Arrays.asList(testTaskId));
+        kafkaScheduler.resourceOffers(driver, Collections.emptyList());
+        verify(driver, times(1)).killTask(anyObject());
+    }
+
+    @Test
+    public void testRestartMultipleTasks()  {
+        KafkaScheduler.restartTasks(Arrays.asList(testTaskId, testTaskId));
+        kafkaScheduler.resourceOffers(driver, Collections.emptyList());
+        verify(driver, times(2)).killTask(anyObject());
+    }
+
+    @Test
+    public void testRescheduleEmptyTasks() {
+        KafkaScheduler.rescheduleTasks(Collections.emptyList());
+        kafkaScheduler.resourceOffers(driver, Collections.emptyList());
+        verify(driver, times(0)).killTask(anyObject());
+    }
+
+    @Test
+    public void testRescheduleOneTask() {
+        KafkaScheduler.rescheduleTasks(Arrays.asList(testTaskId));
+        kafkaScheduler.resourceOffers(driver, Collections.emptyList());
+        verify(driver, times(1)).killTask(anyObject());
+    }
+
+    @Test
+    public void testRescheduleMultipleTask() {
+        KafkaScheduler.rescheduleTasks(Arrays.asList(testTaskId, testTaskId));
+        kafkaScheduler.resourceOffers(driver, Collections.emptyList());
+        verify(driver, times(2)).killTask(anyObject());
+    }
+
+    @Test
+    public void testRegistered() {
+        Assert.assertNull(kafkaScheduler.getKafkaState().getFrameworkId());
+        kafkaScheduler.registered(driver, getTestFrameworkId(), null);
+        Assert.assertEquals(getTestFrameworkId(), kafkaScheduler.getKafkaState().getFrameworkId());
+    }
+
+    @Test
+    public void testStatusUpdate() {
+        kafkaScheduler.statusUpdate(driver, getTestTaskStatus());
+    }
+
+    @Test
+    public void testReconciled() {
+        kafkaScheduler.reregistered(driver, null);
+    }
+
+    private KafkaScheduler getTestKafkaScheduler() throws Exception {
+        return new KafkaScheduler(kafkaSchedulerConfiguration, environment);
+    }
+
+    private Protos.FrameworkID getTestFrameworkId() {
+        return Protos.FrameworkID.newBuilder()
+                .setValue(testFrameworkId)
+                .build();
+    }
+
+    private Protos.TaskStatus getTestTaskStatus() {
+        return Protos.TaskStatus.newBuilder()
+                .setTaskId(Protos.TaskID.newBuilder().setValue(testTaskId))
+                .setState(Protos.TaskState.TASK_RUNNING)
+                .build();
     }
 }

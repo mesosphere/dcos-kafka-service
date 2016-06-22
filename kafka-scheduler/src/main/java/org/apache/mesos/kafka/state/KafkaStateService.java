@@ -28,6 +28,7 @@ public class KafkaStateService {
         this.zkRoot = zkRoot;
         this.zkClient = CuratorFrameworkFactory.newClient(
                 zkHost, new ExponentialBackoffRetry(POLL_DELAY_MS, CURATOR_MAX_RETRIES));
+        this.zkClient.start();
     }
 
     public JSONArray getBrokerIds() throws Exception {

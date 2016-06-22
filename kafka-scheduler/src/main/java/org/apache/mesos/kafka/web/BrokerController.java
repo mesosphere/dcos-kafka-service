@@ -44,7 +44,7 @@ public class BrokerController {
       obj.put("brokers", brokerIds);
       return Response.ok(obj.toString(), MediaType.APPLICATION_JSON).build();
     } catch (Exception ex) {
-      log.error("Failed to fetch broker ids with exception: " + ex);
+      log.error("Failed to fetch broker ids", ex);
       return Response.serverError().build();
     }
   }
@@ -59,7 +59,7 @@ public class BrokerController {
       List<TaskID> taskIds = Arrays.asList(frameworkState.getTaskIdForBroker(Integer.parseInt(id)));
       return killBrokers(taskIds, replace);
     } catch (Exception ex) {
-      log.error("Failed to kill brokers with exception: " + ex);
+      log.error("Failed to kill brokers", ex);
       return Response.serverError().build();
     }
   }
@@ -80,7 +80,7 @@ public class BrokerController {
       }
       return Response.ok(new JSONArray(taskNames).toString(), MediaType.APPLICATION_JSON).build();
     } catch (Exception ex) {
-      log.error("Failed to kill brokers with exception: " + ex);
+      log.error("Failed to kill brokers", ex);
       return Response.serverError().build();
     }
   }

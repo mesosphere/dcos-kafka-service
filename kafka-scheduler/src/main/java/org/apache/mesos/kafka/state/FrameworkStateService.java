@@ -12,6 +12,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.Protos.FrameworkID;
 import org.apache.mesos.Protos.Resource;
+import org.apache.mesos.Protos.TaskID;
 import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.Protos.TaskState;
 import org.apache.mesos.Protos.TaskStatus;
@@ -42,13 +43,15 @@ public class FrameworkStateService implements Observer, TaskStatusProvider {
         try {
             return stateStore.fetchFrameworkId();
         } catch (StateStoreException ex) {
-            log.error("Failed to get FrameworkID", ex);
+            log.warn("Failed to get FrameworkID. "
+                        + "This is expected when the service is starting for the first time.", ex);
         }
         return null;
     }
 
     public void setFrameworkId(FrameworkID fwkId) {
         try {
+            log.info(String.format("Storing framework id: %s", fwkId));
             stateStore.storeFrameworkId(fwkId);
         } catch (StateStoreException ex) {
             log.error("Failed to set FrameworkID: " + fwkId, ex);
@@ -56,14 +59,27 @@ public class FrameworkStateService implements Observer, TaskStatusProvider {
     }
 
     public void recordTasks(List<TaskInfo> taskInfos) throws StateStoreException {
-        recordTaskInfos(taskInfos);
-        List<TaskStatus> taskStatuses = taskInfosToTaskStatuses(taskInfos);
-        recordTaskStatuses(taskStatuses);
+        log.info(String.format("Recording %d updated TaskInfos/TaskStatuses:", taskInfos.size()));
+        List<TaskStatus> taskStatuses = new ArrayList<>();
+        for (TaskInfo taskInfo : taskInfos) {
+            TaskStatus taskStatus = TaskStatus.newBuilder()
+                    .setTaskId(taskInfo.getTaskId())
+                    .setExecutorId(taskInfo.getExecutor().getExecutorId())
+                    .setState(TaskState.TASK_STAGING)
+                    .build();
+            log.info(String.format("- %s => %s", taskInfo, taskStatus));
+            taskStatuses.add(taskStatus);
+        }
+
+        stateStore.storeTasks(taskInfos);
+        for (TaskStatus taskStatus : taskStatuses) {
+            recordTaskStatus(taskStatus);
+        }
     }
 
     public void update(Observable observable, Object obj) {
         TaskStatus taskStatus = (TaskStatus) obj;
-
+        log.info(String.format("Recording updated TaskStatus to state store: %s", taskStatus));
         try {
             recordTaskStatus(taskStatus);
         } catch (Exception ex) {
@@ -89,7 +105,7 @@ public class FrameworkStateService implements Observer, TaskStatusProvider {
         int count = 0;
 
         for (TaskStatus taskStatus : getTaskStatuses()) {
-            if (isRunning(taskStatus)) {
+            if (taskStatus.getState().equals(TaskState.TASK_RUNNING)) {
                 count++;
             }
         }
@@ -138,48 +154,30 @@ public class FrameworkStateService implements Observer, TaskStatusProvider {
      * Returns the full Task ID (including UUID) for the provided Broker index, or {@code null} if
      * none is found.
      */
-    public String getTaskIdForBroker(Integer brokerId) throws Exception {
+    public TaskID getTaskIdForBroker(Integer brokerId) throws Exception {
         String brokerName = OfferUtils.idToName(brokerId);
         for (TaskInfo taskInfo : getTaskInfos()) {
             if (taskInfo.getName().equals(brokerName)) {
-                return taskInfo.getTaskId().getValue();
+                return taskInfo.getTaskId();
             }
         }
         return null;
     }
 
     public void recordTaskInfo(TaskInfo taskInfo) throws StateStoreException {
+        log.info(String.format("Recording updated TaskInfo to state store: %s", taskInfo));
         stateStore.storeTasks(Arrays.asList(taskInfo));
     }
 
-    private boolean isRunning(TaskStatus taskStatus) {
-        TaskState taskState = taskStatus.getState();
-        return taskState.equals(TaskState.TASK_RUNNING);
-    }
-
-    private void recordTaskInfos(List<TaskInfo> taskInfos) throws StateStoreException {
-        for (TaskInfo taskInfo : taskInfos) {
-            recordTaskInfo(taskInfo);
-        }
-    }
-
-    /**
-     * Deletes a task from state storage.
-     * @param taskName of the form "broker-N"
-     */
-    public void deleteTask(String taskName) {
+    public void deleteTask(TaskID taskId) {
         try {
-            // Shortcut: Treat the 'broker-N' name as the executor name. For us they're the same.
-            stateStore.clearExecutor(taskName);
-        } catch (StateStoreException ex) {
-            log.error("Failed to delete Task: " + taskName + " with exception: " + ex);
-        }
-    }
-
-    private void recordTaskStatuses(List<TaskStatus> taskStatuses)
-            throws StateStoreException {
-        for (TaskStatus taskStatus : taskStatuses) {
-            recordTaskStatus(taskStatus);
+            // Shortcut: Treat the 'broker-N' task name as the executor name. For us they're the same.
+            // Alternate: Scan all tasks for an exact match on the Task ID directly.
+            String executorName = TaskUtils.toTaskName(taskId);
+            log.info(String.format("Clearing task from state store: %s", executorName));
+            stateStore.clearExecutor(executorName);
+        } catch (StateStoreException | TaskException ex) {
+            log.error("Failed to delete Task: " + taskId, ex);
         }
     }
 
@@ -191,19 +189,6 @@ public class FrameworkStateService implements Observer, TaskStatusProvider {
         } else {
             stateStore.storeStatus(taskStatus);
         }
-    }
-
-    private List<TaskStatus> taskInfosToTaskStatuses(List<TaskInfo> taskInfos) {
-        List<TaskStatus> taskStatuses = new ArrayList<TaskStatus>();
-
-        for (TaskInfo taskInfo : taskInfos) {
-            taskStatuses.add(TaskStatus.newBuilder()
-                    .setTaskId(taskInfo.getTaskId())
-                    .setState(TaskState.TASK_STAGING)
-                    .build());
-        }
-
-        return taskStatuses;
     }
 
     private boolean taskStatusExists(TaskStatus taskStatus) throws StateStoreException {

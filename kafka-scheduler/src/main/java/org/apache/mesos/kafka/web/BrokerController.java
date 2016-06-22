@@ -2,9 +2,11 @@ package org.apache.mesos.kafka.web;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.mesos.Protos.TaskID;
 import org.apache.mesos.kafka.scheduler.KafkaScheduler;
 import org.apache.mesos.kafka.state.FrameworkStateService;
 import org.apache.mesos.kafka.state.KafkaStateService;
+import org.apache.mesos.offer.TaskUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -16,6 +18,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -52,8 +56,7 @@ public class BrokerController {
     @QueryParam("replace") String replace) {
 
     try {
-      List<String> taskIds =
-        Arrays.asList(frameworkState.getTaskIdForBroker(Integer.parseInt(id)));
+      List<TaskID> taskIds = Arrays.asList(frameworkState.getTaskIdForBroker(Integer.parseInt(id)));
       return killBrokers(taskIds, replace);
     } catch (Exception ex) {
       log.error("Failed to kill brokers with exception: " + ex);
@@ -61,7 +64,7 @@ public class BrokerController {
     }
   }
 
-  private Response killBrokers(List<String> taskIds, String replace) {
+  private Response killBrokers(List<TaskID> taskIds, String replace) {
     try {
       boolean replaced = Boolean.parseBoolean(replace);
 
@@ -71,7 +74,11 @@ public class BrokerController {
         KafkaScheduler.restartTasks(taskIds);
       }
 
-      return Response.ok(new JSONArray(taskIds).toString(), MediaType.APPLICATION_JSON).build();
+      List<String> taskNames = new ArrayList<>();
+      for (TaskID taskId : taskIds) {
+          taskNames.add(TaskUtils.toTaskName(taskId));
+      }
+      return Response.ok(new JSONArray(taskNames).toString(), MediaType.APPLICATION_JSON).build();
     } catch (Exception ex) {
       log.error("Failed to kill brokers with exception: " + ex);
       return Response.serverError().build();

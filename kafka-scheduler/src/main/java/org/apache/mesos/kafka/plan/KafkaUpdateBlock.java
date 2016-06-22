@@ -81,9 +81,9 @@ public class KafkaUpdateBlock implements Block {
       return null;
     }
 
-    if (taskIsRunning() || taskIsStaging()) {
+    if (taskIsRunningOrStaging()) {
       log.info("Adding to restart task list. Block: " + getName() + " Status: " + getTaskStatus());
-      KafkaScheduler.restartTasks(taskIdsToStrings(getUpdateIds()));
+      KafkaScheduler.restartTasks(getUpdateIds());
       return null;
     }
 
@@ -115,8 +115,7 @@ public class KafkaUpdateBlock implements Block {
   @Override
   public void forceComplete() {
     try {
-      List<String> taskIds =
-              Arrays.asList(state.getTaskIdForBroker(brokerId));
+      List<TaskID> taskIds = Arrays.asList(state.getTaskIdForBroker(brokerId));
       KafkaScheduler.rescheduleTasks(taskIds);
     } catch (Exception ex) {
       log.error("Failed to force completion of Block: " + getId() + "with exception: ", ex);
@@ -235,17 +234,6 @@ public class KafkaUpdateBlock implements Block {
       pendingTasks = taskIds;
   }
 
-  private List<String> taskIdsToStrings(List<TaskID> taskIds) {
-    List<String> taskIdStrings = new ArrayList<String>();
-
-    for (TaskID taskId : taskIds) {
-      taskIdStrings.add(taskId.getValue());
-    }
-
-    return taskIdStrings;
-  }
-
-
   public boolean isRelevantStatus(TaskStatus taskStatus) {
     if (taskStatus.getReason().equals(TaskStatus.Reason.REASON_RECONCILIATION)) {
       return false;
@@ -260,20 +248,16 @@ public class KafkaUpdateBlock implements Block {
     return false;
   }
 
-  private boolean taskIsRunning() {
-    return taskInState(TaskState.TASK_RUNNING);
-  }
-
-  private boolean taskIsStaging() {
-    return taskInState(TaskState.TASK_STAGING);
-  }
-
-  private boolean taskInState(TaskState state) {
+  private boolean taskIsRunningOrStaging() {
     TaskStatus taskStatus = getTaskStatus();
-
-    if (null != taskStatus) {
-      return taskStatus.getState().equals(state);
-    } else {
+    if (null == taskStatus) {
+      return false;
+    }
+    switch (taskStatus.getState()) {
+    case TASK_RUNNING:
+    case TASK_STAGING:
+      return true;
+    default:
       return false;
     }
   }

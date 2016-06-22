@@ -55,9 +55,9 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
   private final StageManager stageManager;
   private SchedulerDriver driver;
   private static final Integer restartLock = 0;
-  private static List<String> tasksToRestart = new ArrayList<String>();
+  private static List<TaskID> tasksToRestart = new ArrayList<>();
   private static final Integer rescheduleLock = 0;
-  private static List<String> tasksToReschedule = new ArrayList<String>();
+  private static List<TaskID> tasksToReschedule = new ArrayList<>();
 
   public KafkaScheduler(KafkaSchedulerConfiguration configuration, Environment environment) throws ConfigStoreException {
     ConfigStateUpdater configStateUpdater = new ConfigStateUpdater(configuration);
@@ -126,13 +126,13 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
     }
   }
 
-  public static void restartTasks(List<String> taskIds) {
+  public static void restartTasks(List<TaskID> taskIds) {
     synchronized (restartLock) {
       tasksToRestart.addAll(taskIds);
     }
   }
 
-  public static void rescheduleTasks(List<String> taskIds) {
+  public static void rescheduleTasks(List<TaskID> taskIds) {
     synchronized (rescheduleLock) {
       tasksToReschedule.addAll(taskIds);
     }
@@ -261,32 +261,32 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
 
   private void processTasksToRestart(SchedulerDriver driver) {
     synchronized (restartLock) {
-      for (String taskId : tasksToRestart) {
+      for (TaskID taskId : tasksToRestart) {
         if (taskId != null) {
           log.info("Restarting task: " + taskId);
-          driver.killTask(TaskID.newBuilder().setValue(taskId).build());
+          driver.killTask(taskId);
         } else {
           log.warn("Asked to restart null task.");
         }
       }
 
-      tasksToRestart = new ArrayList<String>();
+      tasksToRestart = new ArrayList<>();
     }
   }
 
   private void processTasksToReschedule(SchedulerDriver driver) {
     synchronized (rescheduleLock) {
-      for (String taskId : tasksToReschedule) {
+      for (TaskID taskId : tasksToReschedule) {
         if (taskId != null) {
           log.info("Rescheduling task: " + taskId);
           frameworkState.deleteTask(taskId);
-          driver.killTask(TaskID.newBuilder().setValue(taskId).build());
+          driver.killTask(taskId);
         } else {
           log.warn("Asked to reschedule null task.");
         }
       }
 
-      tasksToReschedule = new ArrayList<String>();
+      tasksToReschedule = new ArrayList<>();
     }
   }
 

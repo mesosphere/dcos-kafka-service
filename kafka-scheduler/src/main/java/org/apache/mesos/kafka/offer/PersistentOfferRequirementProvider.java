@@ -13,11 +13,7 @@ import org.apache.mesos.Protos.Value.Ranges;
 import org.apache.mesos.config.ConfigStoreException;
 import org.apache.mesos.kafka.config.*;
 import org.apache.mesos.kafka.state.KafkaStateService;
-import org.apache.mesos.offer.OfferRequirement;
-import org.apache.mesos.offer.PlacementStrategy;
-import org.apache.mesos.offer.ResourceUtils;
-import org.apache.mesos.offer.TaskRequirement;
-import org.apache.mesos.offer.TaskRequirement.InvalidTaskRequirementException;
+import org.apache.mesos.offer.*;
 import org.apache.mesos.protobuf.CommandInfoBuilder;
 import org.apache.mesos.protobuf.EnvironmentBuilder;
 import org.apache.mesos.protobuf.LabelBuilder;
@@ -45,7 +41,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
 
   @Override
   public OfferRequirement getNewOfferRequirement(String configName, int brokerId)
-          throws TaskRequirement.InvalidTaskRequirementException, ConfigStoreException {
+          throws InvalidRequirementException, ConfigStoreException {
     OfferRequirement offerRequirement = getNewOfferRequirementInternal(configName, brokerId);
     log.info("Got new OfferRequirement with TaskRequirements: " + offerRequirement.getTaskRequirements());
 
@@ -54,7 +50,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
 
   @Override
   public OfferRequirement getReplacementOfferRequirement(TaskInfo existingTaskInfo)
-          throws TaskRequirement.InvalidTaskRequirementException {
+          throws InvalidRequirementException {
     final ExecutorInfo existingExecutor = existingTaskInfo.getExecutor();
 
     final TaskInfo.Builder replacementTaskInfo = TaskInfo.newBuilder(existingTaskInfo);
@@ -78,7 +74,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
 
   @Override
   public OfferRequirement getUpdateOfferRequirement(String configName, TaskInfo taskInfo)
-          throws TaskRequirement.InvalidTaskRequirementException, ConfigStoreException {
+          throws InvalidRequirementException, ConfigStoreException {
     KafkaSchedulerConfiguration config = configState.fetch(UUID.fromString(configName));
     BrokerConfiguration brokerConfig = config.getBrokerConfiguration();
 
@@ -104,7 +100,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     try {
       cmdBuilder = CommandInfo.newBuilder().mergeFrom(taskBuilder.getData());
     } catch (InvalidProtocolBufferException e) {
-      throw new TaskRequirement.InvalidTaskRequirementException("Unable to rehydrate broker CommandInfo");
+      throw new InvalidRequirementException("Unable to rehydrate broker CommandInfo");
     }
     Map<String, String> environmentMap = fromEnvironmentToMap(cmdBuilder.getEnvironment());
 
@@ -146,7 +142,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
       log.info("Update OfferRequirement with ExecutorRequirement: " + offerRequirement.getExecutorRequirement());
 
       return offerRequirement;
-    } catch (InvalidTaskRequirementException e) {
+    } catch (InvalidRequirementException e) {
       log.warn("Failed to create update OfferRequirement with "
               + "OrigTaskInfo[" + taskInfo + "] NewTaskInfo[" + updatedTaskInfo + "]", e);
       return null;
@@ -284,7 +280,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
   }
 
   private OfferRequirement getNewOfferRequirementInternal(String configName, int brokerId)
-          throws TaskRequirement.InvalidTaskRequirementException, ConfigStoreException {
+          throws InvalidRequirementException, ConfigStoreException {
     log.info("Getting new OfferRequirement for: " + configName);
     String overridePrefix = KafkaSchedulerConfiguration.KAFKA_OVERRIDE_PREFIX;
     String brokerName = OfferUtils.idToName(brokerId);
@@ -419,7 +415,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
           Arrays.asList(taskInfo), executorInfo, avoidAgents, colocateAgents);
       log.info("Got new OfferRequirement with TaskInfo: " + taskInfo);
       return offerRequirement;
-    } catch (InvalidTaskRequirementException e) {
+    } catch (InvalidRequirementException e) {
       log.warn("Failed to create new OfferRequirement with TaskInfo: " + taskInfo, e);
       return null;
     }

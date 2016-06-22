@@ -1,6 +1,7 @@
 package org.apache.mesos.kafka.offer;
 
 import org.apache.mesos.Protos.TaskInfo;
+import org.apache.mesos.config.ConfigStoreException;
 import org.apache.mesos.offer.InvalidRequirementException;
 import org.apache.mesos.offer.OfferRequirement;
 
@@ -9,9 +10,9 @@ import org.apache.mesos.offer.OfferRequirement;
  */
 public interface KafkaOfferRequirementProvider {
   OfferRequirement getNewOfferRequirement(String configName, int brokerId)
-      throws InvalidRequirementException;
+      throws InvalidRequirementException, ConfigStoreException;
   OfferRequirement getReplacementOfferRequirement(TaskInfo taskInfo)
-      throws InvalidRequirementException;
+      throws InvalidRequirementException, ConfigStoreException;
   OfferRequirement getUpdateOfferRequirement(String configName, TaskInfo info)
-      throws InvalidRequirementException;
+      throws InvalidRequirementException, ConfigStoreException;
 }

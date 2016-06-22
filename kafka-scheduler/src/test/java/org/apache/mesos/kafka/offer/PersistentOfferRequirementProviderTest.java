@@ -1,11 +1,9 @@
 package org.apache.mesos.kafka.offer;
 
-import com.google.protobuf.InvalidProtocolBufferException;
 import com.mesosphere.dcos.kafka.common.KafkaTask;
 import org.apache.mesos.Protos.*;
 import org.apache.mesos.kafka.config.*;
 import org.apache.mesos.kafka.state.FrameworkStateService;
-import org.apache.mesos.offer.InvalidRequirementException;
 import org.apache.mesos.offer.OfferRequirement;
 import org.apache.mesos.offer.TaskUtils;
 import org.apache.mesos.protobuf.CommandInfoBuilder;
@@ -39,6 +37,7 @@ public class PersistentOfferRequirementProviderTest {
   private static final String testKafkaUri = "test-kafka-uri";
   private static final String testJavaUri = "test-java-uri";
   private static final String testOverriderUri = "test-overrider-uri";
+  private static final Long testPort = 9092L;
   private static final String testExecutorName = "test-executor-name";
   private static final String testExecutorUri = "test-executor-uri";
   private static final String testKafkaVerName = "test-kafka-ver-name";
@@ -72,7 +71,8 @@ public class PersistentOfferRequirementProviderTest {
         testDiskType,
         testKafkaUri,
         testJavaUri,
-        testOverriderUri);
+        testOverriderUri,
+        testPort);
     kafkaConfig = new KafkaConfiguration(
         true,
         testKafkaVerName,
@@ -100,7 +100,7 @@ public class PersistentOfferRequirementProviderTest {
   }
 
   @Test
-  public void testNewRequirement() throws InvalidRequirementException, InvalidProtocolBufferException {
+  public void testNewRequirement() throws Exception {
     when(configState.fetch(UUID.fromString(testConfigName))).thenReturn(schedulerConfig);
     when(state.getFrameworkId()).thenReturn(FrameworkID.newBuilder().setValue("abcd").build());
     PersistentOfferRequirementProvider provider = new PersistentOfferRequirementProvider(state, configState);
@@ -175,7 +175,7 @@ public class PersistentOfferRequirementProviderTest {
     final CommandInfo kafkaTaskData = CommandInfo.parseFrom(taskInfo.getData());
     final Map<String, String> envFromTask = TaskUtils.fromEnvironmentToMap(kafkaTaskData.getEnvironment());
 
-    Assert.assertEquals(10, envFromTask.size());
+    Assert.assertEquals(11, envFromTask.size());
 
     Map<String, String> expectedEnvMap = new HashMap<>();
     expectedEnvMap.put("KAFKA_OVERRIDE_ZOOKEEPER_CONNECT", testKafkaZkAddress + "/" + testFrameworkName);
@@ -185,6 +185,7 @@ public class PersistentOfferRequirementProviderTest {
     expectedEnvMap.put("KAFKA_VER_NAME", testKafkaVerName);
     expectedEnvMap.put("CONFIG_ID", testConfigName);
     expectedEnvMap.put("KAFKA_OVERRIDE_PORT", portString);
+    expectedEnvMap.put("KAFKA_DYNAMIC_BROKER_PORT", Boolean.toString(false));
     expectedEnvMap.put("KAFKA_OVERRIDE_BROKER_ID", String.valueOf(0));
     expectedEnvMap.put("KAFKA_HEAP_OPTS", "-Xms500M -Xmx500M");
     expectedEnvMap.put("TASK_TYPE", KafkaTask.BROKER.name());
@@ -216,7 +217,7 @@ public class PersistentOfferRequirementProviderTest {
   }
 
   @Test
-  public void testUpdateRequirement() throws InvalidRequirementException, InvalidProtocolBufferException {
+  public void testUpdateRequirement() throws Exception {
     when(configState.fetch(UUID.fromString(testConfigName))).thenReturn(schedulerConfig);
     Resource oldCpu = ResourceBuilder.reservedCpus(0.5, testRole, testPrincipal, testResourceId);
     Resource oldMem = ResourceBuilder.reservedMem(500, testRole, testPrincipal, testResourceId);
@@ -245,10 +246,16 @@ public class PersistentOfferRequirementProviderTest {
     Assert.assertEquals(1, req.getTaskRequirements().size());
     final TaskInfo taskInfo = req.getTaskRequirements().iterator().next().getTaskInfo();
     final Environment environment = CommandInfo.parseFrom(taskInfo.getData()).getEnvironment();
-    final List<Environment.Variable> variablesList = environment.getVariablesList();
-    Assert.assertTrue(variablesList.size() == 1);
-    Assert.assertEquals("KAFKA_HEAP_OPTS", variablesList.get(0).getName());
-    Assert.assertEquals("-Xms500M -Xmx500M", variablesList.get(0).getValue());
+    List<Environment.Variable> variablesList = environment.getVariablesList();
+    List<Environment.Variable> envVariables = new ArrayList<>(variablesList);
+    envVariables.sort((v1, v2) -> v1.getName().compareTo(v2.getName()));
+    Assert.assertEquals(3, envVariables.size());
+    Assert.assertEquals("KAFKA_DYNAMIC_BROKER_PORT", envVariables.get(0).getName());
+    Assert.assertEquals(Boolean.toString(false), envVariables.get(0).getValue());
+    Assert.assertEquals("KAFKA_HEAP_OPTS", envVariables.get(1).getName());
+    Assert.assertEquals("-Xms500M -Xmx500M", envVariables.get(1).getValue());
+    Assert.assertEquals("KAFKA_OVERRIDE_PORT", envVariables.get(2).getName());
+    Assert.assertEquals("9092", envVariables.get(2).getValue());
   }
 
   private static Resource getResource(OfferRequirement req, String name) {

@@ -36,7 +36,7 @@ public class KafkaRepairScheduler {
   }
 
   public List<OfferID> resourceOffers(SchedulerDriver driver, List<Offer> offers, Block block)
-      throws InvalidRequirementException {
+      throws Exception {
     List<OfferID> acceptedOffers = new ArrayList<OfferID>();
     List<TaskInfo> terminatedTasks = getTerminatedTasks(block);
 

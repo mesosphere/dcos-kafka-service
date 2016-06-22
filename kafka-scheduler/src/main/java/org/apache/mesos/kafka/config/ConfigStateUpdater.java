@@ -4,10 +4,10 @@ import java.util.UUID;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.mesos.config.ConfigStoreException;
 import org.apache.mesos.kafka.config.ConfigStateValidator.ValidationException;
 import org.apache.mesos.kafka.state.FrameworkStateService;
 import org.apache.mesos.kafka.state.KafkaStateService;
-import org.apache.mesos.state.StateStoreException;
 
 /**
  * Retrieves and stores configurations in the state store.
@@ -42,7 +42,7 @@ public class ConfigStateUpdater {
    * @throws StateStoreException if the new config fails to be written to persistent storage
    * @throws ValidationException if the new config is invalid or has invalid changes compared to the active config
    */
-  public KafkaSchedulerConfiguration getTargetConfig() throws StateStoreException, ValidationException {
+  public KafkaSchedulerConfiguration getTargetConfig() throws ConfigStoreException, ValidationException {
     if (!kafkaConfigState.hasTarget()) {
       log.info("Initializing config properties storage with new target.");
       setTargetConfig(newTargetConfig);
@@ -90,7 +90,7 @@ public class ConfigStateUpdater {
     return kafkaStateService;
   }
 
-  private void setTargetConfig(KafkaSchedulerConfiguration newTargetConfig) throws StateStoreException {
+  private void setTargetConfig(KafkaSchedulerConfiguration newTargetConfig) throws ConfigStoreException {
     UUID targetConfigName = kafkaConfigState.store(newTargetConfig);
     kafkaConfigState.setTargetName(targetConfigName);
     log.info("Set new target config: " + targetConfigName);

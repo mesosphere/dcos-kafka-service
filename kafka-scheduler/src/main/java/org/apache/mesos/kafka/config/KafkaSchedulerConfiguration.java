@@ -130,7 +130,7 @@ public class KafkaSchedulerConfiguration implements Configuration {
         }
     }
 
-    public static ConfigurationFactory<KafkaSchedulerConfiguration> factoryInstance() {
+    public static ConfigurationFactory<KafkaSchedulerConfiguration> getFactoryInstance() {
         return FACTORY;
     }
 

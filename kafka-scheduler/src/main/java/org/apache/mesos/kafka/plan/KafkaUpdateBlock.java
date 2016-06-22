@@ -10,7 +10,6 @@ import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.OfferUtils;
 import org.apache.mesos.kafka.scheduler.KafkaScheduler;
 import org.apache.mesos.kafka.state.FrameworkStateService;
-import org.apache.mesos.offer.InvalidRequirementException;
 import org.apache.mesos.offer.OfferRequirement;
 import org.apache.mesos.offer.TaskRequirement;
 import org.apache.mesos.offer.TaskUtils;
@@ -92,8 +91,8 @@ public class KafkaUpdateBlock implements Block {
       OfferRequirement offerReq = getOfferRequirement();
       setPendingTasks(offerReq);
       return offerReq;
-    } catch (InvalidRequirementException e) {
-      log.error("Error getting offerRequirement: " + e);
+    } catch (Exception e) {
+      log.error("Error getting offerRequirement: ", e);
     }
 
     return null;
@@ -212,7 +211,7 @@ public class KafkaUpdateBlock implements Block {
     return cachedTaskInfo;
   }
 
-  private OfferRequirement getOfferRequirement() throws InvalidRequirementException {
+  private OfferRequirement getOfferRequirement() throws Exception {
     TaskInfo taskInfo = getTaskInfo();
 
     if (taskInfo == null) {

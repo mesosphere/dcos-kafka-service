@@ -14,6 +14,7 @@ import org.apache.mesos.Protos.*;
 import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
 
+import org.apache.mesos.config.ConfigStoreException;
 import org.apache.mesos.kafka.config.ConfigStateUpdater;
 import org.apache.mesos.kafka.config.ConfigStateValidator.ValidationError;
 import org.apache.mesos.kafka.config.ConfigStateValidator.ValidationException;
@@ -59,7 +60,7 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
   private static final Integer rescheduleLock = 0;
   private static List<String> tasksToReschedule = new ArrayList<String>();
 
-  public KafkaScheduler(KafkaSchedulerConfiguration configuration, Environment environment) {
+  public KafkaScheduler(KafkaSchedulerConfiguration configuration, Environment environment) throws ConfigStoreException {
     ConfigStateUpdater configStateUpdater = new ConfigStateUpdater(configuration);
     List<String> stageErrors = new ArrayList<>();
     KafkaSchedulerConfiguration targetConfigToUse;

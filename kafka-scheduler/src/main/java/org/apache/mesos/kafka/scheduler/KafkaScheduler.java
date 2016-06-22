@@ -26,10 +26,9 @@ import org.apache.mesos.kafka.offer.PersistentOperationRecorder;
 import org.apache.mesos.kafka.plan.KafkaUpdatePhase;
 import org.apache.mesos.kafka.state.FrameworkStateService;
 import org.apache.mesos.kafka.state.KafkaStateService;
-import org.apache.mesos.offer.InvalidRequirementException;
-import org.apache.mesos.offer.OfferAccepter;
-import org.apache.mesos.offer.ResourceCleaner;
-import org.apache.mesos.offer.ResourceCleanerScheduler;
+
+import org.apache.mesos.offer.*;
+
 import org.apache.mesos.reconciliation.DefaultReconciler;
 import org.apache.mesos.reconciliation.Reconciler;
 import org.apache.mesos.scheduler.SchedulerDriverFactory;

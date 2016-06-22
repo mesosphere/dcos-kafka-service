@@ -296,8 +296,8 @@ public class PersistentOfferRequirementProviderTest {
     builder.setCommand(fakeCommand);
 
     builder.setExecutorInfo(ExecutorInfoBuilder.createExecutorInfoBuilder()
-            .setCommand(fakeCommand)
             .setName(testExecutorName)
+            .setCommand(fakeCommand)
             .setExecutorId(ExecutorID.newBuilder().setValue(""))
             .build());
 

@@ -9,6 +9,7 @@ import io.dropwizard.setup.Environment;
 import org.apache.commons.lang3.text.StrSubstitutor;
 import org.apache.mesos.kafka.cmd.CmdExecutor;
 import org.apache.mesos.kafka.config.DropwizardConfiguration;
+import org.apache.mesos.kafka.config.KafkaSchedulerConfiguration;
 import org.apache.mesos.kafka.state.KafkaState;
 import org.apache.mesos.kafka.web.BrokerCheck;
 import org.apache.mesos.kafka.web.BrokerController;
@@ -25,12 +26,14 @@ import java.util.concurrent.ExecutorService;
  */
 public final class Main extends Application<DropwizardConfiguration> {
   private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
+  private KafkaSchedulerConfiguration kafkaSchedulerConfiguration;
+  private Environment environment;
 
   public static void main(String[] args) throws Exception {
     new Main().run(args);
   }
 
-  protected Main() {
+  public Main() {
     super();
   }
 
@@ -55,9 +58,20 @@ public final class Main extends Application<DropwizardConfiguration> {
                     strSubstitutor));
   }
 
+  public KafkaSchedulerConfiguration getKafkaSchedulerConfiguration() {
+    return kafkaSchedulerConfiguration;
+  }
+
+  public Environment getEnvironment() {
+    return environment;
+  }
+
   @Override
   public void run(DropwizardConfiguration configuration, Environment environment) throws Exception {
     LOGGER.info("" + configuration);
+
+    this.kafkaSchedulerConfiguration = configuration.getSchedulerConfiguration();
+    this.environment = environment;
 
     final KafkaScheduler kafkaScheduler = new KafkaScheduler(configuration.getSchedulerConfiguration(), environment);
 

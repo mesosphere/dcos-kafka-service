@@ -14,6 +14,7 @@ dependencies {
   compile "commons-logging:commons-logging:${loggingVer}"
   compile "org.json:json:${jsonVer}"
   testCompile "org.apache.curator:curator-test:${curatorVer}"
+  testCompile "io.dropwizard:dropwizard-testing:${dropwizardVer}"
 }
 
 task wrapper(type: Wrapper) {

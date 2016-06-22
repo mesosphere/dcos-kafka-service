@@ -22,9 +22,4 @@ public class OfferUtils {
   public static String idToName(Integer brokerId) {
     return "broker-" + Integer.toString(brokerId);
   }
-
-  public static String getTaskName(String taskId) {
-    int underScoreIndex = taskId.indexOf("__");
-    return taskId.substring(0, underScoreIndex);
-  }
 }

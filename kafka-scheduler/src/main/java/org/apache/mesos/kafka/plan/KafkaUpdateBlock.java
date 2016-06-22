@@ -283,7 +283,7 @@ public class KafkaUpdateBlock implements Block {
 
     if (null != taskInfo) {
       try {
-        return state.getTaskStatus(taskInfo.getName());
+        return state.fetchStatus(taskInfo);
       } catch (Exception ex) {
         log.error("Failed to retrieve TaskStatus with exception: " + ex);
       }

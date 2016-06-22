@@ -15,8 +15,10 @@ import org.apache.mesos.Protos.Resource;
 import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.Protos.TaskState;
 import org.apache.mesos.Protos.TaskStatus;
+import org.apache.mesos.executor.ExecutorTaskException;
 import org.apache.mesos.executor.ExecutorUtils;
 import org.apache.mesos.kafka.offer.OfferUtils;
+import org.apache.mesos.offer.TaskException;
 import org.apache.mesos.offer.TaskUtils;
 import org.apache.mesos.reconciliation.TaskStatusProvider;
 import org.apache.mesos.state.CuratorStateStore;
@@ -28,7 +30,6 @@ import org.apache.mesos.state.StateStoreException;
  * The underlying data is stored against Executor IDs of "broker-0", "broker-1", etc.
  */
 public class FrameworkStateService implements Observer, TaskStatusProvider {
-    private static final String EXEC_NAME_SUFFIX = "-executor";
     private static final Log log = LogFactory.getLog(FrameworkStateService.class);
 
     private final StateStore stateStore;
@@ -96,8 +97,8 @@ public class FrameworkStateService implements Observer, TaskStatusProvider {
         return count;
     }
 
-    public TaskStatus getTaskStatus(String taskName) throws StateStoreException {
-        return stateStore.fetchStatus(taskName, toExecName(taskName));
+    public TaskStatus fetchStatus(TaskInfo taskInfo) throws StateStoreException {
+        return stateStore.fetchStatus(taskInfo.getName(), taskInfo.getExecutor().getName());
     }
 
     @Override
@@ -133,6 +134,10 @@ public class FrameworkStateService implements Observer, TaskStatusProvider {
         return resources;
     }
 
+    /**
+     * Returns the full Task ID (including UUID) for the provided Broker index, or {@code null} if
+     * none is found.
+     */
     public String getTaskIdForBroker(Integer brokerId) throws Exception {
         String brokerName = OfferUtils.idToName(brokerId);
         for (TaskInfo taskInfo : getTaskInfos()) {
@@ -158,22 +163,16 @@ public class FrameworkStateService implements Observer, TaskStatusProvider {
         }
     }
 
-    private void recordTaskStatus(TaskStatus taskStatus) throws StateStoreException {
-        String taskName = OfferUtils.getTaskName(taskStatus.getTaskId().getValue());
-        if (!taskStatus.getState().equals(TaskState.TASK_STAGING)
-                && !taskStatusExists(taskName)) {
-            log.warn("Dropping non-STAGING status update because the ZK path doesn't exist: "
-                + taskStatus);
-        } else {
-            stateStore.storeStatus(taskStatus);
-        }
-    }
-
-    public void deleteTask(String taskId) {
+    /**
+     * Deletes a task from state storage.
+     * @param taskName of the form "broker-N"
+     */
+    public void deleteTask(String taskName) {
         try {
-            stateStore.clearExecutor(OfferUtils.getTaskName(taskId));
+            // Shortcut: Treat the 'broker-N' name as the executor name. For us they're the same.
+            stateStore.clearExecutor(taskName);
         } catch (StateStoreException ex) {
-            log.error("Failed to delete Task: " + taskId + " with exception: " + ex);
+            log.error("Failed to delete Task: " + taskName + " with exception: " + ex);
         }
     }
 
@@ -181,6 +180,16 @@ public class FrameworkStateService implements Observer, TaskStatusProvider {
             throws StateStoreException {
         for (TaskStatus taskStatus : taskStatuses) {
             recordTaskStatus(taskStatus);
+        }
+    }
+
+    private void recordTaskStatus(TaskStatus taskStatus) {
+        if (!taskStatus.getState().equals(TaskState.TASK_STAGING)
+                && !taskStatusExists(taskStatus)) {
+            log.warn("Dropping non-STAGING status update because the ZK path doesn't exist: "
+                + taskStatus);
+        } else {
+            stateStore.storeStatus(taskStatus);
         }
     }
 
@@ -197,16 +206,21 @@ public class FrameworkStateService implements Observer, TaskStatusProvider {
         return taskStatuses;
     }
 
-    private boolean taskStatusExists(String taskName) {
+    private boolean taskStatusExists(TaskStatus taskStatus) throws StateStoreException {
+        String taskName;
+        String execName;
         try {
-            getTaskStatus(taskName);
+            taskName = TaskUtils.toTaskName(taskStatus.getTaskId());
+            execName = ExecutorUtils.toExecutorName(taskStatus.getExecutorId());
+        } catch (TaskException | ExecutorTaskException e) {
+            throw new StateStoreException(String.format(
+                    "Failed to get TaskName/ExecName from TaskStatus %s", taskStatus), e);
+        }
+        try {
+            stateStore.fetchStatus(taskName, execName);
             return true;
         } catch (Exception e) {
             return false;
         }
-    }
-
-    private static String toExecName(String taskName) {
-        return taskName + EXEC_NAME_SUFFIX;
     }
 }

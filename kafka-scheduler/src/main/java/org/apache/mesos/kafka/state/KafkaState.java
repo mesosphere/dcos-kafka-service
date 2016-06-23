@@ -7,6 +7,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.apache.mesos.kafka.config.ZookeeperConfiguration;
 import org.apache.zookeeper.KeeperException.NoNodeException;
 
 import org.json.JSONArray;
@@ -24,10 +25,11 @@ public class KafkaState {
     private final String zkRoot;
     private final CuratorFramework zkClient;
 
-    public KafkaState(String zkRoot, String zkHost) {
-        this.zkRoot = zkRoot;
+    public KafkaState(ZookeeperConfiguration zkConfig) {
+        this.zkRoot = zkConfig.getZkRoot();
         this.zkClient = CuratorFrameworkFactory.newClient(
-                zkHost, new ExponentialBackoffRetry(POLL_DELAY_MS, CURATOR_MAX_RETRIES));
+                zkConfig.getZkAddress(),
+                new ExponentialBackoffRetry(POLL_DELAY_MS, CURATOR_MAX_RETRIES));
         this.zkClient.start();
     }
 

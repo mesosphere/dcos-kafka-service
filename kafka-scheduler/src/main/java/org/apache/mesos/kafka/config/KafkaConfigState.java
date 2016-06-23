@@ -30,8 +30,9 @@ public class KafkaConfigState {
    *
    * @see CuratorConfigStore
    */
-  public KafkaConfigState(String zkRoot, String zkHost) {
-    this.configStore = new CuratorConfigStore<KafkaSchedulerConfiguration>(zkRoot, zkHost);
+  public KafkaConfigState(ZookeeperConfiguration zkConfig) {
+    this.configStore = new CuratorConfigStore<KafkaSchedulerConfiguration>(
+            zkConfig.getZkRoot(), zkConfig.getZkAddress());
   }
 
   /**
@@ -40,16 +41,16 @@ public class KafkaConfigState {
    *
    * @see CuratorConfigStore
    */
-  public KafkaConfigState(String frameworkName, String zkHost, RetryPolicy retryPolicy) {
+  public KafkaConfigState(String zkRoot, String zkHost, RetryPolicy retryPolicy) {
     this.configStore = new CuratorConfigStore<KafkaSchedulerConfiguration>(
-            "/" + frameworkName, zkHost, retryPolicy);
+            zkRoot, zkHost, retryPolicy);
   }
 
   public KafkaSchedulerConfiguration fetch(UUID version) throws ConfigStoreException {
     try {
       return configStore.fetch(version, KafkaSchedulerConfiguration.getFactoryInstance());
     } catch (ConfigStoreException e) {
-      log.error("Unable to fetch version: " + version + " Reason: ", e);
+      log.error("Unable to fetch version: " + version, e);
       throw new ConfigStoreException(e);
     }
   }
@@ -61,7 +62,7 @@ public class KafkaConfigState {
     try {
       return configStore.getTargetConfig() != null;
     } catch (Exception ex) {
-      log.error("Failed to determine existence of target config with exception: " + ex);
+      log.error("Failed to determine existence of target config", ex);
       return false;
     }
   }
@@ -73,7 +74,7 @@ public class KafkaConfigState {
     try {
       return configStore.getTargetConfig();
     } catch (Exception ex) {
-      log.error("Failed to retrieve config target name with exception: ", ex);
+      log.error("Failed to retrieve config target name", ex);
       throw ex;
     }
   }
@@ -108,7 +109,7 @@ public class KafkaConfigState {
       return configStore.store(configuration);
     } catch (Exception e) {
       String msg = "Failure to store configurations.";
-      log.error(msg);
+      log.error(msg, e);
       throw new ConfigStoreException(msg, e);
     }
   }
@@ -136,7 +137,7 @@ public class KafkaConfigState {
         replaceDuplicateConfig(state, taskInfo, duplicateConfigs, targetName);
       }
     } catch (Exception ex) {
-      log.error("Failed to synchronized configurations with exception: ", ex);
+      log.error("Failed to synchronized configurations", ex);
       throw new ConfigStoreException(ex);
     }
   }
@@ -154,7 +155,7 @@ public class KafkaConfigState {
           log.info("Removing config: " + configName);
           configStore.clear(configName);
         } catch (ConfigStoreException e) {
-          log.error("Unable to clear config: " + configName + " Reason: " + e);
+          log.error("Unable to clear config: " + configName, e);
         }
       }
     }
@@ -173,7 +174,7 @@ public class KafkaConfigState {
         }
       }
     } catch (Exception ex) {
-      log.error("Failed to fetch configurations from TaskInfos with exception: " + ex);
+      log.error("Failed to fetch configurations from TaskInfos", ex);
     }
 
     return activeConfigs;
@@ -196,7 +197,7 @@ public class KafkaConfigState {
         }
       }
     } catch (Exception ex) {
-      log.error("Failed to replace duplicate configuration for taskInfo: " + taskInfo + " with exception: ", ex);
+      log.error("Failed to replace duplicate configuration for taskInfo: " + taskInfo, ex);
       throw new ConfigStoreException(ex);
     }
   }

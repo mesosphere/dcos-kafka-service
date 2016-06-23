@@ -23,15 +23,12 @@ public class ConfigStateUpdater {
 
   public ConfigStateUpdater(KafkaSchedulerConfiguration newTargetConfig) {
     this.newTargetConfig = newTargetConfig;
-    final KafkaConfiguration kafkaConfiguration = newTargetConfig.getKafkaConfiguration();
-    final String frameworkName = newTargetConfig.getServiceConfiguration().getName();
 
-    // We must bootstrap config management with some values from the new config:
-    String zkRoot = "/" + frameworkName;
-    this.kafkaConfigState = new KafkaConfigState(zkRoot, kafkaConfiguration.getZkAddress());
-    this.frameworkState = new FrameworkState(zkRoot, kafkaConfiguration.getZkAddress());
-    this.kafkaState = new KafkaState(zkRoot, kafkaConfiguration.getZkAddress());
-
+    // We must bootstrap ZK settings from the new config:
+    ZookeeperConfiguration zkConfig = newTargetConfig.getZookeeperConfig();
+    this.kafkaConfigState = new KafkaConfigState(zkConfig);
+    this.frameworkState = new FrameworkState(zkConfig);
+    this.kafkaState = new KafkaState(zkConfig);
     this.validator = new ConfigStateValidator(frameworkState);
   }
 

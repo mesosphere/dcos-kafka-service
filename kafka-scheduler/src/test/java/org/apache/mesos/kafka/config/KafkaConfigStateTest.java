@@ -20,7 +20,7 @@ import java.util.UUID;
  */
 public class KafkaConfigStateTest {
 
-    private static final String testFrameworkName = "test-framework-name";
+    private static final String testZkRoot = "/test-framework-name";
     private static final RetryPolicy retryNeverPolicy = new RetryNTimes(0, 1000);
 
     private TestingServer testZk;
@@ -34,7 +34,7 @@ public class KafkaConfigStateTest {
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
         testZk = new TestingServer();
-        configState = new KafkaConfigState(testFrameworkName, testZk.getConnectString(), retryNeverPolicy);
+        configState = new KafkaConfigState(testZkRoot, testZk.getConnectString(), retryNeverPolicy);
         config = new KafkaSchedulerConfiguration(
                 new ServiceConfiguration(),
                 new BrokerConfiguration(),

@@ -67,8 +67,7 @@ public final class Overrider extends Application<DropwizardConfiguration> {
     this.configuration = configEnv.getSchedulerConfiguration();
     configId = System.getenv("CONFIG_ID");
 
-    configState = new KafkaConfigState(
-            configuration.getServiceConfiguration().getName(), configuration.getKafkaConfiguration().getZkAddress());
+    configState = new KafkaConfigState(configuration.getZookeeperConfig());
 
     if (StringUtils.isBlank(configId)) {
       log.error("Require configId. Please set CONFIG_ID env var correctly.");

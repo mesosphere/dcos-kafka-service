@@ -6,7 +6,6 @@ import org.apache.mesos.Protos.TaskID;
 import org.apache.mesos.kafka.scheduler.KafkaScheduler;
 import org.apache.mesos.kafka.state.FrameworkState;
 import org.apache.mesos.kafka.state.KafkaState;
-import org.apache.mesos.offer.TaskUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -76,7 +75,7 @@ public class BrokerController {
 
       List<String> taskNames = new ArrayList<>();
       for (TaskID taskId : taskIds) {
-          taskNames.add(TaskUtils.toTaskName(taskId));
+          taskNames.add(taskId.getValue()); // return the full Task ID, with UUID
       }
       return Response.ok(new JSONArray(taskNames).toString(), MediaType.APPLICATION_JSON).build();
     } catch (Exception ex) {

@@ -16,8 +16,7 @@ import org.apache.mesos.Protos.TaskID;
 import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.Protos.TaskState;
 import org.apache.mesos.Protos.TaskStatus;
-import org.apache.mesos.executor.ExecutorTaskException;
-import org.apache.mesos.executor.ExecutorUtils;
+import org.apache.mesos.kafka.config.ZookeeperConfiguration;
 import org.apache.mesos.kafka.offer.OfferUtils;
 import org.apache.mesos.offer.TaskException;
 import org.apache.mesos.offer.TaskUtils;
@@ -35,8 +34,8 @@ public class FrameworkState implements Observer, TaskStatusProvider {
 
     private final StateStore stateStore;
 
-    public FrameworkState(String zkRoot, String zkHost) {
-        this.stateStore = new CuratorStateStore(zkRoot, zkHost);
+    public FrameworkState(ZookeeperConfiguration zkConfig) {
+        this.stateStore = new CuratorStateStore(zkConfig.getZkRoot(), zkConfig.getZkAddress());
     }
 
     public FrameworkID getFrameworkId() {
@@ -93,8 +92,7 @@ public class FrameworkState implements Observer, TaskStatusProvider {
         for (TaskStatus taskStatus : getTaskStatuses()) {
             if (TaskUtils.isTerminated(taskStatus)) {
                 taskInfos.add(stateStore.fetchTask(
-                        TaskUtils.toTaskName(taskStatus.getTaskId()),
-                        ExecutorUtils.toExecutorName(taskStatus.getExecutorId())));
+                        TaskUtils.toTaskName(taskStatus.getTaskId())));
             }
         }
 
@@ -114,23 +112,19 @@ public class FrameworkState implements Observer, TaskStatusProvider {
     }
 
     public TaskStatus fetchStatus(TaskInfo taskInfo) throws StateStoreException {
-        return stateStore.fetchStatus(taskInfo.getName(), taskInfo.getExecutor().getName());
+        return stateStore.fetchStatus(taskInfo.getName());
     }
 
     @Override
     public Set<TaskStatus> getTaskStatuses() throws StateStoreException {
         Set<TaskStatus> taskStatuses = new HashSet<TaskStatus>();
-        for (String execName : stateStore.fetchExecutorNames()) {
-            taskStatuses.addAll(stateStore.fetchStatuses(execName));
-        }
+        taskStatuses.addAll(stateStore.fetchStatuses());
         return taskStatuses;
     }
 
     public List<TaskInfo> getTaskInfos() throws StateStoreException {
         List<TaskInfo> taskInfos = new ArrayList<TaskInfo>();
-        for (String execName : stateStore.fetchExecutorNames()) {
-            taskInfos.addAll(stateStore.fetchTasks(execName));
-        }
+        taskInfos.addAll(stateStore.fetchTasks());
         return taskInfos;
     }
 
@@ -171,11 +165,9 @@ public class FrameworkState implements Observer, TaskStatusProvider {
 
     public void deleteTask(TaskID taskId) {
         try {
-            // Shortcut: Treat the 'broker-N' task name as the executor name. For us they're the same.
-            // Alternate: Scan all tasks for an exact match on the Task ID directly.
-            String executorName = TaskUtils.toTaskName(taskId);
-            log.info(String.format("Clearing task from state store: %s", executorName));
-            stateStore.clearExecutor(executorName);
+            String taskName = TaskUtils.toTaskName(taskId);
+            log.info(String.format("Clearing task from state store: %s", taskName));
+            stateStore.clearTask(taskName);
         } catch (StateStoreException | TaskException ex) {
             log.error("Failed to delete Task: " + taskId, ex);
         }
@@ -193,16 +185,14 @@ public class FrameworkState implements Observer, TaskStatusProvider {
 
     private boolean taskStatusExists(TaskStatus taskStatus) throws StateStoreException {
         String taskName;
-        String execName;
         try {
             taskName = TaskUtils.toTaskName(taskStatus.getTaskId());
-            execName = ExecutorUtils.toExecutorName(taskStatus.getExecutorId());
-        } catch (TaskException | ExecutorTaskException e) {
+        } catch (TaskException e) {
             throw new StateStoreException(String.format(
                     "Failed to get TaskName/ExecName from TaskStatus %s", taskStatus), e);
         }
         try {
-            stateStore.fetchStatus(taskName, execName);
+            stateStore.fetchStatus(taskName);
             return true;
         } catch (Exception e) {
             return false;

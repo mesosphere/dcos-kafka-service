@@ -149,13 +149,12 @@ public class FrameworkState implements Observer, TaskStatusProvider {
      * none is found.
      */
     public TaskID getTaskIdForBroker(Integer brokerId) throws Exception {
-        String brokerName = OfferUtils.idToName(brokerId);
-        for (TaskInfo taskInfo : getTaskInfos()) {
-            if (taskInfo.getName().equals(brokerName)) {
-                return taskInfo.getTaskId();
-            }
+        try {
+            return stateStore.fetchTask(OfferUtils.idToName(brokerId)).getTaskId();
+        } catch (StateStoreException e) {
+            log.error(String.format("Unable to retrieve TaskID for broker %d", brokerId), e);
+            return null;
         }
-        return null;
     }
 
     public void recordTaskInfo(TaskInfo taskInfo) throws StateStoreException {

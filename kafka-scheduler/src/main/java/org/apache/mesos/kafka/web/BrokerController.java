@@ -18,7 +18,6 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -55,32 +54,37 @@ public class BrokerController {
     @QueryParam("replace") String replace) {
 
     try {
-      List<TaskID> taskIds = Arrays.asList(frameworkState.getTaskIdForBroker(Integer.parseInt(id)));
-      return killBrokers(taskIds, replace);
+      int idVal = Integer.parseInt(id);
+      TaskID taskId = frameworkState.getTaskIdForBroker(idVal);
+      if (taskId == null) {
+        // Tests expect an array containing a single null element in this case. May make sense to
+        // revisit this strange behavior someday...
+        log.error(String.format(
+            "Broker %d doesn't exist in FrameworkState, returning null entry in response", idVal));
+        return killResponse(Arrays.asList((String)null));
+      }
+      return killBroker(taskId, Boolean.parseBoolean(replace));
     } catch (Exception ex) {
       log.error("Failed to kill brokers", ex);
       return Response.serverError().build();
     }
   }
 
-  private Response killBrokers(List<TaskID> taskIds, String replace) {
+  private Response killBroker(TaskID taskId, boolean replace) {
     try {
-      boolean replaced = Boolean.parseBoolean(replace);
-
-      if (replaced) {
-        KafkaScheduler.rescheduleTasks(taskIds);
+      if (replace) {
+        KafkaScheduler.rescheduleTask(taskId);
       } else {
-        KafkaScheduler.restartTasks(taskIds);
+        KafkaScheduler.restartTasks(Arrays.asList(taskId));
       }
-
-      List<String> taskNames = new ArrayList<>();
-      for (TaskID taskId : taskIds) {
-          taskNames.add(taskId.getValue()); // return the full Task ID, with UUID
-      }
-      return Response.ok(new JSONArray(taskNames).toString(), MediaType.APPLICATION_JSON).build();
+      return killResponse(Arrays.asList(taskId.getValue()));
     } catch (Exception ex) {
       log.error("Failed to kill brokers", ex);
       return Response.serverError().build();
     }
+  }
+
+  private static Response killResponse(List<String> taskIds) {
+    return Response.ok(new JSONArray(taskIds).toString(), MediaType.APPLICATION_JSON).build();
   }
 }

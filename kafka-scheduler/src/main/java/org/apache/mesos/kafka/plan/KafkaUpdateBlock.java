@@ -17,7 +17,6 @@ import org.apache.mesos.scheduler.plan.Block;
 import org.apache.mesos.scheduler.plan.Status;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -115,8 +114,7 @@ public class KafkaUpdateBlock implements Block {
   @Override
   public void forceComplete() {
     try {
-      List<TaskID> taskIds = Arrays.asList(state.getTaskIdForBroker(brokerId));
-      KafkaScheduler.rescheduleTasks(taskIds);
+      KafkaScheduler.rescheduleTask(state.getTaskIdForBroker(brokerId));
     } catch (Exception ex) {
       log.error("Failed to force completion of Block: " + getId() + "with exception: ", ex);
       return;

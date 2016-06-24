@@ -132,9 +132,9 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
     }
   }
 
-  public static void rescheduleTasks(List<TaskID> taskIds) {
+  public static void rescheduleTask(TaskID taskId) {
     synchronized (rescheduleLock) {
-      tasksToReschedule.addAll(taskIds);
+      tasksToReschedule.add(taskId);
     }
   }
 

@@ -48,12 +48,13 @@ public class FrameworkState implements Observer, TaskStatusProvider {
         return null;
     }
 
-    public void setFrameworkId(FrameworkID fwkId) {
+    public void setFrameworkId(FrameworkID fwkId) throws StateStoreException {
         try {
             log.info(String.format("Storing framework id: %s", fwkId));
             stateStore.storeFrameworkId(fwkId);
         } catch (StateStoreException ex) {
             log.error("Failed to set FrameworkID: " + fwkId, ex);
+            throw ex;
         }
     }
 
@@ -76,13 +77,14 @@ public class FrameworkState implements Observer, TaskStatusProvider {
         }
     }
 
-    public void update(Observable observable, Object obj) {
+    public void update(Observable observable, Object obj) throws StateStoreException {
         TaskStatus taskStatus = (TaskStatus) obj;
         log.info(String.format("Recording updated TaskStatus to state store: %s", taskStatus));
         try {
             recordTaskStatus(taskStatus);
         } catch (Exception ex) {
             log.error("Failed to update TaskStatus: " + taskStatus, ex);
+            throw ex;
         }
     }
 
@@ -139,7 +141,7 @@ public class FrameworkState implements Observer, TaskStatusProvider {
             }
         } catch (Exception ex) {
             log.error("Failed to retrieve all Task information", ex);
-            return null;
+            return resources;
         }
         return resources;
     }
@@ -172,7 +174,7 @@ public class FrameworkState implements Observer, TaskStatusProvider {
         }
     }
 
-    private void recordTaskStatus(TaskStatus taskStatus) {
+    private void recordTaskStatus(TaskStatus taskStatus) throws StateStoreException {
         if (!taskStatus.getState().equals(TaskState.TASK_STAGING)
                 && !taskStatusExists(taskStatus)) {
             log.warn("Dropping non-STAGING status update because the ZK path doesn't exist: "

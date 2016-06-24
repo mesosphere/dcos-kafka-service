@@ -465,9 +465,9 @@ Configure the number of brokers running in a given Kafka cluster. The default co
 
 ### Broker Port
 
-Configure the port number that the brokers listen on. The default is 0, which indicates to the scheduler that it should choose a random port in the 9092-10092 range. If the port is set to a particular value (e.g. 9092), this will be the port used by all brokers. Note that this requires that `placement-strategy` be set to `NODE` to take effect, since having every broker listening on the same port requires that they be placed on different hosts. This option can be changed after installation.
+Configure the port number that the brokers listen on. If the port is set to a particular value, this will be the port used by all brokers. The default port is 9092.  Note that this requires that `placement-strategy` be set to `NODE` to take effect, since having every broker listening on the same port requires that they be placed on different hosts. Setting the port to 0 indicates that each Broker should have a random port in the 9092-10092 range. 
 
-*   **In dcos-cli options.json**: `broker-port` = integer (default: `0`)
+*   **In dcos-cli options.json**: `broker-port` = integer (default: `9092`)
 *   **In Marathon**: `BROKER_PORT` = integer
 
 ### Configure Broker Placement Strategy

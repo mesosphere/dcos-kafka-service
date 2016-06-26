@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Observable;
-import java.util.Observer;
 import java.util.Set;
 
 import org.apache.commons.logging.Log;
@@ -29,7 +27,7 @@ import org.apache.mesos.state.StateStoreException;
  * Read/write interface for storing and retrieving information about Framework tasks.
  * The underlying data is stored against Executor IDs of "broker-0", "broker-1", etc.
  */
-public class FrameworkState implements Observer, TaskStatusProvider {
+public class FrameworkState implements TaskStatusProvider {
     private static final Log log = LogFactory.getLog(FrameworkState.class);
 
     private final StateStore stateStore;
@@ -77,15 +75,9 @@ public class FrameworkState implements Observer, TaskStatusProvider {
         }
     }
 
-    public void update(Observable observable, Object obj) throws StateStoreException {
-        TaskStatus taskStatus = (TaskStatus) obj;
+    public void updateStatus(TaskStatus taskStatus) throws StateStoreException {
         log.info(String.format("Recording updated TaskStatus to state store: %s", taskStatus));
-        try {
-            recordTaskStatus(taskStatus);
-        } catch (Exception ex) {
-            log.error("Failed to update TaskStatus: " + taskStatus, ex);
-            throw ex;
-        }
+        recordTaskStatus(taskStatus);
     }
 
     public List<TaskInfo> getTerminatedTaskInfos() throws Exception {
@@ -111,10 +103,6 @@ public class FrameworkState implements Observer, TaskStatusProvider {
         }
 
         return count;
-    }
-
-    public TaskStatus fetchStatus(TaskInfo taskInfo) throws StateStoreException {
-        return stateStore.fetchStatus(taskInfo.getName());
     }
 
     @Override
@@ -151,10 +139,30 @@ public class FrameworkState implements Observer, TaskStatusProvider {
      * none is found.
      */
     public TaskID getTaskIdForBroker(Integer brokerId) throws Exception {
+        TaskInfo taskInfo = getTaskInfoForBroker(brokerId);
+        return (taskInfo != null) ? taskInfo.getTaskId() : null;
+    }
+
+    /**
+     * Returns the TaskInfo for the provided Broker index, or {@code null} if none is found.
+     */
+    public TaskInfo getTaskInfoForBroker(Integer brokerId) throws Exception {
         try {
-            return stateStore.fetchTask(OfferUtils.idToName(brokerId)).getTaskId();
+            return stateStore.fetchTask(OfferUtils.idToName(brokerId));
         } catch (StateStoreException e) {
-            log.error(String.format("Unable to retrieve TaskID for broker %d", brokerId), e);
+            log.error(String.format("Unable to retrieve TaskInfo for broker %d", brokerId), e);
+            return null;
+        }
+    }
+
+    /**
+     * Returns the TaskStatus for the provided Broker index, or {@code null} if none is found.
+     */
+    public TaskStatus getTaskStatusForBroker(Integer brokerId) throws Exception {
+        try {
+            return stateStore.fetchStatus(OfferUtils.idToName(brokerId));
+        } catch (StateStoreException e) {
+            log.error(String.format("Unable to retrieve TaskStatus for broker %d", brokerId), e);
             return null;
         }
     }

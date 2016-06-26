@@ -8,6 +8,7 @@ import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.OfferUtils;
+import org.apache.mesos.kafka.plan.KafkaUpdateBlock;
 import org.apache.mesos.kafka.state.FrameworkState;
 import org.apache.mesos.offer.*;
 import org.apache.mesos.scheduler.plan.Block;
@@ -133,13 +134,12 @@ public class KafkaRepairScheduler {
         log.error("Failed to fetch TaskInfos with exception: " + ex);
         return -1;
       }
+    } else if (block instanceof KafkaUpdateBlock) {
+      int brokerId = ((KafkaUpdateBlock)block).getBrokerId();
+      return brokerId - 1;
     } else {
-      try {
-        return OfferUtils.nameToId(block.getName()) - 1;
-      } catch (Exception ex) {
-        log.warn("Failed to transform: " + block.getName() + " into broker id, with exception: " + ex);
-        return -1;
-      }
+      // Reconciliation block
+      return -1;
     }
   }
 }

@@ -206,7 +206,7 @@ public class KafkaScheduler implements Scheduler, Runnable {
       frameworkState.updateStatus(status);
       stageManager.update(status);
     } catch (Exception e) {
-      log.error("Failed to update TaskStatus received from Mesos. "
+      log.warn("Failed to update TaskStatus received from Mesos. "
           + "This may be expected if Mesos sent stale status information: " + status, e);
     }
   }

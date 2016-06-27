@@ -286,7 +286,6 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     log.info("Getting new OfferRequirement for: " + configName);
     String overridePrefix = KafkaSchedulerConfiguration.KAFKA_OVERRIDE_PREFIX;
     String brokerName = OfferUtils.idToName(brokerId);
-    Long jmxPort = 11000 + ThreadLocalRandom.current().nextLong(0, 1000);
 
     String containerPath = "kafka-volume-" + UUID.randomUUID();
 
@@ -329,8 +328,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
       .addEnvironmentVar(overridePrefix + "LOG_DIRS", containerPath + "/" + brokerName)
       .addEnvironmentVar(overridePrefix + "LISTENERS", "PLAINTEXT://:" + port)
       .addEnvironmentVar(overridePrefix + "PORT", Long.toString(port))
-      .addEnvironmentVar("KAFKA_DYNAMIC_BROKER_PORT", Boolean.toString(isDynamicPort))
-      .addEnvironmentVar("JMX_PORT", Long.toString(jmxPort));
+      .addEnvironmentVar("KAFKA_DYNAMIC_BROKER_PORT", Boolean.toString(isDynamicPort));
 
     // Launch command for custom executor
     final String executorCommand = "./executor/bin/kafka-executor -Dlogback.configurationFile=executor/conf/logback.xml";
@@ -371,11 +369,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
             Arrays.asList(
               Range.newBuilder()
               .setBegin(port)
-              .setEnd(port).build(),
-              Range.newBuilder()
-                      .setBegin(jmxPort)
-                      .setEnd(jmxPort).build())
-      ));
+              .setEnd(port).build())));
 
     if (brokerConfig.getDiskType().equals("MOUNT")) {
       taskBuilder.addResources(ResourceUtils.getDesiredMountVolume(

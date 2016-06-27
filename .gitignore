@@ -20,6 +20,9 @@ kafka-*/bin/
 .gradle
 build/
 
+# log
+*.log
+
 # vim swap files
 *.swp
 

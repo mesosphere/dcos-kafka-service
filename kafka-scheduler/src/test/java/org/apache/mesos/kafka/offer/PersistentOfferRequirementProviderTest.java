@@ -175,7 +175,7 @@ public class PersistentOfferRequirementProviderTest {
     final CommandInfo kafkaTaskData = CommandInfo.parseFrom(taskInfo.getData());
     final Map<String, String> envFromTask = TaskUtils.fromEnvironmentToMap(kafkaTaskData.getEnvironment());
 
-    Assert.assertEquals(11, envFromTask.size());
+    Assert.assertEquals(10, envFromTask.size());
 
     Map<String, String> expectedEnvMap = new HashMap<>();
     expectedEnvMap.put("KAFKA_OVERRIDE_ZOOKEEPER_CONNECT", testKafkaZkAddress + "/" + testFrameworkName);
@@ -189,7 +189,6 @@ public class PersistentOfferRequirementProviderTest {
     expectedEnvMap.put("KAFKA_OVERRIDE_BROKER_ID", String.valueOf(0));
     expectedEnvMap.put("KAFKA_HEAP_OPTS", "-Xms500M -Xmx500M");
     expectedEnvMap.put("TASK_TYPE", KafkaTask.BROKER.name());
-    expectedEnvMap.put("JMX_PORT", "11500");
 
     System.out.println(expectedEnvMap);
 
@@ -204,9 +203,6 @@ public class PersistentOfferRequirementProviderTest {
       } else if ("KAFKA_OVERRIDE_LISTENERS".equals(envVarName)) {
         Assert.assertTrue(envVarValue.contains("PLAINTEXT"));
         Assert.assertTrue(envVarValue.contains(portString));
-      } else if ("JMX_PORT".equals(envVarName)) {
-        final int port = Integer.parseInt(envVarValue);
-        Assert.assertTrue(port >= 11000 && port <= 12000);
       } else {
         Assert.assertTrue("Cannot find env value: " + envVarValue, expectedEnvMap.containsValue(envVarValue));
       }

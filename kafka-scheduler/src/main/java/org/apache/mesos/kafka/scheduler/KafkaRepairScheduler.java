@@ -8,7 +8,8 @@ import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.OfferUtils;
-import org.apache.mesos.kafka.state.KafkaStateService;
+import org.apache.mesos.kafka.plan.KafkaUpdateBlock;
+import org.apache.mesos.kafka.state.FrameworkState;
 import org.apache.mesos.offer.*;
 import org.apache.mesos.scheduler.plan.Block;
 
@@ -20,22 +21,23 @@ public class KafkaRepairScheduler {
   private final Log log = LogFactory.getLog(KafkaRepairScheduler.class);
 
   private final String targetConfigName;
-  private final KafkaStateService state;
+  private final FrameworkState state;
   private final OfferAccepter offerAccepter;
   private final KafkaOfferRequirementProvider offerReqProvider;
 
   public KafkaRepairScheduler(
     String targetConfigName,
-    KafkaStateService kafkaStateService,
+    FrameworkState frameworkStateService,
     KafkaOfferRequirementProvider offerReqProvider,
     OfferAccepter offerAccepter) {
     this.targetConfigName = targetConfigName;
-    this.state = kafkaStateService;
+    this.state = frameworkStateService;
     this.offerReqProvider = offerReqProvider;
     this.offerAccepter = offerAccepter;
   }
 
-  public List<OfferID> resourceOffers(SchedulerDriver driver, List<Offer> offers, Block block) throws Exception {
+  public List<OfferID> resourceOffers(SchedulerDriver driver, List<Offer> offers, Block block)
+      throws Exception {
     List<OfferID> acceptedOffers = new ArrayList<OfferID>();
     List<TaskInfo> terminatedTasks = getTerminatedTasks(block);
 
@@ -132,13 +134,12 @@ public class KafkaRepairScheduler {
         log.error("Failed to fetch TaskInfos with exception: " + ex);
         return -1;
       }
+    } else if (block instanceof KafkaUpdateBlock) {
+      int brokerId = ((KafkaUpdateBlock)block).getBrokerId();
+      return brokerId - 1;
     } else {
-      try {
-        return OfferUtils.nameToId(block.getName()) - 1;
-      } catch (Exception ex) {
-        log.warn("Failed to transform: " + block.getName() + " into broker id, with exception: " + ex);
-        return -1;
-      }
+      // Reconciliation block
+      return -1;
     }
   }
 }

@@ -4,7 +4,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.Protos.SlaveID;
 import org.apache.mesos.Protos.TaskInfo;
-import org.apache.mesos.kafka.state.KafkaStateService;
+import org.apache.mesos.kafka.state.FrameworkState;
 import org.apache.mesos.offer.PlacementStrategy;
 
 import java.util.ArrayList;
@@ -16,9 +16,9 @@ import java.util.List;
 public class NodePlacementStrategy implements PlacementStrategy {
   private static final Log log = LogFactory.getLog(NodePlacementStrategy.class);
 
-  private final KafkaStateService state;
+  private final FrameworkState state;
 
-  public NodePlacementStrategy(KafkaStateService state) {
+  public NodePlacementStrategy(FrameworkState state) {
     this.state = state;
   }
 

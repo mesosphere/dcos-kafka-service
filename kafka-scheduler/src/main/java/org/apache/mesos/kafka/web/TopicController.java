@@ -3,7 +3,7 @@ package org.apache.mesos.kafka.web;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.kafka.cmd.CmdExecutor;
-import org.apache.mesos.kafka.state.KafkaStateService;
+import org.apache.mesos.kafka.state.KafkaState;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -24,9 +24,9 @@ public class TopicController {
   private static final Log log = LogFactory.getLog(TopicController.class);
 
   private final CmdExecutor cmdExecutor;
-  private final KafkaStateService state;
+  private final KafkaState state;
 
-  public TopicController(CmdExecutor cmdExecutor, KafkaStateService state) {
+  public TopicController(CmdExecutor cmdExecutor, KafkaState state) {
     this.cmdExecutor = cmdExecutor;
     this.state = state;
   }

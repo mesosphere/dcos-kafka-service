@@ -3,7 +3,6 @@ package org.apache.mesos.kafka.scheduler;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Observable;
 
 import io.dropwizard.setup.Environment;
 
@@ -24,7 +23,8 @@ import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.PersistentOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.PersistentOperationRecorder;
 import org.apache.mesos.kafka.plan.KafkaUpdatePhase;
-import org.apache.mesos.kafka.state.KafkaStateService;
+import org.apache.mesos.kafka.state.FrameworkState;
+import org.apache.mesos.kafka.state.KafkaState;
 
 import org.apache.mesos.offer.*;
 
@@ -33,17 +33,20 @@ import org.apache.mesos.reconciliation.Reconciler;
 import org.apache.mesos.scheduler.SchedulerDriverFactory;
 import org.apache.mesos.scheduler.plan.*;
 
+import com.google.protobuf.TextFormat;
+
 /**
  * Kafka Framework Scheduler.
  */
-public class KafkaScheduler extends Observable implements Scheduler, Runnable {
+public class KafkaScheduler implements Scheduler, Runnable {
   private static final Log log = LogFactory.getLog(KafkaScheduler.class);
 
   private static final int TWO_WEEK_SEC = 2 * 7 * 24 * 60 * 60;
 
   private final KafkaConfigState configState;
   private final KafkaSchedulerConfiguration envConfig;
-  private final KafkaStateService kafkaState;
+  private final FrameworkState frameworkState;
+  private final KafkaState kafkaState;
 
   private final DefaultStageScheduler stageScheduler;
   private final KafkaRepairScheduler repairScheduler;
@@ -53,9 +56,9 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
   private final StageManager stageManager;
   private SchedulerDriver driver;
   private static final Integer restartLock = 0;
-  private static List<String> tasksToRestart = new ArrayList<String>();
+  private static List<TaskID> tasksToRestart = new ArrayList<>();
   private static final Integer rescheduleLock = 0;
-  private static List<String> tasksToReschedule = new ArrayList<String>();
+  private static List<TaskID> tasksToReschedule = new ArrayList<>();
 
   public KafkaScheduler(KafkaSchedulerConfiguration configuration, Environment environment) throws ConfigStoreException {
     ConfigStateUpdater configStateUpdater = new ConfigStateUpdater(configuration);
@@ -77,21 +80,21 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
     reconciler = new DefaultReconciler();
 
     configState = configStateUpdater.getConfigState();
+    frameworkState = configStateUpdater.getFrameworkState();
     kafkaState = configStateUpdater.getKafkaState();
-    addObserver(kafkaState);
 
     offerAccepter =
-      new OfferAccepter(Arrays.asList(new PersistentOperationRecorder(kafkaState)));
+      new OfferAccepter(Arrays.asList(new PersistentOperationRecorder(frameworkState)));
 
     KafkaOfferRequirementProvider offerRequirementProvider =
-      new PersistentOfferRequirementProvider(kafkaState, configState);
+      new PersistentOfferRequirementProvider(frameworkState, configState);
 
     List<Phase> phases = Arrays.asList(
-        ReconciliationPhase.create(reconciler, kafkaState),
+        ReconciliationPhase.create(reconciler, frameworkState),
         new KafkaUpdatePhase(
             configState.getTargetName().toString(),
             envConfig,
-            kafkaState,
+            frameworkState,
             offerRequirementProvider));
     // If config validation had errors, expose them via the Stage.
     Stage stage = stageErrors.isEmpty()
@@ -99,12 +102,11 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
         : DefaultStage.withErrors(phases, stageErrors);
 
     stageManager = new DefaultStageManager(stage, getPhaseStrategyFactory(envConfig));
-    addObserver(stageManager);
 
     stageScheduler = new DefaultStageScheduler(offerAccepter);
     repairScheduler = new KafkaRepairScheduler(
         configState.getTargetName().toString(),
-        kafkaState,
+        frameworkState,
         offerRequirementProvider,
         offerAccepter);
   }
@@ -123,15 +125,15 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
     }
   }
 
-  public static void restartTasks(List<String> taskIds) {
+  public static void restartTasks(List<TaskID> taskIds) {
     synchronized (restartLock) {
       tasksToRestart.addAll(taskIds);
     }
   }
 
-  public static void rescheduleTasks(List<String> taskIds) {
+  public static void rescheduleTask(TaskID taskId) {
     synchronized (rescheduleLock) {
-      tasksToReschedule.addAll(taskIds);
+      tasksToReschedule.add(taskId);
     }
   }
 
@@ -152,8 +154,13 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
   }
 
   @Override
-  public void frameworkMessage(SchedulerDriver driver, ExecutorID executorID, SlaveID slaveID,
-      byte[] data) {
+  public void slaveLost(SchedulerDriver driver, SlaveID slaveId) {
+    log.info("Slave lost slaveId: " + slaveId.getValue());
+  }
+
+  @Override
+  public void frameworkMessage(
+      SchedulerDriver driver, ExecutorID executorID, SlaveID slaveID, byte[] data) {
     log.info("Framework message: executorId: " + executorID.getValue() + " slaveId: "
         + slaveID.getValue() + " data: '" + Arrays.toString(data) + "'");
   }
@@ -166,13 +173,24 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
   @Override
   public void registered(SchedulerDriver driver, FrameworkID frameworkId, MasterInfo masterInfo) {
     log.info("Registered framework with frameworkId: " + frameworkId.getValue());
-    kafkaState.setFrameworkId(frameworkId);
+    try {
+      frameworkState.setFrameworkId(frameworkId);
+    } catch (Exception e) {
+      log.error(String.format(
+          "Unable to store registered framework ID '%s'", frameworkId.getValue()), e);
+      //TODO(nick): exit process?
+    }
   }
 
   @Override
   public void reregistered(SchedulerDriver driver, MasterInfo masterInfo) {
     log.info("Reregistered framework.");
-    reconcile();
+    try {
+      reconcile();
+    } catch (Exception e) {
+      log.error("Unable to trigger reconciliation after re-registration", e);
+      //TODO(nick): exit process?
+    }
   }
 
   @Override
@@ -183,8 +201,14 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
         status.getState().toString(),
         status.getMessage()));
 
-    setChanged();
-    notifyObservers(status);
+    // Store status, then pass status to StageManager => Plan => Blocks
+    try {
+      frameworkState.updateStatus(status);
+      stageManager.update(status);
+    } catch (Exception e) {
+      log.warn("Failed to update TaskStatus received from Mesos. "
+          + "This may be expected if Mesos sent stale status information: " + status, e);
+    }
   }
 
   @Override
@@ -196,9 +220,13 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
 
       List<OfferID> acceptedOffers = new ArrayList<>();
 
-      if (reconciler.isReconciled()) {
+      if (!reconciler.isReconciled()) {
+        log.info("Accepting no offers: Reconciler is still in progress");
+      } else {
         Block block = stageManager.getCurrentBlock();
-        acceptedOffers = stageScheduler.resourceOffers(driver, offers, block);
+        if (block != null) {
+            acceptedOffers = stageScheduler.resourceOffers(driver, offers, block);
+        }
         List<Offer> unacceptedOffers = filterAcceptedOffers(offers, acceptedOffers);
         try {
           acceptedOffers.addAll(repairScheduler.resourceOffers(driver, unacceptedOffers, block));
@@ -212,19 +240,20 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
         }
       }
 
-      log.info("Accepted offers: " + acceptedOffers);
+      log.info(String.format("Accepted %d of %d offers: %s",
+              acceptedOffers.size(), offers.size(), acceptedOffers));
       declineOffers(driver, acceptedOffers, offers);
     } catch (Exception ex) {
-      log.error("Unexpected exception encountered when processing offers: ", ex);
+      log.error("Unexpected exception encountered when processing offers", ex);
     }
   }
 
   private ResourceCleanerScheduler getCleanerScheduler() {
     try {
-      ResourceCleaner cleaner = new ResourceCleaner(kafkaState.getExpectedResources());
+      ResourceCleaner cleaner = new ResourceCleaner(frameworkState.getExpectedResources());
       return new ResourceCleanerScheduler(cleaner, offerAccepter);
     } catch (Exception ex) {
-      log.error("Failed to construct ResourceCleaner with exception:", ex);
+      log.error("Failed to construct ResourceCleaner", ex);
       return null;
     }
   }
@@ -258,38 +287,33 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
 
   private void processTasksToRestart(SchedulerDriver driver) {
     synchronized (restartLock) {
-      for (String taskId : tasksToRestart) {
+      for (TaskID taskId : tasksToRestart) {
         if (taskId != null) {
-          log.info("Restarting task: " + taskId);
-          driver.killTask(TaskID.newBuilder().setValue(taskId).build());
+          log.info("Restarting task: " + taskId.getValue());
+          driver.killTask(taskId);
         } else {
           log.warn("Asked to restart null task.");
         }
       }
 
-      tasksToRestart = new ArrayList<String>();
+      tasksToRestart = new ArrayList<>();
     }
   }
 
   private void processTasksToReschedule(SchedulerDriver driver) {
     synchronized (rescheduleLock) {
-      for (String taskId : tasksToReschedule) {
+      for (TaskID taskId : tasksToReschedule) {
         if (taskId != null) {
-          log.info("Rescheduling task: " + taskId);
-          kafkaState.deleteTask(taskId);
-          driver.killTask(TaskID.newBuilder().setValue(taskId).build());
+          log.info("Rescheduling task: " + taskId.getValue());
+          frameworkState.deleteTask(taskId);
+          driver.killTask(taskId);
         } else {
           log.warn("Asked to reschedule null task.");
         }
       }
 
-      tasksToReschedule = new ArrayList<String>();
+      tasksToReschedule = new ArrayList<>();
     }
-  }
-
-  @Override
-  public void slaveLost(SchedulerDriver driver, SlaveID slaveId) {
-    log.info("Slave lost slaveId: " + slaveId.getValue());
   }
 
   @Override
@@ -336,7 +360,7 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
       .setPrincipal(envConfig.getServiceConfiguration().getPrincipal())
       .setCheckpoint(true);
 
-    FrameworkID fwkId = kafkaState.getFrameworkId();
+    FrameworkID fwkId = frameworkState.getFrameworkId();
     if (fwkId != null) {
       fwkInfoBuilder.setId(fwkId);
     }
@@ -349,26 +373,21 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
       return;
     }
 
-    log.info(String.format("Received %d offers", offers.size()));
-
-    for (Offer offer : offers) {
-      log.info("Received Offer: " + offer);
+    log.info(String.format("Received %d offers:", offers.size()));
+    for (int i = 0; i < offers.size(); ++i) {
+      // offer protos are very long. print each as a single line:
+      log.info(String.format("- Offer %d: %s", i + 1, TextFormat.shortDebugString(offers.get(i))));
     }
   }
 
   private void declineOffers(SchedulerDriver driver, List<OfferID> acceptedOffers, List<Offer> offers) {
     for (Offer offer : offers) {
-      if (!acceptedOffers.contains(offer.getId())) {
-        log.info("Declining offer: " + offer.getId());
-        declineOffer(driver, offer);
+      OfferID offerId = offer.getId();
+      if (!acceptedOffers.contains(offerId)) {
+        log.info("Declining offer: " + offerId.getValue());
+        driver.declineOffer(offerId);
       }
     }
-  }
-
-  private void declineOffer(SchedulerDriver driver, Offer offer) {
-    OfferID offerId = offer.getId();
-    log.info(String.format("Scheduler declining offer: %s", offerId));
-    driver.declineOffer(offerId);
   }
 
   private void registerFramework(KafkaScheduler sched, FrameworkInfo frameworkInfo, String masterUri) {
@@ -394,7 +413,11 @@ public class KafkaScheduler extends Observable implements Scheduler, Runnable {
     return configState;
   }
 
-  public KafkaStateService getKafkaState() {
+  public FrameworkState getFrameworkState() {
+    return frameworkState;
+  }
+
+  public KafkaState getKafkaState() {
     return kafkaState;
   }
 

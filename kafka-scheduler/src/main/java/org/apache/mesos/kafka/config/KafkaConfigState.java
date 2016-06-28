@@ -11,7 +11,7 @@ import org.apache.mesos.config.ConfigStoreException;
 import org.apache.mesos.config.CuratorConfigStore;
 import org.apache.mesos.kafka.offer.OfferUtils;
 import org.apache.mesos.kafka.offer.PersistentOfferRequirementProvider;
-import org.apache.mesos.kafka.state.KafkaStateService;
+import org.apache.mesos.kafka.state.FrameworkState;
 import org.apache.mesos.protobuf.LabelBuilder;
 
 import java.util.*;
@@ -21,31 +21,36 @@ import java.util.*;
  * Each configuration is in the form of a {@link KafkaSchedulerConfiguration}.
  */
 public class KafkaConfigState {
-  private final Log log = LogFactory.getLog(KafkaConfigState.class);
+  private static final Log log = LogFactory.getLog(KafkaConfigState.class);
 
-  private ConfigStore configStore;
-  private KafkaConfigurationFactory kafkaConfigurationFactory;
-  private static final Integer RETRY_SLEEP_MS = 1000;
-  private static final Integer RETRY_MAX_ATTEMPTS = 3;
+  private final ConfigStore<KafkaSchedulerConfiguration> configStore;
 
   /**
    * Creates a new Kafka config state manager based on the provided bootstrap information.
+   *
+   * @see CuratorConfigStore
    */
-  public KafkaConfigState(String frameworkName, String zkHost) {
-    this.configStore = new CuratorConfigStore("/" + frameworkName, zkHost);
-    this.kafkaConfigurationFactory = new KafkaConfigurationFactory();
+  public KafkaConfigState(ZookeeperConfiguration zkConfig) {
+    this.configStore = new CuratorConfigStore<KafkaSchedulerConfiguration>(
+            zkConfig.getZkRoot(), zkConfig.getZkAddress());
   }
 
-  public KafkaConfigState(String frameworkName, String zkHost, RetryPolicy retryPolicy) {
-    this.configStore = new CuratorConfigStore("/" + frameworkName, zkHost, retryPolicy);
-    this.kafkaConfigurationFactory = new KafkaConfigurationFactory();
+  /**
+   * Creates a new Kafka config state manager based on the provided bootstrap information, with a
+   * custom {@link RetryPolicy}.
+   *
+   * @see CuratorConfigStore
+   */
+  public KafkaConfigState(String zkRoot, String zkHost, RetryPolicy retryPolicy) {
+    this.configStore = new CuratorConfigStore<KafkaSchedulerConfiguration>(
+            zkRoot, zkHost, retryPolicy);
   }
 
   public KafkaSchedulerConfiguration fetch(UUID version) throws ConfigStoreException {
     try {
-      return (KafkaSchedulerConfiguration) configStore.fetch(version, this.kafkaConfigurationFactory);
+      return configStore.fetch(version, KafkaSchedulerConfiguration.getFactoryInstance());
     } catch (ConfigStoreException e) {
-      log.error("Unable to fetch version: " + version + " Reason: ", e);
+      log.error("Unable to fetch version: " + version, e);
       throw new ConfigStoreException(e);
     }
   }
@@ -57,7 +62,7 @@ public class KafkaConfigState {
     try {
       return configStore.getTargetConfig() != null;
     } catch (Exception ex) {
-      log.error("Failed to determine existence of target config with exception: " + ex);
+      log.error("Failed to determine existence of target config", ex);
       return false;
     }
   }
@@ -69,7 +74,7 @@ public class KafkaConfigState {
     try {
       return configStore.getTargetConfig();
     } catch (Exception ex) {
-      log.error("Failed to retrieve config target name with exception: ", ex);
+      log.error("Failed to retrieve config target name", ex);
       throw ex;
     }
   }
@@ -90,7 +95,7 @@ public class KafkaConfigState {
     try {
       return configStore.list();
     } catch (ConfigStoreException e) {
-      return Collections.EMPTY_LIST;
+      return Collections.emptyList();
     }
   }
 
@@ -104,7 +109,7 @@ public class KafkaConfigState {
       return configStore.store(configuration);
     } catch (Exception e) {
       String msg = "Failure to store configurations.";
-      log.error(msg);
+      log.error(msg, e);
       throw new ConfigStoreException(msg, e);
     }
   }
@@ -122,7 +127,7 @@ public class KafkaConfigState {
     }
   }
 
-  public void syncConfigs(KafkaStateService state) throws ConfigStoreException {
+  public void syncConfigs(FrameworkState state) throws ConfigStoreException {
     try {
       UUID targetName = getTargetName();
       List<String> duplicateConfigs = getDuplicateConfigs();
@@ -132,17 +137,17 @@ public class KafkaConfigState {
         replaceDuplicateConfig(state, taskInfo, duplicateConfigs, targetName);
       }
     } catch (Exception ex) {
-      log.error("Failed to synchronized configurations with exception: ", ex);
+      log.error("Failed to synchronized configurations", ex);
       throw new ConfigStoreException(ex);
     }
   }
 
-  public void cleanConfigs(KafkaStateService state) throws ConfigStoreException {
+  public void cleanConfigs(FrameworkState state) throws ConfigStoreException {
     Set<UUID> activeConfigs = new HashSet<>();
     activeConfigs.add(getTargetName());
     activeConfigs.addAll(getTaskConfigs(state));
 
-    log.info("Cleaning all configs which are NOT in the active list: " + activeConfigs); 
+    log.info("Cleaning all configs which are NOT in the active list: " + activeConfigs);
 
     for (UUID configName : getConfigNames()) {
       if (!activeConfigs.contains(configName)) {
@@ -150,13 +155,13 @@ public class KafkaConfigState {
           log.info("Removing config: " + configName);
           configStore.clear(configName);
         } catch (ConfigStoreException e) {
-          log.error("Unable to clear config: " + configName + " Reason: " + e);
+          log.error("Unable to clear config: " + configName, e);
         }
       }
     }
   }
 
-  private Set<UUID> getTaskConfigs(KafkaStateService state) {
+  private Set<UUID> getTaskConfigs(FrameworkState state) {
     Set<UUID> activeConfigs = new HashSet<>();
 
     try {
@@ -169,13 +174,13 @@ public class KafkaConfigState {
         }
       }
     } catch (Exception ex) {
-      log.error("Failed to fetch configurations from TaskInfos with exception: " + ex);
+      log.error("Failed to fetch configurations from TaskInfos", ex);
     }
 
     return activeConfigs;
   }
 
-  private void replaceDuplicateConfig(KafkaStateService state, TaskInfo taskInfo, List<String> duplicateConfigs, UUID targetName)
+  private void replaceDuplicateConfig(FrameworkState state, TaskInfo taskInfo, List<String> duplicateConfigs, UUID targetName)
           throws ConfigStoreException {
     try {
       String taskConfig = OfferUtils.getConfigName(taskInfo);
@@ -192,7 +197,7 @@ public class KafkaConfigState {
         }
       }
     } catch (Exception ex) {
-      log.error("Failed to replace duplicate configuration for taskInfo: " + taskInfo + " with exception: ", ex);
+      log.error("Failed to replace duplicate configuration for taskInfo: " + taskInfo, ex);
       throw new ConfigStoreException(ex);
     }
   }

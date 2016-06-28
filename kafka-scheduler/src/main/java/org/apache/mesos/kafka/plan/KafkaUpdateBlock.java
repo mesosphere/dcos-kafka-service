@@ -9,32 +9,32 @@ import org.apache.mesos.Protos.TaskStatus;
 import org.apache.mesos.kafka.offer.KafkaOfferRequirementProvider;
 import org.apache.mesos.kafka.offer.OfferUtils;
 import org.apache.mesos.kafka.scheduler.KafkaScheduler;
-import org.apache.mesos.kafka.state.KafkaStateService;
+import org.apache.mesos.kafka.state.FrameworkState;
 import org.apache.mesos.offer.OfferRequirement;
 import org.apache.mesos.offer.TaskRequirement;
+import org.apache.mesos.offer.TaskUtils;
 import org.apache.mesos.scheduler.plan.Block;
 import org.apache.mesos.scheduler.plan.Status;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
 public class KafkaUpdateBlock implements Block {
   private final Log log = LogFactory.getLog(KafkaUpdateBlock.class);
 
+  private final KafkaOfferRequirementProvider offerReqProvider;
+  private final String targetConfigName;
+  private final FrameworkState state;
+  private final int brokerId;
+  private final UUID blockUuid;
+
+  private final Object pendingTaskIdsLock = new Object();
+  private List<TaskID> pendingTaskIds;
   private Status status = Status.Pending;
-  private KafkaOfferRequirementProvider offerReqProvider;
-  private String targetConfigName = null;
-  private KafkaStateService state = null;
-  private int brokerId;
-  private UUID blockId;
-  private final Object taskLock = new Object();
-  private List<TaskID> pendingTasks;
-  private TaskInfo cachedTaskInfo;
 
   public KafkaUpdateBlock(
-    KafkaStateService state,
+    FrameworkState state,
     KafkaOfferRequirementProvider offerReqProvider,
     String targetConfigName,
     int brokerId) {
@@ -43,17 +43,11 @@ public class KafkaUpdateBlock implements Block {
     this.offerReqProvider = offerReqProvider;
     this.targetConfigName = targetConfigName;
     this.brokerId = brokerId;
-    this.blockId = UUID.randomUUID();
-    this.cachedTaskInfo = getTaskInfo();
+    this.blockUuid = UUID.randomUUID();
 
-    setPendingTasks(getUpdateIds());
-    initializeStatus();
-  }
-
-  private void setStatus(Status newStatus) {
-    Status oldStatus = status;
-    status = newStatus;
-    log.info(getName() + ": changed status from: " + oldStatus + " to: " + status);
+    TaskInfo taskInfo = fetchTaskInfo();
+    pendingTaskIds = getUpdateIds(taskInfo);
+    initializeStatus(taskInfo);
   }
 
   @Override
@@ -80,15 +74,23 @@ public class KafkaUpdateBlock implements Block {
       return null;
     }
 
-    if (taskIsRunning() || taskIsStaging()) {
-      log.info("Adding to restart task list. Block: " + getName() + " Status: " + getTaskStatus());
-      KafkaScheduler.restartTasks(taskIdsToStrings(getUpdateIds()));
+    TaskStatus taskStatus = fetchTaskStatus();
+    if (taskIsRunningOrStaging(taskStatus)) {
+      log.info("Adding task to restart list. Block: " + getName() + " Status: " + taskStatus);
+      KafkaScheduler.restartTasks(getUpdateIds(fetchTaskInfo()));
       return null;
     }
 
     try {
-      OfferRequirement offerReq = getOfferRequirement();
-      setPendingTasks(offerReq);
+      OfferRequirement offerReq = getOfferRequirement(fetchTaskInfo());
+      List<TaskID> newPendingTasks = new ArrayList<TaskID>();
+      // in practice there should only be one TaskRequirement, see PersistentOfferRequirementProvider
+      for (TaskRequirement taskRequirement : offerReq.getTaskRequirements()) {
+        newPendingTasks.add(taskRequirement.getTaskInfo().getTaskId());
+      }
+      synchronized (pendingTaskIdsLock) {
+        pendingTaskIds = newPendingTasks;
+      }
       return offerReq;
     } catch (Exception e) {
       log.error("Error getting offerRequirement: ", e);
@@ -114,9 +116,7 @@ public class KafkaUpdateBlock implements Block {
   @Override
   public void forceComplete() {
     try {
-      List<String> taskIds =
-              Arrays.asList(state.getTaskIdForBroker(brokerId));
-      KafkaScheduler.rescheduleTasks(taskIds);
+      KafkaScheduler.rescheduleTask(state.getTaskIdForBroker(getBrokerId()));
     } catch (Exception ex) {
       log.error("Failed to force completion of Block: " + getId() + "with exception: ", ex);
       return;
@@ -125,32 +125,38 @@ public class KafkaUpdateBlock implements Block {
 
   @Override
   public void update(TaskStatus taskStatus) {
-    synchronized (taskLock) {
-      log.info(getName() + " has pending tasks: " + pendingTasks);
+    synchronized (pendingTaskIdsLock) {
+      log.info(Block.getStatus(this) + " Block " + getName() + " received TaskStatus. "
+          + "Pending tasks: " + pendingTaskIds);
 
-      if (!isRelevantStatus(taskStatus) || isPending()) {
-        log.warn("Received irrelevant TaskStatus: " + taskStatus);
+      if (isPending()) {
+        log.info("Ignoring TaskStatus (Block " + getName() + " is Pending): " + taskStatus);
+        return;
+      }
+
+      if (taskStatus.getReason().equals(TaskStatus.Reason.REASON_RECONCILIATION)) {
+        log.info("Ignoring TaskStatus (Reason is RECONCILIATION): " + taskStatus);
+        return;
+      }
+
+      if (!pendingTaskIds.contains(taskStatus.getTaskId())) {
+        log.info("Ignoring TaskStatus (TaskId " + taskStatus.getTaskId().getValue() +
+            " not found in pending tasks): " + taskStatus);
         return;
       }
 
       if (taskStatus.getState().equals(TaskState.TASK_RUNNING)) {
-        List<TaskID> updatedPendingTasks = new ArrayList<TaskID>();
-        for (TaskID pendingTaskId : pendingTasks) {
-          if (!taskStatus.getTaskId().equals(pendingTaskId)) {
-            updatedPendingTasks.add(pendingTaskId);
-          }
-        }
-
-        setPendingTasks(updatedPendingTasks);
-      } else if (isInProgress() && isTerminalState(taskStatus)) {
-        log.info("Received terminal while InProgress TaskStatus: " + taskStatus);
+        pendingTaskIds.remove(taskStatus.getTaskId());
+        log.info(getName() + " has updated pending tasks: " + pendingTaskIds);
+      } else if (isInProgress() && TaskUtils.isTerminated(taskStatus)) {
+        log.info("Received terminal TaskStatus while " + getName() + " is InProgress: " + taskStatus);
         setStatus(Status.Pending);
         return;
       } else {
         log.warn("TaskStatus with no effect encountered: " + taskStatus);
       }
 
-      if (pendingTasks.size() == 0) {
+      if (pendingTaskIds.size() == 0) {
         setStatus(Status.Complete);
       }
     }
@@ -158,7 +164,7 @@ public class KafkaUpdateBlock implements Block {
 
   @Override
   public UUID getId() {
-    return blockId;
+    return blockUuid;
   }
 
   @Override
@@ -168,17 +174,15 @@ public class KafkaUpdateBlock implements Block {
 
   @Override
   public String getName() {
-    return getBrokerName();
+    return OfferUtils.idToName(getBrokerId());
   }
 
   public int getBrokerId() {
     return brokerId;
   }
 
-  private void initializeStatus() {
+  private void initializeStatus(TaskInfo taskInfo) {
     log.info("Setting initial status for: " + getName());
-
-    TaskInfo taskInfo = getTaskInfo();
 
     if (taskInfo != null) {
       String configName = OfferUtils.getConfigName(taskInfo);
@@ -193,121 +197,40 @@ public class KafkaUpdateBlock implements Block {
     log.info("Status initialized as " + Block.getStatus(this) + " for block: " + getName());
   }
 
-  private synchronized TaskInfo getTaskInfo() {
-    try {
-      List<TaskInfo> allTasks = state.getTaskInfos();
-
-      for (TaskInfo taskInfo : allTasks) {
-        if (taskInfo.getName().equals(getBrokerName())) {
-          cachedTaskInfo = taskInfo;
-          return cachedTaskInfo;
-        }
-      }
-    } catch (Exception ex) {
-      log.error("Failed to retrieve TaskInfo with exception: " + ex);
-    }
-
-    return cachedTaskInfo;
-  }
-
-  private OfferRequirement getOfferRequirement() throws Exception {
-    TaskInfo taskInfo = getTaskInfo();
-
+  private OfferRequirement getOfferRequirement(TaskInfo taskInfo) throws Exception {
     if (taskInfo == null) {
-      return offerReqProvider.getNewOfferRequirement(targetConfigName, brokerId);
+      return offerReqProvider.getNewOfferRequirement(targetConfigName, getBrokerId());
     } else {
       return offerReqProvider.getUpdateOfferRequirement(targetConfigName, taskInfo);
     }
   }
 
-  private void setPendingTasks(OfferRequirement offerReq) {
-    List<TaskID> newPendingTasks = new ArrayList<TaskID>();
-    // in practice there should only be one TaskRequirement, see PersistentOfferRequirementProvider
-    for (TaskRequirement taskRequirement : offerReq.getTaskRequirements()) {
-      newPendingTasks.add(taskRequirement.getTaskInfo().getTaskId());
-    }
-
-    setPendingTasks(newPendingTasks);
+  private void setStatus(Status newStatus) {
+    Status oldStatus = status;
+    status = newStatus;
+    log.info(getName() + ": changed status from: " + oldStatus + " to: " + newStatus);
   }
 
-  private synchronized void setPendingTasks(List<TaskID> taskIds) {
-      pendingTasks = taskIds;
-  }
-
-  private List<String> taskIdsToStrings(List<TaskID> taskIds) {
-    List<String> taskIdStrings = new ArrayList<String>();
-
-    for (TaskID taskId : taskIds) {
-      taskIdStrings.add(taskId.getValue());
-    }
-
-    return taskIdStrings;
-  }
-
-
-  public boolean isRelevantStatus(TaskStatus taskStatus) {
-    if (taskStatus.getReason().equals(TaskStatus.Reason.REASON_RECONCILIATION)) {
-      return false;
-    }
-
-    for (TaskID pendingTaskId : pendingTasks) {
-      if (taskStatus.getTaskId().equals(pendingTaskId)) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  private boolean taskIsRunning() {
-    return taskInState(TaskState.TASK_RUNNING);
-  }
-
-  private boolean taskIsStaging() {
-    return taskInState(TaskState.TASK_STAGING);
-  }
-
-  private boolean taskInState(TaskState state) {
-    TaskStatus taskStatus = getTaskStatus();
-
-    if (null != taskStatus) {
-      return taskStatus.getState().equals(state);
-    } else {
-      return false;
-    }
-  }
-
-  private TaskStatus getTaskStatus() {
-    TaskInfo taskInfo = getTaskInfo();
-
-    if (null != taskInfo) {
-      try {
-        return state.getTaskStatus(taskInfo.getName());
-      } catch (Exception ex) {
-        log.error("Failed to retrieve TaskStatus with exception: " + ex);
-      }
-    } else {
+  private TaskStatus fetchTaskStatus() {
+    try {
+      return state.getTaskStatusForBroker(getBrokerId());
+    } catch (Exception ex) {
+      log.error(String.format("Failed to retrieve TaskStatus for broker %d", getBrokerId()), ex);
       return null;
     }
-
-    return null;
   }
 
-  public String getBrokerName() {
-    return "broker-" + brokerId;
+  private TaskInfo fetchTaskInfo() {
+    try {
+      return state.getTaskInfoForBroker(getBrokerId());
+    } catch (Exception ex) {
+      log.error(String.format("Failed to retrieve TaskInfo for broker %d", getBrokerId()), ex);
+      return null;
+    }
   }
 
-  private boolean isTerminalState(TaskStatus taskStatus) {
-    return taskStatus.getState().equals(TaskState.TASK_FAILED)
-      || taskStatus.getState().equals(TaskState.TASK_FINISHED)
-      || taskStatus.getState().equals(TaskState.TASK_KILLED)
-      || taskStatus.getState().equals(TaskState.TASK_LOST)
-      || taskStatus.getState().equals(TaskState.TASK_ERROR);
-  }
-
-  private List<TaskID> getUpdateIds() {
-    List<TaskID> taskIds = new ArrayList<TaskID>();
-    TaskInfo taskInfo = getTaskInfo();
+  private static List<TaskID> getUpdateIds(TaskInfo taskInfo) {
+    List<TaskID> taskIds = new ArrayList<>();
 
     if (taskInfo != null) {
       taskIds.add(taskInfo.getTaskId());
@@ -315,4 +238,18 @@ public class KafkaUpdateBlock implements Block {
 
     return taskIds;
   }
+
+  private static boolean taskIsRunningOrStaging(TaskStatus taskStatus) {
+    if (null == taskStatus) {
+      return false;
+    }
+    switch (taskStatus.getState()) {
+    case TASK_RUNNING:
+    case TASK_STAGING:
+      return true;
+    default:
+      return false;
+    }
+  }
+
 }

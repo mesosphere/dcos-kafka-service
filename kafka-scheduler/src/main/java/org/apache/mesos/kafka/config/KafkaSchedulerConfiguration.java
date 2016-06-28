@@ -8,12 +8,16 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.config.ConfigStoreException;
 import org.apache.mesos.config.Configuration;
+import org.apache.mesos.config.ConfigurationFactory;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 @JsonSerialize
 public class KafkaSchedulerConfiguration implements Configuration {
+
     private static final Log LOGGER = LogFactory.getLog(KafkaSchedulerConfiguration.class);
+    private static final ConfigurationFactory<KafkaSchedulerConfiguration> FACTORY = new Factory();
 
     public static final String KAFKA_OVERRIDE_PREFIX = "KAFKA_OVERRIDE_";
 
@@ -80,6 +84,14 @@ public class KafkaSchedulerConfiguration implements Configuration {
         this.executorConfiguration = executorConfiguration;
     }
 
+    public ZookeeperConfiguration getZookeeperConfig() {
+        ZookeeperConfiguration zkSettings = new ZookeeperConfiguration(
+                getKafkaConfiguration(), getServiceConfiguration());
+        LOGGER.info(String.format("Using Zookeeper settings: address '%s', path '%s'",
+                zkSettings.getZkAddress(), zkSettings.getZkRoot()));
+        return zkSettings;
+    }
+
     @Override
     public String toString() {
         return "KafkaSchedulerConfiguration{" +
@@ -115,15 +127,26 @@ public class KafkaSchedulerConfiguration implements Configuration {
     @Override
     public byte[] getBytes() throws ConfigStoreException {
         try {
-            final Yaml yaml = new Yaml();
-            return yaml.dump(this).getBytes();
-//            final YAMLFactory yamlFactory = new YAMLFactory();
-//            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-//            yamlFactory.createGenerator(baos).writeObject(this);
-//            return baos.toByteArray();
+            return new Yaml().dump(this).getBytes();
         } catch (Exception e) {
             LOGGER.error("Error occured while serializing the object: " + e);
             throw new ConfigStoreException(e);
+        }
+    }
+
+    public static ConfigurationFactory<KafkaSchedulerConfiguration> getFactoryInstance() {
+        return FACTORY;
+    }
+
+    private static class Factory implements ConfigurationFactory<KafkaSchedulerConfiguration> {
+        @Override
+        public KafkaSchedulerConfiguration parse(byte[] bytes) throws ConfigStoreException {
+            try {
+                final String yamlStr = new String(bytes, StandardCharsets.UTF_8);
+                return new Yaml().loadAs(yamlStr, KafkaSchedulerConfiguration.class);
+            } catch (Exception e) {
+                throw new ConfigStoreException(e);
+            }
         }
     }
 }

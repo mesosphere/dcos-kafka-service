@@ -10,6 +10,16 @@
             "type":"string",
             "default":"kafka"
           },
+          "principal": {
+            "description": "The principal for the Kafka service instance.",
+            "type": "string",
+            "default": "kafka-principal"
+          },
+          "secret_name": {
+            "description": "Name of the Secret Store credentials to use for DC/OS service authentication. This should be left empty unless service authentication is needed.",
+            "type": "string",
+            "default": ""
+          },
           "placement_strategy":{
             "description":"Broker placement strategy. See documentation. [ANY, NODE]",
             "type":"string",

@@ -5,7 +5,7 @@ schedulerConfiguration:
     placementStrategy: ${PLACEMENT_STRATEGY}
     phaseStrategy: ${PHASE_STRATEGY}
     role: "${FRAMEWORK_NAME}-role"
-    principal: "${FRAMEWORK_NAME}-principal"
+    principal: ${FRAMEWORK_PRINCIPAL}
     count: ${BROKER_COUNT:-3}
 
   executor:

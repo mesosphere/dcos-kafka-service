@@ -77,24 +77,10 @@ public class KafkaSchedulerTest {
     }
 
     @Test
-    public void testRescheduleEmptyTasks() {
-        KafkaScheduler.rescheduleTasks(Collections.emptyList());
-        kafkaScheduler.resourceOffers(driver, Collections.emptyList());
-        verify(driver, times(0)).killTask(anyObject());
-    }
-
-    @Test
     public void testRescheduleOneTask() {
-        KafkaScheduler.rescheduleTasks(Arrays.asList(testTaskId));
+        KafkaScheduler.rescheduleTask(testTaskId);
         kafkaScheduler.resourceOffers(driver, Collections.emptyList());
         verify(driver, times(1)).killTask(anyObject());
-    }
-
-    @Test
-    public void testRescheduleMultipleTask() {
-        KafkaScheduler.rescheduleTasks(Arrays.asList(testTaskId, testTaskId));
-        kafkaScheduler.resourceOffers(driver, Collections.emptyList());
-        verify(driver, times(2)).killTask(anyObject());
     }
 
     @Test

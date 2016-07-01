@@ -4,6 +4,7 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.RetryNTimes;
 import org.apache.curator.test.TestingServer;
+import org.apache.mesos.kafka.config.ZookeeperConfiguration;
 import org.apache.zookeeper.KeeperException;
 import org.json.JSONArray;
 import org.junit.Assert;
@@ -22,11 +23,13 @@ public class KafkaStateTest {
     private TestingServer testingServer;
     private KafkaState kafkaState;
     private CuratorFramework zkClient;
+    private ZookeeperConfiguration zkConfig;
 
     @Before
     public void beforeEach() throws Exception {
         testingServer = new TestingServer();
-        kafkaState = new KafkaState(testRoot, testingServer.getConnectString());
+        zkConfig = new ZookeeperConfiguration(testingServer.getConnectString(), testRoot);
+        kafkaState = new KafkaState(zkConfig);
         zkClient = CuratorFrameworkFactory.newClient(
                 testingServer.getConnectString(),
                 new RetryNTimes(0, 0));

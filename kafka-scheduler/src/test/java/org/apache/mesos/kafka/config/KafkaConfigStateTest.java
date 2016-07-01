@@ -21,7 +21,7 @@ import java.util.UUID;
 public class KafkaConfigStateTest {
 
     private static final String testZkRoot = "/test-framework-name";
-    private static final RetryPolicy retryNeverPolicy = new RetryNTimes(0, 1000);
+    private static final RetryPolicy retryNeverPolicy = new RetryNTimes(0, 0);
 
     private TestingServer testZk;
     private KafkaConfigState configState;

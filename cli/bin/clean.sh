@@ -16,7 +16,7 @@
 
 set -o errexit -o nounset 
 
-BASEDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"/..
+BASEDIR=`dirname $0`/..
 
 rm -rf $BASEDIR/.tox $BASEDIR/env $BASEDIR/build $BASEDIR/dist
 echo "Deleted virtualenv and test artifacts."

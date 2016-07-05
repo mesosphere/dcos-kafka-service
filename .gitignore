@@ -22,6 +22,7 @@ build/
 
 # log
 *.log
+dcos-kafka-service.log.*
 
 # vim swap files
 *.swp

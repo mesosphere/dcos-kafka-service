@@ -26,7 +26,7 @@ import java.util.concurrent.ExecutorService;
  */
 public final class Main extends Application<DropwizardConfiguration> {
   private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
-  private KafkaSchedulerConfiguration kafkaSchedulerConfiguration;
+  private DropwizardConfiguration dropwizardConfiguration;
   private Environment environment;
 
   public static void main(String[] args) throws Exception {
@@ -58,25 +58,24 @@ public final class Main extends Application<DropwizardConfiguration> {
                     strSubstitutor));
   }
 
-  public KafkaSchedulerConfiguration getKafkaSchedulerConfiguration() {
-    return kafkaSchedulerConfiguration;
+  KafkaSchedulerConfiguration getKafkaSchedulerConfiguration() {
+    return dropwizardConfiguration.getSchedulerConfiguration();
   }
 
-  public Environment getEnvironment() {
+  Environment getEnvironment() {
     return environment;
   }
 
   @Override
-  public void run(DropwizardConfiguration configuration, Environment environment) throws Exception {
-    LOGGER.info("" + configuration);
-
-    this.kafkaSchedulerConfiguration = configuration.getSchedulerConfiguration();
+  public void run(DropwizardConfiguration dropwizardConfiguration, Environment environment) throws Exception {
+    LOGGER.info("DropwizardConfiguration: " + dropwizardConfiguration);
+    this.dropwizardConfiguration = dropwizardConfiguration;
     this.environment = environment;
 
-    final KafkaScheduler kafkaScheduler = new KafkaScheduler(configuration.getSchedulerConfiguration(), environment);
+    final KafkaScheduler kafkaScheduler = new KafkaScheduler(getKafkaSchedulerConfiguration(), getEnvironment());
 
-    registerJerseyResources(kafkaScheduler, environment, configuration);
-    registerHealthChecks(kafkaScheduler, environment);
+    registerJerseyResources(kafkaScheduler, getEnvironment(), this.dropwizardConfiguration);
+    registerHealthChecks(kafkaScheduler, getEnvironment());
 
     kafkaSchedulerExecutorService = environment.lifecycle().
             executorService("KafkaScheduler")

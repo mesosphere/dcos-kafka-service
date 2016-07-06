@@ -66,8 +66,9 @@ public class KafkaRepairSchedulerTest {
                 anyObject());
 
         Assert.assertTrue(offerIdCaptor.getValue().containsAll(acceptedOfferIds));
-        Assert.assertEquals(9, operationCaptor.getValue().size());
-        Protos.Offer.Operation launchOperation = Iterators.get(operationCaptor.getValue().iterator(), 8);
+        int expectedOperationCount = 8;
+        Assert.assertEquals(expectedOperationCount, operationCaptor.getValue().size());
+        Protos.Offer.Operation launchOperation = Iterators.get(operationCaptor.getValue().iterator(), expectedOperationCount - 1);
         Assert.assertEquals(Protos.Offer.Operation.Type.LAUNCH, launchOperation.getType());
         Assert.assertEquals("broker-1", launchOperation.getLaunch().getTaskInfos(0).getName());
     }

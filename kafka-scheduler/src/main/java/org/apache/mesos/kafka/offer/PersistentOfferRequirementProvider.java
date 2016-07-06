@@ -54,11 +54,9 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
 
     final TaskInfo.Builder replacementTaskInfo = TaskInfo.newBuilder(existingTaskInfo);
     replacementTaskInfo.clearExecutor();
-    replacementTaskInfo.clearTaskId();
     replacementTaskInfo.setTaskId(TaskID.newBuilder().setValue("").build()); // Set later by TaskRequirement
 
     final ExecutorInfo.Builder replacementExecutor = ExecutorInfo.newBuilder(existingExecutor);
-    replacementExecutor.clearExecutorId();
     replacementExecutor.setExecutorId(ExecutorID.newBuilder().setValue("").build()); // Set later by ExecutorRequirement
 
     OfferRequirement offerRequirement = new OfferRequirement(

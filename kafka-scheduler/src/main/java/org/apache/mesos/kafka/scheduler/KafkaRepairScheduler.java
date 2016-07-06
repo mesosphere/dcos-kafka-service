@@ -21,17 +21,17 @@ public class KafkaRepairScheduler {
   private final Log log = LogFactory.getLog(KafkaRepairScheduler.class);
 
   private final String targetConfigName;
-  private final FrameworkState state;
+  private final FrameworkState frameworkState;
   private final OfferAccepter offerAccepter;
   private final KafkaOfferRequirementProvider offerReqProvider;
 
   public KafkaRepairScheduler(
     String targetConfigName,
-    FrameworkState frameworkStateService,
+    FrameworkState frameworkState,
     KafkaOfferRequirementProvider offerReqProvider,
     OfferAccepter offerAccepter) {
     this.targetConfigName = targetConfigName;
-    this.state = frameworkStateService;
+    this.frameworkState = frameworkState;
     this.offerReqProvider = offerReqProvider;
     this.offerAccepter = offerAccepter;
   }
@@ -69,11 +69,11 @@ public class KafkaRepairScheduler {
 
     try {
       if (block == null) {
-        return state.getTerminatedTaskInfos();
+        return frameworkState.getTerminatedTaskInfos();
       }
 
       String brokerName = block.getName();
-      for (TaskInfo taskInfo : state.getTerminatedTaskInfos()) {
+      for (TaskInfo taskInfo : frameworkState.getTerminatedTaskInfos()) {
         if (!taskInfo.getName().equals(brokerName)) {
           filteredTerminatedTasks.add(taskInfo);
         }
@@ -86,7 +86,7 @@ public class KafkaRepairScheduler {
   }
 
   private List<Integer> getMissingBrokerIds(Block block) {
-    List<Integer> missingBrokerIds = new ArrayList<Integer>();
+    List<Integer> missingBrokerIds = new ArrayList<>();
 
     Integer lastExpectedBrokerId = getLastExpectedBrokerId(block);
 
@@ -96,7 +96,7 @@ public class KafkaRepairScheduler {
 
     List<TaskInfo> brokerTasks = null;
     try {
-      brokerTasks = state.getTaskInfos();
+      brokerTasks = frameworkState.getTaskInfos();
     } catch (Exception ex) {
       log.error("Failed to fetch TaskInfos with exception: " + ex);
       return missingBrokerIds;
@@ -129,7 +129,7 @@ public class KafkaRepairScheduler {
   private Integer getLastExpectedBrokerId(Block block) {
     if (block == null) {
       try {
-        return state.getTaskInfos().size() - 1;
+        return frameworkState.getTaskInfos().size() - 1;
       } catch (Exception ex) {
         log.error("Failed to fetch TaskInfos with exception: " + ex);
         return -1;

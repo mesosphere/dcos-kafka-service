@@ -3,6 +3,7 @@ package com.mesosphere.dcos.kafka.executor;
 import org.apache.mesos.ExecutorDriver;
 import org.apache.mesos.Protos;
 import org.apache.mesos.executor.CustomExecutor;
+import org.apache.mesos.executor.ExecutorDriverFactory;
 import org.apache.mesos.executor.MesosExecutorDriverFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,11 +18,14 @@ public class Main {
     private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
 
     public static void main(String[] args) throws Exception {
+        start(new MesosExecutorDriverFactory());
+    }
+
+    public static void start(ExecutorDriverFactory executorDriverFactory) {
         final ExecutorService executorService = Executors.newCachedThreadPool();
         final KafkaExecutorTaskFactory kafkaExecutorTaskFactory = new KafkaExecutorTaskFactory();
         final CustomExecutor kafkaExecutor = new CustomExecutor(executorService, kafkaExecutorTaskFactory);
-        final MesosExecutorDriverFactory mesosExecutorDriverFactory = new MesosExecutorDriverFactory();
-        final ExecutorDriver driver = mesosExecutorDriverFactory.getDriver(kafkaExecutor);
+        final ExecutorDriver driver = executorDriverFactory.getDriver(kafkaExecutor);
         final Protos.Status status = driver.run();
 
         LOGGER.info("Driver stopped: status = {}", status);

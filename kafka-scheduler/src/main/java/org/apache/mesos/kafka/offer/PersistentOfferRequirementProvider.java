@@ -2,6 +2,7 @@ package org.apache.mesos.kafka.offer;
 
 import com.google.common.base.Joiner;
 import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.TextFormat;
 import com.mesosphere.dcos.kafka.common.KafkaTask;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -42,8 +43,6 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
   public OfferRequirement getNewOfferRequirement(String configName, int brokerId)
           throws InvalidRequirementException, ConfigStoreException {
     OfferRequirement offerRequirement = getNewOfferRequirementInternal(configName, brokerId);
-    log.info("Got new OfferRequirement with TaskRequirements: " + offerRequirement.getTaskRequirements());
-
     return offerRequirement;
   }
 
@@ -59,12 +58,17 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     final ExecutorInfo.Builder replacementExecutor = ExecutorInfo.newBuilder(existingExecutor);
     replacementExecutor.setExecutorId(ExecutorID.newBuilder().setValue("").build()); // Set later by ExecutorRequirement
 
+    TaskInfo replaceTaskInfo = replacementTaskInfo.build();
+    ExecutorInfo replaceExecutorInfo = replacementExecutor.build();
     OfferRequirement offerRequirement = new OfferRequirement(
-            Arrays.asList(replacementTaskInfo.build()),
-            replacementExecutor.build(), null, null);
+            Arrays.asList(replaceTaskInfo),
+            replaceExecutorInfo,
+            null,
+            null);
 
-    log.info("Replacement OfferRequirement with TaskRequirements: " + offerRequirement.getTaskRequirements());
-    log.info("Replacement OfferRequirement with ExecutorRequirement: " + offerRequirement.getExecutorRequirement());
+    log.info(String.format("Got replacement OfferRequirement: TaskInfo: '%s' ExecutorInfo: '%s'",
+            TextFormat.shortDebugString(replaceTaskInfo),
+            TextFormat.shortDebugString(replaceExecutorInfo)));
 
     return offerRequirement;
   }
@@ -132,12 +136,14 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     TaskInfo updatedTaskInfo = taskBuilder.build();
 
     try {
+      ExecutorInfo updateExecutorInfo = updatedExecutor.build();
       OfferRequirement offerRequirement = new OfferRequirement(
               Arrays.asList(updatedTaskInfo),
-              updatedExecutor.build(), null, null);
+              updateExecutorInfo, null, null);
 
-      log.info("Update OfferRequirement with TaskRequirements: " + offerRequirement.getTaskRequirements());
-      log.info("Update OfferRequirement with ExecutorRequirement: " + offerRequirement.getExecutorRequirement());
+      log.info(String.format("Got updated OfferRequirement: TaskInfo: '%s' ExecutorInfo: '%s'",
+              TextFormat.shortDebugString(updatedTaskInfo),
+              TextFormat.shortDebugString(updateExecutorInfo)));
 
       return offerRequirement;
     } catch (InvalidRequirementException e) {
@@ -405,7 +411,9 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
 
     OfferRequirement offerRequirement = new OfferRequirement(
         Arrays.asList(taskInfo), executorInfo, avoidAgents, colocateAgents);
-    log.info("Got new OfferRequirement with TaskInfo: " + taskInfo);
+    log.info(String.format("Got new OfferRequirement: TaskInfo: '%s' ExecutorInfo: '%s'",
+            TextFormat.shortDebugString(taskInfo),
+            TextFormat.shortDebugString(executorInfo)));
     return offerRequirement;
   }
 }

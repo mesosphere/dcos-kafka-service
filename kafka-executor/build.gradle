@@ -1,6 +1,11 @@
+ext {
+    systemRulesVer = "1.16.0"
+}
+
 dependencies {
     compile project(':kafka-commons')
     compile "ch.qos.logback:logback-classic:1.1.3"
+    testCompile "com.github.stefanbirkner:system-rules:${systemRulesVer}"
 }
 
 task wrapper(type: Wrapper) {

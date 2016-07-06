@@ -181,6 +181,12 @@ public class KafkaUpdateBlock implements Block {
     return brokerId;
   }
 
+  List<TaskID> getPendingTaskIds() {
+    synchronized (pendingTaskIdsLock) {
+      return pendingTaskIds;
+    }
+  }
+
   private void initializeStatus(TaskInfo taskInfo) {
     log.info("Setting initial status for: " + getName());
 

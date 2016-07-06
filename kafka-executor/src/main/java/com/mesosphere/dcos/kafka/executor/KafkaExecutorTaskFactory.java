@@ -1,12 +1,14 @@
 package com.mesosphere.dcos.kafka.executor;
 
 import com.mesosphere.dcos.kafka.common.KafkaTask;
+
+import java.util.List;
+
 import org.apache.mesos.ExecutorDriver;
 import org.apache.mesos.Protos;
 import org.apache.mesos.executor.*;
 
 import java.util.Collections;
-import java.util.List;
 
 public class KafkaExecutorTaskFactory implements ExecutorTaskFactory {
     @Override

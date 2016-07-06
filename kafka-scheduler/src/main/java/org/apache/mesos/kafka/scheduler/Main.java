@@ -7,15 +7,19 @@ import io.dropwizard.java8.Java8Bundle;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import org.apache.commons.lang3.text.StrSubstitutor;
+import org.apache.mesos.config.api.ConfigResource;
 import org.apache.mesos.kafka.cmd.CmdExecutor;
 import org.apache.mesos.kafka.config.DropwizardConfiguration;
+import org.apache.mesos.kafka.config.KafkaConfigState;
 import org.apache.mesos.kafka.config.KafkaSchedulerConfiguration;
+import org.apache.mesos.kafka.state.FrameworkState;
 import org.apache.mesos.kafka.state.KafkaState;
 import org.apache.mesos.kafka.web.BrokerCheck;
 import org.apache.mesos.kafka.web.BrokerController;
-import org.apache.mesos.kafka.web.ClusterController;
+import org.apache.mesos.kafka.web.ConnectionController;
 import org.apache.mesos.kafka.web.TopicController;
 import org.apache.mesos.scheduler.plan.api.StageResource;
+import org.apache.mesos.state.api.StateResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -90,13 +94,22 @@ public final class Main extends Application<DropwizardConfiguration> {
           Environment environment,
           DropwizardConfiguration configuration) {
     final KafkaState kafkaState = kafkaScheduler.getKafkaState();
-    environment.jersey().register(new ClusterController(
+    final KafkaConfigState configState = kafkaScheduler.getConfigState();
+    final FrameworkState frameworkState = kafkaScheduler.getFrameworkState();
+
+    // Kafka-specific APIs:
+    environment.jersey().register(new ConnectionController(
             configuration.getSchedulerConfiguration().getKafkaConfiguration().getKafkaZkUri(),
-            kafkaScheduler.getConfigState(), kafkaState));
-    environment.jersey().register(new BrokerController(
-            kafkaState, kafkaScheduler.getFrameworkState()));
-    environment.jersey().register(
-            new TopicController(new CmdExecutor(configuration.getSchedulerConfiguration(), kafkaState), kafkaState));
+            configState, kafkaState));
+    environment.jersey().register(new BrokerController(kafkaState, frameworkState));
+    environment.jersey().register(new TopicController(
+            new CmdExecutor(configuration.getSchedulerConfiguration(), kafkaState),
+            kafkaState));
+
+    // APIs from dcos-commons:
+    environment.jersey().register(new ConfigResource<>(
+            configState.getConfigStore(), KafkaSchedulerConfiguration.getFactoryInstance()));
+    environment.jersey().register(new StateResource(frameworkState.getStateStore()));
     environment.jersey().register(new StageResource(kafkaScheduler.getStageManager()));
   }
 

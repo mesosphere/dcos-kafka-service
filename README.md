@@ -1277,7 +1277,7 @@ These operations relate to viewing the service's configuration history.
 
 This configuration shows a default per-broker memory allocation of 2048 (configured via the `BROKER_MEM` parameter):
 
-    $ dcos kafka --name=kafka config describe 319ebe89-42e2-40e2-9169-8568e2421023
+    $ dcos kafka --name=kafka config show 319ebe89-42e2-40e2-9169-8568e2421023
 
     {
         "brokerConfiguration": {

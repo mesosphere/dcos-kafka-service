@@ -89,7 +89,7 @@ public class KafkaConfigStateTest {
     }
 
     @Test
-    public void testGetEmptyConfigNames() {
+    public void testGetEmptyConfigNames() throws Exception {
         Assert.assertEquals(Collections.EMPTY_LIST, configState.getConfigNames());
     }
 

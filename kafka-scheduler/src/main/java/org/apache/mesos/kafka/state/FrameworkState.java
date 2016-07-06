@@ -36,6 +36,10 @@ public class FrameworkState implements TaskStatusProvider {
         this.stateStore = new CuratorStateStore(zkConfig.getZkRoot(), zkConfig.getZkAddress());
     }
 
+    public StateStore getStateStore() {
+        return stateStore;
+    }
+
     public FrameworkID getFrameworkId() {
         try {
             return stateStore.fetchFrameworkId();

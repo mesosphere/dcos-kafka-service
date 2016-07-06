@@ -1,5 +1,5 @@
 #
-#    Copyright (C) 2015 Mesosphere, Inc.
+#    Copyright (C) 2016 Mesosphere, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,15 +25,3 @@ def connection_address():
 
 def connection_dns():
     ku.http_get_json("/connection/dns")
-
-
-def list_configurations():
-    ku.http_get_json("/configurations")
-
-
-def describe_configuration(configuration_name):
-    ku.http_get_json("/configurations/" + configuration_name)
-
-
-def describe_target_configuration():
-    ku.http_get_json("/configurations/target")

@@ -1,5 +1,5 @@
 #
-#    Copyright (C) 2015 Mesosphere, Inc.
+#    Copyright (C) 2016 Mesosphere, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ from operator import xor
 import click
 import dcos_kafka.kafka_utils as ku
 import pkg_resources
-from dcos_kafka import broker_api, cluster_api, plan_api, topic_api
+from dcos_kafka import broker_api, commons_api, connection_api, topic_api
 
 
 @click.group()
@@ -52,7 +52,7 @@ def print_schema():
 
 @kafka.command()
 def help():
-    print("Usage: dcos help kafka")
+    print("Usage: dcos kafka --help")
 
 
 @kafka.command()
@@ -64,11 +64,11 @@ def connection(address, dns):
     dns = bool(dns)
 
     if not xor(address, dns):
-        cluster_api.connection()
+        connection_api.connection()
     elif address:
-        cluster_api.connection_address()
+        connection_api.connection_address()
     elif dns:
-        cluster_api.connection_dns()
+        connection_api.connection_dns()
 
 
 @kafka.group()
@@ -108,22 +108,28 @@ def config(name):
 
 
 @config.command('list')
-def list_configurations():
-    """Lists all available configurations"""
-    cluster_api.list_configurations()
+def list_configuration_ids():
+    """List IDs of all available configurations"""
+    commons_api.configuration_list_ids()
 
 
-@config.command('describe')
+@config.command('show')
 @click.argument("config_id")
-def describe_configuration(config_id):
-    """Describes a single configuration"""
-    cluster_api.describe_configuration(config_id)
+def show_configuration(config_id):
+    """Show a specified configuration"""
+    commons_api.configuration_show(config_id)
+
+
+@config.command()
+def target_id():
+    """List ID of the target configuration"""
+    commons_api.configuration_target_id()
 
 
 @config.command()
 def target():
-    """Describes the target configuration"""
-    cluster_api.describe_target_configuration()
+    """Show the target configuration"""
+    commons_api.configuration_show_target()
 
 
 @kafka.group()
@@ -137,38 +143,72 @@ def plan(name):
 @plan.command()
 def show():
     """Display the full plan"""
-    plan_api.plan()
+    commons_api.plan()
 
 
 @plan.command()
 def active():
     """Display the active operation chain, if any"""
-    plan_api.active_operation()
+    commons_api.plan_active_operation()
 
 
 # python dislikes functions named 'continue'
 @plan.command('continue')
 def continue_():
     """Continue the current Waiting operation"""
-    plan_api.continue_cmd()
+    commons_api.plan_cmd_continue()
 
 
 @plan.command()
 def interrupt():
     """Interrupt the current InProgress operation"""
-    plan_api.interrupt_cmd()
+    commons_api.plan_cmd_interrupt()
 
 
 @plan.command()
 def force():
     """Force the current operation to complete"""
-    plan_api.force_complete_cmd()
+    commons_api.plan_cmd_force_complete()
 
 
 @plan.command('restart')
 def restart_plan():
     """Restart the current operation"""
-    plan_api.restart_cmd()
+    commons_api.plan_cmd_restart()
+
+
+@kafka.group()
+@click.option('--name', help='Name of the Kafka instance to query')
+def state(name):
+    """Framework persisted state maintenance"""
+    if name:
+        ku.set_fwk_name(name)
+
+
+@state.command()
+def framework_id():
+    """Display the framework ID"""
+    commons_api.state_framework_id()
+
+
+@state.command()
+def tasks():
+    """Display the list of persisted task names"""
+    commons_api.state_list_task_names()
+
+
+@state.command()
+@click.argument('name')
+def task(name):
+    """Display the TaskInfo for a specific task"""
+    commons_api.state_task_info(name)
+
+
+@state.command()
+@click.argument('name')
+def status(name):
+    """Display the TaskStatus for a specific task"""
+    commons_api.state_task_status(name)
 
 
 @kafka.group()

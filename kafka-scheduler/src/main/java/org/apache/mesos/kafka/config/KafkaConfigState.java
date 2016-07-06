@@ -46,6 +46,13 @@ public class KafkaConfigState {
             zkRoot, zkHost, retryPolicy);
   }
 
+  /**
+   * Returns the underlying {@link ConfigStore} instance.
+   */
+  public ConfigStore<KafkaSchedulerConfiguration> getConfigStore() {
+      return configStore;
+  }
+
   public KafkaSchedulerConfiguration fetch(UUID version) throws ConfigStoreException {
     try {
       return configStore.fetch(version, KafkaSchedulerConfiguration.getFactoryInstance());
@@ -90,13 +97,11 @@ public class KafkaConfigState {
 
   /**
    * Returns a list of all available configuration names.
+   *
+   * @throws ConfigStoreException if the underlying storage failed to read
    */
-  public Collection<UUID> getConfigNames() {
-    try {
-      return configStore.list();
-    } catch (ConfigStoreException e) {
-      return Collections.emptyList();
-    }
+  public Collection<UUID> getConfigNames() throws ConfigStoreException {
+    return configStore.list();
   }
 
   /**

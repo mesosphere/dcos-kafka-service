@@ -49,6 +49,7 @@ public class ExecutorConfiguration {
         this.mem = mem;
     }
 
+    @JsonProperty("disk")
     public double getDisk() {
         return disk;
     }

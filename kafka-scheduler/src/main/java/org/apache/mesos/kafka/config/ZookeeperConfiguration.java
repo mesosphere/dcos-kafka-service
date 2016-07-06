@@ -8,9 +8,13 @@ public class ZookeeperConfiguration {
     private final String zkAddress;
     private final String zkRoot;
 
-    ZookeeperConfiguration(KafkaConfiguration kafkaConfig, ServiceConfiguration serviceConfig) {
-        this.zkAddress = kafkaConfig.getZkAddress();
-        this.zkRoot = "/" + serviceConfig.getName(); // use framework name as config path
+    public ZookeeperConfiguration(KafkaConfiguration kafkaConfig, ServiceConfiguration serviceConfig) {
+        this(kafkaConfig.getZkAddress(), "/" + serviceConfig.getName());
+    }
+
+    public ZookeeperConfiguration(String zkAddress, String zkRoot) {
+        this.zkAddress = zkAddress;
+        this.zkRoot = zkRoot;
     }
 
     public String getZkAddress() {

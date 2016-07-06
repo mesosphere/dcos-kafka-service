@@ -4,6 +4,7 @@ ext {
   dropwizardJava8Ver = '0.9.0-1'
   jsonVer = '20151123'
   loggingVer = "1.1.1"
+  powermockVer = "1.6.1"
 }
 
 dependencies {
@@ -14,6 +15,7 @@ dependencies {
   compile "commons-logging:commons-logging:${loggingVer}"
   compile "org.json:json:${jsonVer}"
   testCompile "org.apache.curator:curator-test:${curatorVer}"
+  testCompile "io.dropwizard:dropwizard-testing:${dropwizardVer}"
 }
 
 task wrapper(type: Wrapper) {

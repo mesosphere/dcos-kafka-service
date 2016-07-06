@@ -9,8 +9,10 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.config.ConfigStoreException;
 import org.apache.mesos.config.Configuration;
 import org.apache.mesos.config.ConfigurationFactory;
+import org.json.JSONObject;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import java.util.Objects;
 
 @JsonSerialize
@@ -132,6 +134,15 @@ public class KafkaSchedulerConfiguration implements Configuration {
             LOGGER.error("Error occured while serializing the object: " + e);
             throw new ConfigStoreException(e);
         }
+    }
+
+    @Override
+    public String toJsonString() throws Exception {
+        Yaml yaml= new Yaml();
+        Map<String,Object> map= (Map<String, Object>) yaml.load(new Yaml().dump(this));
+
+        JSONObject jsonObject=new JSONObject(map);
+        return jsonObject.toString();
     }
 
     public static ConfigurationFactory<KafkaSchedulerConfiguration> getFactoryInstance() {

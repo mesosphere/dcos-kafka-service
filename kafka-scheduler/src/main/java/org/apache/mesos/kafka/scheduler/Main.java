@@ -9,6 +9,7 @@ import io.dropwizard.setup.Environment;
 import org.apache.commons.lang3.text.StrSubstitutor;
 import org.apache.mesos.kafka.cmd.CmdExecutor;
 import org.apache.mesos.kafka.config.DropwizardConfiguration;
+import org.apache.mesos.kafka.config.KafkaSchedulerConfiguration;
 import org.apache.mesos.kafka.state.KafkaState;
 import org.apache.mesos.kafka.web.BrokerCheck;
 import org.apache.mesos.kafka.web.BrokerController;
@@ -25,12 +26,14 @@ import java.util.concurrent.ExecutorService;
  */
 public final class Main extends Application<DropwizardConfiguration> {
   private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
+  private DropwizardConfiguration dropwizardConfiguration;
+  private Environment environment;
 
   public static void main(String[] args) throws Exception {
     new Main().run(args);
   }
 
-  protected Main() {
+  public Main() {
     super();
   }
 
@@ -55,14 +58,24 @@ public final class Main extends Application<DropwizardConfiguration> {
                     strSubstitutor));
   }
 
+  KafkaSchedulerConfiguration getKafkaSchedulerConfiguration() {
+    return dropwizardConfiguration.getSchedulerConfiguration();
+  }
+
+  Environment getEnvironment() {
+    return environment;
+  }
+
   @Override
-  public void run(DropwizardConfiguration configuration, Environment environment) throws Exception {
-    LOGGER.info("" + configuration);
+  public void run(DropwizardConfiguration dropwizardConfiguration, Environment environment) throws Exception {
+    LOGGER.info("DropwizardConfiguration: " + dropwizardConfiguration);
+    this.dropwizardConfiguration = dropwizardConfiguration;
+    this.environment = environment;
 
-    final KafkaScheduler kafkaScheduler = new KafkaScheduler(configuration.getSchedulerConfiguration(), environment);
+    final KafkaScheduler kafkaScheduler = new KafkaScheduler(getKafkaSchedulerConfiguration(), getEnvironment());
 
-    registerJerseyResources(kafkaScheduler, environment, configuration);
-    registerHealthChecks(kafkaScheduler, environment);
+    registerJerseyResources(kafkaScheduler, getEnvironment(), this.dropwizardConfiguration);
+    registerHealthChecks(kafkaScheduler, getEnvironment());
 
     kafkaSchedulerExecutorService = environment.lifecycle().
             executorService("KafkaScheduler")

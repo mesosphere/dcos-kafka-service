@@ -54,11 +54,9 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
 
     final TaskInfo.Builder replacementTaskInfo = TaskInfo.newBuilder(existingTaskInfo);
     replacementTaskInfo.clearExecutor();
-    replacementTaskInfo.clearTaskId();
     replacementTaskInfo.setTaskId(TaskID.newBuilder().setValue("").build()); // Set later by TaskRequirement
 
     final ExecutorInfo.Builder replacementExecutor = ExecutorInfo.newBuilder(existingExecutor);
-    replacementExecutor.clearExecutorId();
     replacementExecutor.setExecutorId(ExecutorID.newBuilder().setValue("").build()); // Set later by ExecutorRequirement
 
     OfferRequirement offerRequirement = new OfferRequirement(
@@ -350,8 +348,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
       .setFrameworkId(frameworkState.getFrameworkId())
       .setCommand(executorCommandBuilder.build())
       .addResources(ResourceUtils.getDesiredScalar(role, principal, "cpus", executorConfig.getCpus()))
-      .addResources(ResourceUtils.getDesiredScalar(role, principal, "mem", executorConfig.getMem()))
-      .addResources(ResourceUtils.getDesiredScalar(role, principal, "disk", executorConfig.getDisk()));
+      .addResources(ResourceUtils.getDesiredScalar(role, principal, "mem", executorConfig.getMem()));
 
     // Build Task
     TaskInfo.Builder taskBuilder = TaskInfo.newBuilder();

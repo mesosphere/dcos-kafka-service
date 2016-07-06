@@ -348,8 +348,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
       .setFrameworkId(frameworkState.getFrameworkId())
       .setCommand(executorCommandBuilder.build())
       .addResources(ResourceUtils.getDesiredScalar(role, principal, "cpus", executorConfig.getCpus()))
-      .addResources(ResourceUtils.getDesiredScalar(role, principal, "mem", executorConfig.getMem()))
-      .addResources(ResourceUtils.getDesiredScalar(role, principal, "disk", executorConfig.getDisk()));
+      .addResources(ResourceUtils.getDesiredScalar(role, principal, "mem", executorConfig.getMem()));
 
     // Build Task
     TaskInfo.Builder taskBuilder = TaskInfo.newBuilder();

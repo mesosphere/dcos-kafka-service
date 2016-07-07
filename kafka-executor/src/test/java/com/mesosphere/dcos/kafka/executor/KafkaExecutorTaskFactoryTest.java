@@ -1,6 +1,6 @@
 package com.mesosphere.dcos.kafka.executor;
 
-import com.mesosphere.dcos.kafka.common.KafkaTask;
+import com.mesosphere.dcos.kafka.commons.KafkaTask;
 import org.apache.mesos.executor.ExecutorTask;
 import org.apache.mesos.executor.ExecutorTaskException;
 import org.apache.mesos.executor.ProcessTask;

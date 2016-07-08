@@ -47,7 +47,7 @@ subprojects {
   sourceCompatibility = 1.8
   targetCompatibility = 1.8
 
-  mainClassName = "org.apache.mesos.kafka.scheduler.Main"
+  mainClassName = "com.mesosphere.dcos.kafka.scheduler.Main"
 
   repositories {
     mavenLocal()

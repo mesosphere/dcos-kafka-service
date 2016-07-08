@@ -86,4 +86,4 @@ distributions {
   }
 }
 
-mainClassName = 'org.apache.mesos.kafka.config.Overrider'
+mainClassName = 'com.mesosphere.dcos.kafka.config.Overrider'

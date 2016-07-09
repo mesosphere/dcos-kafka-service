@@ -15,6 +15,7 @@ dependencies {
   compile "commons-logging:commons-logging:${loggingVer}"
   testCompile "org.apache.curator:curator-test:${curatorTestVer}"
   testCompile "io.dropwizard:dropwizard-testing:${dropwizardVer}"
+  testCompile project(':kafka-test-commons').sourceSets.test.output
 }
 
 task wrapper(type: Wrapper) {

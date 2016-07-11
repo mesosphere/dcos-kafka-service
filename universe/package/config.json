@@ -124,6 +124,12 @@
         "type":"object",
         "additionalProperties":false,
         "properties":{
+          "kafka_zookeeper_uri":{
+            "title":"The address of the Zookeeper cluster used by Kafka.",
+            "description":"This should be the address of the Zookeeper cluster Kafka will use.",
+            "type":"string",
+            "default":"master.mesos:2181"
+          },
           "kafka_advertise_host_ip":{
             "description":"Automatically configure advertised.host.name with the IP address detected by /opt/mesosphere/detect_ip",
             "type":"boolean",

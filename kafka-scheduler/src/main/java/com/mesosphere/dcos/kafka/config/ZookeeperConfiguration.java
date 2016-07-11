@@ -5,23 +5,43 @@ package com.mesosphere.dcos.kafka.config;
  */
 public class ZookeeperConfiguration {
 
-    private final String zkAddress;
-    private final String zkRoot;
+    private final String mesosZkUri;
+    private final String mesosZkRoot;
+
+    private final String kafkaZkUri;
+    private final String kafkaZkRoot;
 
     public ZookeeperConfiguration(KafkaConfiguration kafkaConfig, ServiceConfiguration serviceConfig) {
-        this(kafkaConfig.getZkAddress(), "/" + serviceConfig.getName());
+        this(kafkaConfig.getMesosZkUri(),
+             "/" + serviceConfig.getName(),
+             kafkaConfig.getKafkaZkUri(),
+             "/" + serviceConfig.getName());
     }
 
-    public ZookeeperConfiguration(String zkAddress, String zkRoot) {
-        this.zkAddress = zkAddress;
-        this.zkRoot = zkRoot;
+    public ZookeeperConfiguration(
+            String mesosZkUri,
+            String mesosZkRoot,
+            String kafkaZkUri,
+            String kafkaZkRoot) {
+        this.mesosZkUri = mesosZkUri;
+        this.mesosZkRoot = mesosZkRoot;
+        this.kafkaZkUri = kafkaZkUri;
+        this.kafkaZkRoot = kafkaZkRoot;
     }
 
-    public String getZkAddress() {
-        return zkAddress;
+    public String getMesosZkUri() {
+        return mesosZkUri;
     }
 
-    public String getZkRoot() {
-        return zkRoot;
+    public String getMesosZkRoot() {
+        return mesosZkRoot;
+    }
+
+    public String getKafkaZkUri() {
+        return kafkaZkUri;
+    }
+
+    public String getKafkaZkRoot() {
+        return kafkaZkRoot;
     }
 }

@@ -30,8 +30,8 @@ schedulerConfiguration:
     kafkaAdvertiseHostIp: ${KAFKA_ADVERTISE_HOST_IP}
     kafkaVerName: ${KAFKA_VER_NAME}
     kafkaSandboxPath: "${MESOS_SANDBOX}/${KAFKA_VER_NAME}"
-    zkAddress: "master.mesos:2181"
-    kafkaZkUri: "master.mesos:2181/${FRAMEWORK_NAME}"
+    mesosZkUri: "master.mesos:2181"
+    kafkaZkUri: "${KAFKA_ZOOKEEPER_URI}"
     overrides:
       reservedBrokerMaxId: ${KAFKA_OVERRIDE_RESERVED_BROKER_MAX_ID}
       offsetsTopicCompressionCodec: ${KAFKA_OVERRIDE_OFFSETS_TOPIC_COMPRESSION_CODEC}

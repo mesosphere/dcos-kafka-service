@@ -321,7 +321,7 @@ public class KafkaScheduler implements Scheduler, Runnable {
     Thread.currentThread().setName("KafkaScheduler");
     Thread.currentThread().setUncaughtExceptionHandler(getUncaughtExceptionHandler());
 
-    String zkPath = "zk://" + envConfig.getKafkaConfiguration().getZkAddress() + "/mesos";
+    String zkPath = "zk://" + envConfig.getKafkaConfiguration().getMesosZkUri() + "/mesos";
     FrameworkInfo fwkInfo = getFrameworkInfo();
     log.info("Registering framework with: " + fwkInfo);
     registerFramework(this, fwkInfo, zkPath);

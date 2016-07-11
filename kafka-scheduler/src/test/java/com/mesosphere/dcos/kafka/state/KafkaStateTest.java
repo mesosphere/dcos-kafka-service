@@ -28,7 +28,9 @@ public class KafkaStateTest {
     @Before
     public void beforeEach() throws Exception {
         testingServer = new TestingServer();
-        zkConfig = new ZookeeperConfiguration(testingServer.getConnectString(), testRoot);
+        zkConfig = new ZookeeperConfiguration(
+                testingServer.getConnectString(), testRoot,
+                testingServer.getConnectString(), testRoot);
         kafkaState = new KafkaState(zkConfig);
         zkClient = CuratorFrameworkFactory.newClient(
                 testingServer.getConnectString(),

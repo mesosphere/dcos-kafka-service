@@ -33,7 +33,7 @@ public class FrameworkState implements TaskStatusProvider {
     private final StateStore stateStore;
 
     public FrameworkState(ZookeeperConfiguration zkConfig) {
-        this.stateStore = new CuratorStateStore(zkConfig.getZkRoot(), zkConfig.getZkAddress());
+        this.stateStore = new CuratorStateStore(zkConfig.getMesosZkRoot(), zkConfig.getMesosZkUri());
     }
 
     public StateStore getStateStore() {

@@ -87,8 +87,8 @@ public class KafkaSchedulerConfiguration implements Configuration {
     public ZookeeperConfiguration getZookeeperConfig() {
         ZookeeperConfiguration zkSettings = new ZookeeperConfiguration(
                 getKafkaConfiguration(), getServiceConfiguration());
-        LOGGER.info(String.format("Using Zookeeper settings: address '%s', path '%s'",
-                zkSettings.getZkAddress(), zkSettings.getZkRoot()));
+        LOGGER.info(String.format("Using Zookeeper settings: Mesos address '%s', path '%s' Kafka ZK address '%s', path '%s'",
+                zkSettings.getMesosZkUri(), zkSettings.getMesosZkRoot(), zkSettings.getKafkaZkUri(), zkSettings.getKafkaZkRoot()));
         return zkSettings;
     }
 

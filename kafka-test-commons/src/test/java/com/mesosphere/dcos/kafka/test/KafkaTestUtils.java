@@ -31,7 +31,7 @@ public class KafkaTestUtils {
     public static final String testKafkaVerName = "test-kafka-ver-name";
     public static final String testKafkaSandboxPath = "test-kafka-sandbox-path";
     public static final String testKafkaZkUri = "test-kafka-zk-uri";
-    public static final String testKafkaZkAddress = "test-kafka-zk-address";
+    public static final String testMesosZkUri = "test-mesos-zk-uri";
     public static final String testOfferId = "test-offer-id";
     public static final String testHostname = "test-hostname";
     public static final Protos.FrameworkID testFrameworkId =
@@ -69,7 +69,7 @@ public class KafkaTestUtils {
                 testKafkaVerName,
                 testKafkaSandboxPath,
                 testKafkaZkUri,
-                testKafkaZkAddress,
+                testMesosZkUri,
                 null);
     }
 

@@ -2,6 +2,7 @@ package com.mesosphere.dcos.kafka.cmd;
 
 import com.mesosphere.dcos.kafka.config.KafkaConfiguration;
 import com.mesosphere.dcos.kafka.config.KafkaSchedulerConfiguration;
+import com.mesosphere.dcos.kafka.config.ServiceConfiguration;
 import com.mesosphere.dcos.kafka.state.KafkaState;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
@@ -26,8 +27,9 @@ public class CmdExecutor {
   public CmdExecutor(KafkaSchedulerConfiguration configuration, KafkaState state) {
     this.state = state;
     final KafkaConfiguration kafkaConfiguration = configuration.getKafkaConfiguration();
+    final ServiceConfiguration serviceConfiguration = configuration.getServiceConfiguration();
     this.binPath = kafkaConfiguration.getKafkaSandboxPath() + "/bin/";
-    this.zkPath = kafkaConfiguration.getKafkaZkUri();
+    this.zkPath = configuration.getFullKafkaZookeeperPath();
   }
 
   public JSONObject createTopic(String name, int partitionCount, int replicationFactor) throws Exception {

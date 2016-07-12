@@ -330,7 +330,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
       .addEnvironmentVar("KAFKA_VER_NAME", kafkaConfiguration.getKafkaVerName())
       .addEnvironmentVar("KAFKA_ZOOKEEPER_URI", zkConfig.getKafkaZkUri())
       .addEnvironmentVar(CONFIG_ID_KEY, configName)
-      .addEnvironmentVar(overridePrefix + "ZOOKEEPER_CONNECT", kafkaConfiguration.getKafkaZkUri() + "/" + serviceConfig.getName())
+      .addEnvironmentVar(overridePrefix + "ZOOKEEPER_CONNECT", config.getFullKafkaZookeeperPath())
       .addEnvironmentVar(overridePrefix + "BROKER_ID", Integer.toString(brokerId))
       .addEnvironmentVar(overridePrefix + "LOG_DIRS", containerPath + "/" + brokerName)
       .addEnvironmentVar(overridePrefix + "LISTENERS", "PLAINTEXT://:" + port)

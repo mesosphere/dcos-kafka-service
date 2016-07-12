@@ -92,6 +92,11 @@ public class KafkaSchedulerConfiguration implements Configuration {
         return zkSettings;
     }
 
+    public String getFullKafkaZookeeperPath() {
+        ZookeeperConfiguration zookeeperConfiguration = getZookeeperConfig();
+        return zookeeperConfiguration.getKafkaZkUri() + zookeeperConfiguration.getKafkaZkRoot();
+    }
+
     @Override
     public String toString() {
         return "KafkaSchedulerConfiguration{" +

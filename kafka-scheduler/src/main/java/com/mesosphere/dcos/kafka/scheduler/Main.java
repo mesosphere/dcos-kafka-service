@@ -99,7 +99,7 @@ public final class Main extends Application<DropwizardConfiguration> {
 
     // Kafka-specific APIs:
     environment.jersey().register(new ConnectionController(
-            configuration.getSchedulerConfiguration().getKafkaConfiguration().getKafkaZkUri(),
+            configuration.getSchedulerConfiguration().getFullKafkaZookeeperPath(),
             configState, kafkaState));
     environment.jersey().register(new BrokerController(kafkaState, frameworkState));
     environment.jersey().register(new TopicController(

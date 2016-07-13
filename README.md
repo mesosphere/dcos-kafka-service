@@ -553,7 +553,7 @@ Here's how you can configure it:
 ```json
     {
         "kafka": {
-            "kafka_zookeeper_uri": "zookeeper.marthon.mesos:2181"
+            "kafka_zookeeper_uri": "zookeeper.marathon.mesos:2181"
         }
     }
 ```

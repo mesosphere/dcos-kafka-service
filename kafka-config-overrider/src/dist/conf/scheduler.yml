@@ -23,8 +23,8 @@ schedulerConfiguration:
     kafkaAdvertiseHostIp: ${KAFKA_ADVERTISE_HOST_IP:-true}
     kafkaVerName: ${KAFKA_VER_NAME}
     kafkaSandboxPath: "${MESOS_SANDBOX}/${KAFKA_VER_NAME}"
-    zkAddress: "master.mesos:2181"
-    kafkaZkUri: "master.mesos:2181/${FRAMEWORK_NAME}"
+    mesosZkUri: "master.mesos:2181"
+    kafkaZkUri: "${KAFKA_ZOOKEEPER_URI}"
     overrides:
       zookeeperConnect: ${KAFKA_OVERRIDE_ZOOKEEPER_CONNECT}
       brokerId: ${KAFKA_OVERRIDE_BROKER_ID}

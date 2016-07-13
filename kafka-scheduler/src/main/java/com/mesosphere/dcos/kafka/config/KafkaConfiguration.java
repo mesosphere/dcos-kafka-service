@@ -19,8 +19,8 @@ public class KafkaConfiguration {
     @JsonProperty("kafkaZkUri")
     private String kafkaZkUri;
 
-    @JsonProperty("zkAddress")
-    private String zkAddress;
+    @JsonProperty("mesosZkUri")
+    private String mesosZkUri;
 
     @JsonProperty("overrides")
     private Map<String, String> overrides;
@@ -35,13 +35,13 @@ public class KafkaConfiguration {
             @JsonProperty("kafkaVerName")String kafkaVerName,
             @JsonProperty("kafkaSandboxPath")String kafkaSandboxPath,
             @JsonProperty("kafkaZkUri")String kafkaZkUri,
-            @JsonProperty("zkAddress")String zkAddress,
+            @JsonProperty("mesosZkUri")String mesosZkUri,
             @JsonProperty("overrides")Map<String, String> overrides) {
         this.kafkaAdvertiseHostIp = kafkaAdvertiseHostIp;
         this.kafkaVerName = kafkaVerName;
         this.kafkaSandboxPath = kafkaSandboxPath;
         this.kafkaZkUri = kafkaZkUri;
-        this.zkAddress = zkAddress;
+        this.mesosZkUri = mesosZkUri;
         this.overrides = overrides;
     }
 
@@ -81,13 +81,14 @@ public class KafkaConfiguration {
         this.kafkaZkUri = kafkaZkUri;
     }
 
-    public String getZkAddress() {
-        return zkAddress;
+    @JsonProperty("mesosZkUri")
+    public String getMesosZkUri() {
+        return mesosZkUri;
     }
 
-    @JsonProperty("zkAddress")
-    public void setZkAddress(String zkAddress) {
-        this.zkAddress = zkAddress;
+    @JsonProperty("mesosZkUri")
+    public void setMesosZkUri(String mesosZkUri) {
+        this.mesosZkUri = mesosZkUri;
     }
 
     public Map<String, String> getOverrides() {
@@ -113,13 +114,13 @@ public class KafkaConfiguration {
         return kafkaAdvertiseHostIp == that.kafkaAdvertiseHostIp &&
                 Objects.equals(kafkaVerName, that.kafkaVerName) &&
                 Objects.equals(kafkaZkUri, that.kafkaZkUri) &&
-                Objects.equals(zkAddress, that.zkAddress) &&
+                Objects.equals(mesosZkUri, that.mesosZkUri) &&
                 Objects.equals(overrides, that.overrides);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(kafkaAdvertiseHostIp, kafkaVerName, kafkaZkUri, zkAddress, overrides);
+        return Objects.hash(kafkaAdvertiseHostIp, kafkaVerName, kafkaZkUri, mesosZkUri, overrides);
     }
 
     @Override
@@ -129,7 +130,7 @@ public class KafkaConfiguration {
                 ", kafkaVerName='" + kafkaVerName + '\'' +
                 ", kafkaSandboxPath='" + kafkaSandboxPath + '\'' +
                 ", kafkaZkUri='" + kafkaZkUri + '\'' +
-                ", zkAddress='" + zkAddress + '\'' +
+                ", mesosZkUri='" + mesosZkUri + '\'' +
                 ", overrides=" + overrides +
                 '}';
     }

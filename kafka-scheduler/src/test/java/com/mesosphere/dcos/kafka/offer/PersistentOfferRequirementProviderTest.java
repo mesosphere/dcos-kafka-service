@@ -117,10 +117,11 @@ public class PersistentOfferRequirementProviderTest {
     final CommandInfo kafkaTaskData = CommandInfo.parseFrom(taskInfo.getData());
     final Map<String, String> envFromTask = TaskUtils.fromEnvironmentToMap(kafkaTaskData.getEnvironment());
 
-    Assert.assertEquals(10, envFromTask.size());
+    Assert.assertEquals(11, envFromTask.size());
 
     Map<String, String> expectedEnvMap = new HashMap<>();
-    expectedEnvMap.put("KAFKA_OVERRIDE_ZOOKEEPER_CONNECT", KafkaTestUtils.testKafkaZkAddress + "/" + KafkaTestUtils.testFrameworkName);
+    expectedEnvMap.put("KAFKA_ZOOKEEPER_URI", KafkaTestUtils.testKafkaZkUri);
+    expectedEnvMap.put("KAFKA_OVERRIDE_ZOOKEEPER_CONNECT", KafkaTestUtils.testKafkaZkUri + "/" + KafkaTestUtils.testFrameworkName);
     expectedEnvMap.put("FRAMEWORK_NAME", KafkaTestUtils.testFrameworkName);
     expectedEnvMap.put("KAFKA_OVERRIDE_LOG_DIRS", "kafka-volume-9a67ba10-644c-4ef2-b764-e7df6e6a66e5/broker-0");
     expectedEnvMap.put("KAFKA_OVERRIDE_LISTENERS", "PLAINTEXT://:123a");
@@ -135,7 +136,7 @@ public class PersistentOfferRequirementProviderTest {
     System.out.println(expectedEnvMap);
 
     final Set<String> envVarNames = envFromTask.keySet();
-    for (String envVarName:envVarNames) {
+    for (String envVarName : envVarNames) {
       Assert.assertTrue("Cannot find env key: " + envVarName, expectedEnvMap.containsKey(envVarName));
 
       final String envVarValue = envFromTask.get(envVarName);

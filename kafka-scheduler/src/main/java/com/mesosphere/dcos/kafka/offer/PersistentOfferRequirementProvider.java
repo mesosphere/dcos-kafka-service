@@ -294,8 +294,10 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     String containerPath = "kafka-volume-" + UUID.randomUUID();
 
     KafkaSchedulerConfiguration config = configState.fetch(UUID.fromString(configName));
+    ServiceConfiguration serviceConfig = config.getServiceConfiguration();
     BrokerConfiguration brokerConfig = config.getBrokerConfiguration();
     ExecutorConfiguration executorConfig = config.getExecutorConfiguration();
+    ZookeeperConfiguration zkConfig = config.getZookeeperConfig();
 
     Long port = brokerConfig.getPort();
     Boolean isDynamicPort = false;
@@ -326,8 +328,9 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
       .addEnvironmentVar("TASK_TYPE", KafkaTask.BROKER.name())
       .addEnvironmentVar("FRAMEWORK_NAME", frameworkName)
       .addEnvironmentVar("KAFKA_VER_NAME", kafkaConfiguration.getKafkaVerName())
+      .addEnvironmentVar("KAFKA_ZOOKEEPER_URI", zkConfig.getKafkaZkUri())
       .addEnvironmentVar(CONFIG_ID_KEY, configName)
-      .addEnvironmentVar(overridePrefix + "ZOOKEEPER_CONNECT", kafkaConfiguration.getZkAddress() + "/" + frameworkName)
+      .addEnvironmentVar(overridePrefix + "ZOOKEEPER_CONNECT", config.getFullKafkaZookeeperPath())
       .addEnvironmentVar(overridePrefix + "BROKER_ID", Integer.toString(brokerId))
       .addEnvironmentVar(overridePrefix + "LOG_DIRS", containerPath + "/" + brokerName)
       .addEnvironmentVar(overridePrefix + "LISTENERS", "PLAINTEXT://:" + port)

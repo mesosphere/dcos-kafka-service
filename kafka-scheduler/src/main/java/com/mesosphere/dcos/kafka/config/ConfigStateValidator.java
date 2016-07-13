@@ -84,7 +84,7 @@ public class ConfigStateValidator {
     }
   }
 
-  private Collection<ValidationError> validateKafkaConfigChange(KafkaConfiguration oldKafkaConfiguration, KafkaConfiguration newKafkaConfiguration) {
+  Collection<ValidationError> validateKafkaConfigChange(KafkaConfiguration oldKafkaConfiguration, KafkaConfiguration newKafkaConfiguration) {
     List<ValidationError> errors = new ArrayList<>();
     String oldKafkaZkUri = oldKafkaConfiguration.getKafkaZkUri();
     String newKafkaZkUri = newKafkaConfiguration.getKafkaZkUri();

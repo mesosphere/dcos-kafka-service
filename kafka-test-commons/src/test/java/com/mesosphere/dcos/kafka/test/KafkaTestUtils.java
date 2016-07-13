@@ -63,7 +63,7 @@ public class KafkaTestUtils {
                 testPort);
     }
 
-    public static KafkaConfiguration getTestKafkaConfiguraiton() {
+    public static KafkaConfiguration getTestKafkaConfiguration() {
         return new KafkaConfiguration(
                 true,
                 testKafkaVerName,
@@ -86,7 +86,7 @@ public class KafkaTestUtils {
         return new KafkaSchedulerConfiguration(
                 getTestServiceConfiguration(),
                 getTestBrokerConfiguration(),
-                getTestKafkaConfiguraiton(),
+                getTestKafkaConfiguration(),
                 getTestExecutorConfiguration());
     }
 }

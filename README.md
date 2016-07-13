@@ -544,6 +544,21 @@ Kafka Service allows configuration of JVM Heap Size for the broker JVM process. 
 
 **Note**: The total memory allocated for the Mesos task is specified by the `BROKER_MEM` configuration parameter. The value for `BROKER_HEAP_MB` should not be greater than `BROKER_MEM` value. Also, if `BROKER_MEM` is greater than `BROKER_HEAP_MB` then the Linux operating system will use `BROKER_MEM` - `BROKER_HEAP_MB` for [PageCache](https://en.wikipedia.org/wiki/Page_cache).
 
+### Alternate Zookeeper 
+
+By default the Kafka framework uses the Zookeeper ensemble made available on the Mesos Masters of a DC/OS cluster.  If one would like to use an alternate Zookeeper installation, this may be specified at install time as a customization.
+Here's how you can configure it:
+* **DC/OS cli options.json**:
+
+```json
+    {
+        "kafka": {
+            "kafka_zookeeper_uri": "zookeeper.marthon.mesos:2181"
+        }
+    }
+```
+
+This configuration option may not be changed after installation.
 
 <a name="connecting-clients"></a>
 # Connecting Clients

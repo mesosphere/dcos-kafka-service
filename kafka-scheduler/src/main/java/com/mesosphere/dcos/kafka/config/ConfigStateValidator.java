@@ -77,10 +77,23 @@ public class ConfigStateValidator {
 
     errors.addAll(validateServiceConfigChange(newConfig.getServiceConfiguration()));
     errors.addAll(validateBrokerConfigChange(oldConfig.getBrokerConfiguration(), newConfig.getBrokerConfiguration()));
+    errors.addAll(validateKafkaConfigChange(oldConfig.getKafkaConfiguration(), newConfig.getKafkaConfiguration()));
 
     if (!errors.isEmpty()) {
       throw new ValidationException(errors);
     }
+  }
+
+  Collection<ValidationError> validateKafkaConfigChange(KafkaConfiguration oldKafkaConfiguration, KafkaConfiguration newKafkaConfiguration) {
+    List<ValidationError> errors = new ArrayList<>();
+    String oldKafkaZkUri = oldKafkaConfiguration.getKafkaZkUri();
+    String newKafkaZkUri = newKafkaConfiguration.getKafkaZkUri();
+    if (!oldKafkaZkUri.equals(newKafkaZkUri)) {
+      errors.add(new ValidationError("KAFKA_ZOOKEEPER_URI",
+              "Changing this value (from " + oldKafkaZkUri + " to " + newKafkaZkUri + ") is not supported."));
+    }
+
+    return errors;
   }
 
   private List<ValidationError> validateServiceConfigChange(ServiceConfiguration newConfig) throws ValidationException {

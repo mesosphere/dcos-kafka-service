@@ -75,7 +75,7 @@ public class ConfigStateValidator {
           throws ValidationException {
     List<ValidationError> errors = new ArrayList<>();
 
-    errors.addAll(validateServiceConfigChange(newConfig.getServiceConfiguration()));
+    errors.addAll(validateServiceConfigChange(oldConfig.getServiceConfiguration(), newConfig.getServiceConfiguration()));
     errors.addAll(validateBrokerConfigChange(oldConfig.getBrokerConfiguration(), newConfig.getBrokerConfiguration()));
     errors.addAll(validateKafkaConfigChange(oldConfig.getKafkaConfiguration(), newConfig.getKafkaConfiguration()));
 
@@ -96,8 +96,31 @@ public class ConfigStateValidator {
     return errors;
   }
 
-  private List<ValidationError> validateServiceConfigChange(ServiceConfiguration newConfig) throws ValidationException {
+  List<ValidationError> validateServiceConfigChange(ServiceConfiguration oldConfig, ServiceConfiguration newConfig) throws ValidationException {
 
+    List<ValidationError> errors = new ArrayList<>();
+
+    errors.addAll(validateBrokerCount(newConfig));
+    errors.addAll(validateFrameworkName(oldConfig, newConfig));
+
+    return errors;
+  }
+
+  private Collection<ValidationError> validateFrameworkName(ServiceConfiguration oldConfig, ServiceConfiguration newConfig) {
+    List<ValidationError> errors = new ArrayList<>();
+
+    String oldFrameworkName = oldConfig.getName();
+    String newFrameworkName = newConfig.getName();
+
+    if (!oldFrameworkName.equals(newFrameworkName)) {
+      errors.add(new ValidationError("FRAMEWORK_NAME",
+              "Changing this value (from " + oldFrameworkName + " to " + oldFrameworkName + ") is not supported."));
+    }
+
+    return errors;
+  }
+
+  private List<ValidationError> validateBrokerCount(ServiceConfiguration newConfig) {
     List<ValidationError> errors = new ArrayList<>();
     int currBrokerCount = Integer.MAX_VALUE;
 

@@ -1,8 +1,8 @@
 DC/OS Kafka Service Guide
 ======================
 
-- Root disk: [![Build Status](http://velocity.mesosphere.com/service/velocity/buildStatus/icon?job=infinity-kafka-root-disk)](http://velocity.mesosphere.com/service/velocity/job/infinity-kafka-root-disk/)
-- Mount disk: [![Build Status](http://velocity.mesosphere.com/service/velocity/buildStatus/icon?job=infinity-kafka-mount-disk)](http://velocity.mesosphere.com/service/velocity/job/infinity-kafka-mount-disk/)
+- Root disk: [![Build Status](http://velocity.mesosphere.com/service/velocity/buildStatus/icon?job=kafka/infinity-kafka-root-disk)](http://velocity.mesosphere.com/service/velocity/job/kafka/job/infinity-kafka-root-disk/)
+- Mount disk: [![Build Status](http://velocity.mesosphere.com/service/velocity/buildStatus/icon?job=kafka/infinity-kafka-mount-disk)](http://velocity.mesosphere.com/service/velocity/job/kafka/job/infinity-kafka-mount-disk/)
 
 [Overview](#overview)
 - [Benefits](#benefits)

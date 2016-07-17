@@ -49,4 +49,30 @@ public class ConfigStateValidatorTest {
         Assert.assertEquals(0, errors.size());
     }
 
+    @Test
+    public void testKafkaFrameworkNameChangeFails() throws ConfigStateValidator.ValidationException {
+        ServiceConfiguration oldServiceConfiguration = KafkaTestUtils.getTestServiceConfiguration();
+        ServiceConfiguration newServiceConfiguration = new ServiceConfiguration(
+                1,
+                "bad-framework-name",
+                KafkaTestUtils.testUser,
+                KafkaTestUtils.testPlacementStrategy,
+                KafkaTestUtils.testPhaseStrategy,
+                KafkaTestUtils.testRole,
+                KafkaTestUtils.testPrincipal);
+
+        ConfigStateValidator configStateValidator = new ConfigStateValidator(frameworkState);
+        Collection<ConfigStateValidator.ValidationError> errors = configStateValidator.validateServiceConfigChange(oldServiceConfiguration, newServiceConfiguration);
+        Assert.assertEquals(1, errors.size());
+    }
+
+    @Test
+    public void testKafkaFrameworkNameChangeSucceds() throws ConfigStateValidator.ValidationException {
+        ServiceConfiguration oldServiceConfiguration = KafkaTestUtils.getTestServiceConfiguration();
+        ServiceConfiguration newServiceConfiguration = oldServiceConfiguration;
+
+        ConfigStateValidator configStateValidator = new ConfigStateValidator(frameworkState);
+        Collection<ConfigStateValidator.ValidationError> errors = configStateValidator.validateServiceConfigChange(oldServiceConfiguration, newServiceConfiguration);
+        Assert.assertEquals(0, errors.size());
+    }
 }

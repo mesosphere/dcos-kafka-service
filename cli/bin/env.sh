@@ -17,20 +17,21 @@
 BASEDIR=`dirname $0`/..
 
 if [ ! -d "$BASEDIR/env" ]; then
-    virtualenv -q $BASEDIR/env --prompt='(dcos-kafka) '
+    virtualenv -q $BASEDIR/env --prompt='(dcos-kafka-cli) '
     echo "Virtualenv created."
 fi
 
 cd $BASEDIR
-if [ "$(uname)" == "Darwin" ]; then
+uname -a
+if [ "$(uname)" = "Darwin" -o "$(expr substr $(uname -s) 1 5)" = "Linux" ]; then
     source $BASEDIR/env/bin/activate
-elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
-    source $BASEDIR/env/bin/activate
-elif [ "$(expr substr $(uname -s) 1 10)" == "MINGW32_NT" ]; then
-    source $BASEDIR/env/Scripts/activate
+    echo "Virtualenv activated."
+else
+    # apparently not needed on Windows
+    echo "Skipping virtualenv activation."
 fi
-echo "Virtualenv activated."
 
+echo "Installing requirements..."
 if [ ! -f "$BASEDIR/env/updated" -o $BASEDIR/setup.py -nt $BASEDIR/env/updated ]; then
     pip install -e $BASEDIR
     touch $BASEDIR/env/updated

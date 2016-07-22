@@ -117,8 +117,6 @@ public class PersistentOfferRequirementProviderTest {
     final CommandInfo kafkaTaskData = CommandInfo.parseFrom(taskInfo.getData());
     final Map<String, String> envFromTask = TaskUtils.fromEnvironmentToMap(kafkaTaskData.getEnvironment());
 
-    Assert.assertEquals(11, envFromTask.size());
-
     Map<String, String> expectedEnvMap = new HashMap<>();
     expectedEnvMap.put("KAFKA_ZOOKEEPER_URI", KafkaTestUtils.testKafkaZkUri);
     expectedEnvMap.put("KAFKA_OVERRIDE_ZOOKEEPER_CONNECT", KafkaTestUtils.testKafkaZkUri + "/" + KafkaTestUtils.testFrameworkName);
@@ -133,17 +131,18 @@ public class PersistentOfferRequirementProviderTest {
     expectedEnvMap.put("KAFKA_HEAP_OPTS", "-Xms500M -Xmx500M");
     expectedEnvMap.put("TASK_TYPE", KafkaTask.BROKER.name());
 
+    Assert.assertEquals(expectedEnvMap.size(), envFromTask.size());
+
     System.out.println(expectedEnvMap);
 
-    final Set<String> envVarNames = envFromTask.keySet();
-    for (String envVarName : envVarNames) {
-      Assert.assertTrue("Cannot find env key: " + envVarName, expectedEnvMap.containsKey(envVarName));
+    for (String expectedEnvKey : expectedEnvMap.keySet()) {
+      Assert.assertTrue("Cannot find env key: " + expectedEnvKey, envFromTask.containsKey(expectedEnvKey));
 
-      final String envVarValue = envFromTask.get(envVarName);
-      if ("KAFKA_OVERRIDE_LOG_DIRS".equals(envVarName)) {
+      final String envVarValue = envFromTask.get(expectedEnvKey);
+      if ("KAFKA_OVERRIDE_LOG_DIRS".equals(expectedEnvKey)) {
         Assert.assertTrue(envVarValue.contains("kafka-volume"));
         Assert.assertTrue(envVarValue.contains(KafkaTestUtils.testTaskName));
-      } else if ("KAFKA_OVERRIDE_LISTENERS".equals(envVarName)) {
+      } else if ("KAFKA_OVERRIDE_LISTENERS".equals(expectedEnvKey)) {
         Assert.assertTrue(envVarValue.contains("PLAINTEXT"));
         Assert.assertTrue(envVarValue.contains(portString));
       } else {

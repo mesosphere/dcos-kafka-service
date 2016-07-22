@@ -294,7 +294,6 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     String containerPath = "kafka-volume-" + UUID.randomUUID();
 
     KafkaSchedulerConfiguration config = configState.fetch(UUID.fromString(configName));
-    ServiceConfiguration serviceConfig = config.getServiceConfiguration();
     BrokerConfiguration brokerConfig = config.getBrokerConfiguration();
     ExecutorConfiguration executorConfig = config.getExecutorConfiguration();
     ZookeeperConfiguration zkConfig = config.getZookeeperConfig();
@@ -335,7 +334,8 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
       .addEnvironmentVar(overridePrefix + "LOG_DIRS", containerPath + "/" + brokerName)
       .addEnvironmentVar(overridePrefix + "LISTENERS", "PLAINTEXT://:" + port)
       .addEnvironmentVar(overridePrefix + "PORT", Long.toString(port))
-      .addEnvironmentVar("KAFKA_DYNAMIC_BROKER_PORT", Boolean.toString(isDynamicPort));
+      .addEnvironmentVar("KAFKA_DYNAMIC_BROKER_PORT", Boolean.toString(isDynamicPort))
+      .addEnvironmentVar("KAFKA_HEAP_OPTS", getKafkaHeapOpts(brokerConfig.getHeap()));
 
     // Launch command for custom executor
     final String executorCommand = "./executor/bin/kafka-executor -Dlogback.configurationFile=executor/conf/logback.xml";

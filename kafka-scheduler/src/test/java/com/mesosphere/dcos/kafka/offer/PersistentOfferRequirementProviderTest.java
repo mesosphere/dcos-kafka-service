@@ -1,6 +1,7 @@
 package com.mesosphere.dcos.kafka.offer;
 
 import com.mesosphere.dcos.kafka.commons.KafkaTask;
+import com.mesosphere.dcos.kafka.config.ConfigTestUtils;
 import com.mesosphere.dcos.kafka.config.HeapConfig;
 import com.mesosphere.dcos.kafka.config.KafkaConfigState;
 import com.mesosphere.dcos.kafka.config.KafkaSchedulerConfiguration;
@@ -32,7 +33,7 @@ public class PersistentOfferRequirementProviderTest {
   @Before
   public void beforeEach() {
     MockitoAnnotations.initMocks(this);
-    schedulerConfig = KafkaTestUtils.getTestKafkaSchedulerConfiguration();
+    schedulerConfig = ConfigTestUtils.getTestKafkaSchedulerConfiguration();
   }
 
   @Test

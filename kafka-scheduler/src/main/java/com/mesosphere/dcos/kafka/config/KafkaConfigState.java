@@ -9,7 +9,7 @@ import org.apache.mesos.Protos.Labels;
 import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.config.ConfigStore;
 import org.apache.mesos.config.ConfigStoreException;
-import org.apache.mesos.config.CuratorConfigStore;
+import org.apache.mesos.curator.CuratorConfigStore;
 import com.mesosphere.dcos.kafka.offer.PersistentOfferRequirementProvider;
 import com.mesosphere.dcos.kafka.state.FrameworkState;
 import org.apache.mesos.protobuf.LabelBuilder;
@@ -32,7 +32,7 @@ public class KafkaConfigState {
    */
   public KafkaConfigState(ZookeeperConfiguration zkConfig) {
     this.configStore = new CuratorConfigStore<KafkaSchedulerConfiguration>(
-            zkConfig.getMesosZkRoot(), zkConfig.getMesosZkUri());
+            zkConfig.getFrameworkName(), zkConfig.getMesosZkUri());
   }
 
   /**

@@ -23,11 +23,11 @@ public class KafkaState {
     private static final int POLL_DELAY_MS = 1000;
     private static final int CURATOR_MAX_RETRIES = 3;
 
-    private final ZookeeperConfiguration zkConfig;
+    private final String zkRoot;
     private final CuratorFramework kafkaZkClient;
 
     public KafkaState(ZookeeperConfiguration zkConfig) {
-        this.zkConfig = zkConfig;
+        this.zkRoot = '/' + zkConfig.getFrameworkName();
 
         this.kafkaZkClient = CuratorFrameworkFactory.newClient(
                 zkConfig.getKafkaZkUri(),
@@ -36,11 +36,11 @@ public class KafkaState {
     }
 
     public JSONArray getBrokerIds() throws Exception {
-        return getIds(zkConfig.getKafkaZkRoot() + "/brokers/ids");
+        return getIds(zkRoot + "/brokers/ids");
     }
 
     public List<String> getBrokerEndpoints() {
-        String brokerPath = zkConfig.getKafkaZkRoot() + "/brokers/ids";
+        String brokerPath = zkRoot + "/brokers/ids";
         List<String> endpoints = new ArrayList<String>();
 
         try {
@@ -60,7 +60,7 @@ public class KafkaState {
     }
 
     public List<String> getBrokerDNSEndpoints(String frameworkName) {
-        String brokerPath = zkConfig.getKafkaZkRoot() + "/brokers/ids";
+        String brokerPath = zkRoot + "/brokers/ids";
         List<String> endpoints = new ArrayList<String>();
 
         try {
@@ -80,11 +80,11 @@ public class KafkaState {
     }
 
     public JSONArray getTopics() throws Exception {
-        return getIds(zkConfig.getKafkaZkRoot() + "/brokers/topics");
+        return getIds(zkRoot + "/brokers/topics");
     }
 
     public JSONObject getTopic(String topicName) throws Exception {
-        String partitionsPath = zkConfig.getKafkaZkRoot() + "/brokers/topics/" + topicName + "/partitions";
+        String partitionsPath = zkRoot + "/brokers/topics/" + topicName + "/partitions";
         List<String> partitionIds = kafkaZkClient.getChildren()
                 .forPath(partitionsPath);
 

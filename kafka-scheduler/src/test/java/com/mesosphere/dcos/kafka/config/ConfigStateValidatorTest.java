@@ -25,7 +25,7 @@ public class ConfigStateValidatorTest {
 
     @Test
     public void testKafkaZkUriChangeFails() {
-        KafkaConfiguration oldKafkaConfiguration = KafkaTestUtils.getTestKafkaConfiguration();
+        KafkaConfiguration oldKafkaConfiguration = ConfigTestUtils.getTestKafkaConfiguration();
         KafkaConfiguration newKafkaConfiguration = new KafkaConfiguration(
                 true,
                 KafkaTestUtils.testKafkaVerName,
@@ -41,7 +41,7 @@ public class ConfigStateValidatorTest {
 
     @Test
     public void testKafkaZkUriUnchangedSucceeds() {
-        KafkaConfiguration oldKafkaConfiguration = KafkaTestUtils.getTestKafkaConfiguration();
+        KafkaConfiguration oldKafkaConfiguration = ConfigTestUtils.getTestKafkaConfiguration();
         KafkaConfiguration newKafkaConfiguration = oldKafkaConfiguration;
 
         ConfigStateValidator configStateValidator = new ConfigStateValidator(frameworkState);
@@ -51,7 +51,7 @@ public class ConfigStateValidatorTest {
 
     @Test
     public void testKafkaFrameworkNameChangeFails() throws ConfigStateValidator.ValidationException {
-        ServiceConfiguration oldServiceConfiguration = KafkaTestUtils.getTestServiceConfiguration();
+        ServiceConfiguration oldServiceConfiguration = ConfigTestUtils.getTestServiceConfiguration();
         ServiceConfiguration newServiceConfiguration = new ServiceConfiguration(
                 1,
                 "bad-framework-name",
@@ -68,7 +68,7 @@ public class ConfigStateValidatorTest {
 
     @Test
     public void testKafkaFrameworkNameChangeSucceds() throws ConfigStateValidator.ValidationException {
-        ServiceConfiguration oldServiceConfiguration = KafkaTestUtils.getTestServiceConfiguration();
+        ServiceConfiguration oldServiceConfiguration = ConfigTestUtils.getTestServiceConfiguration();
         ServiceConfiguration newServiceConfiguration = oldServiceConfiguration;
 
         ConfigStateValidator configStateValidator = new ConfigStateValidator(frameworkState);

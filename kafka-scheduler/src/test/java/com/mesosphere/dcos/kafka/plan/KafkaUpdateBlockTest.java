@@ -2,6 +2,8 @@ package com.mesosphere.dcos.kafka.plan;
 
 import com.mesosphere.dcos.kafka.test.KafkaTestUtils;
 import org.apache.mesos.Protos;
+
+import com.mesosphere.dcos.kafka.config.ConfigTestUtils;
 import com.mesosphere.dcos.kafka.config.KafkaConfigState;
 import com.mesosphere.dcos.kafka.offer.PersistentOfferRequirementProvider;
 import com.mesosphere.dcos.kafka.state.FrameworkState;
@@ -29,7 +31,8 @@ public class KafkaUpdateBlockTest {
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
         when(frameworkState.getFrameworkId()).thenReturn(KafkaTestUtils.testFrameworkId);
-        when(configState.fetch(UUID.fromString(KafkaTestUtils.testConfigName))).thenReturn(KafkaTestUtils.getTestKafkaSchedulerConfiguration());
+        when(configState.fetch(UUID.fromString(KafkaTestUtils.testConfigName))).thenReturn(
+                ConfigTestUtils.getTestKafkaSchedulerConfiguration());
         offerRequirementProvider = new PersistentOfferRequirementProvider(frameworkState, configState);
         updateBlock =
                 new KafkaUpdateBlock(

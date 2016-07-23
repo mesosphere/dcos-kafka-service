@@ -16,10 +16,10 @@ import org.apache.mesos.Protos.TaskID;
 import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.Protos.TaskState;
 import org.apache.mesos.Protos.TaskStatus;
+import org.apache.mesos.curator.CuratorStateStore;
 import org.apache.mesos.offer.TaskException;
 import org.apache.mesos.offer.TaskUtils;
 import org.apache.mesos.reconciliation.TaskStatusProvider;
-import org.apache.mesos.state.CuratorStateStore;
 import org.apache.mesos.state.StateStore;
 import org.apache.mesos.state.StateStoreException;
 
@@ -33,7 +33,7 @@ public class FrameworkState implements TaskStatusProvider {
     private final StateStore stateStore;
 
     public FrameworkState(ZookeeperConfiguration zkConfig) {
-        this.stateStore = new CuratorStateStore(zkConfig.getMesosZkRoot(), zkConfig.getMesosZkUri());
+        this.stateStore = new CuratorStateStore(zkConfig.getFrameworkName(), zkConfig.getMesosZkUri());
     }
 
     public StateStore getStateStore() {

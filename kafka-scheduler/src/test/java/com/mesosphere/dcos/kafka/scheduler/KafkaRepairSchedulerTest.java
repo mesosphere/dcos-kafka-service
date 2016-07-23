@@ -8,6 +8,7 @@ import org.apache.mesos.Protos;
 import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.config.ConfigStoreException;
 import com.mesosphere.dcos.kafka.config.BrokerConfiguration;
+import com.mesosphere.dcos.kafka.config.ConfigTestUtils;
 import com.mesosphere.dcos.kafka.config.KafkaConfigState;
 import com.mesosphere.dcos.kafka.offer.PersistentOfferRequirementProvider;
 import com.mesosphere.dcos.kafka.offer.PersistentOperationRecorder;
@@ -40,7 +41,8 @@ public class KafkaRepairSchedulerTest {
     public void beforeEach() throws ConfigStoreException {
         MockitoAnnotations.initMocks(this);
         when(frameworkState.getFrameworkId()).thenReturn(KafkaTestUtils.testFrameworkId);
-        when(configState.fetch(UUID.fromString(KafkaTestUtils.testConfigName))).thenReturn(KafkaTestUtils.getTestKafkaSchedulerConfiguration());
+        when(configState.fetch(UUID.fromString(KafkaTestUtils.testConfigName)))
+            .thenReturn(ConfigTestUtils.getTestKafkaSchedulerConfiguration());
     }
 
     @Test
@@ -102,8 +104,8 @@ public class KafkaRepairSchedulerTest {
     }
 
     public Protos.Offer getTestOfferSufficientForNewBroker() {
-        BrokerConfiguration brokerConfiguration = KafkaTestUtils.getTestBrokerConfiguration();
-        ExecutorConfiguration executorConfiguration = KafkaTestUtils.getTestExecutorConfiguration();
+        BrokerConfiguration brokerConfiguration = ConfigTestUtils.getTestBrokerConfiguration();
+        ExecutorConfiguration executorConfiguration = ConfigTestUtils.getTestExecutorConfiguration();
 
         Protos.Resource cpu = ResourceUtils.getUnreservedScalar("cpus", brokerConfiguration.getCpus() + executorConfiguration.getCpus());
         Protos.Resource mem = ResourceUtils.getUnreservedScalar("mem", brokerConfiguration.getMem() + executorConfiguration.getMem());

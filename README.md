@@ -505,7 +505,7 @@ These same values are also represented as environment variables for the Schedule
 <a name="disk-type"></a>
 ### Disk Type 
 
-The type of disks that can be used for storing broker data are: `ROOT` (default) and `MOUNT`.
+The type of disks that can be used for storing broker data are: `ROOT` (default) and `MOUNT`.  The type of disk may only be specified at install time.
 
 * `ROOT`: Broker data is stored on the same volume as the agent work directory. And, the Broker tasks will use the configured amount of disk space.
 * `MOUNT`: Broker data will be stored on a dedicated volume attached to the agent. Dedicated MOUNT volumes have performance advantages and a disk error on these MOUNT volumes will be correctly reported to Kafka.

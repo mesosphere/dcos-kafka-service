@@ -1,5 +1,7 @@
 package com.mesosphere.dcos.kafka.config;
 
+import org.apache.mesos.dcos.DcosConstants;
+
 /**
  * POJO storage of Zookeeper connection settings
  */
@@ -34,5 +36,9 @@ public class ZookeeperConfiguration {
 
     public String getKafkaZkUri() {
         return kafkaZkUri;
+    }
+
+    public String getZkRootPath() {
+        return DcosConstants.SERVICE_ROOT_PATH_PREFIX + getFrameworkName();
     }
 }

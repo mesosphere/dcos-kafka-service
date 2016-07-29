@@ -3,16 +3,17 @@ package com.mesosphere.dcos.kafka.scheduler;
 import com.google.common.collect.Iterators;
 import com.mesosphere.dcos.kafka.config.ExecutorConfiguration;
 import com.mesosphere.dcos.kafka.offer.KafkaOfferRequirementProvider;
+import com.mesosphere.dcos.kafka.state.ClusterState;
 import com.mesosphere.dcos.kafka.test.KafkaTestUtils;
 import org.apache.mesos.Protos;
 import org.apache.mesos.SchedulerDriver;
-import org.apache.mesos.config.ConfigStoreException;
 import com.mesosphere.dcos.kafka.config.BrokerConfiguration;
 import com.mesosphere.dcos.kafka.config.ConfigTestUtils;
 import com.mesosphere.dcos.kafka.config.KafkaConfigState;
 import com.mesosphere.dcos.kafka.offer.PersistentOfferRequirementProvider;
 import com.mesosphere.dcos.kafka.offer.PersistentOperationRecorder;
 import com.mesosphere.dcos.kafka.state.FrameworkState;
+import org.apache.mesos.dcos.Capabilities;
 import org.apache.mesos.offer.OfferAccepter;
 import org.apache.mesos.offer.ResourceUtils;
 import org.junit.Assert;
@@ -20,6 +21,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.*;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.*;
 
 import static org.mockito.Matchers.anyObject;
@@ -33,16 +36,20 @@ import static org.mockito.Mockito.when;
 public class KafkaRepairSchedulerTest {
     @Mock private FrameworkState frameworkState;
     @Mock private KafkaConfigState configState;
+    @Mock private ClusterState clusterState;
+    @Mock private Capabilities capabilities;
     @Mock private SchedulerDriver driver;
     @Captor private ArgumentCaptor<Collection<Protos.OfferID>> offerIdCaptor;
     @Captor private ArgumentCaptor<Collection<Protos.Offer.Operation>> operationCaptor;
 
     @Before
-    public void beforeEach() throws ConfigStoreException {
+    public void beforeEach() throws IOException, URISyntaxException {
         MockitoAnnotations.initMocks(this);
         when(frameworkState.getFrameworkId()).thenReturn(KafkaTestUtils.testFrameworkId);
         when(configState.fetch(UUID.fromString(KafkaTestUtils.testConfigName)))
             .thenReturn(ConfigTestUtils.getTestKafkaSchedulerConfiguration());
+        when(clusterState.getCapabilities()).thenReturn(capabilities);
+        when(capabilities.supportsNamedVips()).thenReturn(true);
     }
 
     @Test
@@ -100,7 +107,7 @@ public class KafkaRepairSchedulerTest {
     }
 
     private KafkaOfferRequirementProvider getTestOfferRequirementProvider() {
-        return new PersistentOfferRequirementProvider(frameworkState, configState);
+        return new PersistentOfferRequirementProvider(frameworkState, configState, clusterState);
     }
 
     public Protos.Offer getTestOfferSufficientForNewBroker() {

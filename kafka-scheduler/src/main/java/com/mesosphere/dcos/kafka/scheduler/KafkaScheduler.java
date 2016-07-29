@@ -1,11 +1,13 @@
 package com.mesosphere.dcos.kafka.scheduler;
 
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import com.mesosphere.dcos.kafka.config.ConfigStateUpdater;
 import com.mesosphere.dcos.kafka.plan.KafkaUpdatePhase;
+import com.mesosphere.dcos.kafka.state.ClusterState;
 import io.dropwizard.setup.Environment;
 
 import org.apache.commons.logging.Log;
@@ -47,6 +49,7 @@ public class KafkaScheduler implements Scheduler, Runnable {
   private final KafkaSchedulerConfiguration envConfig;
   private final FrameworkState frameworkState;
   private final KafkaState kafkaState;
+  private final ClusterState clusterState;
 
   private final DefaultStageScheduler stageScheduler;
   private final KafkaRepairScheduler repairScheduler;
@@ -60,7 +63,7 @@ public class KafkaScheduler implements Scheduler, Runnable {
   private static final Integer rescheduleLock = 0;
   private static List<TaskID> tasksToReschedule = new ArrayList<>();
 
-  public KafkaScheduler(KafkaSchedulerConfiguration configuration, Environment environment) throws ConfigStoreException {
+  public KafkaScheduler(KafkaSchedulerConfiguration configuration, Environment environment) throws ConfigStoreException, URISyntaxException {
     ConfigStateUpdater configStateUpdater = new ConfigStateUpdater(configuration);
     List<String> stageErrors = new ArrayList<>();
     KafkaSchedulerConfiguration targetConfigToUse;
@@ -82,12 +85,13 @@ public class KafkaScheduler implements Scheduler, Runnable {
     configState = configStateUpdater.getConfigState();
     frameworkState = configStateUpdater.getFrameworkState();
     kafkaState = configStateUpdater.getKafkaState();
+    clusterState = new ClusterState();
 
     offerAccepter =
       new OfferAccepter(Arrays.asList(new PersistentOperationRecorder(frameworkState)));
 
     KafkaOfferRequirementProvider offerRequirementProvider =
-      new PersistentOfferRequirementProvider(frameworkState, configState);
+      new PersistentOfferRequirementProvider(frameworkState, configState, clusterState);
 
     List<Phase> phases = Arrays.asList(
         ReconciliationPhase.create(reconciler, frameworkState),

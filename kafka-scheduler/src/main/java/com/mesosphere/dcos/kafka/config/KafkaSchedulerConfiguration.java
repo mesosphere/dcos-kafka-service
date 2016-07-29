@@ -10,6 +10,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.config.ConfigStoreException;
 import org.apache.mesos.config.Configuration;
 import org.apache.mesos.config.ConfigurationFactory;
+import org.apache.mesos.dcos.DcosConstants;
+
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
@@ -95,7 +97,7 @@ public class KafkaSchedulerConfiguration implements Configuration {
 
     public String getFullKafkaZookeeperPath() {
         ZookeeperConfiguration zkConfiguration = getZookeeperConfig();
-        return zkConfiguration.getKafkaZkUri() + '/' + zkConfiguration.getFrameworkName();
+        return zkConfiguration.getKafkaZkUri() + DcosConstants.SERVICE_ROOT_PATH_PREFIX + zkConfiguration.getFrameworkName();
     }
 
     @Override

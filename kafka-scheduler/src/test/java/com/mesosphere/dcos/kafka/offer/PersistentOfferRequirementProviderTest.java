@@ -5,8 +5,11 @@ import com.mesosphere.dcos.kafka.config.ConfigTestUtils;
 import com.mesosphere.dcos.kafka.config.HeapConfig;
 import com.mesosphere.dcos.kafka.config.KafkaConfigState;
 import com.mesosphere.dcos.kafka.config.KafkaSchedulerConfiguration;
+import com.mesosphere.dcos.kafka.state.ClusterState;
 import org.apache.mesos.Protos.*;
 import com.mesosphere.dcos.kafka.state.FrameworkState;
+import org.apache.mesos.dcos.Capabilities;
+import org.apache.mesos.dcos.DcosConstants;
 import org.apache.mesos.offer.OfferRequirement;
 import org.apache.mesos.offer.TaskUtils;
 import org.apache.mesos.protobuf.CommandInfoBuilder;
@@ -20,6 +23,8 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import com.mesosphere.dcos.kafka.test.KafkaTestUtils;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.*;
 
 import static org.mockito.Mockito.when;
@@ -28,17 +33,21 @@ public class PersistentOfferRequirementProviderTest {
 
   @Mock private FrameworkState state;
   @Mock private KafkaConfigState configState;
+  @Mock private ClusterState clusterState;
+  @Mock private Capabilities capabilities;
   private KafkaSchedulerConfiguration schedulerConfig;
 
   @Before
-  public void beforeEach() {
+  public void beforeEach() throws IOException, URISyntaxException {
     MockitoAnnotations.initMocks(this);
+    when(capabilities.supportsNamedVips()).thenReturn(true);
+    when(clusterState.getCapabilities()).thenReturn(capabilities);
     schedulerConfig = ConfigTestUtils.getTestKafkaSchedulerConfiguration();
   }
 
   @Test
   public void testConstructor() {
-    PersistentOfferRequirementProvider provider = new PersistentOfferRequirementProvider(state, configState);
+    PersistentOfferRequirementProvider provider = new PersistentOfferRequirementProvider(state, configState, clusterState);
     Assert.assertNotNull(provider);
   }
 
@@ -46,7 +55,7 @@ public class PersistentOfferRequirementProviderTest {
   public void testNewRequirement() throws Exception {
     when(configState.fetch(UUID.fromString(KafkaTestUtils.testConfigName))).thenReturn(schedulerConfig);
     when(state.getFrameworkId()).thenReturn(FrameworkID.newBuilder().setValue("abcd").build());
-    PersistentOfferRequirementProvider provider = new PersistentOfferRequirementProvider(state, configState);
+    PersistentOfferRequirementProvider provider = new PersistentOfferRequirementProvider(state, configState, clusterState);
     OfferRequirement req = provider.getNewOfferRequirement(KafkaTestUtils.testConfigName, 0);
 
     TaskInfo taskInfo = req.getTaskRequirements().iterator().next().getTaskInfo();
@@ -120,7 +129,7 @@ public class PersistentOfferRequirementProviderTest {
 
     Map<String, String> expectedEnvMap = new HashMap<>();
     expectedEnvMap.put("KAFKA_ZOOKEEPER_URI", KafkaTestUtils.testKafkaZkUri);
-    expectedEnvMap.put("KAFKA_OVERRIDE_ZOOKEEPER_CONNECT", KafkaTestUtils.testKafkaZkUri + "/" + KafkaTestUtils.testFrameworkName);
+    expectedEnvMap.put("KAFKA_OVERRIDE_ZOOKEEPER_CONNECT", KafkaTestUtils.testKafkaZkUri + DcosConstants.SERVICE_ROOT_PATH_PREFIX + KafkaTestUtils.testFrameworkName);
     expectedEnvMap.put("FRAMEWORK_NAME", KafkaTestUtils.testFrameworkName);
     expectedEnvMap.put("KAFKA_OVERRIDE_LOG_DIRS", "kafka-volume-9a67ba10-644c-4ef2-b764-e7df6e6a66e5/broker-0");
     expectedEnvMap.put("KAFKA_OVERRIDE_LISTENERS", "PLAINTEXT://:123a");
@@ -157,7 +166,7 @@ public class PersistentOfferRequirementProviderTest {
 
   @Test
   public void testReplaceOfferRequirement() throws Exception {
-    PersistentOfferRequirementProvider provider = new PersistentOfferRequirementProvider(state, configState);
+    PersistentOfferRequirementProvider provider = new PersistentOfferRequirementProvider(state, configState, clusterState);
     Resource cpu = ResourceBuilder.reservedCpus(0.5, KafkaTestUtils.testRole, KafkaTestUtils.testPrincipal, KafkaTestUtils.testResourceId);
     TaskInfo inTaskInfo = getTaskInfo(Arrays.asList(cpu));
     OfferRequirement req = provider.getReplacementOfferRequirement(inTaskInfo);
@@ -176,7 +185,7 @@ public class PersistentOfferRequirementProviderTest {
     TaskInfo oldTaskInfo = getTaskInfo(Arrays.asList(oldCpu, oldMem, oldDisk));
     oldTaskInfo = configKafkaHeapOpts(oldTaskInfo, oldHeapConfig);
 
-    PersistentOfferRequirementProvider provider = new PersistentOfferRequirementProvider(state, configState);
+    PersistentOfferRequirementProvider provider = new PersistentOfferRequirementProvider(state, configState, clusterState);
     OfferRequirement req = provider.getUpdateOfferRequirement(KafkaTestUtils.testConfigName, oldTaskInfo);
     Assert.assertNotNull(req);
 

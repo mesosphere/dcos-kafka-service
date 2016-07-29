@@ -12,5 +12,5 @@ test:
 packages:
 	bin/packages.sh
 
-binary:  clean env packages
-	pyinstaller binary/binary.spec
+binary: clean env packages
+	bin/binary.sh

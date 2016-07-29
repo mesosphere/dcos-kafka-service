@@ -5,6 +5,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.TextFormat;
 import com.mesosphere.dcos.kafka.commons.KafkaTask;
 import com.mesosphere.dcos.kafka.config.*;
+import com.mesosphere.dcos.kafka.state.ClusterState;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.Protos.*;
@@ -19,6 +20,8 @@ import org.apache.mesos.protobuf.EnvironmentBuilder;
 import org.apache.mesos.protobuf.LabelBuilder;
 import org.apache.mesos.protobuf.ValueBuilder;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -30,18 +33,22 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
 
   private final KafkaConfigState configState;
   private final FrameworkState frameworkState;
+  private final ClusterState clusterState;
   private final PlacementStrategyManager placementStrategyManager;
 
   public PersistentOfferRequirementProvider(
-      FrameworkState frameworkState, KafkaConfigState configState) {
+      FrameworkState frameworkState,
+      KafkaConfigState configState,
+      ClusterState clusterState) {
     this.configState = configState;
     this.frameworkState = frameworkState;
+    this.clusterState = clusterState;
     this.placementStrategyManager = new PlacementStrategyManager(frameworkState);
   }
 
   @Override
   public OfferRequirement getNewOfferRequirement(String configName, int brokerId)
-          throws InvalidRequirementException, ConfigStoreException {
+          throws InvalidRequirementException, IOException, URISyntaxException {
     OfferRequirement offerRequirement = getNewOfferRequirementInternal(configName, brokerId);
     return offerRequirement;
   }
@@ -286,7 +293,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
   }
 
   private OfferRequirement getNewOfferRequirementInternal(String configName, int brokerId)
-          throws InvalidRequirementException, ConfigStoreException {
+          throws InvalidRequirementException, IOException, URISyntaxException {
     log.info("Getting new OfferRequirement for: " + configName);
     String overridePrefix = KafkaSchedulerConfiguration.KAFKA_OVERRIDE_PREFIX;
     String brokerName = OfferUtils.idToName(brokerId);
@@ -397,6 +404,25 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
             .setKey(CONFIG_TARGET_KEY)
             .setValue(configName))
           .build());
+
+    if (clusterState.getCapabilities().supportsNamedVips()) {
+      DiscoveryInfo discoveryInfo = DiscoveryInfo.newBuilder()
+              .setVisibility(DiscoveryInfo.Visibility.EXTERNAL)
+              .setName(brokerName)
+              .setPorts(Ports.newBuilder()
+                      .addPorts(Port.newBuilder()
+                              .setNumber((int) (long)port)
+                              .setProtocol("tcp")
+                              .setLabels(Labels.newBuilder()
+                                      .addLabels(Label.newBuilder()
+                                              .setKey("VIP_" + UUID.randomUUID())
+                                              .setValue("broker:9092")
+                                              .build())
+                                      .build()))
+                      .build())
+              .build();
+      taskBuilder.setDiscovery(discoveryInfo);
+    }
 
     log.info("TaskInfo.Builder contains executor: " + taskBuilder.hasExecutor());
     // Explicitly clear executor.

@@ -1,5 +1,6 @@
 package com.mesosphere.dcos.kafka.plan;
 
+import com.mesosphere.dcos.kafka.state.ClusterState;
 import com.mesosphere.dcos.kafka.test.KafkaTestUtils;
 import org.apache.mesos.Protos;
 
@@ -7,6 +8,7 @@ import com.mesosphere.dcos.kafka.config.ConfigTestUtils;
 import com.mesosphere.dcos.kafka.config.KafkaConfigState;
 import com.mesosphere.dcos.kafka.offer.PersistentOfferRequirementProvider;
 import com.mesosphere.dcos.kafka.state.FrameworkState;
+import org.apache.mesos.dcos.Capabilities;
 import org.apache.mesos.offer.OfferRequirement;
 import org.junit.Assert;
 import org.junit.Before;
@@ -24,6 +26,8 @@ import static org.mockito.Mockito.when;
 public class KafkaUpdateBlockTest {
     @Mock private FrameworkState frameworkState;
     @Mock private KafkaConfigState configState;
+    @Mock private ClusterState clusterState;
+    @Mock private Capabilities capabilities;
     private PersistentOfferRequirementProvider offerRequirementProvider;
     private KafkaUpdateBlock updateBlock;
 
@@ -33,7 +37,9 @@ public class KafkaUpdateBlockTest {
         when(frameworkState.getFrameworkId()).thenReturn(KafkaTestUtils.testFrameworkId);
         when(configState.fetch(UUID.fromString(KafkaTestUtils.testConfigName))).thenReturn(
                 ConfigTestUtils.getTestKafkaSchedulerConfiguration());
-        offerRequirementProvider = new PersistentOfferRequirementProvider(frameworkState, configState);
+        when(capabilities.supportsNamedVips()).thenReturn(true);
+        when(clusterState.getCapabilities()).thenReturn(capabilities);
+        offerRequirementProvider = new PersistentOfferRequirementProvider(frameworkState, configState, clusterState);
         updateBlock =
                 new KafkaUpdateBlock(
                         frameworkState,

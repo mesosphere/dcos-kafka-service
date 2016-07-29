@@ -1,6 +1,7 @@
 package com.mesosphere.dcos.kafka.web;
 
 import com.mesosphere.dcos.kafka.config.KafkaConfigState;
+import com.mesosphere.dcos.kafka.state.ClusterState;
 import com.mesosphere.dcos.kafka.state.KafkaState;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -19,16 +20,25 @@ public class ConnectionController {
     static final String ZOOKEEPER_KEY = "zookeeper";
     static final String ADDRESS_KEY = "address";
     static final String DNS_KEY = "dns";
+    static final String VIP_KEY = "vip";
 
     private final String zookeeperEndpoint;
+    private final String frameworkName;
     private final KafkaState state;
+    private final ClusterState clusterState;
     private final KafkaConfigState configState;
 
     public ConnectionController(
-            String zookeeperEndpoint, KafkaConfigState configState, KafkaState state) {
+            String zookeeperEndpoint,
+            KafkaConfigState configState,
+            KafkaState state,
+            ClusterState clusterState,
+            String frameworkName) {
         this.zookeeperEndpoint = zookeeperEndpoint;
         this.configState = configState;
         this.state = state;
+        this.clusterState = clusterState;
+        this.frameworkName = frameworkName;
     }
 
     @Path("/connection")
@@ -39,6 +49,9 @@ public class ConnectionController {
             connectionInfo.put(ZOOKEEPER_KEY, zookeeperEndpoint);
             connectionInfo.put(ADDRESS_KEY, getBrokerList());
             connectionInfo.put(DNS_KEY, getBrokerDNSList());
+            if (clusterState.getCapabilities().supportsNamedVips()) {
+                connectionInfo.put(VIP_KEY, String.format("broker.%s.l4lb.thisdcos.directory:9092", frameworkName));
+            }
             return Response.ok(connectionInfo.toString(), MediaType.APPLICATION_JSON).build();
         } catch (Exception ex) {
             log.error("Failed to fetch topics with exception: " + ex);
@@ -79,6 +92,6 @@ public class ConnectionController {
     private JSONArray getBrokerDNSList() throws Exception {
         final String frameworkName =
                 configState.getTargetConfig().getServiceConfiguration().getName();
-        return new JSONArray(state.getBrokerDNSEndpoints(frameworkName));
+        return new JSONArray(state.getBrokerDNSEndpoints());
     }
 }

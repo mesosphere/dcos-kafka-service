@@ -23,11 +23,11 @@ public class KafkaState {
     private static final int POLL_DELAY_MS = 1000;
     private static final int CURATOR_MAX_RETRIES = 3;
 
-    private final String zkRoot;
+    private final ZookeeperConfiguration zkConfig;
     private final CuratorFramework kafkaZkClient;
 
     public KafkaState(ZookeeperConfiguration zkConfig) {
-        this.zkRoot = '/' + zkConfig.getFrameworkName();
+        this.zkConfig = zkConfig;
 
         this.kafkaZkClient = CuratorFrameworkFactory.newClient(
                 zkConfig.getKafkaZkUri(),
@@ -36,11 +36,11 @@ public class KafkaState {
     }
 
     public JSONArray getBrokerIds() throws Exception {
-        return getIds(zkRoot + "/brokers/ids");
+        return getIds(zkConfig.getZkRootPath() + "/brokers/ids");
     }
 
     public List<String> getBrokerEndpoints() {
-        String brokerPath = zkRoot + "/brokers/ids";
+        String brokerPath = zkConfig.getZkRootPath() + "/brokers/ids";
         List<String> endpoints = new ArrayList<String>();
 
         try {
@@ -59,8 +59,8 @@ public class KafkaState {
         return endpoints;
     }
 
-    public List<String> getBrokerDNSEndpoints(String frameworkName) {
-        String brokerPath = zkRoot + "/brokers/ids";
+    public List<String> getBrokerDNSEndpoints() {
+        String brokerPath = zkConfig.getZkRootPath() + "/brokers/ids";
         List<String> endpoints = new ArrayList<String>();
 
         try {
@@ -68,7 +68,7 @@ public class KafkaState {
             for (String id : ids) {
                 byte[] bytes = kafkaZkClient.getData().forPath(brokerPath + "/" + id);
                 JSONObject broker = new JSONObject(new String(bytes, "UTF-8"));
-                String host = "broker-" + id + "." + frameworkName + ".mesos";
+                String host = "broker-" + id + "." + zkConfig.getFrameworkName() + ".mesos";
                 Integer port = (Integer) broker.get("port");
                 endpoints.add(host + ":" + port);
             }
@@ -80,11 +80,11 @@ public class KafkaState {
     }
 
     public JSONArray getTopics() throws Exception {
-        return getIds(zkRoot + "/brokers/topics");
+        return getIds(zkConfig.getZkRootPath() + "/brokers/topics");
     }
 
     public JSONObject getTopic(String topicName) throws Exception {
-        String partitionsPath = zkRoot + "/brokers/topics/" + topicName + "/partitions";
+        String partitionsPath = zkConfig.getZkRootPath() + "/brokers/topics/" + topicName + "/partitions";
         List<String> partitionIds = kafkaZkClient.getChildren()
                 .forPath(partitionsPath);
 

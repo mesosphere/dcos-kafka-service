@@ -1,6 +1,7 @@
 package com.mesosphere.dcos.kafka.scheduler;
 
 import com.mesosphere.dcos.kafka.config.DropwizardConfiguration;
+import com.mesosphere.dcos.kafka.state.ClusterState;
 import com.mesosphere.dcos.kafka.web.BrokerCheck;
 import com.mesosphere.dcos.kafka.web.BrokerController;
 import io.dropwizard.Application;
@@ -18,11 +19,13 @@ import com.mesosphere.dcos.kafka.state.FrameworkState;
 import com.mesosphere.dcos.kafka.state.KafkaState;
 import com.mesosphere.dcos.kafka.web.ConnectionController;
 import com.mesosphere.dcos.kafka.web.TopicController;
+import org.apache.mesos.dcos.DcosCluster;
 import org.apache.mesos.scheduler.plan.api.StageResource;
 import org.apache.mesos.state.api.StateResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URISyntaxException;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -92,7 +95,7 @@ public final class Main extends Application<DropwizardConfiguration> {
   private void registerJerseyResources(
           KafkaScheduler kafkaScheduler,
           Environment environment,
-          DropwizardConfiguration configuration) {
+          DropwizardConfiguration configuration) throws URISyntaxException {
     final KafkaState kafkaState = kafkaScheduler.getKafkaState();
     final KafkaConfigState configState = kafkaScheduler.getConfigState();
     final FrameworkState frameworkState = kafkaScheduler.getFrameworkState();
@@ -100,7 +103,10 @@ public final class Main extends Application<DropwizardConfiguration> {
     // Kafka-specific APIs:
     environment.jersey().register(new ConnectionController(
             configuration.getSchedulerConfiguration().getFullKafkaZookeeperPath(),
-            configState, kafkaState));
+            configState,
+            kafkaState,
+            new ClusterState(new DcosCluster()),
+            configuration.getSchedulerConfiguration().getZookeeperConfig().getFrameworkName()));
     environment.jersey().register(new BrokerController(kafkaState, frameworkState));
     environment.jersey().register(new TopicController(
             new CmdExecutor(configuration.getSchedulerConfiguration(), kafkaState),

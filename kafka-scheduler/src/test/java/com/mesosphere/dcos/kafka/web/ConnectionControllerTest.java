@@ -3,11 +3,13 @@ package com.mesosphere.dcos.kafka.web;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
+import com.mesosphere.dcos.kafka.state.ClusterState;
 import org.apache.mesos.config.ConfigStoreException;
 import com.mesosphere.dcos.kafka.config.KafkaConfigState;
 import com.mesosphere.dcos.kafka.config.KafkaSchedulerConfiguration;
 import com.mesosphere.dcos.kafka.config.ServiceConfiguration;
 import com.mesosphere.dcos.kafka.state.KafkaState;
+import org.apache.mesos.dcos.Capabilities;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Before;
@@ -15,6 +17,8 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.List;
 import javax.ws.rs.core.Response;
@@ -38,27 +42,35 @@ public class ConnectionControllerTest {
     @Mock private KafkaState mockKafkaState;
     @Mock private KafkaSchedulerConfiguration mockKafkaSchedulerConfiguration;
     @Mock private ServiceConfiguration mockServiceConfiguration;
+    @Mock private ClusterState clusterState;
+    @Mock private Capabilities capabilities;
 
     private ConnectionController controller;
 
     @Before
-    public void beforeAll() {
+    public void beforeAll() throws IOException, URISyntaxException {
         MockitoAnnotations.initMocks(this);
+        when(clusterState.getCapabilities()).thenReturn(capabilities);
+        when(capabilities.supportsNamedVips()).thenReturn(true);
         controller = new ConnectionController(
-                ZOOKEEPER_ENDPOINT, mockKafkaConfigState, mockKafkaState);
+                ZOOKEEPER_ENDPOINT,
+                mockKafkaConfigState,
+                mockKafkaState,
+                clusterState,
+                FRAMEWORK_NAME);
     }
 
     @Test
     public void testGetConnectionInfo() throws Exception {
         when(mockKafkaState.getBrokerEndpoints()).thenReturn(BROKER_ENDPOINTS);
         mockFrameworkNameRetrieval(FRAMEWORK_NAME);
-        when(mockKafkaState.getBrokerDNSEndpoints(FRAMEWORK_NAME)).thenReturn(BROKER_DNS_ENDPOINTS);
+        when(mockKafkaState.getBrokerDNSEndpoints()).thenReturn(BROKER_DNS_ENDPOINTS);
 
         Response response = controller.getConnectionInfo();
         assertEquals(200, response.getStatus());
 
         JSONObject json = new JSONObject((String) response.getEntity());
-        assertEquals(3, json.length());
+        assertEquals(4, json.length());
         assertEquals(ZOOKEEPER_ENDPOINT, json.get(ConnectionController.ZOOKEEPER_KEY));
 
         JSONArray jsonAddress = json.getJSONArray(ConnectionController.ADDRESS_KEY);
@@ -70,6 +82,9 @@ public class ConnectionControllerTest {
         assertEquals(2, jsonDns.length());
         assertEquals(BROKER_DNS_ENDPOINT_1, jsonDns.get(0));
         assertEquals(BROKER_DNS_ENDPOINT_2, jsonDns.get(1));
+
+        String vip = (String) json.get(ConnectionController.VIP_KEY);
+        assertEquals(String.format("broker.%s.l4lb.thisdcos.directory:9092", FRAMEWORK_NAME), vip);
     }
 
     @Test
@@ -91,7 +106,7 @@ public class ConnectionControllerTest {
     public void testGetConnectionInfoDnsListFails() throws Exception {
         when(mockKafkaState.getBrokerEndpoints()).thenReturn(BROKER_ENDPOINTS);
         mockFrameworkNameRetrieval(FRAMEWORK_NAME);
-        when(mockKafkaState.getBrokerDNSEndpoints(FRAMEWORK_NAME)).thenThrow(
+        when(mockKafkaState.getBrokerDNSEndpoints()).thenThrow(
                 new IllegalArgumentException("hi"));
         Response response = controller.getConnectionInfo();
         assertEquals(500, response.getStatus());
@@ -123,7 +138,7 @@ public class ConnectionControllerTest {
     @Test
     public void testGetConnectionDNSInfo() throws Exception {
         mockFrameworkNameRetrieval(FRAMEWORK_NAME);
-        when(mockKafkaState.getBrokerDNSEndpoints(FRAMEWORK_NAME)).thenReturn(BROKER_DNS_ENDPOINTS);
+        when(mockKafkaState.getBrokerDNSEndpoints()).thenReturn(BROKER_DNS_ENDPOINTS);
 
         Response response = controller.getConnectionDNSInfo();
         assertEquals(200, response.getStatus());
@@ -147,7 +162,7 @@ public class ConnectionControllerTest {
     @Test
     public void testGetConnectionDNSInfoEndpointFails() throws Exception {
         mockFrameworkNameRetrieval(FRAMEWORK_NAME);
-        when(mockKafkaState.getBrokerDNSEndpoints(FRAMEWORK_NAME)).thenThrow(
+        when(mockKafkaState.getBrokerDNSEndpoints()).thenThrow(
                 new IllegalArgumentException("hi"));
         Response response = controller.getConnectionDNSInfo();
         assertEquals(500, response.getStatus());

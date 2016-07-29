@@ -9,9 +9,9 @@ import org.apache.mesos.Protos.Labels;
 import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.config.ConfigStore;
 import org.apache.mesos.config.ConfigStoreException;
-import org.apache.mesos.curator.CuratorConfigStore;
 import com.mesosphere.dcos.kafka.offer.PersistentOfferRequirementProvider;
 import com.mesosphere.dcos.kafka.state.FrameworkState;
+import org.apache.mesos.curator.CuratorConfigStore;
 import org.apache.mesos.protobuf.LabelBuilder;
 
 import java.util.*;
@@ -31,7 +31,7 @@ public class KafkaConfigState {
    * @see CuratorConfigStore
    */
   public KafkaConfigState(ZookeeperConfiguration zkConfig) {
-    this.configStore = new CuratorConfigStore<KafkaSchedulerConfiguration>(
+    this.configStore = new CuratorConfigStore<>(
             zkConfig.getFrameworkName(), zkConfig.getMesosZkUri());
   }
 
@@ -42,7 +42,7 @@ public class KafkaConfigState {
    * @see CuratorConfigStore
    */
   public KafkaConfigState(String zkRoot, String zkHost, RetryPolicy retryPolicy) {
-    this.configStore = new CuratorConfigStore<KafkaSchedulerConfiguration>(
+    this.configStore = new CuratorConfigStore<>(
             zkRoot, zkHost, retryPolicy);
   }
 

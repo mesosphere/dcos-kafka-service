@@ -229,7 +229,7 @@ Then, use the [framework cleaner script][7] to remove your Kafka instance from Z
 
 *   `framework-role` is `<name>-role`.
 *   `framework-principal` is `<name>-principal`.
-*   `zk_path` is `<name>`.
+*   `zk_path` is `dcos-service-<name>`.
 
 <a name="configuring"></a>
 # Configuring

@@ -224,12 +224,13 @@ Uninstalling a cluster is also straightforward. Replace `name` with the name of 
 
     $ dcos package uninstall --app-id=<name> kafka
 
+Then, use the [framework cleaner script][7] to remove your Kafka instance from Zookeeper and to destroy all data associated with it. The script require several arguments, the default values to be used are:
 
-Then, use the [framework cleaner script][7] to remove your Kafka instance from Zookeeper and to destroy all data associated with it. The script require several arguments, the values for which are derived from your service name:
+- `framework_role` is `kafka-role`.
+- `framework_principal` is `kafka-principal`.
+- `zk_path` is `dcos-service-<service-name>`.
 
-*   `framework-role` is `<name>-role`.
-*   `framework-principal` is `<name>-principal`.
-*   `zk_path` is `dcos-service-<name>`.
+These values may vary if you had customized them during installation.
 
 <a name="configuring"></a>
 # Configuring

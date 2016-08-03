@@ -76,8 +76,8 @@ fi
 if [ -z "$GITHUB_REPO_PATH" ]; then
     # extract commit id and project path on the fly from the repo itself
     # expected formats:
-    # - 'https://github.com/mesosphere/kafka-private' => mesosphere/kafka-private
-    # - 'git@github.com:mesosphere/kafka-private.git' => mesosphere/kafka-private
+    # - 'https://github.com/mesosphere/dcos-kafka-service' => mesosphere/dcos-kafka-service
+    # - 'git@github.com:mesosphere/dcos-kafka-service.git' => mesosphere/dcos-kafka-service
     # how it's implemented: this specifically avoids using busybox's sed, and does something kludgy in grep instead:
     # cut the string down to [:/]username/repo-name, then trim off the : or / at the start of the string
     set_repo_path

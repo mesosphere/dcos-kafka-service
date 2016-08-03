@@ -26,7 +26,7 @@ echo Running with dcos-tests rev: $(git --git-dir=dcos-tests/.git rev-parse HEAD
 # GitHub notifier config
 _notify_github() {
     # IF THIS FAILS FOR YOU, your dcos-tests is out of date!
-    # do this: rm -rf kafka-private/dcos-tests/ then run build.sh again
+    # do this: rm -rf dcos-kafka-service/dcos-tests/ then run build.sh again
     ./dcos-tests/build/update-github-status.py $1 $2 $3
 }
 

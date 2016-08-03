@@ -7,11 +7,11 @@ Setup
 #. Make sure you meet requirements for installing packages_
 #. Clone git repo for the dcos kafka cli::
 
-    git clone git@github.com:mesosphere/kafka-private.git
+    git clone git@github.com:mesosphere/dcos-kafka-service.git
 
 #. Change directory to the repo directory::
 
-    cd kafka-private/cli
+    cd dcos-kafka-service/cli
 
 #. Make sure that you have virtualenv installed. If not type::
 

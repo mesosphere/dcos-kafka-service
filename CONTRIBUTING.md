@@ -17,8 +17,8 @@
 ### Build
 
 ``` bash
-git clone https://github.com/mesosphere/kafka-private
-cd kafka-private
+git clone https://github.com/mesosphere/dcos-kafka-service
+cd dcos-kafka-service
 ./gradlew clean check build
 ```
 

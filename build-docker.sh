@@ -2,7 +2,7 @@
 
 # This script runs './build.sh' in the same image as used by CI.
 
-DKR_IMAGE=mesosphere/kafka-private
+DKR_IMAGE=mesosphere/dcos-kafka-service
 
 if [ -z "$AWS_ACCESS_KEY_ID" -o -z "$AWS_SECRET_ACCESS_KEY" ]; then
     echo "Missing required AWS access info: AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY"

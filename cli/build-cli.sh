@@ -22,8 +22,10 @@ print_file_and_shasum() {
     echo ""
 }
 
+# ---
+
 # go (static binaries containing the CLI itself)
-cd dcos-kafka/
+cd $EXE_NAME/
 
 # this may be omitted in 1.6+, left here for compatibility with 1.5:
 export GO15VENDOREXPERIMENT=1

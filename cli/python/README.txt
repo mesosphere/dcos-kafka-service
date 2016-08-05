@@ -9,7 +9,7 @@ Assumptions:
 - Windows file should end in '.exe'
 
 Configuration:
-See declarations at top of bin_wrapper/setup.py.
+See declarations at top of setup.py.
 
 Usage:
 python bin_wrapper/__init__.py test1 test2 test3

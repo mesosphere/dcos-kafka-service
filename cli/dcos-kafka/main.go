@@ -26,7 +26,11 @@ func main() {
 	}
 
 	handleTopicSection(app)
-	cli.HandleCommonArgs(app, modName, fmt.Sprintf("%s DC/OS CLI Module", strings.Title(modName)))
+	cli.HandleCommonArgs(
+		app,
+		modName,
+		fmt.Sprintf("%s DC/OS CLI Module", strings.Title(modName)),
+		[]string{"address","dns"})
 
 	// Omit modname:
 	kingpin.MustParse(app.Parse(os.Args[2:]))
@@ -116,61 +120,59 @@ func (cmd *TopicHandler) runUnavailablePartitions(c *kingpin.ParseContext) error
 	cli.PrintJSON(cli.HTTPGet("v1/unavailable_partitions"))
 	return nil
 }
-
 func (cmd *TopicHandler) runUnderReplicatedPartitions(c *kingpin.ParseContext) error {
 	cli.PrintJSON(cli.HTTPGet("v1/unavailable_partitions"))
 	return nil
 }
 
 func handleTopicSection(app *kingpin.Application) {
-	// example echo -n <text>, example ping <host/ip>
 	cmd := &TopicHandler{}
-	example := app.Command("topic", "Kafka topic maintenance")
+	topic := app.Command("topic", "Kafka topic maintenance")
 
-	create := example.Command(
+	create := topic.Command(
 		"create",
 		"Creates a new topic").Action(cmd.runCreate)
 	create.Arg("topic", "The topic to create").StringVar(&cmd.topic)
 	create.Flag("partitions", "Number of partitions").Short('p').Default("1").OverrideDefaultFromEnvar("KAFKA_DEFAULT_PARTITION_COUNT").IntVar(&cmd.createPartitions)
 	create.Flag("replication", "Replication factor").Short('r').Default("3").OverrideDefaultFromEnvar("KAFKA_DEFAULT_REPLICATION_FACTOR").IntVar(&cmd.createReplication)
 
-	delete := example.Command(
+	delete := topic.Command(
 		"delete",
 		"Deletes an existing topic").Action(cmd.runDelete)
 	delete.Arg("topic", "The topic to delete").StringVar(&cmd.topic)
 
-	describe := example.Command(
+	describe := topic.Command(
 		"describe",
 		"Describes a single existing topic").Action(cmd.runDescribe)
 	describe.Arg("topic", "The topic to describe").StringVar(&cmd.topic)
 
-	example.Command(
+	topic.Command(
 		"list",
 		"Lists all available topics").Action(cmd.runList)
 
-	offsets := example.Command(
+	offsets := topic.Command(
 		"offsets",
 		"Returns the current offset counts for a topic").Action(cmd.runOffsets)
 	offsets.Arg("topic", "The topic to examine").StringVar(&cmd.topic)
 	offsets.Flag("time", "Offset for the topic: 'first'/'last'/timestamp_millis").Default("last").StringVar(&cmd.topic)
 
-	partitions := example.Command(
+	partitions := topic.Command(
 		"partitions",
 		"Alters partition count for an existing topic").Action(cmd.runPartitions)
 	partitions.Arg("topic", "The topic to update").StringVar(&cmd.topic)
 	partitions.Arg("count", "The number of partitions to assign").IntVar(&cmd.partitionCount)
 
-	producerTest := example.Command(
+	producerTest := topic.Command(
 		"producer_test",
 		"Produces some test messages against a topic").Action(cmd.runProducerTest)
 	producerTest.Arg("topic", "The topic to test").StringVar(&cmd.topic)
 	producerTest.Arg("messages", "The number of messages to produce").IntVar(&cmd.produceMessageCount)
 
-	example.Command(
+	topic.Command(
 		"unavailable_partitions",
 		"Gets info for any unavailable partitions").Action(cmd.runUnavailablePartitions)
 
-	example.Command(
+	topic.Command(
 		"under_replicated_partitions",
 		"Gets info for any under-replicated partitions").Action(cmd.runUnderReplicatedPartitions)
 }

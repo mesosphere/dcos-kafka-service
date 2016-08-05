@@ -18,7 +18,7 @@ fi
 # Instead, clone the secondary 'dcos-tests' repo manually.
 if [ -d dcos-tests ]; then
   cd dcos-tests/
-  git fetch --depth 1 git@github.com:mesosphere/dcos-tests.git bincli
+  git fetch --depth 1 origin bincli
   git checkout bincli
   cd ..
 else

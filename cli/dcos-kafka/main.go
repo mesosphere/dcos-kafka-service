@@ -1,11 +1,11 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/mesosphere/dcos-commons/cli"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"log"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -25,6 +25,7 @@ func main() {
 		log.Fatalf(err.Error())
 	}
 
+	handleBrokerSection(app)
 	handleTopicSection(app)
 	cli.HandleCommonArgs(
 		app,
@@ -36,6 +37,44 @@ func main() {
 	kingpin.MustParse(app.Parse(os.Args[2:]))
 }
 
+type BrokerHandler struct {
+	broker string
+}
+func (cmd *BrokerHandler) runList(c *kingpin.ParseContext) error {
+	cli.PrintJSON(cli.HTTPGet("v1/brokers"))
+	return nil
+}
+func (cmd *BrokerHandler) runReplace(c *kingpin.ParseContext) error {
+	query := url.Values{}
+	query.Set("replace", "true")
+	cli.PrintJSON(cli.HTTPPutQuery(fmt.Sprintf("v1/brokers/%s", cmd.broker), query.Encode()))
+	return nil
+}
+func (cmd *BrokerHandler) runRestart(c *kingpin.ParseContext) error {
+	cli.PrintJSON(cli.HTTPPut(fmt.Sprintf("v1/brokers/%s", cmd.broker)))
+	return nil
+}
+
+func handleBrokerSection(app *kingpin.Application) {
+	cmd := &BrokerHandler{}
+	broker := app.Command("broker", "Kafka broker maintenance")
+
+	broker.Command(
+		"list",
+		"Lists all running brokers in the service").Action(cmd.runList)
+
+	replace := broker.Command(
+		"replace",
+		"Replaces a single broker job, moving it to a different agent").Action(cmd.runReplace)
+	replace.Arg("broker_id", "The broker to replace").StringVar(&cmd.broker)
+
+	restart := broker.Command(
+		"restart",
+		"Restarts a single broker job, keeping it on the same agent").Action(cmd.runRestart)
+	restart.Arg("broker_id", "The broker to restart").StringVar(&cmd.broker)
+}
+
+
 type TopicHandler struct {
 	topic string // shared by many commands
 	createPartitions int
@@ -44,17 +83,12 @@ type TopicHandler struct {
 	partitionCount int
 	produceMessageCount int
 }
-
 func (cmd *TopicHandler) runCreate(c *kingpin.ParseContext) error {
-	payload, err := json.Marshal(map[string]interface{} {
-		"name": cmd.topic,
-		"partitions": cmd.createPartitions,
-		"replication": cmd.createReplication,
-	})
-	if err != nil {
-		return err
-	}
-	cli.PrintJSON(cli.HTTPPostJSON("v1/topics/create", string(payload)))
+	query := url.Values{}
+	query.Set("name", cmd.topic)
+	query.Set("partitions", strconv.FormatInt(int64(cmd.createPartitions), 10))
+	query.Set("replication", strconv.FormatInt(int64(cmd.createReplication), 10))
+	cli.PrintJSON(cli.HTTPPostQuery("v1/topics", query.Encode()))
 	return nil
 }
 func (cmd *TopicHandler) runDelete(c *kingpin.ParseContext) error {
@@ -85,43 +119,31 @@ func (cmd *TopicHandler) runOffsets(c *kingpin.ParseContext) error {
 		}
 	}
 
-	payload, err := json.Marshal(map[string]interface{} {
-		"time": timeVal,
-	})
-	if err != nil {
-		return err
-	}
-	cli.PrintJSON(cli.HTTPGetJSON(fmt.Sprintf("v1/topics/%s/offsets", cmd.topic), string(payload)))
+	query := url.Values{}
+	query.Set("time", strconv.FormatInt(timeVal, 10))
+	cli.PrintJSON(cli.HTTPGetQuery(fmt.Sprintf("v1/topics/%s/offsets", cmd.topic), query.Encode()))
 	return nil
 }
 func (cmd *TopicHandler) runPartitions(c *kingpin.ParseContext) error {
-	payload, err := json.Marshal(map[string]interface{} {
-		"operation": "partitions",
-		"partitions": cmd.partitionCount,
-	})
-	if err != nil {
-		return err
-	}
-	cli.PrintJSON(cli.HTTPPutJSON(fmt.Sprintf("v1/topics/%s", cmd.topic), string(payload)))
+	query := url.Values{}
+	query.Set("operation", "partitions")
+	query.Set("partitions", strconv.FormatInt(int64(cmd.partitionCount), 10))
+	cli.PrintJSON(cli.HTTPPutQuery(fmt.Sprintf("v1/topics/%s", cmd.topic), query.Encode()))
 	return nil
 }
 func (cmd *TopicHandler) runProducerTest(c *kingpin.ParseContext) error {
-	payload, err := json.Marshal(map[string]interface{} {
-		"operation": "producer-test",
-		"messages": cmd.produceMessageCount,
-	})
-	if err != nil {
-		return err
-	}
-	cli.PrintJSON(cli.HTTPPutJSON(fmt.Sprintf("v1/topics/%s", cmd.topic), string(payload)))
+	query := url.Values{}
+	query.Set("operation", "producer-test")
+	query.Set("messages", strconv.FormatInt(int64(cmd.produceMessageCount), 10))
+	cli.PrintJSON(cli.HTTPPutQuery(fmt.Sprintf("v1/topics/%s", cmd.topic), query.Encode()))
 	return nil
 }
 func (cmd *TopicHandler) runUnavailablePartitions(c *kingpin.ParseContext) error {
-	cli.PrintJSON(cli.HTTPGet("v1/unavailable_partitions"))
+	cli.PrintJSON(cli.HTTPGet("v1/topics/unavailable_partitions"))
 	return nil
 }
 func (cmd *TopicHandler) runUnderReplicatedPartitions(c *kingpin.ParseContext) error {
-	cli.PrintJSON(cli.HTTPGet("v1/unavailable_partitions"))
+	cli.PrintJSON(cli.HTTPGet("v1/topics/under_replicated_partitions"))
 	return nil
 }
 
@@ -154,7 +176,7 @@ func handleTopicSection(app *kingpin.Application) {
 		"offsets",
 		"Returns the current offset counts for a topic").Action(cmd.runOffsets)
 	offsets.Arg("topic", "The topic to examine").StringVar(&cmd.topic)
-	offsets.Flag("time", "Offset for the topic: 'first'/'last'/timestamp_millis").Default("last").StringVar(&cmd.topic)
+	offsets.Flag("time", "Offset for the topic: 'first'/'last'/timestamp_millis").Default("last").StringVar(&cmd.offsetsTime)
 
 	partitions := topic.Command(
 		"partitions",

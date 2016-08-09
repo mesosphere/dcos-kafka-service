@@ -3,11 +3,16 @@ package com.mesosphere.dcos.kafka.scheduler;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
+import com.mesosphere.dcos.kafka.repair.KafkaFailureMonitor;
+import com.mesosphere.dcos.kafka.repair.KafkaTaskFailureListener;
 import com.mesosphere.dcos.kafka.config.ConfigStateUpdater;
 import com.mesosphere.dcos.kafka.plan.KafkaUpdatePhase;
 import com.mesosphere.dcos.kafka.state.ClusterState;
+import com.mesosphere.dcos.kafka.repair.KafkaRepairOfferRequirementProvider;
 import io.dropwizard.setup.Environment;
 
 import org.apache.commons.logging.Log;
@@ -28,6 +33,7 @@ import com.mesosphere.dcos.kafka.offer.PersistentOperationRecorder;
 import com.mesosphere.dcos.kafka.state.FrameworkState;
 import com.mesosphere.dcos.kafka.state.KafkaState;
 
+import org.apache.mesos.config.RecoveryConfiguration;
 import org.apache.mesos.offer.*;
 
 import org.apache.mesos.reconciliation.DefaultReconciler;
@@ -36,6 +42,11 @@ import org.apache.mesos.scheduler.SchedulerDriverFactory;
 import org.apache.mesos.scheduler.plan.*;
 
 import com.google.protobuf.TextFormat;
+import org.apache.mesos.scheduler.recovery.DefaultRecoveryScheduler;
+import org.apache.mesos.scheduler.recovery.RecoveryOfferRequirementProvider;
+import org.apache.mesos.scheduler.recovery.RecoveryStatus;
+import org.apache.mesos.scheduler.recovery.constrain.LaunchConstrainer;
+import org.apache.mesos.scheduler.recovery.constrain.TimedLaunchConstrainer;
 
 /**
  * Kafka Framework Scheduler.
@@ -52,16 +63,18 @@ public class KafkaScheduler implements Scheduler, Runnable {
   private final ClusterState clusterState;
 
   private final DefaultStageScheduler stageScheduler;
-  private final KafkaRepairScheduler repairScheduler;
+  private final DefaultRecoveryScheduler repairScheduler;
+  private final KafkaTaskFailureListener kafkaTaskFailureListener;
 
   private final OfferAccepter offerAccepter;
   private final Reconciler reconciler;
   private final StageManager stageManager;
+  private final AtomicReference<RecoveryStatus> recoveryStatusRef;
   private SchedulerDriver driver;
   private static final Integer restartLock = 0;
-  private static List<TaskID> tasksToRestart = new ArrayList<>();
+  private static List<TaskInfo> tasksToRestart = new ArrayList<>();
   private static final Integer rescheduleLock = 0;
-  private static List<TaskID> tasksToReschedule = new ArrayList<>();
+  private static List<TaskInfo> tasksToReschedule = new ArrayList<>();
 
   private boolean isRegistered = false;
 
@@ -110,11 +123,25 @@ public class KafkaScheduler implements Scheduler, Runnable {
     stageManager = new DefaultStageManager(stage, getPhaseStrategyFactory(envConfig));
 
     stageScheduler = new DefaultStageScheduler(offerAccepter);
-    repairScheduler = new KafkaRepairScheduler(
-        configState.getTargetName().toString(),
-        frameworkState,
-        offerRequirementProvider,
-        offerAccepter);
+    RecoveryOfferRequirementProvider repairOfferRequirementProvider =
+            new KafkaRepairOfferRequirementProvider(
+                    offerRequirementProvider,
+                    configState.getConfigStore());
+
+    recoveryStatusRef = new AtomicReference<>(new RecoveryStatus(Collections.emptyList(), Collections.emptyList()));
+    RecoveryConfiguration repairConfig = envConfig.getRecoveryConfiguration();
+    LaunchConstrainer constrainer = new TimedLaunchConstrainer(repairConfig.getRepairDelaySecs());
+    kafkaTaskFailureListener = new KafkaTaskFailureListener(frameworkState.getStateStore());
+    repairScheduler = new DefaultRecoveryScheduler(
+            frameworkState.getStateStore(),
+            kafkaTaskFailureListener,
+            repairOfferRequirementProvider,
+            offerAccepter,
+            //new KafkaRepairTestConstrainer(),
+            //new KafkaRepairTestMonitor(),
+            constrainer,
+            new KafkaFailureMonitor(repairConfig),
+            recoveryStatusRef);
   }
 
   private static PhaseStrategyFactory getPhaseStrategyFactory(KafkaSchedulerConfiguration config) {
@@ -131,15 +158,15 @@ public class KafkaScheduler implements Scheduler, Runnable {
     }
   }
 
-  public static void restartTasks(List<TaskID> taskIds) {
+  public static void restartTasks(TaskInfo taskInfo) {
     synchronized (restartLock) {
-      tasksToRestart.addAll(taskIds);
+      tasksToRestart.add(taskInfo);
     }
   }
 
-  public static void rescheduleTask(TaskID taskId) {
+  public static void rescheduleTask(TaskInfo taskInfo) {
     synchronized (rescheduleLock) {
-      tasksToReschedule.add(taskId);
+      tasksToReschedule.add(taskInfo);
     }
   }
 
@@ -301,10 +328,10 @@ public class KafkaScheduler implements Scheduler, Runnable {
 
   private void processTasksToRestart(SchedulerDriver driver) {
     synchronized (restartLock) {
-      for (TaskID taskId : tasksToRestart) {
-        if (taskId != null) {
-          log.info("Restarting task: " + taskId.getValue());
-          driver.killTask(taskId);
+      for (TaskInfo taskInfo : tasksToRestart) {
+        if (taskInfo != null) {
+          log.info("Restarting task: " + taskInfo.getTaskId().getValue());
+          driver.killTask(taskInfo.getTaskId());
         } else {
           log.warn("Asked to restart null task.");
         }
@@ -316,11 +343,11 @@ public class KafkaScheduler implements Scheduler, Runnable {
 
   private void processTasksToReschedule(SchedulerDriver driver) {
     synchronized (rescheduleLock) {
-      for (TaskID taskId : tasksToReschedule) {
-        if (taskId != null) {
-          log.info("Rescheduling task: " + taskId.getValue());
-          frameworkState.deleteTask(taskId);
-          driver.killTask(taskId);
+      for (TaskInfo taskInfo : tasksToReschedule) {
+        if (taskInfo != null) {
+          log.info("Rescheduling task: " + taskInfo.getTaskId().getValue());
+          kafkaTaskFailureListener.taskFailed(taskInfo.getTaskId());
+          driver.killTask(taskInfo.getTaskId());
         } else {
           log.warn("Asked to reschedule null task.");
         }
@@ -437,5 +464,9 @@ public class KafkaScheduler implements Scheduler, Runnable {
 
   public StageManager getStageManager() {
     return stageManager;
+  }
+
+  public AtomicReference<RecoveryStatus> getRecoveryStatusRef() {
+    return recoveryStatusRef;
   }
 }

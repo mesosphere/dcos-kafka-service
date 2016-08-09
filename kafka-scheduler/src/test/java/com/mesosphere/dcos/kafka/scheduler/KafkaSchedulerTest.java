@@ -13,7 +13,6 @@ import org.junit.*;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.util.Arrays;
 import java.util.Collections;
 import static org.mockito.Mockito.*;
 
@@ -23,7 +22,11 @@ import static org.mockito.Mockito.*;
 public class KafkaSchedulerTest {
     private static KafkaSchedulerConfiguration kafkaSchedulerConfiguration;
     private static Environment environment;
-    private static final Protos.TaskID testTaskId = Protos.TaskID.newBuilder().setValue("test-task-id").build();
+    private static final Protos.TaskInfo testTaskInfo = Protos.TaskInfo.newBuilder()
+            .setName("test-task-name")
+            .setTaskId(Protos.TaskID.newBuilder().setValue("test-task-id"))
+            .setSlaveId(Protos.SlaveID.newBuilder().setValue("test-agent-id"))
+            .build();
     private static final String testFrameworkId = "test-framework-id";
     private KafkaScheduler kafkaScheduler;
 
@@ -58,28 +61,21 @@ public class KafkaSchedulerTest {
 
     @Test
     public void testRestartEmptyTasks() {
-        KafkaScheduler.restartTasks(Collections.emptyList());
+        KafkaScheduler.restartTasks(null);
         kafkaScheduler.resourceOffers(driver, Collections.emptyList());
         verify(driver, times(0)).killTask(anyObject());
     }
 
     @Test
     public void testRestartOneTask() {
-        KafkaScheduler.restartTasks(Arrays.asList(testTaskId));
+        KafkaScheduler.restartTasks(testTaskInfo);
         kafkaScheduler.resourceOffers(driver, Collections.emptyList());
         verify(driver, times(1)).killTask(anyObject());
     }
 
     @Test
-    public void testRestartMultipleTasks()  {
-        KafkaScheduler.restartTasks(Arrays.asList(testTaskId, testTaskId));
-        kafkaScheduler.resourceOffers(driver, Collections.emptyList());
-        verify(driver, times(2)).killTask(anyObject());
-    }
-
-    @Test
     public void testRescheduleOneTask() {
-        KafkaScheduler.rescheduleTask(testTaskId);
+        KafkaScheduler.rescheduleTask(testTaskInfo);
         kafkaScheduler.resourceOffers(driver, Collections.emptyList());
         verify(driver, times(1)).killTask(anyObject());
     }
@@ -113,7 +109,7 @@ public class KafkaSchedulerTest {
 
     private Protos.TaskStatus getTestTaskStatus() {
         return Protos.TaskStatus.newBuilder()
-                .setTaskId(testTaskId)
+                .setTaskId(testTaskInfo.getTaskId())
                 .setState(Protos.TaskState.TASK_RUNNING)
                 .build();
     }

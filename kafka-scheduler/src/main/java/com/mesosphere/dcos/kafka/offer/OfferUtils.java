@@ -17,4 +17,8 @@ public class OfferUtils {
   public static String idToName(Integer brokerId) {
     return "broker-" + Integer.toString(brokerId);
   }
+
+  public static int nameToId(String brokerName) {
+    return Integer.parseInt(brokerName.substring(brokerName.indexOf('-') + 1));
+  }
 }

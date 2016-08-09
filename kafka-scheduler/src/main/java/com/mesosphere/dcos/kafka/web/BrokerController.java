@@ -3,7 +3,7 @@ package com.mesosphere.dcos.kafka.web;
 import com.mesosphere.dcos.kafka.scheduler.KafkaScheduler;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.mesos.Protos.TaskID;
+import org.apache.mesos.Protos;
 import com.mesosphere.dcos.kafka.state.FrameworkState;
 import com.mesosphere.dcos.kafka.state.KafkaState;
 import org.json.JSONArray;
@@ -55,29 +55,29 @@ public class BrokerController {
 
     try {
       int idVal = Integer.parseInt(id);
-      TaskID taskId = frameworkState.getTaskIdForBroker(idVal);
-      if (taskId == null) {
+      Protos.TaskInfo taskInfo = frameworkState.getTaskInfoForBroker(idVal);
+      if (taskInfo == null) {
         // Tests expect an array containing a single null element in this case. May make sense to
         // revisit this strange behavior someday...
         log.error(String.format(
             "Broker %d doesn't exist in FrameworkState, returning null entry in response", idVal));
         return killResponse(Arrays.asList((String)null));
       }
-      return killBroker(taskId, Boolean.parseBoolean(replace));
+      return killBroker(taskInfo, Boolean.parseBoolean(replace));
     } catch (Exception ex) {
       log.error("Failed to kill brokers", ex);
       return Response.serverError().build();
     }
   }
 
-  private Response killBroker(TaskID taskId, boolean replace) {
+  private Response killBroker(Protos.TaskInfo taskInfo, boolean replace) {
     try {
       if (replace) {
-        KafkaScheduler.rescheduleTask(taskId);
+        KafkaScheduler.rescheduleTask(taskInfo);
       } else {
-        KafkaScheduler.restartTasks(Arrays.asList(taskId));
+        KafkaScheduler.restartTasks(taskInfo);
       }
-      return killResponse(Arrays.asList(taskId.getValue()));
+      return killResponse(Arrays.asList(taskInfo.getTaskId().getValue()));
     } catch (Exception ex) {
       log.error("Failed to kill brokers", ex);
       return Response.serverError().build();

@@ -6,6 +6,7 @@ import org.apache.curator.test.TestingServer;
 
 import org.apache.mesos.config.ConfigStoreException;
 import com.mesosphere.dcos.kafka.state.KafkaState;
+import org.apache.mesos.config.RecoveryConfiguration;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,7 +40,8 @@ public class KafkaConfigStateTest {
                 new ServiceConfiguration(),
                 new BrokerConfiguration(),
                 new KafkaConfiguration(),
-                new ExecutorConfiguration());
+                new ExecutorConfiguration(),
+                new RecoveryConfiguration());
     }
 
     @Test(expected=ConfigStoreException.class)

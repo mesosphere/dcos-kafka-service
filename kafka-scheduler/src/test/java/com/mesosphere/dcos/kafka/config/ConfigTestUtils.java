@@ -1,6 +1,7 @@
 package com.mesosphere.dcos.kafka.config;
 
 import com.mesosphere.dcos.kafka.test.KafkaTestUtils;
+import org.apache.mesos.config.RecoveryConfiguration;
 
 public class ConfigTestUtils {
     public static ServiceConfiguration getTestServiceConfiguration() {
@@ -46,11 +47,27 @@ public class ConfigTestUtils {
         );
     }
 
+    public static ZookeeperConfiguration getTestZookeeperConfiguration() {
+        return new ZookeeperConfiguration(
+                KafkaTestUtils.testFrameworkName,
+                KafkaTestUtils.testMesosZkUri,
+                KafkaTestUtils.testKafkaZkUri);
+    }
+
+    public static RecoveryConfiguration getTestRepairConfiguration() {
+        return new RecoveryConfiguration(
+                5,
+                30,
+                true
+        );
+    }
+
     public static KafkaSchedulerConfiguration getTestKafkaSchedulerConfiguration() {
         return new KafkaSchedulerConfiguration(
                 getTestServiceConfiguration(),
                 getTestBrokerConfiguration(),
                 getTestKafkaConfiguration(),
-                getTestExecutorConfiguration());
+                getTestExecutorConfiguration(),
+                getTestRepairConfiguration());
     }
 }

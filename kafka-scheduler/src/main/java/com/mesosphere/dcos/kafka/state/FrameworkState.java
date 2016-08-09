@@ -1,34 +1,26 @@
 package com.mesosphere.dcos.kafka.state;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
+import com.google.protobuf.TextFormat;
 import com.mesosphere.dcos.kafka.config.ZookeeperConfiguration;
 import com.mesosphere.dcos.kafka.offer.OfferUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.mesos.Protos.FrameworkID;
-import org.apache.mesos.Protos.Resource;
-import org.apache.mesos.Protos.TaskID;
-import org.apache.mesos.Protos.TaskInfo;
-import org.apache.mesos.Protos.TaskState;
-import org.apache.mesos.Protos.TaskStatus;
+import org.apache.mesos.Protos.*;
 import org.apache.mesos.curator.CuratorStateStore;
 import org.apache.mesos.offer.TaskException;
 import org.apache.mesos.offer.TaskUtils;
 import org.apache.mesos.reconciliation.TaskStatusProvider;
 import org.apache.mesos.state.StateStore;
 import org.apache.mesos.state.StateStoreException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.*;
 
 /**
- * Read/write interface for storing and retrieving information about Framework tasks.
- * The underlying data is stored against Executor IDs of "broker-0", "broker-1", etc.
+ * Read/write interface for storing and retrieving information about Framework tasks. The underlying data is stored
+ * against Executor IDs of "broker-0", "broker-1", etc.
  */
 public class FrameworkState implements TaskStatusProvider {
-    private static final Log log = LogFactory.getLog(FrameworkState.class);
+    private static final Logger log = LoggerFactory.getLogger(FrameworkState.class);
 
     private final StateStore stateStore;
 
@@ -45,7 +37,7 @@ public class FrameworkState implements TaskStatusProvider {
             return stateStore.fetchFrameworkId();
         } catch (StateStoreException ex) {
             log.warn("Failed to get FrameworkID. "
-                        + "This is expected when the service is starting for the first time.", ex);
+                    + "This is expected when the service is starting for the first time.", ex);
         }
         return null;
     }
@@ -70,6 +62,7 @@ public class FrameworkState implements TaskStatusProvider {
                     .setState(TaskState.TASK_STAGING)
                     .build();
             log.info(String.format("- %s => %s", taskInfo, taskStatus));
+            log.info("Marking stopped task as failed: {}", TextFormat.shortDebugString(taskInfo));
             taskStatuses.add(taskStatus);
         }
 
@@ -139,8 +132,7 @@ public class FrameworkState implements TaskStatusProvider {
     }
 
     /**
-     * Returns the full Task ID (including UUID) for the provided Broker index, or {@code null} if
-     * none is found.
+     * Returns the full Task ID (including UUID) for the provided Broker index, or {@code null} if none is found.
      */
     public TaskID getTaskIdForBroker(Integer brokerId) throws Exception {
         TaskInfo taskInfo = getTaskInfoForBroker(brokerId);
@@ -176,21 +168,11 @@ public class FrameworkState implements TaskStatusProvider {
         stateStore.storeTasks(Arrays.asList(taskInfo));
     }
 
-    public void deleteTask(TaskID taskId) {
-        try {
-            String taskName = TaskUtils.toTaskName(taskId);
-            log.info(String.format("Clearing task from state store: %s", taskName));
-            stateStore.clearTask(taskName);
-        } catch (StateStoreException | TaskException ex) {
-            log.error("Failed to delete Task: " + taskId, ex);
-        }
-    }
-
     private void recordTaskStatus(TaskStatus taskStatus) throws StateStoreException {
         if (!taskStatus.getState().equals(TaskState.TASK_STAGING)
                 && !taskStatusExists(taskStatus)) {
             log.warn("Dropping non-STAGING status update because the ZK path doesn't exist: "
-                + taskStatus);
+                    + taskStatus);
         } else {
             stateStore.storeStatus(taskStatus);
         }

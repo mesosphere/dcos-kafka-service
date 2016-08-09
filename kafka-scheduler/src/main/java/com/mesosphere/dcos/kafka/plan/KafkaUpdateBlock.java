@@ -77,7 +77,7 @@ public class KafkaUpdateBlock implements Block {
     TaskStatus taskStatus = fetchTaskStatus();
     if (taskIsRunningOrStaging(taskStatus)) {
       log.info("Adding task to restart list. Block: " + getName() + " Status: " + taskStatus);
-      KafkaScheduler.restartTasks(getUpdateIds(fetchTaskInfo()));
+      KafkaScheduler.restartTasks(fetchTaskInfo());
       return null;
     }
 
@@ -116,7 +116,7 @@ public class KafkaUpdateBlock implements Block {
   @Override
   public void forceComplete() {
     try {
-      KafkaScheduler.rescheduleTask(state.getTaskIdForBroker(getBrokerId()));
+      KafkaScheduler.rescheduleTask(fetchTaskInfo());
     } catch (Exception ex) {
       log.error("Failed to force completion of Block: " + getId() + "with exception: ", ex);
       return;

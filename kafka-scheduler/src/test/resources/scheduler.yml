@@ -8,6 +8,11 @@ schedulerConfiguration:
     principal: "${FRAMEWORK_NAME}-principal"
     count: ${BROKER_COUNT:-3}
 
+  recovery:
+    min_delay_between_repairs_secs: 30
+    repair_in_place_grace_period_mins: 3
+    enable_replacement: true
+
   executor:
     cpus: ${EXECUTOR_CPUS:-0.5}
     mem: ${EXECUTOR_MEM:-256}

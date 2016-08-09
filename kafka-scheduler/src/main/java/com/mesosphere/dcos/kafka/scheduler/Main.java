@@ -18,6 +18,7 @@ import com.mesosphere.dcos.kafka.state.FrameworkState;
 import com.mesosphere.dcos.kafka.state.KafkaState;
 import org.apache.mesos.dcos.DcosCluster;
 import org.apache.mesos.scheduler.plan.api.StageResource;
+import org.apache.mesos.scheduler.recovery.RecoveryResource;
 import org.apache.mesos.state.api.StateResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -108,6 +109,7 @@ public final class Main extends Application<DropwizardConfiguration> {
     environment.jersey().register(new TopicController(
             new CmdExecutor(configuration.getSchedulerConfiguration(), kafkaState),
             kafkaState));
+    environment.jersey().register(new RecoveryResource(kafkaScheduler.getRecoveryStatusRef()));
 
     // APIs from dcos-commons:
     environment.jersey().register(new ConfigResource<>(

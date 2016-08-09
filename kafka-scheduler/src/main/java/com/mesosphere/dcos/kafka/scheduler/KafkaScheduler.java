@@ -63,6 +63,8 @@ public class KafkaScheduler implements Scheduler, Runnable {
   private static final Integer rescheduleLock = 0;
   private static List<TaskID> tasksToReschedule = new ArrayList<>();
 
+  private boolean isRegistered = false;
+
   public KafkaScheduler(KafkaSchedulerConfiguration configuration, Environment environment) throws ConfigStoreException, URISyntaxException {
     ConfigStateUpdater configStateUpdater = new ConfigStateUpdater(configuration);
     List<String> stageErrors = new ArrayList<>();
@@ -179,7 +181,9 @@ public class KafkaScheduler implements Scheduler, Runnable {
     log.info("Registered framework with frameworkId: " + frameworkId.getValue());
     try {
       frameworkState.setFrameworkId(frameworkId);
+      isRegistered = true;
     } catch (Exception e) {
+      isRegistered = false;
       log.error(String.format(
           "Unable to store registered framework ID '%s'", frameworkId.getValue()), e);
       //TODO(nick): exit process?
@@ -190,11 +194,17 @@ public class KafkaScheduler implements Scheduler, Runnable {
   public void reregistered(SchedulerDriver driver, MasterInfo masterInfo) {
     log.info("Reregistered framework.");
     try {
+      isRegistered = true;
       reconcile();
     } catch (Exception e) {
+      isRegistered = false;
       log.error("Unable to trigger reconciliation after re-registration", e);
       //TODO(nick): exit process?
     }
+  }
+
+  public boolean isRegistered() {
+    return isRegistered;
   }
 
   @Override

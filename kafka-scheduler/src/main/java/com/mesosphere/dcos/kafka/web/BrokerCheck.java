@@ -10,7 +10,7 @@ import com.mesosphere.dcos.kafka.state.FrameworkState;
 import org.apache.mesos.scheduler.plan.*;
 
 public class BrokerCheck extends HealthCheck {
-  public static final String NAME = "brokerCount";
+  public static final String NAME = "broker_count";
   private final Log log = LogFactory.getLog(BrokerCheck.class);
 
   private final StageManager stageManager;

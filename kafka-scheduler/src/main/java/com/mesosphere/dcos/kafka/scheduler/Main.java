@@ -2,8 +2,7 @@ package com.mesosphere.dcos.kafka.scheduler;
 
 import com.mesosphere.dcos.kafka.config.DropwizardConfiguration;
 import com.mesosphere.dcos.kafka.state.ClusterState;
-import com.mesosphere.dcos.kafka.web.BrokerCheck;
-import com.mesosphere.dcos.kafka.web.BrokerController;
+import com.mesosphere.dcos.kafka.web.*;
 import io.dropwizard.Application;
 import io.dropwizard.configuration.EnvironmentVariableLookup;
 import io.dropwizard.configuration.SubstitutingSourceProvider;
@@ -17,8 +16,6 @@ import com.mesosphere.dcos.kafka.config.KafkaConfigState;
 import com.mesosphere.dcos.kafka.config.KafkaSchedulerConfiguration;
 import com.mesosphere.dcos.kafka.state.FrameworkState;
 import com.mesosphere.dcos.kafka.state.KafkaState;
-import com.mesosphere.dcos.kafka.web.ConnectionController;
-import com.mesosphere.dcos.kafka.web.TopicController;
 import org.apache.mesos.dcos.DcosCluster;
 import org.apache.mesos.scheduler.plan.api.StageResource;
 import org.apache.mesos.state.api.StateResource;
@@ -126,5 +123,8 @@ public final class Main extends Application<DropwizardConfiguration> {
     environment.healthChecks().register(
         BrokerCheck.NAME,
         new BrokerCheck(kafkaScheduler.getStageManager(), kafkaScheduler.getFrameworkState()));
+    environment.healthChecks().register(
+            RegisterCheck.NAME,
+            new RegisterCheck(kafkaScheduler));
   }
 }

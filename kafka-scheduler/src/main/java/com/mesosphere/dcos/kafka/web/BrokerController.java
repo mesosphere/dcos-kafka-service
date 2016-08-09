@@ -7,7 +7,6 @@ import org.apache.mesos.Protos;
 import com.mesosphere.dcos.kafka.state.FrameworkState;
 import com.mesosphere.dcos.kafka.state.KafkaState;
 import org.json.JSONArray;
-import org.json.JSONObject;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
@@ -37,10 +36,7 @@ public class BrokerController {
   @GET
   public Response listBrokers() {
     try {
-      JSONArray brokerIds = kafkaState.getBrokerIds();
-      JSONObject obj = new JSONObject();
-      obj.put("brokers", brokerIds);
-      return Response.ok(obj.toString(), MediaType.APPLICATION_JSON).build();
+      return Response.ok(kafkaState.getBrokerIds(), MediaType.APPLICATION_JSON).build();
     } catch (Exception ex) {
       log.error("Failed to fetch broker ids", ex);
       return Response.serverError().build();

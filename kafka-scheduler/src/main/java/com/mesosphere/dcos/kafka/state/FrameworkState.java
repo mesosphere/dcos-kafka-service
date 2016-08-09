@@ -78,16 +78,7 @@ public class FrameworkState implements TaskStatusProvider {
     }
 
     public List<TaskInfo> getTerminatedTaskInfos() throws Exception {
-        List<TaskInfo> taskInfos = new ArrayList<TaskInfo>();
-
-        for (TaskStatus taskStatus : getTaskStatuses()) {
-            if (TaskUtils.isTerminated(taskStatus)) {
-                taskInfos.add(stateStore.fetchTask(
-                        TaskUtils.toTaskName(taskStatus.getTaskId())));
-            }
-        }
-
-        return taskInfos;
+        return new ArrayList(stateStore.fetchTerminatedTasks());
     }
 
     public int getRunningBrokersCount() throws StateStoreException {

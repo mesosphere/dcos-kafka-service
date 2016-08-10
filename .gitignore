@@ -32,4 +32,4 @@ dcos-kafka-service.log.*
 
 # created by build scripts (see build.sh/build-docker.sh)
 /Dockerfile
-/dcos-tests/
+/dcos-commons/

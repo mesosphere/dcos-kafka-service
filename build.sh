@@ -15,54 +15,51 @@ if [ -z "$AWS_ACCESS_KEY_ID" -o -z "$AWS_SECRET_ACCESS_KEY" ]; then
 fi
 
 # In theory, we could use Jenkins' "Multi SCM" script, but good luck with getting auto-build to work with that
-# Instead, clone the secondary 'dcos-tests' repo manually.
-if [ -d dcos-tests ]; then
-  cd dcos-tests/
-  git fetch --depth 1 origin bincli
-  git checkout bincli
+# Instead, clone the secondary 'dcos-commons' repo manually.
+if [ -d dcos-commons ]; then
+  cd dcos-commons/
+  git pull origin master
   cd ..
 else
-  git clone --depth 1 --branch bincli git@github.com:mesosphere/dcos-tests.git
+  git clone --depth 1 --branch master git@github.com:mesosphere/dcos-commons.git
 fi
-echo Running with dcos-tests rev: $(git --git-dir=dcos-tests/.git rev-parse HEAD)
+echo Running with dcos-commons tools rev: $(git --git-dir=dcos-commons/.git rev-parse HEAD)
 
 # GitHub notifier config
 _notify_github() {
-    # IF THIS FAILS FOR YOU, your dcos-tests is out of date!
-    # do this: rm -rf dcos-kafka-service/dcos-tests/ then run build.sh again
-    $REPO_ROOT_DIR/dcos-tests/build/github_update.py $1 $2 $3
+    $REPO_ROOT_DIR/dcos-commons/tools/github_update.py $1 build $2
 }
 
 # Build steps for Kafka
 
-_notify_github pending build "Build running"
+_notify_github pending "Build running"
 
 # Scheduler/Executor (Java):
 
 ./gradlew --refresh-dependencies distZip
 if [ $? -ne 0 ]; then
-  _notify_github failure build "Gradle build failed"
+  _notify_github failure "Gradle build failed"
   exit 1
 fi
 
 ./gradlew check
 if [ $? -ne 0 ]; then
-  _notify_github failure build "Unit tests failed"
+  _notify_github failure "Unit tests failed"
   exit 1
 fi
 
 # CLI (Go):
 
-cd cli && ./build-cli.sh
+cd cli/ && ./build-cli.sh
 if [ $? -ne 0 ]; then
-    _notify_github failure build "CLI build failed"
+    _notify_github failure "CLI build failed"
     exit 1
 fi
 cd $REPO_ROOT_DIR
 
-_notify_github success build "Build succeeded"
+_notify_github success "Build succeeded"
 
-./dcos-tests/build/ci-upload.sh \
+./dcos-commons/tools/ci-upload.sh \
   kafka \
   universe/ \
   kafka-scheduler/build/distributions/*.zip \

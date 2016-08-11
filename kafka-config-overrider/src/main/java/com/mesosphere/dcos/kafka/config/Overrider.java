@@ -1,6 +1,5 @@
 package com.mesosphere.dcos.kafka.config;
 
-import com.google.common.base.CaseFormat;
 import io.dropwizard.Application;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
 import io.dropwizard.configuration.SubstitutingSourceProvider;
@@ -14,7 +13,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.mesos.config.ConfigStoreException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -29,9 +27,6 @@ import java.util.*;
  */
 public final class Overrider extends Application<DropwizardConfiguration> {
   private static final Log log = LogFactory.getLog(Overrider.class);
-  private KafkaConfigState configState;
-  private String configId;
-  private KafkaSchedulerConfiguration configuration;
   private OverriderEnvironment overriderEnvironment;
 
   public enum OverriderExitCode {
@@ -74,54 +69,59 @@ public final class Overrider extends Application<DropwizardConfiguration> {
   }
 
   @Override
-  public void run(DropwizardConfiguration configEnv, Environment environment) throws Exception {
-    this.configuration = configEnv.getSchedulerConfiguration();
-    configId = overriderEnvironment.getConfigurationId();
+  public void run(DropwizardConfiguration rootConfigEnv, Environment environment) throws Exception {
+    // Initialize config objects based on container env. This contains ephemeral container-specific
+    // settings, either provided by Mesos or by the Scheduler's PersistentOfferRequirementProvider.
+    final KafkaSchedulerConfiguration configEnv = rootConfigEnv.getSchedulerConfiguration();
+    final KafkaConfiguration kafkaConfigEnv = configEnv.getKafkaConfiguration();
+    KafkaConfigState configState = new KafkaConfigState(configEnv.getZookeeperConfig());
+    log.info("Environment config: " + configEnv);
 
-    configState = new KafkaConfigState(configuration.getZookeeperConfig());
-
+    // Retrieve config objects for target configuration (from ZK). This contains persistent settings
+    // which would have been configured at the service level.
+    final String configId = overriderEnvironment.getConfigurationId();
     if (StringUtils.isBlank(configId)) {
-      log.error("Require configId. Please set CONFIG_ID env var correctly.");
+      log.error("Configuration ID is required. Please set CONFIG_ID env var correctly.");
       System.exit(OverriderExitCode.MISSING_CONFIG_ID.ordinal());
     }
+    log.info("Fetching ZK config: " + configId);
+    KafkaSchedulerConfiguration configZk = configState.fetch(UUID.fromString(configId));
+    KafkaConfiguration kafkaConfigZk = configZk.getKafkaConfiguration();
+    log.info("Fetched ZK config '" + configId + "': " + kafkaConfigZk);
 
-    log.info("Default config: " + configEnv);
+    Map<String, String> kafkaOverrides = getKafkaOverrides(kafkaConfigZk, kafkaConfigEnv);
+    kafkaOverrides.putAll(getStatsdConfig(kafkaConfigEnv.getKafkaSandboxPath()));
 
-    KafkaSchedulerConfiguration configZk = fetchConfig(configId);
+    String kafkaPropertiesFileName =
+        kafkaConfigEnv.getKafkaSandboxPath() + "/config/server.properties";
+    updateProperties(kafkaPropertiesFileName, kafkaOverrides);
 
-    log.info("Fetched config: " + configZk);
-
-    Map<String, String> overrides = getOverrides(configZk, configuration);
-    Map<String, String> statsdConfig = getStatsdConfig(configuration);
-    updateProperties(overrides, statsdConfig);
     System.exit(OverriderExitCode.SUCCESS.ordinal());
   }
 
-  private void updateProperties(
-      Map<String, String> overrides, Map<String, String> statsdConfig) {
-    String serverPropertiesFileName =
-        configuration.getKafkaConfiguration().getKafkaSandboxPath() + "/config/server.properties";
+  private static void updateProperties(
+      String kafkaPropertiesFileName, Map<String, String> overrides) {
 
-    log.info("Updating config file: " + serverPropertiesFileName);
+    log.info("Updating config file: " + kafkaPropertiesFileName);
 
     try {
-      FileInputStream in = new FileInputStream(serverPropertiesFileName);
+      FileInputStream in = new FileInputStream(kafkaPropertiesFileName);
       Properties props = new Properties();
       props.load(in);
       in.close();
 
       log.info("Opened properties file: " + props);
 
-      FileOutputStream out = new FileOutputStream(serverPropertiesFileName);
-      for (Map.Entry<String, String> override : overrides.entrySet()) {
-        String key = convertKey(override.getKey());
-        String value = override.getValue();
-        log.info("Overriding key: " + key + " value: " + value);
-        props.setProperty(key, value);
-      }
-      for (Map.Entry<String, String> entry : statsdConfig.entrySet()) {
-        log.info("Overriding metrics key: " + entry.getKey() + " value: " + entry.getValue());
-        props.setProperty(entry.getKey(), entry.getValue());
+      FileOutputStream out = new FileOutputStream(kafkaPropertiesFileName);
+      for (Map.Entry<String, String> entry : overrides.entrySet()) {
+        Object lastValue = props.setProperty(entry.getKey(), entry.getValue());
+        if (lastValue != null) {
+          log.info(String.format("Overriding Kafka property %s = %s (previously %s)",
+              entry.getKey(), entry.getValue(), lastValue.toString()));
+        } else {
+          log.info(String.format("Overriding Kafka property %s = %s (previously unset)",
+              entry.getKey(), entry.getValue()));
+        }
       }
 
       log.info("Saving properties file: " + props);
@@ -133,41 +133,34 @@ public final class Overrider extends Application<DropwizardConfiguration> {
     }
   }
 
-  private static String convertKey(String key) {
-    key = CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, key);
-    key = key.replace('_', '.');
-    return key;
-  }
+  private static Map<String, String> getKafkaOverrides(
+      KafkaConfiguration kafkaConfigZk, KafkaConfiguration kafkaConfigEnv) {
+    // Use treemap for ordered printing in logs:
+    Map<String, String> kafkaProperties = new TreeMap<>();
 
-  private KafkaSchedulerConfiguration fetchConfig(String configName) throws ConfigStoreException {
-    log.info("Fetching configuration: " + configName);
-    return configState.fetch(UUID.fromString(configName));
-  }
+    // Copy any available overrides from the zk config. These come from the user-visible
+    // ZOOKEEPER_OVERRIDE_* settings, and are pre-translated to "x.y.z" format.
+    log.info("Overrides from ZK Config: " + kafkaConfigZk.getOverrides());
+    kafkaProperties.putAll(kafkaConfigZk.getOverrides());
 
-  private static Map<String, String> getOverrides(
-          KafkaSchedulerConfiguration fromZk,
-          KafkaSchedulerConfiguration fromEnv) {
-    Map<String, String> overrides = new TreeMap<>();
+    // Fetch any available overrides from explicitly-set envvars. These settings are manually
+    // embedded into the container environment at launch-time by PersistentOfferRequirementProvider.
+    log.info("Overrides from System Environment: " + kafkaConfigEnv.getOverrides());
+    kafkaProperties.putAll(kafkaConfigEnv.getOverrides());
 
-    final Map<String, String> overridesFromZk = fromZk.getKafkaConfiguration().getOverrides();
-    log.info("Overrides from ZK: " + overridesFromZk);
-    overrides.putAll(overridesFromZk);
-    final Map<String, String> overridesFromEnv = fromEnv.getKafkaConfiguration().getOverrides();
-    log.info("Overrides from ENV: " + overridesFromEnv);
-    overrides.putAll(overridesFromEnv);
-
-    if (fromZk.getKafkaConfiguration().isKafkaAdvertiseHostIp()) {
+    // One additional override which is only determined *after* the container has started:
+    if (kafkaConfigZk.isKafkaAdvertiseHostIp()) {
       String ip = getIp();
-      overrides.put("advertised.host.name", ip);
+      log.info("Using advertised host ip: " + ip);
+      kafkaProperties.put("advertised.host.name", ip);
     } else {
       log.info("Advertise host ip is not enabled.");
     }
 
-    return overrides;
+    return kafkaProperties;
   }
 
-  private Map<String, String> getStatsdConfig(
-      KafkaSchedulerConfiguration configuration) {
+  private Map<String, String> getStatsdConfig(String kafkaSandboxPath) {
     String statsdHost = overriderEnvironment.getStatsdUdpHost();
     String statsdPort = overriderEnvironment.getStatsdUdpPort();
     if (StringUtils.isBlank(statsdHost) || StringUtils.isBlank(statsdPort)) {
@@ -177,7 +170,7 @@ public final class Overrider extends Application<DropwizardConfiguration> {
     log.info("Found env-provided metrics endpoint, configuring Kafka output: " + statsdHost + ":" + statsdPort);
 
     try {
-      copyMetricsLibsIntoClasspath(configuration);
+      copyMetricsLibsIntoClasspath(kafkaSandboxPath);
     } catch (Exception e) {
       log.warn("Failed to copy metrics libraries to classpath, skipping metrics config.", e);
       return new TreeMap<>();
@@ -198,7 +191,7 @@ public final class Overrider extends Application<DropwizardConfiguration> {
    *
    * @throws Exception if any unexpected state is hit along the way, or if copies fail
    */
-  private void copyMetricsLibsIntoClasspath(KafkaSchedulerConfiguration configuration) throws Exception {
+  private void copyMetricsLibsIntoClasspath(String kafkaSandboxPath) throws Exception {
     String sandboxPath = overriderEnvironment.getMesosSandbox();
     if (StringUtils.isBlank(sandboxPath)) {
       throw new IllegalStateException("Missing 'MESOS_SANDBOX' env");
@@ -226,9 +219,10 @@ public final class Overrider extends Application<DropwizardConfiguration> {
     }
 
     // find dest dir(s)
-    File kafkaLibsDir = new File(configuration.getKafkaConfiguration().getKafkaSandboxPath(), "libs");
+    File kafkaLibsDir = new File(kafkaSandboxPath, "libs");
     if (!kafkaLibsDir.isDirectory()) {
-      throw new IllegalStateException("Library destination path is not a directory: " + kafkaLibsDir.getAbsolutePath());
+      throw new IllegalStateException(
+          "Library destination path is not a directory: " + kafkaLibsDir.getAbsolutePath());
     }
     log.info("Copying " + String.valueOf(srcFiles.size()) + " files to Kafka libs directory: " + kafkaLibsDir.getAbsolutePath());
     for (File srcFile : srcFiles) {

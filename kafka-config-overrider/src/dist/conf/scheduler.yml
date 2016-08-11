@@ -25,12 +25,6 @@ schedulerConfiguration:
     kafkaSandboxPath: "${MESOS_SANDBOX}/${KAFKA_VER_NAME}"
     mesosZkUri: "master.mesos:2181"
     kafkaZkUri: "${KAFKA_ZOOKEEPER_URI}"
-    overrides:
-      zookeeperConnect: ${KAFKA_OVERRIDE_ZOOKEEPER_CONNECT}
-      brokerId: ${KAFKA_OVERRIDE_BROKER_ID}
-      logDirs: ${KAFKA_OVERRIDE_LOG_DIRS}
-      port: ${KAFKA_OVERRIDE_PORT}
-      listeners: ${KAFKA_OVERRIDE_LISTENERS}
 
 logging:
   level: INFO

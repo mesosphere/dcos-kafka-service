@@ -112,7 +112,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     }
     Map<String, String> environmentMap = fromEnvironmentToMap(cmdBuilder.getEnvironment());
 
-    String portVar = KafkaSchedulerConfiguration.KAFKA_OVERRIDE_PREFIX + "PORT";
+    String portVar = KafkaEnvConfigUtils.toEnvName("port");
     String dynamicVar = "KAFKA_DYNAMIC_BROKER_PORT";
     String dynamicValue = environmentMap.get(dynamicVar);
     Long port = brokerConfig.getPort();
@@ -295,7 +295,6 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
   private OfferRequirement getNewOfferRequirementInternal(String configName, int brokerId)
           throws InvalidRequirementException, IOException, URISyntaxException {
     log.info("Getting new OfferRequirement for: " + configName);
-    String overridePrefix = KafkaSchedulerConfiguration.KAFKA_OVERRIDE_PREFIX;
     String brokerName = OfferUtils.idToName(brokerId);
 
     String containerPath = "kafka-volume-" + UUID.randomUUID();
@@ -336,11 +335,11 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
       .addEnvironmentVar("KAFKA_VER_NAME", kafkaConfiguration.getKafkaVerName())
       .addEnvironmentVar("KAFKA_ZOOKEEPER_URI", zkConfig.getKafkaZkUri())
       .addEnvironmentVar(CONFIG_ID_KEY, configName)
-      .addEnvironmentVar(overridePrefix + "ZOOKEEPER_CONNECT", config.getFullKafkaZookeeperPath())
-      .addEnvironmentVar(overridePrefix + "BROKER_ID", Integer.toString(brokerId))
-      .addEnvironmentVar(overridePrefix + "LOG_DIRS", containerPath + "/" + brokerName)
-      .addEnvironmentVar(overridePrefix + "LISTENERS", "PLAINTEXT://:" + port)
-      .addEnvironmentVar(overridePrefix + "PORT", Long.toString(port))
+      .addEnvironmentVar(KafkaEnvConfigUtils.toEnvName("zookeeper.connect"), config.getFullKafkaZookeeperPath())
+      .addEnvironmentVar(KafkaEnvConfigUtils.toEnvName("broker.id"), Integer.toString(brokerId))
+      .addEnvironmentVar(KafkaEnvConfigUtils.toEnvName("log.dirs"), containerPath + "/" + brokerName)
+      .addEnvironmentVar(KafkaEnvConfigUtils.toEnvName("listeners"), "PLAINTEXT://:" + port)
+      .addEnvironmentVar(KafkaEnvConfigUtils.toEnvName("port"), Long.toString(port))
       .addEnvironmentVar("KAFKA_DYNAMIC_BROKER_PORT", Boolean.toString(isDynamicPort))
       .addEnvironmentVar("KAFKA_HEAP_OPTS", getKafkaHeapOpts(brokerConfig.getHeap()));
 

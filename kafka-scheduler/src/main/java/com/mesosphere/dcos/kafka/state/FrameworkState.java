@@ -137,7 +137,9 @@ public class FrameworkState implements TaskStatusProvider {
         try {
             return stateStore.fetchTask(OfferUtils.idToName(brokerId));
         } catch (StateStoreException e) {
-            log.error(String.format("Unable to retrieve TaskInfo for broker %d", brokerId), e);
+            log.warn(String.format(
+                    "Failed to get TaskInfo for broker %d. This is expected when the service is "
+                    + "starting for the first time.", brokerId), e);
             return null;
         }
     }
@@ -149,7 +151,9 @@ public class FrameworkState implements TaskStatusProvider {
         try {
             return stateStore.fetchStatus(OfferUtils.idToName(brokerId));
         } catch (StateStoreException e) {
-            log.error(String.format("Unable to retrieve TaskStatus for broker %d", brokerId), e);
+            log.warn(String.format(
+                    "Failed to get TaskStatus for broker %d. This is expected when the service is "
+                    + "starting for the first time.", brokerId), e);
             return null;
         }
     }

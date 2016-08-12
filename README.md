@@ -109,7 +109,7 @@ DC/OS Kafka provides the following features:
                 "broker-2.kafka.mesos:9689"
             ],
             "vip": "broker.kafka.l4lb.thisdcos.directory:9092",
-            "zookeeper": "master.mesos:2181/kafka"
+            "zookeeper": "master.mesos:2181/dcos-service-kafka"
         }
 
 
@@ -121,7 +121,7 @@ DC/OS Kafka provides the following features:
     
         root@7d0aed75e582:/bin# echo "Hello, World." | ./kafka-console-producer.sh --broker-list broker.kafka.l4lb.thisdcos.directory:9092 --topic topic1
     
-        root@7d0aed75e582:/bin# ./kafka-console-consumer.sh --zookeeper master.mesos:2181/kafka --topic topic1 --from-beginning
+        root@7d0aed75e582:/bin# ./kafka-console-consumer.sh --zookeeper master.mesos:2181/dcos-service-kafka --topic topic1 --from-beginning
         Hello, World.
 
 

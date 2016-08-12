@@ -29,6 +29,21 @@
             "description":"Broker rollout strategy. See documentation. [INSTALL, STAGE]",
             "type":"string",
             "default":"INSTALL"
+          },
+          "enable_replacement":{
+            "description":"Enable automated replacement of Brokers. WARNING: May cause data loss. See documentation.",
+            "type":"boolean",
+            "default":false
+          },
+          "recover_in_place_grace_period_mins":{
+            "description":"The minimum amount of time (in minutes) which must pass before a Broker be destructively replaced.",
+            "type":"number",
+            "default":20
+          },
+          "min_delay_between_recovers_secs":{
+            "description":"The minimum amount of time (in seconds) which must pass between destructive replacements of Brokers.",
+            "type":"number",
+            "default":600
           }
         },
         "required":[

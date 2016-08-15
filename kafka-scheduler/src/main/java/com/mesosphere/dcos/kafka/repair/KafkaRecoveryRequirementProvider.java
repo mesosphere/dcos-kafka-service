@@ -8,7 +8,9 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.offer.InvalidRequirementException;
 import org.apache.mesos.offer.OfferRequirement;
-import org.apache.mesos.scheduler.recovery.RecoveryOfferRequirementProvider;
+import org.apache.mesos.scheduler.recovery.DefaultRecoveryRequirement;
+import org.apache.mesos.scheduler.recovery.RecoveryRequirement;
+import org.apache.mesos.scheduler.recovery.RecoveryRequirementProvider;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -16,15 +18,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * This class implements the {@link RecoveryOfferRequirementProvider} interface for the Kafka framework.
+ * This class implements the {@link RecoveryRequirementProvider} interface for the Kafka framework.
  */
-public class KafkaRepairOfferRequirementProvider implements RecoveryOfferRequirementProvider {
+public class KafkaRecoveryRequirementProvider implements RecoveryRequirementProvider {
     private static final Log log = LogFactory.getLog(KafkaOfferRequirementProvider.class);
 
     private final KafkaOfferRequirementProvider offerRequirementProvider;
     private final ConfigStore configStore;
 
-    public KafkaRepairOfferRequirementProvider(
+    public KafkaRecoveryRequirementProvider(
             KafkaOfferRequirementProvider offerRequirementProvider,
             ConfigStore configStore) {
         this.offerRequirementProvider = offerRequirementProvider;
@@ -38,12 +40,15 @@ public class KafkaRepairOfferRequirementProvider implements RecoveryOfferRequire
      * @return A list of OfferRequirements generated from the failed Tasks.
      */
     @Override
-    public List<OfferRequirement> getTransientRecoveryOfferRequirements(List<TaskInfo> stoppedTasks) {
-        List<OfferRequirement> transientRecoveryRequirements = new ArrayList<>();
+    public List<RecoveryRequirement> getTransientRecoveryOfferRequirements(List<TaskInfo> stoppedTasks) {
+        List<RecoveryRequirement> transientRecoveryRequirements = new ArrayList<>();
 
         for (TaskInfo taskInfo : stoppedTasks) {
             try {
-                transientRecoveryRequirements.add(offerRequirementProvider.getReplacementOfferRequirement(taskInfo));
+                transientRecoveryRequirements.add(
+                        new DefaultRecoveryRequirement(
+                                offerRequirementProvider.getReplacementOfferRequirement(taskInfo),
+                                RecoveryRequirement.RecoveryType.TRANSIENT));
             } catch (InvalidRequirementException e) {
                 log.error("Failed to create an OfferRequirement for the transiently failed task: " + taskInfo, e);
             }
@@ -61,16 +66,18 @@ public class KafkaRepairOfferRequirementProvider implements RecoveryOfferRequire
      * @return A list of OfferRequirements generated from the failed Tasks.
      */
     @Override
-    public List<OfferRequirement> getPermanentRecoveryOfferRequirements(List<TaskInfo> failedTasks) {
-        List<OfferRequirement> permanentRecoveryRequirements = new ArrayList<>();
+    public List<RecoveryRequirement> getPermanentRecoveryOfferRequirements(List<TaskInfo> failedTasks) {
+        List<RecoveryRequirement> permanentRecoveryRequirements = new ArrayList<>();
 
         for (TaskInfo taskInfo : failedTasks) {
             int brokerId = OfferUtils.nameToId(taskInfo.getName());
             try {
                 permanentRecoveryRequirements.add(
-                        offerRequirementProvider.getNewOfferRequirement(
-                                configStore.getTargetConfig().toString(),
-                                brokerId));
+                        new DefaultRecoveryRequirement(
+                                offerRequirementProvider.getNewOfferRequirement(
+                                        configStore.getTargetConfig().toString(),
+                                        brokerId),
+                                RecoveryRequirement.RecoveryType.PERMANENT));
             } catch (InvalidRequirementException|IOException|URISyntaxException e) {
                 log.error("Failed to create an OfferRequirement for the permanently failed task: " + taskInfo, e);
             }

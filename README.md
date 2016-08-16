@@ -1,7 +1,7 @@
 DC/OS Kafka Service Guide
 ======================
 
-[![Build Status](http://jenkins.mesosphere.com/service/jenkins/buildStatus/icon?job=kafka/0-kafka-trigger-master)](http://jenkins.mesosphere.com/service/jenkins/job/kafka/job/0-kafka-trigger-master/)
+[![Build Status](http://jenkins.mesosphere.com/service/jenkins/buildStatus/icon?job=kafka/0-trigger-master)](http://jenkins.mesosphere.com/service/jenkins/job/kafka/job/0-trigger-master/)
 
 [Overview](#overview)
 - [Benefits](#benefits)

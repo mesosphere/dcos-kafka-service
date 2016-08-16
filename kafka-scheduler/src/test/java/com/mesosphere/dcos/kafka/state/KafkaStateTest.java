@@ -6,10 +6,12 @@ import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.RetryNTimes;
 import org.apache.curator.test.TestingServer;
 import org.apache.mesos.dcos.DcosConstants;
+import org.apache.mesos.testing.CuratorTestUtils;
 import org.apache.zookeeper.KeeperException;
 import org.json.JSONArray;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.List;
@@ -21,14 +23,19 @@ public class KafkaStateTest {
     private static final String testFrameworkName = "kafka";
     private static final String testRoot = DcosConstants.SERVICE_ROOT_PATH_PREFIX + testFrameworkName;
 
-    private TestingServer testingServer;
+    private static TestingServer testingServer;
     private KafkaState kafkaState;
     private CuratorFramework zkClient;
     private ZookeeperConfiguration zkConfig;
 
+    @BeforeClass
+    public static void beforeAll() throws Exception {
+        testingServer = new TestingServer();
+    }
+
     @Before
     public void beforeEach() throws Exception {
-        testingServer = new TestingServer();
+        CuratorTestUtils.clear(testingServer);
         zkConfig = new ZookeeperConfiguration(
                 testFrameworkName,
                 testingServer.getConnectString(),

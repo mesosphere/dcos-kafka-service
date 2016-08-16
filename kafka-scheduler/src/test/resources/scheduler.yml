@@ -10,7 +10,7 @@ schedulerConfiguration:
 
   recovery:
     min_delay_between_recoveries_secs: ${REPLACE_DELAY_SEC:-600}
-    recover_in_place_grace_period_mins: ${RECOVERY_GRACE_PERIOD_MIN:-20}
+    recover_in_place_grace_period_secs: ${RECOVERY_GRACE_PERIOD_SEC:-20}
     enable_replacement: ${ENABLE_REPLACEMENT:-false}
 
   executor:

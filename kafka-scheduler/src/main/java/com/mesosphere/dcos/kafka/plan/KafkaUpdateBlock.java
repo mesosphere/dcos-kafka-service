@@ -31,7 +31,7 @@ public class KafkaUpdateBlock implements Block {
 
   private final Object pendingTaskIdsLock = new Object();
   private List<TaskID> pendingTaskIds;
-  private Status status = Status.Pending;
+  private Status status = Status.PENDING;
 
   public KafkaUpdateBlock(
     FrameworkState state,
@@ -52,17 +52,17 @@ public class KafkaUpdateBlock implements Block {
 
   @Override
   public boolean isPending() {
-    return status == Status.Pending;
+    return status == Status.PENDING;
   }
 
   @Override
   public boolean isInProgress() {
-    return status == Status.InProgress;
+    return status == Status.IN_PROGRESS;
   }
 
   @Override
   public boolean isComplete() {
-    return status == Status.Complete;
+    return status == Status.COMPLETE;
   }
 
   @Override
@@ -102,15 +102,15 @@ public class KafkaUpdateBlock implements Block {
   @Override
   public void updateOfferStatus(boolean accepted) {
     if (accepted) {
-      setStatus(Status.InProgress);
+      setStatus(Status.IN_PROGRESS);
     } else {
-      setStatus(Status.Pending);
+      setStatus(Status.PENDING);
     }
   }
 
   @Override
   public void restart() {
-    setStatus(Status.Pending);
+    setStatus(Status.PENDING);
   }
 
   @Override
@@ -150,14 +150,14 @@ public class KafkaUpdateBlock implements Block {
         log.info(getName() + " has updated pending tasks: " + pendingTaskIds);
       } else if (isInProgress() && TaskUtils.isTerminated(taskStatus)) {
         log.info("Received terminal TaskStatus while " + getName() + " is InProgress: " + taskStatus);
-        setStatus(Status.Pending);
+        setStatus(Status.PENDING);
         return;
       } else {
         log.warn("TaskStatus with no effect encountered: " + taskStatus);
       }
 
       if (pendingTaskIds.size() == 0) {
-        setStatus(Status.Complete);
+        setStatus(Status.COMPLETE);
       }
     }
   }
@@ -194,9 +194,9 @@ public class KafkaUpdateBlock implements Block {
       String configName = OfferUtils.getConfigName(taskInfo);
       log.info("TargetConfigName: " + targetConfigName + " currentConfigName: " + configName);
       if (configName.equals(targetConfigName)) {
-        setStatus(Status.Complete);
+        setStatus(Status.COMPLETE);
       } else {
-        setStatus(Status.Pending);
+        setStatus(Status.PENDING);
       }
     }
 

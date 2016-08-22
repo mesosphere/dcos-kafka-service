@@ -1,15 +1,13 @@
 package com.mesosphere.dcos.kafka.config;
 
+import com.mesosphere.dcos.kafka.state.KafkaState;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.retry.RetryNTimes;
 import org.apache.curator.test.TestingServer;
-
 import org.apache.mesos.config.ConfigStoreException;
-import com.mesosphere.dcos.kafka.state.KafkaState;
 import org.apache.mesos.config.RecoveryConfiguration;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.apache.mesos.testing.CuratorTestUtils;
+import org.junit.*;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -24,17 +22,28 @@ public class KafkaConfigStateTest {
     private static final String testZkRoot = "/test-framework-name";
     private static final RetryPolicy retryNeverPolicy = new RetryNTimes(0, 0);
 
-    private TestingServer testZk;
+    private static TestingServer testZk;
     private KafkaConfigState configState;
     private KafkaSchedulerConfiguration config;
 
     @Mock
     KafkaState state;
 
+    @BeforeClass
+    public static void beforeAll() throws Exception {
+        testZk = new TestingServer();
+    }
+
     @Before
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
-        testZk = new TestingServer();
+
+        try {
+            CuratorTestUtils.clear(testZk);
+        } catch (Exception ex) {
+            testZk = new TestingServer();
+        }
+
         configState = new KafkaConfigState(testZkRoot, testZk.getConnectString(), retryNeverPolicy);
         config = new KafkaSchedulerConfiguration(
                 new ServiceConfiguration(),
@@ -42,6 +51,11 @@ public class KafkaConfigStateTest {
                 new KafkaConfiguration(),
                 new ExecutorConfiguration(),
                 new RecoveryConfiguration());
+    }
+
+    @After
+    public void afterEach() throws Exception {
+        testZk.start();
     }
 
     @Test(expected=ConfigStoreException.class)

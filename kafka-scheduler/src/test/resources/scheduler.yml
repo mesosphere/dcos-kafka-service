@@ -9,9 +9,9 @@ schedulerConfiguration:
     count: ${BROKER_COUNT:-3}
 
   recovery:
-    min_delay_between_repairs_secs: 30
-    repair_in_place_grace_period_mins: 3
-    enable_replacement: true
+    min_delay_between_recoveries_secs: ${REPLACE_DELAY_SEC:-600}
+    recover_in_place_grace_period_secs: ${RECOVERY_GRACE_PERIOD_SEC:-20}
+    enable_replacement: ${ENABLE_REPLACEMENT:-false}
 
   executor:
     cpus: ${EXECUTOR_CPUS:-0.5}
@@ -32,7 +32,7 @@ schedulerConfiguration:
     port: ${BROKER_PORT:-0}
 
   kafka:
-    kafkaAdvertiseHostIp: ${KAFKA_ADVERTISE_HOST_IP:-false}
+    kafkaAdvertiseHostIp: ${KAFKA_ADVERTISE_HOST_IP:-true}
     kafkaVerName: ${KAFKA_VER_NAME}
     kafkaSandboxPath: "${MESOS_SANDBOX}/${KAFKA_VER_NAME}"
     mesosZkUri: "localhost:40000"

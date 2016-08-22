@@ -5,7 +5,7 @@ import com.mesosphere.dcos.kafka.config.*;
 import com.mesosphere.dcos.kafka.offer.KafkaOfferRequirementProvider;
 import com.mesosphere.dcos.kafka.repair.FailureUtils;
 import com.mesosphere.dcos.kafka.repair.KafkaFailureMonitor;
-import com.mesosphere.dcos.kafka.repair.KafkaRepairOfferRequirementProvider;
+import com.mesosphere.dcos.kafka.repair.KafkaRecoveryRequirementProvider;
 import com.mesosphere.dcos.kafka.state.ClusterState;
 import com.mesosphere.dcos.kafka.test.KafkaTestUtils;
 import org.apache.mesos.config.ConfigStore;
@@ -197,12 +197,12 @@ public class RepairSchedulerTest {
         return new OfferAccepter(Arrays.asList(new PersistentOperationRecorder(frameworkState)));
     }
 
-    private KafkaRepairOfferRequirementProvider getTestOfferRequirementProvider() throws Exception {
+    private KafkaRecoveryRequirementProvider getTestOfferRequirementProvider() throws Exception {
         KafkaOfferRequirementProvider kafkaOfferRequirementProvider = new PersistentOfferRequirementProvider(frameworkState, configState, clusterState);
         Capabilities capabilities = mock(Capabilities.class);
         when(capabilities.supportsNamedVips()).thenReturn(false);
         when(clusterState.getCapabilities()).thenReturn(capabilities);
-        return new KafkaRepairOfferRequirementProvider(kafkaOfferRequirementProvider, configState.getConfigStore());
+        return new KafkaRecoveryRequirementProvider(kafkaOfferRequirementProvider, configState.getConfigStore());
     }
 
     public Protos.Offer getTestOfferSufficientForNewBroker() {

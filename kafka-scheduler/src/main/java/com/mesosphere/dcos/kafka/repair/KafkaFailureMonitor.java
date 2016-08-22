@@ -6,6 +6,8 @@ import org.apache.mesos.scheduler.recovery.monitor.FailureMonitor;
 import org.apache.mesos.scheduler.recovery.monitor.NeverFailureMonitor;
 import org.apache.mesos.scheduler.recovery.monitor.TimedFailureMonitor;
 
+import java.time.Duration;
+
 /**
  * The KafkaFailureMonitor determines whether or not a Task has failed.  A task can be marked as terminally failed
  * by the manual replace endpoint available through the Scheduler's REST API.  This accounts for the check on the
@@ -16,7 +18,8 @@ public class KafkaFailureMonitor implements FailureMonitor {
 
     public KafkaFailureMonitor(RecoveryConfiguration recoveryConfiguration) {
         if (recoveryConfiguration.isReplacementEnabled()) {
-            autoFailureMonitor = new TimedFailureMonitor(recoveryConfiguration.getGracePeriodMins());
+            autoFailureMonitor = new TimedFailureMonitor(
+                    Duration.ofSeconds(recoveryConfiguration.getGracePeriodSecs()));
         } else {
             autoFailureMonitor = new NeverFailureMonitor();
         }

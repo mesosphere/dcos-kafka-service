@@ -58,7 +58,7 @@ public class ConfigStateUpdater {
         kafkaConfigState.syncConfigs(frameworkState);
         kafkaConfigState.cleanConfigs(frameworkState);
       } else {
-        log.info("No config properties changes detected.");
+        log.info("No config property changes detected, leaving brokers as-is.");
       }
     }
     return newTargetConfig;

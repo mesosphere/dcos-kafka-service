@@ -1,6 +1,7 @@
 package com.mesosphere.dcos.kafka.config;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -21,8 +22,6 @@ public class KafkaSchedulerConfiguration implements Configuration {
 
     private static final Log LOGGER = LogFactory.getLog(KafkaSchedulerConfiguration.class);
     private static final ConfigurationFactory<KafkaSchedulerConfiguration> FACTORY = new Factory();
-
-    public static final String KAFKA_OVERRIDE_PREFIX = "KAFKA_OVERRIDE_";
 
     @JsonProperty("service")
     private ServiceConfiguration serviceConfiguration;
@@ -147,6 +146,7 @@ public class KafkaSchedulerConfiguration implements Configuration {
                 '}';
     }
 
+    @JsonIgnore
     @Override
     public byte[] getBytes() throws ConfigStoreException {
         try {

@@ -67,9 +67,9 @@ public class KafkaConfigState {
    */
   public boolean hasTarget() {
     try {
-      return configStore.getTargetConfig() != null;
+      configStore.getTargetConfig();
+      return true;
     } catch (Exception ex) {
-      log.error("Failed to determine existence of target config", ex);
       return false;
     }
   }

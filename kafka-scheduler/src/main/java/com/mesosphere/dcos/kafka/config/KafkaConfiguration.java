@@ -2,11 +2,14 @@ package com.mesosphere.dcos.kafka.config;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.CaseFormat;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.TreeMap;
 
 public class KafkaConfiguration {
+
     @JsonProperty("kafkaAdvertiseHostIp")
     private boolean kafkaAdvertiseHostIp;
 
@@ -22,11 +25,14 @@ public class KafkaConfiguration {
     @JsonProperty("mesosZkUri")
     private String mesosZkUri;
 
+    // Note: We don't directly use this data, we just store it to detect when values have changed
+    // via config updates. Do not remove.
     @JsonProperty("overrides")
     private Map<String, String> overrides;
 
     public KafkaConfiguration() {
-
+        // No overrides provided. Auto-populate from process environment.
+        overrides = KafkaEnvConfigUtils.getKafkaConfig(getSystemEnv());
     }
 
     @JsonCreator
@@ -42,7 +48,13 @@ public class KafkaConfiguration {
         this.kafkaSandboxPath = kafkaSandboxPath;
         this.kafkaZkUri = kafkaZkUri;
         this.mesosZkUri = mesosZkUri;
-        this.overrides = overrides;
+        if (overrides == null || overrides.isEmpty()) {
+            // No overrides provided by yaml. Auto-populate from process environment.
+            this.overrides = KafkaEnvConfigUtils.getKafkaConfig(getSystemEnv());
+        } else {
+            // Use provided values.
+            this.overrides = overrides;
+        }
     }
 
     public boolean isKafkaAdvertiseHostIp() {
@@ -91,8 +103,23 @@ public class KafkaConfiguration {
         this.mesosZkUri = mesosZkUri;
     }
 
+    /**
+     * Returns a list of override settings to be passed directly to Kafka's server.properties file.
+     * Returned keys are of the form "some.kafka.setting".
+     */
+    @JsonProperty("overrides")
     public Map<String, String> getOverrides() {
-        return overrides;
+        // TODO(nick): This conversion is for backwards compatibility with persisted configs
+        // produced by 1.1.9-0.10.0.0 and earlier.
+        // ** In Jan 2017, remove all the following and just 'return overrides'. **
+        if (overrides == null) {
+            return overrides;
+        }
+        Map<String, String> normalizedOverrides = new TreeMap<>();
+        for (Map.Entry<String, String> entry : overrides.entrySet()) {
+            normalizedOverrides.put(normalizedOverrideKey(entry.getKey()), entry.getValue());
+        }
+        return normalizedOverrides;
     }
 
     @JsonProperty("overrides")
@@ -133,5 +160,22 @@ public class KafkaConfiguration {
                 ", mesosZkUri='" + mesosZkUri + '\'' +
                 ", overrides=" + overrides +
                 '}';
+    }
+
+    /**
+     * Returns the system environment. Broken out into a protected function to allow testing.
+     */
+    protected Map<String, String> getSystemEnv() {
+        return System.getenv();
+    }
+
+    /**
+     * Convert the provided string from "someKafkaKey" (old fixed-yaml format) to "some.kafka.key",
+     * or does nothing if the provided string is already in the latter format.
+     */
+    private static String normalizedOverrideKey(String origKey) {
+        // someKafkaKey => some_kafka_key => some.kafka.key
+        String fixedKey = CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, origKey);
+        return fixedKey.replace('_', '.');
     }
 }

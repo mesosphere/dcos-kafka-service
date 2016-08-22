@@ -11,8 +11,6 @@ import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import static org.mockito.Mockito.when;
 
@@ -20,7 +18,6 @@ import static org.mockito.Mockito.when;
  * This class tests the Overrider class.
  */
 public class OverriderTest {
-    private final Log log = LogFactory.getLog(getClass());
 
     @ClassRule
     public static KafkaDropwizardAppRule<DropwizardConfiguration> RULE =

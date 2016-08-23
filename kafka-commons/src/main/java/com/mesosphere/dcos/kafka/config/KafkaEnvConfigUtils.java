@@ -9,7 +9,7 @@ import java.util.TreeMap;
  *
  */
 public class KafkaEnvConfigUtils {
-    private static final String KAFKA_OVERRIDE_PREFIX = "KAFKA_OVERRIDE_";
+    public static final String KAFKA_OVERRIDE_PREFIX = "KAFKA_OVERRIDE_";
 
     private KafkaEnvConfigUtils() {
         // Do not instantiate.

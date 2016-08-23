@@ -1,8 +1,8 @@
 package com.mesosphere.dcos.kafka.web;
 
+import com.mesosphere.dcos.kafka.commons.state.KafkaState;
 import com.mesosphere.dcos.kafka.config.KafkaConfigState;
 import com.mesosphere.dcos.kafka.state.ClusterState;
-import com.mesosphere.dcos.kafka.state.KafkaState;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.json.JSONArray;

@@ -2,18 +2,19 @@ package com.mesosphere.dcos.kafka.scheduler;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.mesosphere.dcos.kafka.config.DropwizardConfiguration;
+import com.mesosphere.dcos.kafka.config.KafkaSchedulerConfiguration;
 import com.mesosphere.dcos.kafka.test.KafkaDropwizardAppRule;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.testing.ResourceHelpers;
 import org.apache.mesos.Protos;
 import org.apache.mesos.SchedulerDriver;
-import com.mesosphere.dcos.kafka.config.DropwizardConfiguration;
-import com.mesosphere.dcos.kafka.config.KafkaSchedulerConfiguration;
 import org.junit.*;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.util.Collections;
+
 import static org.mockito.Mockito.*;
 
 /**

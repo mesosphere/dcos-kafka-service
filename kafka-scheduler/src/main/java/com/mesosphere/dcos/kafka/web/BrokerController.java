@@ -1,24 +1,20 @@
 package com.mesosphere.dcos.kafka.web;
 
+import com.mesosphere.dcos.kafka.commons.state.KafkaState;
 import com.mesosphere.dcos.kafka.scheduler.KafkaScheduler;
+import com.mesosphere.dcos.kafka.state.FrameworkState;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.Protos;
-import com.mesosphere.dcos.kafka.state.FrameworkState;
-import com.mesosphere.dcos.kafka.state.KafkaState;
 import org.json.JSONArray;
+import org.json.JSONObject;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 @Path("/v1/brokers")
 @Produces("application/json")
@@ -39,6 +35,22 @@ public class BrokerController {
       return Response.ok(kafkaState.getBrokerIds(), MediaType.APPLICATION_JSON).build();
     } catch (Exception ex) {
       log.error("Failed to fetch broker ids", ex);
+      return Response.serverError().build();
+    }
+  }
+
+  @GET
+  @Path("/{id}")
+  public Response getBroker(@PathParam("id") String id) {
+    try {
+      Optional<JSONObject> brokerObj = kafkaState.getBroker(id);
+      if (brokerObj.isPresent()) {
+        return Response.ok(brokerObj, MediaType.APPLICATION_JSON).build();
+      } else {
+        return Response.status(Response.Status.NOT_FOUND).build();
+      }
+    } catch (Exception ex) {
+      log.error("Failed to fetch broker id: " + id, ex);
       return Response.serverError().build();
     }
   }

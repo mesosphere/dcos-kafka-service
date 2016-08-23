@@ -1,29 +1,8 @@
 package com.mesosphere.dcos.kafka.scheduler;
 
-import java.net.URISyntaxException;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
-
-import com.mesosphere.dcos.kafka.repair.KafkaFailureMonitor;
-import com.mesosphere.dcos.kafka.repair.KafkaTaskFailureListener;
+import com.google.protobuf.TextFormat;
+import com.mesosphere.dcos.kafka.commons.state.KafkaState;
 import com.mesosphere.dcos.kafka.config.ConfigStateUpdater;
-import com.mesosphere.dcos.kafka.plan.KafkaUpdatePhase;
-import com.mesosphere.dcos.kafka.state.ClusterState;
-import com.mesosphere.dcos.kafka.repair.KafkaRecoveryRequirementProvider;
-import io.dropwizard.setup.Environment;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import org.apache.mesos.Protos.*;
-import org.apache.mesos.Scheduler;
-import org.apache.mesos.SchedulerDriver;
-
-import org.apache.mesos.config.ConfigStoreException;
 import com.mesosphere.dcos.kafka.config.ConfigStateValidator.ValidationError;
 import com.mesosphere.dcos.kafka.config.ConfigStateValidator.ValidationException;
 import com.mesosphere.dcos.kafka.config.KafkaConfigState;
@@ -31,23 +10,41 @@ import com.mesosphere.dcos.kafka.config.KafkaSchedulerConfiguration;
 import com.mesosphere.dcos.kafka.offer.KafkaOfferRequirementProvider;
 import com.mesosphere.dcos.kafka.offer.PersistentOfferRequirementProvider;
 import com.mesosphere.dcos.kafka.offer.PersistentOperationRecorder;
+import com.mesosphere.dcos.kafka.plan.KafkaUpdatePhase;
+import com.mesosphere.dcos.kafka.repair.KafkaFailureMonitor;
+import com.mesosphere.dcos.kafka.repair.KafkaRecoveryRequirementProvider;
+import com.mesosphere.dcos.kafka.repair.KafkaTaskFailureListener;
+import com.mesosphere.dcos.kafka.state.ClusterState;
 import com.mesosphere.dcos.kafka.state.FrameworkState;
-import com.mesosphere.dcos.kafka.state.KafkaState;
-
+import io.dropwizard.setup.Environment;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.mesos.Protos.*;
+import org.apache.mesos.Scheduler;
+import org.apache.mesos.SchedulerDriver;
+import org.apache.mesos.config.ConfigStoreException;
 import org.apache.mesos.config.RecoveryConfiguration;
-import org.apache.mesos.offer.*;
-
+import org.apache.mesos.offer.InvalidRequirementException;
+import org.apache.mesos.offer.OfferAccepter;
+import org.apache.mesos.offer.ResourceCleaner;
+import org.apache.mesos.offer.ResourceCleanerScheduler;
 import org.apache.mesos.reconciliation.DefaultReconciler;
 import org.apache.mesos.reconciliation.Reconciler;
 import org.apache.mesos.scheduler.SchedulerDriverFactory;
 import org.apache.mesos.scheduler.plan.*;
-
-import com.google.protobuf.TextFormat;
 import org.apache.mesos.scheduler.recovery.DefaultRecoveryScheduler;
 import org.apache.mesos.scheduler.recovery.RecoveryRequirementProvider;
 import org.apache.mesos.scheduler.recovery.RecoveryStatus;
 import org.apache.mesos.scheduler.recovery.constrain.LaunchConstrainer;
 import org.apache.mesos.scheduler.recovery.constrain.TimedLaunchConstrainer;
+
+import java.net.URISyntaxException;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Kafka Framework Scheduler.
@@ -130,8 +127,8 @@ public class KafkaScheduler implements Scheduler, Runnable {
                     configState.getConfigStore());
 
     recoveryStatusRef = new AtomicReference<>(new RecoveryStatus(Collections.emptyList(), Collections.emptyList()));
-    RecoveryConfiguration repairConfig = envConfig.getRecoveryConfiguration();
-    LaunchConstrainer constrainer = new TimedLaunchConstrainer(Duration.ofSeconds(repairConfig.getRepairDelaySecs()));
+    RecoveryConfiguration recoveryConfiguration = envConfig.getRecoveryConfiguration();
+    LaunchConstrainer constrainer = new TimedLaunchConstrainer(Duration.ofSeconds(recoveryConfiguration.getRepairDelaySecs()));
     kafkaTaskFailureListener = new KafkaTaskFailureListener(frameworkState.getStateStore());
     repairScheduler = new DefaultRecoveryScheduler(
             frameworkState.getStateStore(),
@@ -141,8 +138,12 @@ public class KafkaScheduler implements Scheduler, Runnable {
             //new KafkaRecoveryTestConstrainer(),
             //new KafkaRepairTestMonitor(),
             constrainer,
-            new KafkaFailureMonitor(repairConfig),
+            new KafkaFailureMonitor(recoveryConfiguration),
             recoveryStatusRef);
+  }
+
+  public KafkaSchedulerConfiguration getKafkaSchedulerConfiguration() {
+    return envConfig;
   }
 
   private static PhaseStrategyFactory getPhaseStrategyFactory(KafkaSchedulerConfiguration config) {
@@ -410,7 +411,7 @@ public class KafkaScheduler implements Scheduler, Runnable {
     return fwkInfoBuilder.build();
   }
 
-  private void logOffers(List<Offer> offers) {
+ private void logOffers(List<Offer> offers) {
     if (offers == null) {
       return;
     }

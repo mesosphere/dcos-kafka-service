@@ -1,9 +1,9 @@
 ext {
-    mesosVer = "0.28.0"
+    mesosVer = "1.0.0"
 }
 
 dependencies {
-    compile "mesosphere:dcos-commons:0.4.34-SNAPSHOT"
+    compile "mesosphere:dcos-commons:0.4.35-SNAPSHOT"
     compile "org.apache.mesos:mesos:${mesosVer}"
 }
 

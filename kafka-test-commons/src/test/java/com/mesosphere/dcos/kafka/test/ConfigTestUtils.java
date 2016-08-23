@@ -1,6 +1,6 @@
-package com.mesosphere.dcos.kafka.config;
+package com.mesosphere.dcos.kafka.test;
 
-import com.mesosphere.dcos.kafka.test.KafkaTestUtils;
+import com.mesosphere.dcos.kafka.config.*;
 import org.apache.mesos.config.RecoveryConfiguration;
 
 public class ConfigTestUtils {
@@ -54,12 +54,12 @@ public class ConfigTestUtils {
                 KafkaTestUtils.testKafkaZkUri);
     }
 
-    public static RecoveryConfiguration getTestRepairConfiguration() {
-        return new RecoveryConfiguration(
-                5,
-                30,
-                true
-        );
+    public static KafkaHealthCheckConfiguration getTestHealthCheckConfiguration() {
+        return new KafkaHealthCheckConfiguration(true, 15, 10, 20, 3, 10);
+    }
+
+    public static RecoveryConfiguration getTestRecoveryConfiguration() {
+        return new RecoveryConfiguration(1200, 600, false);
     }
 
     public static KafkaSchedulerConfiguration getTestKafkaSchedulerConfiguration() {
@@ -68,6 +68,7 @@ public class ConfigTestUtils {
                 getTestBrokerConfiguration(),
                 getTestKafkaConfiguration(),
                 getTestExecutorConfiguration(),
-                getTestRepairConfiguration());
+                getTestRecoveryConfiguration(),
+                getTestHealthCheckConfiguration());
     }
 }

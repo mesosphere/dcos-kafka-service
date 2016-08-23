@@ -3,20 +3,21 @@ package com.mesosphere.dcos.kafka.scheduler;
 import com.google.common.collect.Iterators;
 import com.mesosphere.dcos.kafka.config.*;
 import com.mesosphere.dcos.kafka.offer.KafkaOfferRequirementProvider;
+import com.mesosphere.dcos.kafka.offer.PersistentOfferRequirementProvider;
+import com.mesosphere.dcos.kafka.offer.PersistentOperationRecorder;
 import com.mesosphere.dcos.kafka.repair.FailureUtils;
 import com.mesosphere.dcos.kafka.repair.KafkaFailureMonitor;
 import com.mesosphere.dcos.kafka.repair.KafkaRecoveryRequirementProvider;
 import com.mesosphere.dcos.kafka.state.ClusterState;
+import com.mesosphere.dcos.kafka.state.FrameworkState;
+import com.mesosphere.dcos.kafka.test.ConfigTestUtils;
 import com.mesosphere.dcos.kafka.test.KafkaTestUtils;
-import org.apache.mesos.config.ConfigStore;
-import org.apache.mesos.config.RecoveryConfiguration;
-import org.apache.mesos.dcos.Capabilities;
 import org.apache.mesos.Protos;
 import org.apache.mesos.SchedulerDriver;
+import org.apache.mesos.config.ConfigStore;
 import org.apache.mesos.config.ConfigStoreException;
-import com.mesosphere.dcos.kafka.offer.PersistentOfferRequirementProvider;
-import com.mesosphere.dcos.kafka.offer.PersistentOperationRecorder;
-import com.mesosphere.dcos.kafka.state.FrameworkState;
+import org.apache.mesos.config.RecoveryConfiguration;
+import org.apache.mesos.dcos.Capabilities;
 import org.apache.mesos.offer.OfferAccepter;
 import org.apache.mesos.offer.ResourceUtils;
 import org.apache.mesos.scheduler.recovery.DefaultRecoveryScheduler;
@@ -29,9 +30,15 @@ import org.apache.mesos.state.StateStore;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.*;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.mockito.Matchers.anyObject;
@@ -96,7 +103,7 @@ public class RepairSchedulerTest {
                 anyObject());
 
         Assert.assertTrue(offerIdCaptor.getValue().containsAll(acceptedOfferIds));
-        int expectedOperationCount = 8;
+        int expectedOperationCount = 9;
         Assert.assertEquals(expectedOperationCount, operationCaptor.getValue().size());
         Protos.Offer.Operation launchOperation = Iterators.get(operationCaptor.getValue().iterator(), expectedOperationCount - 1);
         Assert.assertEquals(Protos.Offer.Operation.Type.LAUNCH, launchOperation.getType());
@@ -142,7 +149,7 @@ public class RepairSchedulerTest {
                 anyObject());
 
         Assert.assertTrue(offerIdCaptor.getValue().containsAll(acceptedOfferIds));
-        int expectedOperationCount = 8;
+        int expectedOperationCount = 9;
         Assert.assertEquals(expectedOperationCount, operationCaptor.getValue().size());
         Protos.Offer.Operation launchOperation = Iterators.get(operationCaptor.getValue().iterator(), expectedOperationCount - 1);
         Assert.assertEquals(Protos.Offer.Operation.Type.LAUNCH, launchOperation.getType());
@@ -213,8 +220,8 @@ public class RepairSchedulerTest {
         Protos.Resource mem = ResourceUtils.getUnreservedScalar("mem", brokerConfiguration.getMem() + executorConfiguration.getMem());
         Protos.Resource disk = ResourceUtils.getUnreservedRootVolume(brokerConfiguration.getDisk() + executorConfiguration.getDisk());
         Protos.Value.Range portRange = Protos.Value.Range.newBuilder()
-                .setBegin(brokerConfiguration.getPort())
-                .setEnd(brokerConfiguration.getPort())
+                .setBegin(0)
+                .setEnd(65536)
                 .build();
         Protos.Resource ports = ResourceUtils.getUnreservedRanges("ports",  Arrays.asList(portRange));
 

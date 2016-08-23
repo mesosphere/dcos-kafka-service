@@ -6,6 +6,7 @@ import com.google.protobuf.TextFormat;
 import com.mesosphere.dcos.kafka.commons.KafkaTask;
 import com.mesosphere.dcos.kafka.config.*;
 import com.mesosphere.dcos.kafka.state.ClusterState;
+import com.mesosphere.dcos.kafka.state.FrameworkState;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.Protos.*;
@@ -13,8 +14,10 @@ import org.apache.mesos.Protos.Environment.Variable;
 import org.apache.mesos.Protos.Value.Range;
 import org.apache.mesos.Protos.Value.Ranges;
 import org.apache.mesos.config.ConfigStoreException;
-import com.mesosphere.dcos.kafka.state.FrameworkState;
-import org.apache.mesos.offer.*;
+import org.apache.mesos.offer.InvalidRequirementException;
+import org.apache.mesos.offer.OfferRequirement;
+import org.apache.mesos.offer.PlacementStrategy;
+import org.apache.mesos.offer.ResourceUtils;
 import org.apache.mesos.protobuf.CommandInfoBuilder;
 import org.apache.mesos.protobuf.EnvironmentBuilder;
 import org.apache.mesos.protobuf.LabelBuilder;
@@ -300,9 +303,11 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     String containerPath = "kafka-volume-" + UUID.randomUUID();
 
     KafkaSchedulerConfiguration config = configState.fetch(UUID.fromString(configName));
+    log.warn("KafkaSchedulerConfiguration: " + config);
     BrokerConfiguration brokerConfig = config.getBrokerConfiguration();
     ExecutorConfiguration executorConfig = config.getExecutorConfiguration();
     ZookeeperConfiguration zkConfig = config.getZookeeperConfig();
+    KafkaHealthCheckConfiguration healthCheckConfiguration = config.getHealthCheckConfiguration();
 
     Long port = brokerConfig.getPort();
     Boolean isDynamicPort = false;
@@ -344,11 +349,16 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
       .addEnvironmentVar("KAFKA_HEAP_OPTS", getKafkaHeapOpts(brokerConfig.getHeap()));
 
     // Launch command for custom executor
-    final String executorCommand = "./executor/bin/kafka-executor -Dlogback.configurationFile=executor/conf/logback.xml";
+    final String executorCommand = "./executor/bin/kafka-executor server ./executor/conf/executor.yml";
 
+    Long adminPort = getDynamicPort();
     CommandInfoBuilder executorCommandBuilder = new CommandInfoBuilder()
       .setCommand(executorCommand)
       .addEnvironmentVar("JAVA_HOME", "jre1.8.0_91")
+      .addEnvironmentVar("FRAMEWORK_NAME", frameworkName)
+      .addEnvironmentVar("API_PORT", String.valueOf(adminPort))
+      .addEnvironmentVar("KAFKA_ZOOKEEPER_URI", zkConfig.getKafkaZkUri())
+      .addEnvironmentVar(KafkaEnvConfigUtils.KAFKA_OVERRIDE_PREFIX + "BROKER_ID", Integer.toString(brokerId))
       .addUri(brokerConfig.getJavaUri())
       .addUri(brokerConfig.getKafkaUri())
       .addUri(brokerConfig.getOverriderUri())
@@ -363,7 +373,15 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
       .setFrameworkId(frameworkState.getFrameworkId())
       .setCommand(executorCommandBuilder.build())
       .addResources(ResourceUtils.getDesiredScalar(role, principal, "cpus", executorConfig.getCpus()))
-      .addResources(ResourceUtils.getDesiredScalar(role, principal, "mem", executorConfig.getMem()));
+      .addResources(ResourceUtils.getDesiredScalar(role, principal, "mem", executorConfig.getMem()))
+      .addResources(ResourceUtils.getDesiredRanges(
+            role,
+            principal,
+            "ports",
+            Arrays.asList(
+              Range.newBuilder()
+                .setBegin(adminPort)
+                .setEnd(adminPort).build())));
 
     // Build Task
     TaskInfo.Builder taskBuilder = TaskInfo.newBuilder();
@@ -421,6 +439,22 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
                       .build())
               .build();
       taskBuilder.setDiscovery(discoveryInfo);
+    }
+
+    if (healthCheckConfiguration.isHealthCheckEnabled()) {
+      taskBuilder.setHealthCheck(HealthCheck.newBuilder()
+              .setDelaySeconds(healthCheckConfiguration.getHealthCheckDelay().getSeconds())
+              .setIntervalSeconds(healthCheckConfiguration.getHealthCheckInterval().getSeconds())
+              .setTimeoutSeconds(healthCheckConfiguration.getHealthCheckTimeout().getSeconds())
+              .setConsecutiveFailures(healthCheckConfiguration.getHealthCheckMaxFailures())
+              .setGracePeriodSeconds(healthCheckConfiguration.getHealthCheckGracePeriod().getSeconds())
+              .setCommand(CommandInfo.newBuilder()
+                      .setEnvironment(Environment.newBuilder()
+                              .addVariables(Variable.newBuilder()
+                                      .setName("API_PORT")
+                                      .setValue(String.valueOf(adminPort))))
+                      .setValue("curl -f localhost:$API_PORT/admin/healthcheck")
+                      .build()));
     }
 
     log.info("TaskInfo.Builder contains executor: " + taskBuilder.hasExecutor());

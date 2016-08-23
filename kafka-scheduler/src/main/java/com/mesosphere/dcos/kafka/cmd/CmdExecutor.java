@@ -1,9 +1,9 @@
 package com.mesosphere.dcos.kafka.cmd;
 
+import com.mesosphere.dcos.kafka.commons.state.KafkaState;
 import com.mesosphere.dcos.kafka.config.KafkaConfiguration;
 import com.mesosphere.dcos.kafka.config.KafkaSchedulerConfiguration;
 import com.mesosphere.dcos.kafka.config.ServiceConfiguration;
-import com.mesosphere.dcos.kafka.state.KafkaState;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.commons.logging.Log;

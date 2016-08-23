@@ -9,9 +9,17 @@ schedulerConfiguration:
     count: ${BROKER_COUNT:-3}
 
   recovery:
+    enable_replacement: ${ENABLE_REPLACEMENT:-false}
     min_delay_between_recoveries_secs: ${REPLACE_DELAY_SEC:-600}
     recover_in_place_grace_period_secs: ${RECOVERY_GRACE_PERIOD_SEC:-1200}
-    enable_replacement: ${ENABLE_REPLACEMENT:-false}
+
+  healthcheck:
+    broker_health_check_enabled: ${ENABLE_BROKER_HEALTH_CHECK:-true}
+    broker_health_check_delay_sec: ${BROKER_HEALTH_CHECK_DELAY_SEC:-15}
+    broker_health_check_interval_sec: ${BROKER_HEALTH_CHECK_INTERVAL_SEC:-10}
+    broker_health_check_timeout_sec: ${BROKER_HEALTH_CHECK_TIMEOUT_SEC:-20}
+    broker_health_check_max_consecutive_failures: ${BROKER_HEALTH_CHECK_MAX_FAILURES:-3}
+    broker_health_check_grace_period_sec: ${BROKER_HEALTH_CHECK_GRACE_SEC:-10}
 
   executor:
     cpus: ${EXECUTOR_CPUS:-0.5}

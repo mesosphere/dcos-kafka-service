@@ -1,7 +1,12 @@
 package com.mesosphere.dcos.kafka.scheduler;
 
+import com.mesosphere.dcos.kafka.cmd.CmdExecutor;
+import com.mesosphere.dcos.kafka.commons.state.KafkaState;
 import com.mesosphere.dcos.kafka.config.DropwizardConfiguration;
+import com.mesosphere.dcos.kafka.config.KafkaConfigState;
+import com.mesosphere.dcos.kafka.config.KafkaSchedulerConfiguration;
 import com.mesosphere.dcos.kafka.state.ClusterState;
+import com.mesosphere.dcos.kafka.state.FrameworkState;
 import com.mesosphere.dcos.kafka.web.*;
 import io.dropwizard.Application;
 import io.dropwizard.configuration.EnvironmentVariableLookup;
@@ -11,11 +16,6 @@ import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import org.apache.commons.lang3.text.StrSubstitutor;
 import org.apache.mesos.config.api.ConfigResource;
-import com.mesosphere.dcos.kafka.cmd.CmdExecutor;
-import com.mesosphere.dcos.kafka.config.KafkaConfigState;
-import com.mesosphere.dcos.kafka.config.KafkaSchedulerConfiguration;
-import com.mesosphere.dcos.kafka.state.FrameworkState;
-import com.mesosphere.dcos.kafka.state.KafkaState;
 import org.apache.mesos.dcos.DcosCluster;
 import org.apache.mesos.scheduler.plan.api.StageResource;
 import org.apache.mesos.scheduler.recovery.RecoveryResource;

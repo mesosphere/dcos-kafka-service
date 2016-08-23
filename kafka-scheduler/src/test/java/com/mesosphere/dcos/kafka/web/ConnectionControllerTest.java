@@ -1,14 +1,11 @@
 package com.mesosphere.dcos.kafka.web;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
-
-import com.mesosphere.dcos.kafka.state.ClusterState;
-import org.apache.mesos.config.ConfigStoreException;
+import com.mesosphere.dcos.kafka.commons.state.KafkaState;
 import com.mesosphere.dcos.kafka.config.KafkaConfigState;
 import com.mesosphere.dcos.kafka.config.KafkaSchedulerConfiguration;
 import com.mesosphere.dcos.kafka.config.ServiceConfiguration;
-import com.mesosphere.dcos.kafka.state.KafkaState;
+import com.mesosphere.dcos.kafka.state.ClusterState;
+import org.apache.mesos.config.ConfigStoreException;
 import org.apache.mesos.dcos.Capabilities;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -17,11 +14,14 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.List;
-import javax.ws.rs.core.Response;
+
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.when;
 
 public class ConnectionControllerTest {
 

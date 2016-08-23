@@ -1,13 +1,12 @@
 package com.mesosphere.dcos.kafka.plan;
 
-import com.mesosphere.dcos.kafka.state.ClusterState;
-import com.mesosphere.dcos.kafka.test.KafkaTestUtils;
-import org.apache.mesos.Protos;
-
-import com.mesosphere.dcos.kafka.config.ConfigTestUtils;
 import com.mesosphere.dcos.kafka.config.KafkaConfigState;
 import com.mesosphere.dcos.kafka.offer.PersistentOfferRequirementProvider;
+import com.mesosphere.dcos.kafka.state.ClusterState;
 import com.mesosphere.dcos.kafka.state.FrameworkState;
+import com.mesosphere.dcos.kafka.test.ConfigTestUtils;
+import com.mesosphere.dcos.kafka.test.KafkaTestUtils;
+import org.apache.mesos.Protos;
 import org.apache.mesos.dcos.Capabilities;
 import org.apache.mesos.offer.OfferRequirement;
 import org.junit.Assert;

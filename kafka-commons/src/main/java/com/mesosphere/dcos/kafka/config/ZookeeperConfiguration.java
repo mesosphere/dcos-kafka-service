@@ -41,4 +41,8 @@ public class ZookeeperConfiguration {
     public String getZkRootPath() {
         return DcosConstants.SERVICE_ROOT_PATH_PREFIX + getFrameworkName();
     }
+
+    public String getBrokerIdPath() {
+        return getZkRootPath() + "/brokers/ids";
+    }
 }

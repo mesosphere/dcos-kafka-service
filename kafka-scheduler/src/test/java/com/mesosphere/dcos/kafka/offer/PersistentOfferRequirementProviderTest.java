@@ -1,13 +1,14 @@
 package com.mesosphere.dcos.kafka.offer;
 
 import com.mesosphere.dcos.kafka.commons.KafkaTask;
-import com.mesosphere.dcos.kafka.config.ConfigTestUtils;
 import com.mesosphere.dcos.kafka.config.HeapConfig;
 import com.mesosphere.dcos.kafka.config.KafkaConfigState;
 import com.mesosphere.dcos.kafka.config.KafkaSchedulerConfiguration;
 import com.mesosphere.dcos.kafka.state.ClusterState;
-import org.apache.mesos.Protos.*;
 import com.mesosphere.dcos.kafka.state.FrameworkState;
+import com.mesosphere.dcos.kafka.test.ConfigTestUtils;
+import com.mesosphere.dcos.kafka.test.KafkaTestUtils;
+import org.apache.mesos.Protos.*;
 import org.apache.mesos.dcos.Capabilities;
 import org.apache.mesos.dcos.DcosConstants;
 import org.apache.mesos.offer.OfferRequirement;
@@ -21,7 +22,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import com.mesosphere.dcos.kafka.test.KafkaTestUtils;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -113,6 +113,14 @@ public class PersistentOfferRequirementProviderTest {
     Assert.assertEquals("config_target", labels.getLabelsList().get(0).getKey());
     Assert.assertEquals(KafkaTestUtils.testConfigName, labels.getLabelsList().get(0).getValue());
 
+    Assert.assertTrue(taskInfo.hasHealthCheck());
+    final HealthCheck healthCheck = taskInfo.getHealthCheck();
+    Assert.assertEquals(15, healthCheck.getDelaySeconds(), 0.0);
+    Assert.assertEquals(10, healthCheck.getIntervalSeconds(), 0.0);
+    Assert.assertEquals(20, healthCheck.getTimeoutSeconds(), 0.0);
+    Assert.assertEquals(3, healthCheck.getConsecutiveFailures(), 0.0);
+    Assert.assertEquals(10, healthCheck.getGracePeriodSeconds(), 0.0);
+
     final ExecutorInfo executorInfo = req.getExecutorRequirement().getExecutorInfo();
 
     CommandInfo cmd = executorInfo.getCommand();
@@ -161,7 +169,7 @@ public class PersistentOfferRequirementProviderTest {
     }
 
     Assert.assertEquals(286, kafkaTaskData.getValue().length());
-    Assert.assertEquals(83, cmd.getValue().length());
+    Assert.assertEquals(65, cmd.getValue().length());
   }
 
   @Test

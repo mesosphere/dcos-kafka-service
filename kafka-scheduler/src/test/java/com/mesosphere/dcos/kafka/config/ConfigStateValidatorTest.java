@@ -1,6 +1,7 @@
 package com.mesosphere.dcos.kafka.config;
 
 import com.mesosphere.dcos.kafka.state.FrameworkState;
+import com.mesosphere.dcos.kafka.test.ConfigTestUtils;
 import com.mesosphere.dcos.kafka.test.KafkaTestUtils;
 import org.junit.Assert;
 import org.junit.Before;

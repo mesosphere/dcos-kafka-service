@@ -5,16 +5,11 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.dataformat.yaml.snakeyaml.Yaml;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.mesos.config.ConfigStoreException;
-import org.apache.mesos.config.Configuration;
-import org.apache.mesos.config.ConfigurationFactory;
-import org.apache.mesos.config.RecoveryConfiguration;
+import org.apache.mesos.config.*;
 import org.apache.mesos.dcos.DcosConstants;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 @JsonSerialize
@@ -38,6 +33,9 @@ public class KafkaSchedulerConfiguration implements Configuration {
     @JsonProperty("recovery")
     private RecoveryConfiguration recoveryConfiguration;
 
+    @JsonProperty("healthcheck")
+    private KafkaHealthCheckConfiguration healthCheckConfiguration;
+
     public KafkaSchedulerConfiguration() {
     }
 
@@ -47,14 +45,17 @@ public class KafkaSchedulerConfiguration implements Configuration {
             @JsonProperty("broker") BrokerConfiguration brokerConfiguration,
             @JsonProperty("kafka") KafkaConfiguration kafkaConfiguration,
             @JsonProperty("executor") ExecutorConfiguration executorConfiguration,
-            @JsonProperty("recovery") RecoveryConfiguration recoveryConfiguration) {
+            @JsonProperty("recovery") RecoveryConfiguration recoveryConfiguration,
+            @JsonProperty("healthcheck") KafkaHealthCheckConfiguration healthCheckConfiguration) {
         this.serviceConfiguration = serviceConfiguration;
         this.brokerConfiguration = brokerConfiguration;
         this.kafkaConfiguration = kafkaConfiguration;
         this.executorConfiguration = executorConfiguration;
         this.recoveryConfiguration = recoveryConfiguration;
+        this.healthCheckConfiguration = healthCheckConfiguration;
     }
 
+    @JsonProperty("service")
     public ServiceConfiguration getServiceConfiguration() {
         return serviceConfiguration;
     }
@@ -64,6 +65,7 @@ public class KafkaSchedulerConfiguration implements Configuration {
         this.serviceConfiguration = serviceConfiguration;
     }
 
+    @JsonProperty("broker")
     public BrokerConfiguration getBrokerConfiguration() {
         return brokerConfiguration;
     }
@@ -94,6 +96,7 @@ public class KafkaSchedulerConfiguration implements Configuration {
         this.brokerConfiguration = brokerConfiguration;
     }
 
+    @JsonProperty("kafka")
     public KafkaConfiguration getKafkaConfiguration() {
         return kafkaConfiguration;
     }
@@ -103,6 +106,7 @@ public class KafkaSchedulerConfiguration implements Configuration {
         this.kafkaConfiguration = kafkaConfiguration;
     }
 
+    @JsonProperty("executor")
     public ExecutorConfiguration getExecutorConfiguration() {
         return executorConfiguration;
     }
@@ -112,6 +116,7 @@ public class KafkaSchedulerConfiguration implements Configuration {
         this.executorConfiguration = executorConfiguration;
     }
 
+    @JsonProperty("recovery")
     public RecoveryConfiguration getRecoveryConfiguration() {
         return recoveryConfiguration;
     }
@@ -121,6 +126,17 @@ public class KafkaSchedulerConfiguration implements Configuration {
         this.recoveryConfiguration = recoveryConfiguration;
     }
 
+    @JsonProperty("healthcheck")
+    public void setHealthCheckConfiguration(KafkaHealthCheckConfiguration healthCheckConfiguration) {
+        this.healthCheckConfiguration = healthCheckConfiguration;
+    }
+
+    @JsonProperty("healthcheck")
+    public KafkaHealthCheckConfiguration getHealthCheckConfiguration() {
+        return healthCheckConfiguration;
+    }
+
+    @JsonIgnore
     public ZookeeperConfiguration getZookeeperConfig() {
         ZookeeperConfiguration zkSettings = new ZookeeperConfiguration(
                 getKafkaConfiguration(), getServiceConfiguration());
@@ -130,6 +146,7 @@ public class KafkaSchedulerConfiguration implements Configuration {
         return zkSettings;
     }
 
+    @JsonIgnore
     public String getFullKafkaZookeeperPath() {
         ZookeeperConfiguration zkConfiguration = getZookeeperConfig();
         return zkConfiguration.getKafkaZkUri() + DcosConstants.SERVICE_ROOT_PATH_PREFIX + zkConfiguration.getFrameworkName();
@@ -137,20 +154,18 @@ public class KafkaSchedulerConfiguration implements Configuration {
 
     @Override
     public String toString() {
-        return "KafkaSchedulerConfiguration{" +
-                "serviceConfiguration=" + serviceConfiguration +
-                ", brokerConfiguration=" + brokerConfiguration +
-                ", kafkaConfiguration=" + kafkaConfiguration +
-                ", executorConfiguration=" + executorConfiguration +
-                ", recoveryConfiguration=" + recoveryConfiguration +
-                '}';
+        try {
+            return toJsonString();
+        } catch (Exception e) {
+            return "Failed to stringify KafkaSchedulerConfiguration";
+        }
     }
 
     @JsonIgnore
     @Override
     public byte[] getBytes() throws ConfigStoreException {
         try {
-            return new Yaml().dump(this).getBytes(StandardCharsets.UTF_8);
+            return JsonUtils.MAPPER.writeValueAsBytes(this);
         } catch (Exception e) {
             LOGGER.error("Error occured while serializing the object: " + e);
             throw new ConfigStoreException(e);
@@ -162,11 +177,11 @@ public class KafkaSchedulerConfiguration implements Configuration {
     }
 
     private static class Factory implements ConfigurationFactory<KafkaSchedulerConfiguration> {
+
         @Override
         public KafkaSchedulerConfiguration parse(byte[] bytes) throws ConfigStoreException {
             try {
-                final String yamlStr = new String(bytes, StandardCharsets.UTF_8);
-                return new Yaml().loadAs(yamlStr, KafkaSchedulerConfiguration.class);
+                return JsonUtils.MAPPER.readValue(bytes, KafkaSchedulerConfiguration.class);
             } catch (Exception e) {
                 throw new ConfigStoreException(e);
             }

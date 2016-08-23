@@ -1,13 +1,13 @@
 package com.mesosphere.dcos.kafka.config;
 
-import java.util.UUID;
-
+import com.mesosphere.dcos.kafka.commons.state.KafkaState;
+import com.mesosphere.dcos.kafka.config.ConfigStateValidator.ValidationException;
+import com.mesosphere.dcos.kafka.state.FrameworkState;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.config.ConfigStoreException;
-import com.mesosphere.dcos.kafka.config.ConfigStateValidator.ValidationException;
-import com.mesosphere.dcos.kafka.state.FrameworkState;
-import com.mesosphere.dcos.kafka.state.KafkaState;
+
+import java.util.UUID;
 
 /**
  * Retrieves and stores configurations in the state store.

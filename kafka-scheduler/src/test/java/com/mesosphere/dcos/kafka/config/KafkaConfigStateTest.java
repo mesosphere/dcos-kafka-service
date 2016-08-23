@@ -1,11 +1,11 @@
 package com.mesosphere.dcos.kafka.config;
 
-import com.mesosphere.dcos.kafka.state.KafkaState;
+import com.mesosphere.dcos.kafka.commons.state.KafkaState;
+import com.mesosphere.dcos.kafka.test.ConfigTestUtils;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.retry.RetryNTimes;
 import org.apache.curator.test.TestingServer;
 import org.apache.mesos.config.ConfigStoreException;
-import org.apache.mesos.config.RecoveryConfiguration;
 import org.apache.mesos.testing.CuratorTestUtils;
 import org.junit.*;
 import org.mockito.Mock;
@@ -45,12 +45,7 @@ public class KafkaConfigStateTest {
         }
 
         configState = new KafkaConfigState(testZkRoot, testZk.getConnectString(), retryNeverPolicy);
-        config = new KafkaSchedulerConfiguration(
-                new ServiceConfiguration(),
-                new BrokerConfiguration(),
-                new KafkaConfiguration(),
-                new ExecutorConfiguration(),
-                new RecoveryConfiguration());
+        config = ConfigTestUtils.getTestKafkaSchedulerConfiguration();
     }
 
     @After

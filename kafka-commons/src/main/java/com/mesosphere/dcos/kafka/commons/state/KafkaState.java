@@ -1,7 +1,4 @@
-package com.mesosphere.dcos.kafka.state;
-
-import java.util.ArrayList;
-import java.util.List;
+package com.mesosphere.dcos.kafka.commons.state;
 
 import com.mesosphere.dcos.kafka.config.ZookeeperConfiguration;
 import org.apache.commons.logging.Log;
@@ -10,9 +7,12 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.zookeeper.KeeperException.NoNodeException;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * Read-only interface for retrieving information stored by the Kafka brokers themselves.
@@ -36,17 +36,29 @@ public class KafkaState {
     }
 
     public JSONArray getBrokerIds() throws Exception {
-        return getIds(zkConfig.getZkRootPath() + "/brokers/ids");
+        return getIds(zkConfig.getBrokerIdPath());
+    }
+
+    public Optional<JSONObject> getBroker(String brokerId) throws Exception {
+        List<String> ids = kafkaZkClient.getChildren().forPath(zkConfig.getBrokerIdPath());
+        if (!ids.contains(brokerId)) {
+            return Optional.empty();
+        }
+
+        return Optional.of(
+                new JSONObject(
+                        new String(
+                                kafkaZkClient.getData().forPath(zkConfig.getBrokerIdPath() + "/" + brokerId),
+                                "UTF-8")));
     }
 
     public List<String> getBrokerEndpoints() {
-        String brokerPath = zkConfig.getZkRootPath() + "/brokers/ids";
         List<String> endpoints = new ArrayList<String>();
 
         try {
-            List<String> ids = kafkaZkClient.getChildren().forPath(brokerPath);
+            List<String> ids = kafkaZkClient.getChildren().forPath(zkConfig.getBrokerIdPath());
             for (String id : ids) {
-                byte[] bytes = kafkaZkClient.getData().forPath(brokerPath + "/" + id);
+                byte[] bytes = kafkaZkClient.getData().forPath(zkConfig.getBrokerIdPath() + "/" + id);
                 JSONObject broker = new JSONObject(new String(bytes, "UTF-8"));
                 String host = (String) broker.get("host");
                 Integer port = (Integer) broker.get("port");
@@ -60,13 +72,12 @@ public class KafkaState {
     }
 
     public List<String> getBrokerDNSEndpoints() {
-        String brokerPath = zkConfig.getZkRootPath() + "/brokers/ids";
         List<String> endpoints = new ArrayList<String>();
 
         try {
-            List<String> ids = kafkaZkClient.getChildren().forPath(brokerPath);
+            List<String> ids = kafkaZkClient.getChildren().forPath(zkConfig.getBrokerIdPath());
             for (String id : ids) {
-                byte[] bytes = kafkaZkClient.getData().forPath(brokerPath + "/" + id);
+                byte[] bytes = kafkaZkClient.getData().forPath(zkConfig.getBrokerIdPath() + "/" + id);
                 JSONObject broker = new JSONObject(new String(bytes, "UTF-8"));
                 String host = "broker-" + id + "." + zkConfig.getFrameworkName() + ".mesos";
                 Integer port = (Integer) broker.get("port");

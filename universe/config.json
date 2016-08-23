@@ -44,6 +44,36 @@
             "description":"The minimum amount of time (in seconds) which must pass between destructive replacements of Brokers.",
             "type":"number",
             "default":600
+          },
+          "enable_health_check":{
+            "description":"Enable automated detection of Broker failures which did not result in a Broker process exit.",
+            "type":"boolean",
+            "default":true
+          },
+          "health_check_delay_sec":{
+            "description":"The period of time (in seconds) waited before the health-check begins execution.",
+            "type":"number",
+            "default":15
+          },
+          "health_check_interval_sec":{
+            "description":"The period of time (in seconds) between health-check executions.",
+            "type":"number",
+            "default":10
+          },
+          "health_check_timeout_sec":{
+            "description":"The duration (in seconds) allowed for a health-check to complete before it is considered a failure.",
+            "type":"number",
+            "default":20
+          },
+          "health_check_grace_period_sec":{
+            "description":"The period of time after the delay (in seconds) before health-check failures count towards the maximum consecutive failures.",
+            "type":"number",
+            "default":10
+          },
+          "health_check_max_consecutive_failures":{
+            "description":"The the number of consecutive failures which cause a Broker process to exit.",
+            "type":"number",
+            "default":3
           }
         },
         "required":[

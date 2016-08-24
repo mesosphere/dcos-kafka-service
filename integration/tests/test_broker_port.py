@@ -5,26 +5,16 @@ import time
 import pytest
 import requests
 import shakedown
+import test_utils
 
 
-PACKAGE_NAME = 'kafka'
 DYNAMIC_PORT_OPTIONS_FILE = os.path.join('options', 'dynamic_port.json')
 STATIC_PORT_OPTIONS_FILE = os.path.join('options', 'static_port.json')
-WAIT_TIME_IN_SECONDS = 300
-
-MARATHON_REQUEST_HEADERS = {
-    'authorization': 'token=%s' % (
-        shakedown.run_dcos_command(
-            'config show core.dcos_acs_token'
-        )[0].strip()
-    ),
-}
-
 
 def get_kafka_config():
     response = requests.get(
         marathon_api_url('apps/kafka/versions'),
-        headers=MARATHON_REQUEST_HEADERS
+        headers=test_utils.REQUEST_HEADERS
     )
     assert response.status_code == 200, 'Marathon versions request failed'
 
@@ -32,7 +22,7 @@ def get_kafka_config():
 
     response = requests.get(
         marathon_api_url('apps/kafka/versions/%s' % version),
-        headers=MARATHON_REQUEST_HEADERS
+        headers=test_utils.REQUEST_HEADERS
     )
     assert response.status_code == 200
 
@@ -49,7 +39,7 @@ def get_connection_info():
 
     def success_predicate(result):
         deployments = requests.get(
-            marathon_api_url('deployments'), headers=MARATHON_REQUEST_HEADERS
+            marathon_api_url('deployments'), headers=test_utils.REQUEST_HEADERS
         ).json()
         if deployments:
             return False, 'Deployment is ongoing'
@@ -65,20 +55,20 @@ def get_connection_info():
                 'Command errored or expected number of brokers are not up',
             )
 
-    return json.loads(spin(fn, success_predicate)[0])
+    return json.loads(test_utils.spin(fn, success_predicate)[0])
 
 
 def check_health():
     def fn():
         return (
-            shakedown.get_service(PACKAGE_NAME) is not None and
-            shakedown.service_healthy(PACKAGE_NAME)
+            shakedown.get_service(test_utils.PACKAGE_NAME) is not None and
+            shakedown.service_healthy(test_utils.PACKAGE_NAME)
         )
 
     def success_predicate(x):
         return x, 'Service did not become healthy'
 
-    return spin(fn, success_predicate)
+    return test_utils.spin(fn, success_predicate)
 
 
 def marathon_api_url(basename):
@@ -92,25 +82,11 @@ def request(request_fn, *args, **kwargs):
             'Request failed: %s' % response.content,
         )
 
-    return spin(request_fn, success_predicate, *args, **kwargs)
-
-
-def spin(fn, success_predicate, *args, **kwargs):
-    end_time = time.time() + WAIT_TIME_IN_SECONDS
-    while time.time() < end_time:
-        result = fn(*args, **kwargs)
-        is_successful, error_message = success_predicate(result)
-        if is_successful:
-            break
-        time.sleep(1)
-
-    assert is_successful, error_message
-
-    return result
+    return test_utils.spin(request_fn, success_predicate, *args, **kwargs)
 
 
 def uninstall():
-    shakedown.uninstall_package_and_wait(PACKAGE_NAME)
+    shakedown.uninstall_package_and_wait(test_utils.PACKAGE_NAME)
     shakedown.run_command_on_master(
         'docker run mesosphere/janitor /janitor.py '
         '-r kafka-role -p kafka-principal -z kafka'
@@ -120,21 +96,21 @@ def uninstall():
 @pytest.yield_fixture
 def dynamic_port_config():
     shakedown.install_package_and_wait(
-        PACKAGE_NAME, options_file=DYNAMIC_PORT_OPTIONS_FILE
+        test_utils.PACKAGE_NAME, options_file=DYNAMIC_PORT_OPTIONS_FILE
     )
     yield
-    uninstall()
+    test_utils.uninstall()
 
 
 @pytest.fixture
 def static_port_config():
     shakedown.install_package_and_wait(
-        PACKAGE_NAME, options_file=STATIC_PORT_OPTIONS_FILE
+        test_utils.PACKAGE_NAME, options_file=STATIC_PORT_OPTIONS_FILE
     )
 
 
 def teardown_module(module):
-    uninstall()
+    test_utils.uninstall()
 
 
 def test_dynamic_port_comes_online(dynamic_port_config):
@@ -154,7 +130,7 @@ def test_can_adjust_config_from_static_to_static_port():
         requests.put,
         marathon_api_url('apps/kafka'),
         json=config,
-        headers=MARATHON_REQUEST_HEADERS
+        headers=test_utils.REQUEST_HEADERS
     )
 
     check_health()
@@ -175,7 +151,7 @@ def test_can_adjust_config_from_static_to_dynamic_port():
         requests.put,
         marathon_api_url('apps/kafka'),
         json=config,
-        headers=MARATHON_REQUEST_HEADERS
+        headers=test_utils.REQUEST_HEADERS
     )
 
     check_health()
@@ -197,7 +173,7 @@ def test_can_adjust_config_from_dynamic_to_dynamic_port():
         requests.put,
         marathon_api_url('apps/kafka'),
         json=config,
-        headers=MARATHON_REQUEST_HEADERS
+        headers=test_utils.REQUEST_HEADERS
     )
 
     check_health()
@@ -218,7 +194,7 @@ def test_can_adjust_config_from_dynamic_to_static_port():
         requests.put,
         marathon_api_url('apps/kafka'),
         json=config,
-        headers=MARATHON_REQUEST_HEADERS
+        headers=test_utils.REQUEST_HEADERS
     )
 
     check_health()

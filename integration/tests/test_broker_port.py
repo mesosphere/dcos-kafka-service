@@ -7,30 +7,33 @@ import requests
 import shakedown
 import test_utils
 
+from tests.test_utils import (
+    DEFAULT_PARTITION_COUNT,
+    DEFAULT_REPLICATION_FACTOR,
+    DEFAULT_BROKER_COUNT,
+    DYNAMIC_PORT_OPTIONS_FILE,
+    STATIC_PORT_OPTIONS_FILE,
+    PACKAGE_NAME,
+    check_health,
+    get_broker_list,
+    get_kafka_command,
+    get_kafka_config,
+    marathon_api_url,
+    request,
+    spin,
+    uninstall,
+)
 
-DYNAMIC_PORT_OPTIONS_FILE = os.path.join('options', 'dynamic_port.json')
-STATIC_PORT_OPTIONS_FILE = os.path.join('options', 'static_port.json')
 
-def get_kafka_config():
-    response = requests.get(
-        marathon_api_url('apps/kafka/versions'),
-        headers=test_utils.REQUEST_HEADERS
-    )
-    assert response.status_code == 200, 'Marathon versions request failed'
+WAIT_TIME_IN_SECONDS = 300
 
-    version = response.json()['versions'][0]
-
-    response = requests.get(
-        marathon_api_url('apps/kafka/versions/%s' % version),
-        headers=test_utils.REQUEST_HEADERS
-    )
-    assert response.status_code == 200
-
-    config = response.json()
-    del config['uris']
-    del config['version']
-
-    return config
+MARATHON_REQUEST_HEADERS = {
+    'authorization': 'token=%s' % (
+        shakedown.run_dcos_command(
+            'config show core.dcos_acs_token'
+        )[0].strip()
+    ),
+}
 
 
 def get_connection_info():
@@ -56,41 +59,6 @@ def get_connection_info():
             )
 
     return json.loads(test_utils.spin(fn, success_predicate)[0])
-
-
-def check_health():
-    def fn():
-        return (
-            shakedown.get_service(test_utils.PACKAGE_NAME) is not None and
-            shakedown.service_healthy(test_utils.PACKAGE_NAME)
-        )
-
-    def success_predicate(x):
-        return x, 'Service did not become healthy'
-
-    return test_utils.spin(fn, success_predicate)
-
-
-def marathon_api_url(basename):
-    return '{}/v2/{}'.format(shakedown.dcos_service_url('marathon'), basename)
-
-
-def request(request_fn, *args, **kwargs):
-    def success_predicate(response):
-        return (
-            response.status_code == 200,
-            'Request failed: %s' % response.content,
-        )
-
-    return test_utils.spin(request_fn, success_predicate, *args, **kwargs)
-
-
-def uninstall():
-    shakedown.uninstall_package_and_wait(test_utils.PACKAGE_NAME)
-    shakedown.run_command_on_master(
-        'docker run mesosphere/janitor /janitor.py '
-        '-r kafka-role -p kafka-principal -z kafka'
-    )
 
 
 @pytest.yield_fixture

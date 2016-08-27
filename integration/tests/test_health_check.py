@@ -15,62 +15,77 @@ def teardown_module(module):
 @pytest.fixture
 def static_port_config():
     shakedown.install_package_and_wait(
-        test_utils.PACKAGE_NAME, options_file=STATIC_PORT_OPTIONS_FILE
+        test_utils.PACKAGE_NAME,
+        options_file=test_utils.STATIC_PORT_OPTIONS_FILE
     )
 
 
 @pytest.mark.timeout(120)
 def test_failing_health_check(static_port_config):
-    broker_id = "0"
-    broker_name = "broker-" + broker_id
+    broker_id = '0'
+    broker_name = 'broker-' + broker_id
 
     def found_broker(result):
-        return result != None, "Broker not found."
+        return result != None, 'Broker not found.'
 
     def broker_killed_result_checker(result):
-        return result, "Broker not killed."
+        return result, 'Broker not killed.'
 
-    print("Waiting for last Running Broker.")
-    test_utils.spin(get_running_broker_task_id, found_broker, "broker-2")
+    print('Waiting for last Running Broker.')
+    test_utils.spin(get_running_broker_task_id, found_broker, 'broker-2')
 
-    # Get broker-0's task ID so we can know when it kills itself after failing the health check.
+    # Get broker-0's task ID so we can know when it kills itself after failing
+    # the health check.
     task_id = get_running_broker_task_id(broker_name)
     print("{0} 's task_id is {1}" % broker_name, task_id)
 
     # Delete the ZK node which should trigger the health check to kill broker-0
-    shakedown.run_command_on_master("wget https://github.com/outbrain/zookeepercli/releases/download/v1.0.10/zookeepercli")
-    shakedown.run_command_on_master("sudo chmod +x zookeepercli")
-    shakedown.run_command_on_master("./zookeepercli --servers 127.0.0.1 -c delete /dcos-service-kafka/brokers/ids/" + broker_id)
+    shakedown.run_command_on_master(
+        'wget https://github.com/outbrain/zookeepercli/releases/'
+        'download/v1.0.10/zookeepercli'
+    )
+    shakedown.run_command_on_master('sudo chmod +x zookeepercli')
+    shakedown.run_command_on_master(
+        './zookeepercli --servers 127.0.0.1 -c delete '
+        '/dcos-service-kafka/brokers/ids/' + broker_id
+    )
 
-    print("Waiting for Broker to fail.")
+    print('Waiting for Broker to fail.')
     test_utils.spin(broker_killed, broker_killed_result_checker, task_id)
 
-    print("Waiting for Running Broker.")
+    print('Waiting for Running Broker.')
     test_utils.spin(get_running_broker_task_id, found_broker, broker_name)
 
 
 def get_running_broker_task_id(broker_name):
-    tasks_url = test_utils.DCOS_URL + "/mesos/tasks"
-    tasks_json = requests.get(tasks_url, headers=test_utils.REQUEST_HEADERS).json()
-    for task in tasks_json["tasks"]:
-        task_name = task["name"]
-        task_state = task["state"]
-        if broker_name == task_name and task_state == "TASK_RUNNING":
-            print("Broker with name " + broker_name + " is running")
-            return task["id"]
+    tasks_url = test_utils.DCOS_URL + '/mesos/tasks'
+    tasks_json = requests.get(
+        tasks_url, headers=test_utils.REQUEST_HEADERS
+    ).json()
+
+    for task in tasks_json['tasks']:
+        task_name = task['name']
+        task_state = task['state']
+
+        if broker_name == task_name and task_state == 'TASK_RUNNING':
+            print('Broker with name ' + broker_name + ' is running')
+            return task['id']
 
     return None
 
 
 def broker_killed(task_id):
-    tasks_url = test_utils.DCOS_URL + "/mesos/tasks"
-    tasks_json = requests.get(tasks_url, headers=test_utils.REQUEST_HEADERS).json()
-    for task in tasks_json["tasks"]:
-        curr_task_id = task["id"]
-        task_state = task["state"]
-        if curr_task_id == task_id and task_state == "TASK_KILLED":
-            print("Broker with id " + task_id + " failed");
+    tasks_url = test_utils.DCOS_URL + '/mesos/tasks'
+    tasks_json = requests.get(
+        tasks_url, headers=test_utils.REQUEST_HEADERS
+    ).json()
+
+    for task in tasks_json['tasks']:
+        curr_task_id = task['id']
+        task_state = task['state']
+
+        if curr_task_id == task_id and task_state == 'TASK_KILLED':
+            print('Broker with id ' + task_id + ' failed');
             return True
 
     return False
-

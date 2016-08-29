@@ -1,9 +1,9 @@
-schedulerConfiguration:
+scheduler_configuration:
   service:
     name: ${FRAMEWORK_NAME}
     user: ${USER}
-    placementStrategy: ${PLACEMENT_STRATEGY}
-    phaseStrategy: ${PHASE_STRATEGY}
+    placement_strategy: ${PLACEMENT_STRATEGY}
+    phase_strategy: ${PHASE_STRATEGY}
     role: "${FRAMEWORK_NAME}-role"
     principal: "${FRAMEWORK_NAME}-principal"
     count: ${BROKER_COUNT:-3}
@@ -12,19 +12,19 @@ schedulerConfiguration:
     cpus: ${BROKER_CPUS:-1}
     mem: ${BROKER_MEM:-2304}
     heap:
-      sizeMb: ${BROKER_HEAP_MB:-2048}
+      size_mb: ${BROKER_HEAP_MB:-2048}
     disk: ${BROKER_DISK:-5000}
-    diskType: ${DISK_TYPE:-ROOT}
-    javaUri: ${JAVA_URI}
-    kafkaUri: ${KAFKA_URI}
-    overriderUri: ${OVERRIDER_URI}
+    disk_type: ${DISK_TYPE:-ROOT}
+    java_uri: ${JAVA_URI}
+    kafka_uri: ${KAFKA_URI}
+    overrider_uri: ${OVERRIDER_URI}
 
   kafka:
-    kafkaAdvertiseHostIp: ${KAFKA_ADVERTISE_HOST_IP:-true}
-    kafkaVerName: ${KAFKA_VER_NAME}
-    kafkaSandboxPath: "${MESOS_SANDBOX}/${KAFKA_VER_NAME}"
-    mesosZkUri: "master.mesos:2181"
-    kafkaZkUri: "${KAFKA_ZOOKEEPER_URI}"
+    kafka_advertise_host_ip: ${KAFKA_ADVERTISE_HOST_IP:-true}
+    kafka_ver_name: ${KAFKA_VER_NAME}
+    kafka_sandbox_path: "${MESOS_SANDBOX}/${KAFKA_VER_NAME}"
+    mesos_zk_uri: "master.mesos:2181"
+    kafka_zk_uri: "${KAFKA_ZOOKEEPER_URI}"
 
 logging:
   level: INFO

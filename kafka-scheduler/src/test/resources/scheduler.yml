@@ -1,9 +1,9 @@
-schedulerConfiguration:
+scheduler_configuration:
   service:
     name: ${FRAMEWORK_NAME}
     user: ${USER}
-    placementStrategy: ${PLACEMENT_STRATEGY:-NODE}
-    phaseStrategy: ${PHASE_STRATEGY:-INSTALL}
+    placement_strategy: ${PLACEMENT_STRATEGY:-NODE}
+    phase_strategy: ${PHASE_STRATEGY:-INSTALL}
     role: "${FRAMEWORK_NAME}-role"
     principal: "${FRAMEWORK_NAME}-principal"
     count: ${BROKER_COUNT:-3}
@@ -25,26 +25,26 @@ schedulerConfiguration:
     cpus: ${EXECUTOR_CPUS:-0.5}
     mem: ${EXECUTOR_MEM:-256}
     disk: ${EXECUTOR_DISK:-0}
-    executorUri: ${EXECUTOR_URI}
+    executor_uri: ${EXECUTOR_URI}
 
   broker:
     cpus: ${BROKER_CPUS:-1.0}
     mem: ${BROKER_MEM:-2304}
     heap:
-      sizeMb: ${BROKER_HEAP_MB:-2048}
+      size_mb: ${BROKER_HEAP_MB:-2048}
     disk: ${BROKER_DISK:-5000}
-    diskType: ${DISK_TYPE:-ROOT}
-    javaUri: ${JAVA_URI}
-    kafkaUri: ${KAFKA_URI}
-    overriderUri: ${OVERRIDER_URI}
+    disk_type: ${DISK_TYPE:-ROOT}
+    java_uri: ${JAVA_URI}
+    kafka_uri: ${KAFKA_URI}
+    overrider_uri: ${OVERRIDER_URI}
     port: ${BROKER_PORT:-0}
 
   kafka:
-    kafkaAdvertiseHostIp: ${KAFKA_ADVERTISE_HOST_IP:-true}
-    kafkaVerName: ${KAFKA_VER_NAME}
-    kafkaSandboxPath: "${MESOS_SANDBOX}/${KAFKA_VER_NAME}"
-    mesosZkUri: "localhost:40000"
-    kafkaZkUri: "localhost:40000"
+    kafka_advertise_host_ip: ${KAFKA_ADVERTISE_HOST_IP:-true}
+    kafka_ver_name: ${KAFKA_VER_NAME}
+    kafka_sandbox_path: "${MESOS_SANDBOX}/${KAFKA_VER_NAME}"
+    mesos_zk_uri: "localhost:40000"
+    kafka_zk_uri: "localhost:40000"
 
 server:
   type: simple

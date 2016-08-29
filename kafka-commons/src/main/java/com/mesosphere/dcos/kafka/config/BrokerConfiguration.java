@@ -14,13 +14,13 @@ public class BrokerConfiguration {
     private HeapConfig heap;
     @JsonProperty("disk")
     private double disk;
-    @JsonProperty("diskType")
+    @JsonProperty("disk_type")
     private String diskType;
-    @JsonProperty("kafkaUri")
+    @JsonProperty("kafka_uri")
     private String kafkaUri;
-    @JsonProperty("javaUri")
+    @JsonProperty("java_uri")
     private String javaUri;
-    @JsonProperty("overriderUri")
+    @JsonProperty("overrider_uri")
     private String overriderUri;
     @JsonProperty("port")
     private Long port;
@@ -35,10 +35,10 @@ public class BrokerConfiguration {
             @JsonProperty("mem")double mem,
             @JsonProperty("heap")HeapConfig heap,
             @JsonProperty("disk")double disk,
-            @JsonProperty("diskType")String diskType,
-            @JsonProperty("kafkaUri")String kafkaUri,
-            @JsonProperty("javaUri")String javaUri,
-            @JsonProperty("overriderUri")String overriderUri,
+            @JsonProperty("disk_type")String diskType,
+            @JsonProperty("kafka_uri")String kafkaUri,
+            @JsonProperty("java_uri")String javaUri,
+            @JsonProperty("overrider_uri")String overriderUri,
             @JsonProperty("port")Long port) {
         this.cpus = cpus;
         this.mem = mem;
@@ -91,7 +91,7 @@ public class BrokerConfiguration {
         return diskType;
     }
 
-    @JsonProperty("diskType")
+    @JsonProperty("disk_type")
     public void setDiskType(String diskType) {
         this.diskType = diskType;
     }
@@ -100,7 +100,7 @@ public class BrokerConfiguration {
         return kafkaUri;
     }
 
-    @JsonProperty("kafkaUri")
+    @JsonProperty("kafka_uri")
     public void setKafkaUri(String kafkaUri) {
         this.kafkaUri = kafkaUri;
     }
@@ -109,7 +109,7 @@ public class BrokerConfiguration {
         return javaUri;
     }
 
-    @JsonProperty("javaUri")
+    @JsonProperty("java_uri")
     public void setJavaUri(String javaUri) {
         this.javaUri = javaUri;
     }
@@ -118,7 +118,7 @@ public class BrokerConfiguration {
         return overriderUri;
     }
 
-    @JsonProperty("overriderUri")
+    @JsonProperty("overrider_uri")
     public void setOverriderUri(String overriderUri) {
         this.overriderUri = overriderUri;
     }

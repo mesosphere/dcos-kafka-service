@@ -7,12 +7,12 @@ import io.dropwizard.Configuration;
 import java.util.Objects;
 
 public class DropwizardConfiguration extends Configuration {
-    @JsonProperty("schedulerConfiguration")
+    @JsonProperty("scheduler_configuration")
     KafkaSchedulerConfiguration schedulerConfiguration;
 
     @JsonCreator
     public DropwizardConfiguration(
-            @JsonProperty("schedulerConfiguration") KafkaSchedulerConfiguration schedulerConfiguration) {
+            @JsonProperty("scheduler_configuration") KafkaSchedulerConfiguration schedulerConfiguration) {
         this.schedulerConfiguration = schedulerConfiguration;
     }
 
@@ -20,7 +20,7 @@ public class DropwizardConfiguration extends Configuration {
         return schedulerConfiguration;
     }
 
-    @JsonProperty("schedulerConfiguration")
+    @JsonProperty("scheduler_configuration")
     public void setSchedulerConfiguration(KafkaSchedulerConfiguration schedulerConfiguration) {
         this.schedulerConfiguration = schedulerConfiguration;
     }

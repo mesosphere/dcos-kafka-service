@@ -276,7 +276,7 @@ Make the REST request below to view the current plan. See [REST API authenticati
             {
                 "blocks": [
                     {
-                        "hasDecisionPoint": false,
+                        "has_decision_point": false,
                         "id": "7752c4fe-e998-4f30-bfd3-9748fc8c8354",
                         "message": "Reconciliation complete",
                         "name": "Reconciliation",
@@ -290,21 +290,21 @@ Make the REST request below to view the current plan. See [REST API authenticati
             {
                 "blocks": [
                     {
-                        "hasDecisionPoint": false,
+                        "has_decision_point": false,
                         "id": "918c6019-09af-476d-b0f6-a26f59526bd7",
                         "message": "Broker-0 is Complete",
                         "name": "broker-0",
                         "status": "Complete"
                     },
                     {
-                        "hasDecisionPoint": false,
+                        "has_decision_point": false,
                         "id": "883945bc-87e7-4156-bda9-fca249aef828",
                         "message": "Broker-1 is Complete",
                         "name": "broker-1",
                         "status": "Complete"
                     },
                     {
-                        "hasDecisionPoint": false,
+                        "has_decision_point": false,
                         "id": "17e70549-6401-4128-80ee-a9a5f89e0ff7",
                         "message": "Broker-2 is Complete",
                         "name": "broker-2",
@@ -332,7 +332,7 @@ When using the `STAGE` deployment strategy, an update plan will initially pause 
             {
                 "blocks": [
                     {
-                        "hasDecisionPoint": false,
+                        "has_decision_point": false,
                         "id": "8139b860-2011-45fd-acda-738d8b915f30",
                         "message": "Reconciliation complete",
                         "name": "Reconciliation",
@@ -346,21 +346,21 @@ When using the `STAGE` deployment strategy, an update plan will initially pause 
             {
                 "blocks": [
                     {
-                        "hasDecisionPoint": true,
+                        "has_decision_point": true,
                         "id": "926fb980-8942-48fb-8eb6-1b63fad4e7e3",
                         "message": "Broker-0 is Pending",
                         "name": "broker-0",
                         "status": "Pending"
                     },
                     {
-                        "hasDecisionPoint": true,
+                        "has_decision_point": true,
                         "id": "60f6dade-bff8-42b5-b4ac-aa6aa6b705a4",
                         "message": "Broker-1 is Pending",
                         "name": "broker-1",
                         "status": "Pending"
                     },
                     {
-                        "hasDecisionPoint": false,
+                        "has_decision_point": false,
                         "id": "c98b9e72-b12b-4b47-9193-776a2cb9ed53",
                         "message": "Broker-2 is Pending",
                         "name": "broker-2",
@@ -400,7 +400,7 @@ After you execute the continue operation, the plan will look like this:
             {
                 "blocks": [
                     {
-                        "hasDecisionPoint": false,
+                        "has_decision_point": false,
                         "id": "8139b860-2011-45fd-acda-738d8b915f30",
                         "message": "Reconciliation complete",
                         "name": "Reconciliation",
@@ -414,21 +414,21 @@ After you execute the continue operation, the plan will look like this:
             {
                 "blocks": [
                     {
-                        "hasDecisionPoint": false,
+                        "has_decision_point": false,
                         "id": "926fb980-8942-48fb-8eb6-1b63fad4e7e3",
                         "message": "Broker-0 is InProgress",
                         "name": "broker-0",
                         "status": "InProgress"
                     },
                     {
-                        "hasDecisionPoint": true,
+                        "has_decision_point": true,
                         "id": "60f6dade-bff8-42b5-b4ac-aa6aa6b705a4",
                         "message": "Broker-1 is Pending",
                         "name": "broker-1",
                         "status": "Pending"
                     },
                     {
-                        "hasDecisionPoint": false,
+                        "has_decision_point": false,
                         "id": "c98b9e72-b12b-4b47-9193-776a2cb9ed53",
                         "message": "Broker-2 is Pending",
                         "name": "broker-2",
@@ -852,7 +852,7 @@ GET /service/kafka/v1/plan HTTP/1.1
         {
             "blocks": [
                 {
-                    "hasDecisionPoint": false,
+                    "has_decision_point": false,
                     "id": "e56d2e4a-e05b-42ad-b4a0-d74b68d206af",
                     "message": "Reconciliation complete",
                     "name": "Reconciliation",
@@ -866,21 +866,21 @@ GET /service/kafka/v1/plan HTTP/1.1
         {
             "blocks": [
                 {
-                    "hasDecisionPoint": false,
+                    "has_decision_point": false,
                     "id": "d4e72ee8-4608-423a-9566-1632ff0ab211",
                     "message": "Broker-0 is Complete",
                     "name": "broker-0",
                     "status": "Complete"
                 },
                 {
-                    "hasDecisionPoint": false,
+                    "has_decision_point": false,
                     "id": "3ea30deb-9660-42f1-ad23-bd418d718999",
                     "message": "Broker-1 is Complete",
                     "name": "broker-1",
                     "status": "Complete"
                 },
                 {
-                    "hasDecisionPoint": false,
+                    "has_decision_point": false,
                     "id": "4da21440-de73-4772-9c85-877f2677e62a",
                     "message": "Broker-2 is Complete",
                     "name": "broker-2",
@@ -1442,7 +1442,7 @@ Displays all Phases and Blocks in the service Plan. If a rollout is currently in
             {
                 "blocks": [
                     {
-                        "hasDecisionPoint": false,
+                        "has_decision_point": false,
                         "id": "019eaab4-4082-4e38-ab01-a5d2a825cf8d",
                         "message": "Reconciliation complete",
                         "name": "Reconciliation",
@@ -1456,21 +1456,21 @@ Displays all Phases and Blocks in the service Plan. If a rollout is currently in
             {
                 "blocks": [
                     {
-                        "hasDecisionPoint": false,
+                        "has_decision_point": false,
                         "id": "8a727290-062a-44bf-87ba-3ebfe005aa18",
                         "message": "Broker-0 is Complete",
                         "name": "broker-0",
                         "status": "Complete"
                     },
                     {
-                        "hasDecisionPoint": false,
+                        "has_decision_point": false,
                         "id": "5d2aa9d9-5eda-4a13-aea1-9d98e4cf7ea7",
                         "message": "Broker-1 is Complete",
                         "name": "broker-1",
                         "status": "Complete"
                     },
                     {
-                        "hasDecisionPoint": false,
+                        "has_decision_point": false,
                         "id": "7f6762b6-7a51-4df2-bb4d-b82b75623938",
                         "message": "Broker-2 is Complete",
                         "name": "broker-2",
@@ -1495,7 +1495,7 @@ Displays all Phases and Blocks in the service Plan. If a rollout is currently in
             {
                 "blocks": [
                     {
-                        "hasDecisionPoint": false,
+                        "has_decision_point": false,
                         "id": "019eaab4-4082-4e38-ab01-a5d2a825cf8d",
                         "message": "Reconciliation complete",
                         "name": "Reconciliation",
@@ -1509,21 +1509,21 @@ Displays all Phases and Blocks in the service Plan. If a rollout is currently in
             {
                 "blocks": [
                     {
-                        "hasDecisionPoint": false,
+                        "has_decision_point": false,
                         "id": "8a727290-062a-44bf-87ba-3ebfe005aa18",
                         "message": "Broker-0 is Complete",
                         "name": "broker-0",
                         "status": "Complete"
                     },
                     {
-                        "hasDecisionPoint": false,
+                        "has_decision_point": false,
                         "id": "5d2aa9d9-5eda-4a13-aea1-9d98e4cf7ea7",
                         "message": "Broker-1 is Complete",
                         "name": "broker-1",
                         "status": "Complete"
                     },
                     {
-                        "hasDecisionPoint": false,
+                        "has_decision_point": false,
                         "id": "7f6762b6-7a51-4df2-bb4d-b82b75623938",
                         "message": "Broker-2 is Complete",
                         "name": "broker-2",

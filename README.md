@@ -1316,11 +1316,11 @@ This configuration shows a default per-broker memory allocation of 2048 (configu
             "containerHookUri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/container-hook-0.2.5.tgz",
             "cpus": 1,
             "disk": 5000,
-            "diskType": "ROOT",
-            "javaUri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/jre-8u72-linux-x64.tar.gz",
-            "kafkaUri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/kafka_2.10-0.9.0.1.tgz",
+            "disk_type": "ROOT",
+            "java_uri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/jre-8u72-linux-x64.tar.gz",
+            "kafka_uri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/kafka_2.10-0.9.0.1.tgz",
             "mem": 2048, // <<--
-            "overriderUri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/overrider.zip"
+            "overrider_uri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/overrider.zip"
         },
         "kafkaConfiguration": {
             [...]
@@ -1328,8 +1328,8 @@ This configuration shows a default per-broker memory allocation of 2048 (configu
         "serviceConfiguration": {
             "count": 3,
             "name": "kafka",
-            "phaseStrategy": "INSTALL",
-            "placementStrategy": "NODE",
+            "phase_strategy": "INSTALL",
+            "placement_strategy": "NODE",
             "principal": "kafka-principal",
             "role": "kafka-role",
             "user": ""
@@ -1345,11 +1345,11 @@ This configuration shows a default per-broker memory allocation of 2048 (configu
             "containerHookUri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/container-hook-0.2.5.tgz",
             "cpus": 1,
             "disk": 5000,
-            "diskType": "ROOT",
-            "javaUri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/jre-8u72-linux-x64.tar.gz",
-            "kafkaUri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/kafka_2.10-0.9.0.1.tgz",
+            "disk_type": "ROOT",
+            "java_uri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/jre-8u72-linux-x64.tar.gz",
+            "kafka_uri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/kafka_2.10-0.9.0.1.tgz",
             "mem": 2048, // <<--
-            "overriderUri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/overrider.zip"
+            "overrider_uri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/overrider.zip"
         },
         "kafkaConfiguration": {
             [...]
@@ -1357,8 +1357,8 @@ This configuration shows a default per-broker memory allocation of 2048 (configu
         "serviceConfiguration": {
             "count": 3,
             "name": "kafka",
-            "phaseStrategy": "INSTALL",
-            "placementStrategy": "NODE",
+            "phase_strategy": "INSTALL",
+            "placement_strategy": "NODE",
             "principal": "kafka-principal",
             "role": "kafka-role",
             "user": ""
@@ -1376,11 +1376,11 @@ The target configuration, meanwhile, shows an increase of configured per-broker 
             "containerHookUri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/container-hook-0.2.5.tgz",
             "cpus": 1,
             "disk": 5000,
-            "diskType": "ROOT",
-            "javaUri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/jre-8u72-linux-x64.tar.gz",
-            "kafkaUri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/kafka_2.10-0.9.0.1.tgz",
+            "disk_type": "ROOT",
+            "java_uri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/jre-8u72-linux-x64.tar.gz",
+            "kafka_uri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/kafka_2.10-0.9.0.1.tgz",
             "mem": 4096, // <<--
-            "overriderUri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/overrider.zip"
+            "overrider_uri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/overrider.zip"
         },
         "kafkaConfiguration": {
             [...]
@@ -1388,8 +1388,8 @@ The target configuration, meanwhile, shows an increase of configured per-broker 
         "serviceConfiguration": {
             "count": 3,
             "name": "kafka",
-            "phaseStrategy": "INSTALL",
-            "placementStrategy": "NODE",
+            "phase_strategy": "INSTALL",
+            "placement_strategy": "NODE",
             "principal": "kafka-principal",
             "role": "kafka-role",
             "user": ""
@@ -1405,11 +1405,11 @@ The target configuration, meanwhile, shows an increase of configured per-broker 
             "containerHookUri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/container-hook-0.2.5.tgz",
             "cpus": 1,
             "disk": 5000,
-            "diskType": "ROOT",
-            "javaUri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/jre-8u72-linux-x64.tar.gz",
-            "kafkaUri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/kafka_2.10-0.9.0.1.tgz",
+            "disk_type": "ROOT",
+            "java_uri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/jre-8u72-linux-x64.tar.gz",
+            "kafka_uri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/kafka_2.10-0.9.0.1.tgz",
             "mem": 4096, // <<--
-            "overriderUri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/overrider.zip"
+            "overrider_uri": "https://s3.amazonaws.com/downloads.mesosphere.io/kafka/assets/0.2.5-0.9.0.1/overrider.zip"
         },
         "kafkaConfiguration": {
             [...]
@@ -1417,8 +1417,8 @@ The target configuration, meanwhile, shows an increase of configured per-broker 
         "serviceConfiguration": {
             "count": 3,
             "name": "kafka",
-            "phaseStrategy": "INSTALL",
-            "placementStrategy": "NODE",
+            "phase_strategy": "INSTALL",
+            "placement_strategy": "NODE",
             "principal": "kafka-principal",
             "role": "kafka-role",
             "user": ""

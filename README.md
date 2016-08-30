@@ -257,7 +257,7 @@ Configuration updates are rolled out through execution of Update Plans. You can 
 
 In brief, "plans" are composed of "phases," which are in turn composed of "blocks." Two possible configuration update strategies specify how the blocks are executed. These strategies are specified by setting the `PHASE_STRATEGY` environment variable on the scheduler. By default, the strategy is `INSTALL`, which rolls changes out to one broker at a time with no pauses.
 
-The alternative is the `STAGE` strategy. This strategy injects two mandatory human decision points into the configuration update process. Initially, no configuration update will take place: the service waits for a human to confirm the update plan is correct. You may then decide to either continue the configuration update through a [REST API][9] call, or roll back the configuration update by replacing the original configuration through Marathon in exactly the same way as a configuration update is specified above.
+The alternative is the `STAGE` strategy. This strategy injects two mandatory human decision points into the configuration update process. Initially, no configuration update will take place: the service waits for a human to confirm the update plan is correct. You may then decide to either continue the configuration update through a [REST API][9] call, or roll back the configuration update by replacing the original configuration through the DC/OS web interface in exactly the same way as a configuration update is specified above.
 
 After specifying that an update should continue, one block representing one broker will be updated and the configuration update will again pause. At this point, you have a second opportunity to roll back or continue. If you decide to continue a second time, the rest of the brokers will be updated one at a time until all the brokers are using the new configuration. You may interrupt an update at any point. After interrupting, you can choose to continue or roll back. Consult the "Configuration Update REST API" for these operations.
 
@@ -954,11 +954,11 @@ The following code connects to a DC/OS-hosted Kafka instance using `bin/kafka-co
 
 ## Add a Broker
 
-Increase the `BROKER_COUNT` value via Marathon as in any other configuration update.
+Increase the `BROKER_COUNT` value via the DC/OS web interface as in any other configuration update.
 
 ## Upgrade Software
 
-1.  In the Marathon web interface, destroy the Kafka scheduler to be updated.
+1.  In the DC/OS web interface, destroy the Kafka scheduler to be updated.
 
 2.  Verify that you no longer see it in the DC/OS web interface.
 
@@ -1109,7 +1109,7 @@ The same information can be retrieved through the DC/OS CLI:
 
 ### Add Broker
 
-Increase the `BROKER_COUNT` value via Marathon. This should be rolled as in any other configuration update. <!-- so you wouldn't use the API to do this? If so, I will move this to Management -->
+Increase the `BROKER_COUNT` value via the DC/OS web interface. This should be rolled as in any other configuration update.
 
 ### List All Brokers
 

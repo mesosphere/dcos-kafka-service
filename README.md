@@ -240,10 +240,10 @@ These values may vary if you had customized them during installation.
 
 You can customize your cluster in-place when it is up and running.
 
-The Kafka scheduler runs as a Marathon process and can be reconfigured by changing values within Marathon. These are the general steps to follow:
+The Kafka scheduler runs as a Marathon process and can be reconfigured by changing values from the DC/OS web interface. These are the general steps to follow:
 
-1.  View your Marathon dashboard at `http://$DCOS_URI/marathon`
-2.  In the list of `Applications`, click the name of the Kafka service to be updated.
+1.  Go to the `Services` tab of the DC/OS web interface.
+2.  Click the name of the Kafka service to be updated.
 3.  Within the Kafka instance details view, click the `Configuration` tab, then click the `Edit` button.
 4.  In the dialog that appears, expand the `Environment Variables` section and update any field(s) to their desired value(s). For example, to [increase the number of Brokers][8], edit the value for `BROKER_COUNT`. Do not edit the value for `FRAMEWORK_NAME` or `BROKER_DISK` or `PLACEMENT_STRATEGY`.
 5.  A `PHASE_STRATEGY` of `STAGE` should also be set. See "Configuration Deployment Strategy" below for more details.
@@ -454,40 +454,39 @@ If you enter `continue` a second time, the rest of the plan will be executed wit
         "Result": "Received cmd: interrupt"
     }
 
-
 **Note:** The interrupt command can’t stop a block that is `InProgress`, but it will stop the change on the subsequent blocks.
 
 ## Configuration Options
 
-The following describes the most commonly used features of the Kafka service and how to configure them via dcos-cli and in Marathon. View the [default `config.json` in DC/OS Universe][11] to see all possible configuration options.
+The following describes the most commonly used features of the Kafka service and how to configure them via the DC/OS CLI and from the DC/OS web interface. View the [default `config.json` in DC/OS Universe][11] to see all possible configuration options.
 
 ### Service Name
 
-The name of this Kafka instance in DC/OS. This is an option that cannot be changed once the Kafka cluster is started: it can only be configured via the `dcos-cli --options` flag when the Kafka instance is created.
+The name of this Kafka instance in DC/OS. This is an option that cannot be changed once the Kafka cluster is started: it can only be configured via the DC/OS CLI `--options` flag when the Kafka instance is created.
 
-*   **In dcos-cli options.json**: `name` = string (default: `kafka`)
-*   **In Marathon**: The service name cannot be changed after the cluster has started.
+*   **In DC/OS CLI options.json**: `name` = string (default: `kafka`)
+*   **DC/OS web interface**: The service name cannot be changed after the cluster has started.
 
 ### Broker Count
 
 Configure the number of brokers running in a given Kafka cluster. The default count at installation is three brokers. This number may be increased, but not decreased, after installation.
 
-*   **In dcos-cli options.json**: `broker-count` = integer (default: `3`)
-*   **In Marathon**: `BROKER_COUNT` = integer
+*   **In DC/OS CLI options.json**: `broker-count` = integer (default: `3`)
+*   **DC/OS web interface**: `BROKER_COUNT` = integer
 
 ### Broker Port
 
 Configure the port number that the brokers listen on. If the port is set to a particular value, this will be the port used by all brokers. The default port is 9092.  Note that this requires that `placement-strategy` be set to `NODE` to take effect, since having every broker listening on the same port requires that they be placed on different hosts. Setting the port to 0 indicates that each Broker should have a random port in the 9092-10092 range. 
 
-*   **In dcos-cli options.json**: `broker-port` = integer (default: `9092`)
-*   **In Marathon**: `BROKER_PORT` = integer
+*   **In DC/OS CLI options.json**: `broker-port` = integer (default: `9092`)
+*   **DC/OS web interface**: `BROKER_PORT` = integer
 
 ### Configure Broker Placement Strategy
 
-`ANY` allows brokers to be placed on any node with sufficient resources, while `NODE` ensures that all brokers within a given Kafka cluster are never colocated on the same node. This is an option that cannot be changed once the Kafka cluster is started: it can only be configured via the `dcos-cli --options` flag when the Kafka instance is created.
+`ANY` allows brokers to be placed on any node with sufficient resources, while `NODE` ensures that all brokers within a given Kafka cluster are never colocated on the same node. This is an option that cannot be changed once the Kafka cluster is started: it can only be configured via the DC/OS CLI `--options` flag when the Kafka instance is created.
 
-*   **In dcos-cli options.json**: `placement-strategy` = `ANY` or `NODE` (default: `ANY`)
-*   **In Marathon**: `PLACEMENT_STRATEGY` = `ANY` or `NODE`
+*   **In DC/OS CLI options.json**: `placement-strategy` = `ANY` or `NODE` (default: `ANY`)
+*   **DC/OS web interface**: `PLACEMENT_STRATEGY` = `ANY` or `NODE`
 
 ### Configure Kafka Broker Properties
 
@@ -500,9 +499,6 @@ Kafka Brokers are configured through settings in a server.properties file deploy
         "default": 168
     },
 
-
-
-
 The defaults can be overridden at install time by specifying an options.json file with a format like this:
 
     {
@@ -511,8 +507,7 @@ The defaults can be overridden at install time by specifying an options.json fil
         }
     }
 
-
-These same values are also represented as environment variables for the Scheduler in the form `KAFKA_OVERRIDE_LOG_RETENTION_HOURS` and may be modified through Marathon and deployed during a rolling upgrade as [described here][12].
+These same values are also represented as environment variables for the Scheduler in the form `KAFKA_OVERRIDE_LOG_RETENTION_HOURS` and may be modified through the DC/OS web interface and deployed during a rolling upgrade as [described here][12].
 
 <a name="disk-type"></a>
 ### Disk Type 
@@ -533,7 +528,7 @@ Here's how you can configure Kafka service to use dedicated disk volumes:
     }
 ```
 
-* **Marathon**: Set the environment variable `DISK_TYPE` = `MOUNT`
+* **DC/OS web interface**: Set the environment variable `DISK_TYPE` = `MOUNT`
 
 When configured to `MOUNT` disk type, the scheduler selects a disk on agent whose capacity is equal to or greater than the configured `disk` value.
 
@@ -552,7 +547,7 @@ Kafka Service allows configuration of JVM Heap Size for the broker JVM process. 
     }
 ```
 
-* **Marathon**: Set the environment variable `BROKER_HEAP_MB` = 2000
+* **DC/OS web interface**: Set the environment variable `BROKER_HEAP_MB` = 2000
 
 **Note**: The total memory allocated for the Mesos task is specified by the `BROKER_MEM` configuration parameter. The value for `BROKER_HEAP_MB` should not be greater than `BROKER_MEM` value. Also, if `BROKER_MEM` is greater than `BROKER_HEAP_MB` then the Linux operating system will use `BROKER_MEM` - `BROKER_HEAP_MB` for [PageCache](https://en.wikipedia.org/wiki/Page_cache).
 
@@ -560,7 +555,7 @@ Kafka Service allows configuration of JVM Heap Size for the broker JVM process. 
 
 By default the Kafka framework uses the Zookeeper ensemble made available on the Mesos Masters of a DC/OS cluster.  If one would like to use an alternate Zookeeper installation, this may be specified at install time as a customization.
 Here's how you can configure it:
-* **DC/OS cli options.json**:
+* **DC/OS CLI options.json**:
 
 ```json
     {
@@ -572,6 +567,160 @@ Here's how you can configure it:
 
 This configuration option may not be changed after installation.
 
+### Recovery and Health Checks
+
+You can enable automated replacement of brokers and configure the circumstances under which they are replaced.
+
+#### Enable Broker Replacement
+
+To enable automated replacement: <!-- what's all this about data loss, then? -->
+
+* **DC/OS CLI options.json**:
+
+```json
+    {
+        "enable_replacement":{
+            "description":"Enable automated replacement of Brokers. WARNING: May cause data loss. See documentation.",
+            "type":"boolean",
+            "default":false
+        }
+    }
+```
+
+* **DC/OS web interface**: Set the environment variable `ENABLE_REPLACEMENT` = true to enable replacement. <!-- this doesn't follow the convention, but nothing that follows makes sense if this is set to false -->
+
+
+The following configuration options control [what?]
+
+#### Minumum Grace Period
+
+Configure the minimum amount of time before a broker should be replaced:
+
+* **DC/OS CLI options.json**:
+
+```json
+    {   
+        "recover_in_place_grace_period_secs":{
+            "description":"The minimum amount of time (in minutes) which must pass before a Broker may be destructively replaced.",
+            "type":"number",
+            "default":1200
+        }
+    }
+```
+
+* **DC/OS web interface**: Set the environment variable `RECOVERY_GRACE_PERIOD_SEC` = 1200
+
+#### Minumum Delay Between Replacements
+
+Configure the minimum amount of time between broker replacements.
+
+```json
+    {
+        "min_delay_between_recovers_secs":{
+            "description":"The minimum amount of time (in seconds) which must pass between destructive replacements of Brokers.",
+            "type":"number",
+            "default":600
+        }
+    }
+```
+
+* **DC/OS web interface**: Set the environment variable `REPLACE_DELAY_SEC` = 600 <!-- this one isn't exactly the same as the JSON -->
+
+The following configurations control the health checks that determine when a broker has failed:
+
+#### Enable Health Check
+
+Enable health checks on brokers:
+
+```json
+    {
+        "enable_health_check":{
+            "description":"Enable automated detection of Broker failures which did not result in a Broker process exit.",
+            "type":"boolean",
+            "default":true
+        }
+    }
+```
+
+* **DC/OS web interface**: Set the environment variable `ENABLE_BROKER_HEALTH_CHECK` = true
+
+#### Health Check Delay
+
+Set the amount of time before the health check begins:
+
+```json
+    {
+        "health_check_delay_sec":{
+            "description":"The period of time (in seconds) waited before the health-check begins execution.",
+            "type":"number",
+            "default":15
+        }
+    }
+```
+
+* **DC/OS web interface**: Set the environment variable `BROKER_HEALTH_CHECK_DELAY_SEC` = 15
+
+#### Health Check Interval
+
+Set the interval between health checks:
+
+```json
+    {
+        "health_check_interval_sec":{
+            "description":"The period of time (in seconds) between health-check executions.",
+            "type":"number",
+            "default":10
+        }
+    }
+```
+
+* **DC/OS web interface**: Set the environment variable `BROKER_HEALTH_CHECK_INTERVAL_SEC` = 10
+
+#### Health Check Timeout
+
+Set the time a health check can take to complete before it is considered a failed check:
+```json
+    {
+        "health_check_timeout_sec":{
+            "description":"The duration (in seconds) allowed for a health-check to complete before it is considered a failure.",
+            "type":"number",
+            "default":20
+        }
+    }
+```
+
+* **DC/OS web interface**: Set the environment variable `BROKER_HEALTH_CHECK_TIMEOUT_SEC` = 20
+
+#### Health Check Grace Period
+
+Set the amount of time after the delay before health check failures count toward the maximum number of consecutive failures:
+
+```json
+    {
+        "health_check_grace_period_sec":{
+            "description":"The period of time after the delay (in seconds) before health-check failures count towards the maximum consecutive failures.",
+            "type":"number",
+            "default":10
+        }
+    }
+```
+
+* **DC/OS web interface**: Set the environment variable `BROKER_HEALTH_CHECK_GRACE_SEC` = 10
+
+#### Maximum Consecutive Health Check Failures
+
+```json
+    {
+        "health_check_max_consecutive_failures":{
+            "description":"The the number of consecutive failures which cause a Broker process to exit.",
+            "type":"number",
+            "default":3
+        }
+    }
+```
+
+* **DC/OS web interface**: Set the environment variable `BROKER_HEALTH_CHECK_MAX_FAILURES` = 3
+
 <a name="connecting-clients"></a>
 # Connecting Clients
 
@@ -579,7 +728,7 @@ The only supported client library is the official Kafka Java library, ie `org.ap
 
 ## Using the DC/OS CLI
 
-The following command can be executed from the cli in order to retrieve a set of brokers to connect to.
+The following command can be executed from the CLI in order to retrieve a set of brokers to connect to.
 
     dcos kafka --name=<name> connection
 
@@ -827,7 +976,7 @@ Increase the `BROKER_COUNT` value via Marathon as in any other configuration upd
         $ dcos package install kafka -—options=options.json
 
 
-1.  Rollout the new version of Kafka in the same way as a configuration update is rolled out. See Configuration Update Plans.
+1.  Roll out the new version of Kafka in the same way as a configuration update is rolled out. See Configuration Update Plans.
 
 <a name="troubleshooting"></a>
 # Troubleshooting
@@ -910,7 +1059,7 @@ In the example below, the broker with id `0` will be replaced on new machine as 
 
 For ongoing maintenance of the Kafka cluster itself, the Kafka service exposes an HTTP API whose structure is designed to roughly match the tools provided by the Kafka distribution, such as `bin/kafka-topics.sh`.
 
-The examples here provide equivalent commands using both `[dcos-cli](https://github.com/mesosphere/dcos-cli)` (with the `kafka` CLI module installed) and `curl`. These examples assume a service named `kafka` (the default), and the `curl` examples assume a DC/OS cluster path of `$DCOS_URI`. Replace these with appropriate values as needed.
+The examples here provide equivalent commands using both the [DC/OS CLI](https://github.com/mesosphere/dcos-cli) (with the `kafka` CLI module installed) and `curl`. These examples assume a service named `kafka` (the default), and the `curl` examples assume a DC/OS cluster path of `$DCOS_URI`. Replace these with appropriate values as needed.
 
 The `dcos kafka` CLI commands have a `--name` argument, allowing the user to specify which Kafka instance to query. The value defaults to `kafka`, so it's technically redundant to specify `--name=kafka` in these examples.
 

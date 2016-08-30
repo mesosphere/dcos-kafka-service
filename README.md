@@ -573,7 +573,7 @@ You can enable automated replacement of brokers and configure the circumstances 
 
 #### Enable Broker Replacement
 
-To enable automated replacement: <!-- what's all this about data loss, then? -->
+To enable automated replacement:
 
 * **DC/OS CLI options.json**:
 
@@ -587,7 +587,7 @@ To enable automated replacement: <!-- what's all this about data loss, then? -->
     }
 ```
 
-* **DC/OS web interface**: Set the environment variable `ENABLE_REPLACEMENT` = true to enable replacement. <!-- this doesn't follow the convention, but nothing that follows makes sense if this is set to false -->
+* **DC/OS web interface**: Set the environment variable `ENABLE_REPLACEMENT` = true to enable replacement.
 
 
 The following configuration options control [what?]

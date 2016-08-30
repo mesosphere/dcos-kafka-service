@@ -624,7 +624,7 @@ Configure the minimum amount of time between broker replacements.
     }
 ```
 
-* **DC/OS web interface**: Set the environment variable `REPLACE_DELAY_SEC` = 600 <!-- this one isn't exactly the same as the JSON -->
+* **DC/OS web interface**: Set the environment variable `REPLACE_DELAY_SEC` = 600
 
 The following configurations control the health checks that determine when a broker has failed:
 

@@ -12,7 +12,7 @@ public class ExecutorConfiguration {
     private double mem;
     @JsonProperty("disk")
     private double disk;
-    @JsonProperty("executorUri")
+    @JsonProperty("executor_uri")
     private String executorUri;
 
     public ExecutorConfiguration() {
@@ -24,7 +24,7 @@ public class ExecutorConfiguration {
             @JsonProperty("cpus")double cpus,
             @JsonProperty("mem")double mem,
             @JsonProperty("disk")double disk,
-            @JsonProperty("executorUri")String executorUri) {
+            @JsonProperty("executor_uri")String executorUri) {
         this.cpus = cpus;
         this.mem = mem;
         this.disk = disk;
@@ -63,7 +63,7 @@ public class ExecutorConfiguration {
         return executorUri;
     }
 
-    @JsonProperty("executorUri")
+    @JsonProperty("executor_uri")
     public void setExecutorUri(String executorUri) {
         this.executorUri = executorUri;
     }

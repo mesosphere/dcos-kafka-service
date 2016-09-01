@@ -9,20 +9,19 @@ import java.util.Objects;
 import java.util.TreeMap;
 
 public class KafkaConfiguration {
-
-    @JsonProperty("kafkaAdvertiseHostIp")
+    @JsonProperty("kafka_advertise_host_ip")
     private boolean kafkaAdvertiseHostIp;
 
-    @JsonProperty("kafkaVerName")
+    @JsonProperty("kafka_ver_name")
     private String kafkaVerName;
 
-    @JsonProperty("kafkaSandboxPath")
+    @JsonProperty("kafka_sandbox_path")
     private String kafkaSandboxPath;
 
-    @JsonProperty("kafkaZkUri")
+    @JsonProperty("kafka_zk_uri")
     private String kafkaZkUri;
 
-    @JsonProperty("mesosZkUri")
+    @JsonProperty("mesos_zk_uri")
     private String mesosZkUri;
 
     // Note: We don't directly use this data, we just store it to detect when values have changed
@@ -37,11 +36,11 @@ public class KafkaConfiguration {
 
     @JsonCreator
     public KafkaConfiguration(
-            @JsonProperty("kafkaAdvertiseHostIp")boolean kafkaAdvertiseHostIp,
-            @JsonProperty("kafkaVerName")String kafkaVerName,
-            @JsonProperty("kafkaSandboxPath")String kafkaSandboxPath,
-            @JsonProperty("kafkaZkUri")String kafkaZkUri,
-            @JsonProperty("mesosZkUri")String mesosZkUri,
+            @JsonProperty("kafka_advertise_host_ip")boolean kafkaAdvertiseHostIp,
+            @JsonProperty("kafka_ver_name")String kafkaVerName,
+            @JsonProperty("kafka_sandbox_path")String kafkaSandboxPath,
+            @JsonProperty("kafka_zk_uri")String kafkaZkUri,
+            @JsonProperty("mesos_zk_uri")String mesosZkUri,
             @JsonProperty("overrides")Map<String, String> overrides) {
         this.kafkaAdvertiseHostIp = kafkaAdvertiseHostIp;
         this.kafkaVerName = kafkaVerName;
@@ -61,7 +60,7 @@ public class KafkaConfiguration {
         return kafkaAdvertiseHostIp;
     }
 
-    @JsonProperty("kafkaAdvertiseHostIp")
+    @JsonProperty("kafka_advertise_host_ip")
     public void setKafkaAdvertiseHostIp(boolean kafkaAdvertiseHostIp) {
         this.kafkaAdvertiseHostIp = kafkaAdvertiseHostIp;
     }
@@ -70,7 +69,7 @@ public class KafkaConfiguration {
         return kafkaVerName;
     }
 
-    @JsonProperty("kafkaVerName")
+    @JsonProperty("kafka_ver_name")
     public void setKafkaVerName(String kafkaVerName) {
         this.kafkaVerName = kafkaVerName;
     }
@@ -79,7 +78,7 @@ public class KafkaConfiguration {
         return kafkaSandboxPath;
     }
 
-    @JsonProperty("kafkaSandboxPath")
+    @JsonProperty("kafka_sandbox_path")
     public void setKafkaSandboxPath(String kafkaSandboxPath) {
         this.kafkaSandboxPath = kafkaSandboxPath;
     }
@@ -88,17 +87,17 @@ public class KafkaConfiguration {
         return kafkaZkUri;
     }
 
-    @JsonProperty("kafkaZkUri")
+    @JsonProperty("kafka_zk_uri")
     public void setKafkaZkUri(String kafkaZkUri) {
         this.kafkaZkUri = kafkaZkUri;
     }
 
-    @JsonProperty("mesosZkUri")
+    @JsonProperty("mesos_zk_uri")
     public String getMesosZkUri() {
         return mesosZkUri;
     }
 
-    @JsonProperty("mesosZkUri")
+    @JsonProperty("mesos_zk_uri")
     public void setMesosZkUri(String mesosZkUri) {
         this.mesosZkUri = mesosZkUri;
     }

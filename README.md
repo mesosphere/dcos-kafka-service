@@ -589,8 +589,9 @@ To enable automated replacement:
 
 * **DC/OS web interface**: Set the environment variable `ENABLE_REPLACEMENT` = true to enable replacement.
 
+**Warning:** The replacement mechanism has no way of knowing if the broker it is destructively replacing had the last copy of a given item of data. So depending on a user's specified replication policy and the degree and duration of the permanent failures the system has encountered, data loss is a possibility.
 
-The following configuration options control [what?]
+The following configuration options control the circumastances under which a broker is replaced.
 
 #### Minumum Grace Period
 

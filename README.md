@@ -472,14 +472,14 @@ The name of this Kafka instance in DC/OS. This is an option that cannot be chang
 Configure the number of brokers running in a given Kafka cluster. The default count at installation is three brokers. This number may be increased, but not decreased, after installation.
 
 *   **In DC/OS CLI options.json**: `broker-count` = integer (default: `3`)
-*   **DC/OS web interface**: `BROKER_COUNT` = integer
+*   **DC/OS web interface**: `BROKER_COUNT` = `integer`
 
 ### Broker Port
 
 Configure the port number that the brokers listen on. If the port is set to a particular value, this will be the port used by all brokers. The default port is 9092.  Note that this requires that `placement-strategy` be set to `NODE` to take effect, since having every broker listening on the same port requires that they be placed on different hosts. Setting the port to 0 indicates that each Broker should have a random port in the 9092-10092 range. 
 
 *   **In DC/OS CLI options.json**: `broker-port` = integer (default: `9092`)
-*   **DC/OS web interface**: `BROKER_PORT` = integer
+*   **DC/OS web interface**: `BROKER_PORT` = `integer`
 
 ### Configure Broker Placement Strategy
 
@@ -547,7 +547,7 @@ Kafka service allows configuration of JVM Heap Size for the broker JVM process. 
     }
 ```
 
-* **DC/OS web interface**: Set the environment variable `BROKER_HEAP_MB` = 2000
+* **DC/OS web interface**: Set the environment variable `BROKER_HEAP_MB` = `2000`
 
 **Note**: The total memory allocated for the Mesos task is specified by the `BROKER_MEM` configuration parameter. The value for `BROKER_HEAP_MB` should not be greater than `BROKER_MEM` value. Also, if `BROKER_MEM` is greater than `BROKER_HEAP_MB`, then the Linux operating system will use `BROKER_MEM` - `BROKER_HEAP_MB` for [PageCache](https://en.wikipedia.org/wiki/Page_cache).
 
@@ -588,7 +588,7 @@ To enable automated replacement:
     }
 ```
 
-* **DC/OS web interface**: Set the environment variable `ENABLE_REPLACEMENT` = true to enable replacement.
+* **DC/OS web interface**: Set the environment variable `ENABLE_REPLACEMENT` = `true` to enable replacement.
 
 **Warning:** The replacement mechanism has no way of knowing if the broker it is destructively replacing had the last copy of a given item of data. So depending on a user's specified replication policy and the degree and duration of the permanent failures the system has encountered, data loss is a possibility.
 
@@ -610,7 +610,7 @@ Configure the minimum amount of time before a broker should be replaced:
     }
 ```
 
-* **DC/OS web interface**: Set the environment variable `RECOVERY_GRACE_PERIOD_SEC` = 1200
+* **DC/OS web interface**: Set the environment variable `RECOVERY_GRACE_PERIOD_SEC` = `1200`
 
 #### Minumum Delay Between Replacements
 
@@ -626,7 +626,7 @@ Configure the minimum amount of time between broker replacements.
     }
 ```
 
-* **DC/OS web interface**: Set the environment variable `REPLACE_DELAY_SEC` = 600
+* **DC/OS web interface**: Set the environment variable `REPLACE_DELAY_SEC` = `600`
 
 The following configurations control the health checks that determine when a broker has failed:
 
@@ -644,7 +644,7 @@ Enable health checks on brokers:
     }
 ```
 
-* **DC/OS web interface**: Set the environment variable `ENABLE_BROKER_HEALTH_CHECK` = true
+* **DC/OS web interface**: Set the environment variable `ENABLE_BROKER_HEALTH_CHECK` = `true`
 
 #### Health Check Delay
 
@@ -660,7 +660,7 @@ Set the amount of time before the health check begins:
     }
 ```
 
-* **DC/OS web interface**: Set the environment variable `BROKER_HEALTH_CHECK_DELAY_SEC` = 15
+* **DC/OS web interface**: Set the environment variable `BROKER_HEALTH_CHECK_DELAY_SEC` = `15`
 
 #### Health Check Interval
 
@@ -676,7 +676,7 @@ Set the interval between health checks:
     }
 ```
 
-* **DC/OS web interface**: Set the environment variable `BROKER_HEALTH_CHECK_INTERVAL_SEC` = 10
+* **DC/OS web interface**: Set the environment variable `BROKER_HEALTH_CHECK_INTERVAL_SEC` = `10`
 
 #### Health Check Timeout
 
@@ -691,7 +691,7 @@ Set the time a health check can take to complete before it is considered a faile
     }
 ```
 
-* **DC/OS web interface**: Set the environment variable `BROKER_HEALTH_CHECK_TIMEOUT_SEC` = 20
+* **DC/OS web interface**: Set the environment variable `BROKER_HEALTH_CHECK_TIMEOUT_SEC` = `20`
 
 #### Health Check Grace Period
 
@@ -707,7 +707,7 @@ Set the amount of time after the delay before health check failures count toward
     }
 ```
 
-* **DC/OS web interface**: Set the environment variable `BROKER_HEALTH_CHECK_GRACE_SEC` = 10
+* **DC/OS web interface**: Set the environment variable `BROKER_HEALTH_CHECK_GRACE_SEC` = `10`
 
 #### Maximum Consecutive Health Check Failures
 
@@ -721,7 +721,7 @@ Set the amount of time after the delay before health check failures count toward
     }
 ```
 
-* **DC/OS web interface**: Set the environment variable `BROKER_HEALTH_CHECK_MAX_FAILURES` = 3
+* **DC/OS web interface**: Set the environment variable `BROKER_HEALTH_CHECK_MAX_FAILURES` = `3`
 
 <a name="connecting-clients"></a>
 # Connecting Clients

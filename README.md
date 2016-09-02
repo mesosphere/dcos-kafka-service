@@ -244,7 +244,7 @@ The Kafka scheduler runs as a Marathon process and can be reconfigured by changi
 
 1.  Go to the `Services` tab of the DC/OS web interface.
 2.  Click the name of the Kafka service to be updated.
-3.  Within the Kafka instance details view, click the `Configuration` tab, then click the `Edit` button.
+3.  Within the Kafka instance details view, click the `Edit` button.
 4.  In the dialog that appears, expand the `Environment Variables` section and update any field(s) to their desired value(s). For example, to [increase the number of Brokers][8], edit the value for `BROKER_COUNT`. Do not edit the value for `FRAMEWORK_NAME` or `BROKER_DISK` or `PLACEMENT_STRATEGY`.
 5.  A `PHASE_STRATEGY` of `STAGE` should also be set. See "Configuration Deployment Strategy" below for more details.
 6.  Click `Change and deploy configuration` to apply any changes and cleanly reload the Kafka service scheduler. The Kafka cluster itself will persist across the change.

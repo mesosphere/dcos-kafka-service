@@ -507,7 +507,7 @@ The defaults can be overridden at install time by specifying an options.json fil
         }
     }
 
-These same values are also represented as environment variables for the Scheduler in the form `KAFKA_OVERRIDE_LOG_RETENTION_HOURS` and may be modified through the DC/OS web interface and deployed during a rolling upgrade as [described here][12].
+These same values are also represented as environment variables for the scheduler in the form `KAFKA_OVERRIDE_LOG_RETENTION_HOURS` and may be modified through the DC/OS web interface and deployed during a rolling upgrade as [described here][12].
 
 <a name="disk-type"></a>
 ### Disk Type 

@@ -514,10 +514,10 @@ These same values are also represented as environment variables for the schedule
 
 The type of disks that can be used for storing broker data are: `ROOT` (default) and `MOUNT`.  The type of disk may only be specified at install time.
 
-* `ROOT`: Broker data is stored on the same volume as the agent work directory. And, the Broker tasks will use the configured amount of disk space.
+* `ROOT`: Broker data is stored on the same volume as the agent work directory. Broker tasks will use the configured amount of disk space.
 * `MOUNT`: Broker data will be stored on a dedicated volume attached to the agent. Dedicated MOUNT volumes have performance advantages and a disk error on these MOUNT volumes will be correctly reported to Kafka.
 
-Here's how you can configure Kafka service to use dedicated disk volumes:
+Configure Kafka service to use dedicated disk volumes:
 * **DC/OS cli options.json**: 
     
 ```json
@@ -530,11 +530,11 @@ Here's how you can configure Kafka service to use dedicated disk volumes:
 
 * **DC/OS web interface**: Set the environment variable `DISK_TYPE` = `MOUNT`
 
-When configured to `MOUNT` disk type, the scheduler selects a disk on agent whose capacity is equal to or greater than the configured `disk` value.
+When configured to `MOUNT` disk type, the scheduler selects a disk on an agent whose capacity is equal to or greater than the configured `disk` value.
 
 ### JVM Heap Size
 
-Kafka Service allows configuration of JVM Heap Size for the broker JVM process. Here's how you can configure it:
+Kafka service allows configuration of JVM Heap Size for the broker JVM process. To configure it:
 * **DC/OS cli options.json**:
 
 ```json
@@ -549,12 +549,13 @@ Kafka Service allows configuration of JVM Heap Size for the broker JVM process. 
 
 * **DC/OS web interface**: Set the environment variable `BROKER_HEAP_MB` = 2000
 
-**Note**: The total memory allocated for the Mesos task is specified by the `BROKER_MEM` configuration parameter. The value for `BROKER_HEAP_MB` should not be greater than `BROKER_MEM` value. Also, if `BROKER_MEM` is greater than `BROKER_HEAP_MB` then the Linux operating system will use `BROKER_MEM` - `BROKER_HEAP_MB` for [PageCache](https://en.wikipedia.org/wiki/Page_cache).
+**Note**: The total memory allocated for the Mesos task is specified by the `BROKER_MEM` configuration parameter. The value for `BROKER_HEAP_MB` should not be greater than `BROKER_MEM` value. Also, if `BROKER_MEM` is greater than `BROKER_HEAP_MB`, then the Linux operating system will use `BROKER_MEM` - `BROKER_HEAP_MB` for [PageCache](https://en.wikipedia.org/wiki/Page_cache).
 
 ### Alternate Zookeeper 
 
-By default the Kafka framework uses the Zookeeper ensemble made available on the Mesos Masters of a DC/OS cluster.  If one would like to use an alternate Zookeeper installation, this may be specified at install time as a customization.
-Here's how you can configure it:
+By default the Kafka framework uses the Zookeeper ensemble made available on the Mesos masters of a DC/OS cluster. You can configure an alternate Zookeeper installationat install time.
+
+To configure it:
 * **DC/OS CLI options.json**:
 
 ```json

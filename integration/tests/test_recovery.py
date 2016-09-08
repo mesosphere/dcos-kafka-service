@@ -49,7 +49,7 @@ def get_and_verify_plan(predicate=lambda r: True):
 
         try:
             body = result.json()
-        except json.decoder.JSONDecodeError:
+        except:
             return False, message
 
         return predicate(body), message
@@ -147,7 +147,7 @@ def test_service_becomes_healthy_after_master_fails():
 
 def test_service_becomes_healthy_after_zk_fails():
     kill_task_with_pattern('zookeeper')
-    
+
     check_health()
 
 

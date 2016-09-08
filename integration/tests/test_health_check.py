@@ -2,7 +2,7 @@ import os
 import pytest
 import requests
 import shakedown
-import test_utils
+import tests.test_utils as test_utils
 
 
 STATIC_PORT_OPTIONS_FILE = os.path.join('options', 'static_port.json')
@@ -37,7 +37,7 @@ def test_failing_health_check(static_port_config):
     # Get broker-0's task ID so we can know when it kills itself after failing
     # the health check.
     task_id = get_running_broker_task_id(broker_name)
-    print("{0} 's task_id is {1}" % broker_name, task_id)
+    print("{}'s task_id is {}".format(broker_name, task_id))
 
     # Delete the ZK node which should trigger the health check to kill broker-0
     shakedown.run_command_on_master(

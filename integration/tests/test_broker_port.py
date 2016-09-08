@@ -5,7 +5,7 @@ import time
 import pytest
 import requests
 import shakedown
-import test_utils
+import tests.test_utils as test_utils
 
 from tests.test_utils import (
     DEFAULT_PARTITION_COUNT,

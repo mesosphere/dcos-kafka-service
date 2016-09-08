@@ -18,8 +18,9 @@ DEFAULT_PARTITION_COUNT = 1
 DEFAULT_REPLICATION_FACTOR = 1
 DEFAULT_BROKER_COUNT = 3
 
-DYNAMIC_PORT_OPTIONS_FILE = os.path.join('options', 'dynamic_port.json')
-STATIC_PORT_OPTIONS_FILE = os.path.join('options', 'static_port.json')
+OPTIONS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'options')
+DYNAMIC_PORT_OPTIONS_FILE = os.path.join(OPTIONS_DIR, 'dynamic_port.json')
+STATIC_PORT_OPTIONS_FILE = os.path.join(OPTIONS_DIR, 'static_port.json')
 
 TASK_RUNNING_STATE = 'TASK_RUNNING'
 
@@ -154,9 +155,11 @@ def spin(fn, success_predicate, *args, **kwargs):
 def uninstall():
     def fn():
         try:
-            shakedown.uninstall_package_and_wait(PACKAGE_NAME)
-        except (dcos.errors.DCOSException, json.decoder.JSONDecodeError):
-            return False
+            shakedown.uninstall_package_and_wait(PACKAGE_NAME, app_id=PACKAGE_NAME)
+            pkg_uninstall_ok = True
+        except (dcos.errors.DCOSException, ValueError) as e:
+            print('Got exception when uninstalling package, continuing with janitor anyway: {}'.format(e))
+            pkg_uninstall_ok = False
 
         return shakedown.run_command_on_master(
             'docker run mesosphere/janitor /janitor.py '
@@ -166,6 +169,6 @@ def uninstall():
                     'config show core.dcos_acs_token'
                 )[0].strip()
             )
-        )
+        ) and pkg_uninstall_ok
 
     spin(fn, lambda x: (x, 'Uninstall failed'))

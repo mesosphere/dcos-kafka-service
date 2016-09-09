@@ -49,6 +49,8 @@ def check_health():
 
     def success_predicate(tasks):
         running_tasks = [t for t in tasks if t['state'] == TASK_RUNNING_STATE]
+        print('Waiting for {} healthy tasks, got {}/{}'.format(
+            DEFAULT_BROKER_COUNT, len(running_tasks), len(tasks)))
         return (
             len(running_tasks) == DEFAULT_BROKER_COUNT,
             'Service did not become healthy'
@@ -144,7 +146,9 @@ def spin(fn, success_predicate, *args, **kwargs):
             is_successful, error_message = success_predicate(result)
 
         if is_successful:
+            print('Success state reached, exiting spin. prev_err={}'.format(error_message))
             break
+        print('Waiting for success state... err={}'.format(error_message))
         time.sleep(1)
 
     assert is_successful, error_message
@@ -153,22 +157,18 @@ def spin(fn, success_predicate, *args, **kwargs):
 
 
 def uninstall():
-    def fn():
-        try:
-            shakedown.uninstall_package_and_wait(PACKAGE_NAME, app_id=PACKAGE_NAME)
-            pkg_uninstall_ok = True
-        except (dcos.errors.DCOSException, ValueError) as e:
-            print('Got exception when uninstalling package, continuing with janitor anyway: {}'.format(e))
-            pkg_uninstall_ok = False
+    print('Uninstalling/janitoring {}'.format(PACKAGE_NAME))
+    try:
+        shakedown.uninstall_package_and_wait(PACKAGE_NAME, app_id=PACKAGE_NAME)
+    except (dcos.errors.DCOSException, ValueError) as e:
+        print('Got exception when uninstalling package, continuing with janitor anyway: {}'.format(e))
 
-        return shakedown.run_command_on_master(
-            'docker run mesosphere/janitor /janitor.py '
-            '-r kafka-role -p kafka-principal -z dcos-service-kafka '
-            '--auth_token={}'.format(
-                shakedown.run_dcos_command(
-                    'config show core.dcos_acs_token'
-                )[0].strip()
-            )
-        ) and pkg_uninstall_ok
-
-    spin(fn, lambda x: (x, 'Uninstall failed'))
+    shakedown.run_command_on_master(
+        'docker run mesosphere/janitor /janitor.py '
+        '-r kafka-role -p kafka-principal -z dcos-service-kafka '
+        '--auth_token={}'.format(
+            shakedown.run_dcos_command(
+                'config show core.dcos_acs_token'
+            )[0].strip()
+        )
+    )

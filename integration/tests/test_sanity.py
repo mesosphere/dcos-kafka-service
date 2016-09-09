@@ -27,6 +27,7 @@ def default_topic():
 
 
 def setup_module(module):
+    uninstall()
     shakedown.install_package_and_wait(
         PACKAGE_NAME, options_file=DYNAMIC_PORT_OPTIONS_FILE
     )

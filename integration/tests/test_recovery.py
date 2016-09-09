@@ -110,6 +110,7 @@ def run_planned_operation(operation, failure=lambda: None):
 
 
 def setup_module(module):
+    uninstall()
     shakedown.install_package_and_wait(
         PACKAGE_NAME, options_file=STATIC_PORT_OPTIONS_FILE
     )

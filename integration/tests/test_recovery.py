@@ -121,12 +121,14 @@ def teardown_module(module):
     uninstall()
 
 
+@pytest.mark.recovery
 def test_service_becomes_healthy_after_broker_fails():
     kill_task_with_pattern('kafka.Kafka', get_broker_host())
 
     check_health()
 
 
+@pytest.mark.recovery
 def test_service_becomes_healthy_after_all_brokers_fail():
     for host in shakedown.get_service_ips(PACKAGE_NAME):
         kill_task_with_pattern('kafka.Kafka', host)
@@ -134,24 +136,28 @@ def test_service_becomes_healthy_after_all_brokers_fail():
     check_health()
 
 
+@pytest.mark.recovery
 def test_service_becomes_healthy_after_scheduler_fails():
     kill_task_with_pattern('kafka.scheduler.Main', get_scheduler_host())
 
     check_health()
 
 
+@pytest.mark.recovery
 def test_service_becomes_healthy_after_master_fails():
     kill_task_with_pattern('mesos-master')
 
     check_health()
 
 
+@pytest.mark.recovery
 def test_service_becomes_healthy_after_zk_fails():
     kill_task_with_pattern('zookeeper')
 
     check_health()
 
 
+@pytest.mark.recovery
 def test_service_becomes_healthy_after_agent_is_partitioned():
     host = get_broker_host()
 
@@ -161,6 +167,7 @@ def test_service_becomes_healthy_after_agent_is_partitioned():
     check_health()
 
 
+@pytest.mark.recovery
 def test_service_becomes_healthy_after_all_agents_are_partitioned():
     hosts = shakedown.get_service_ips(PACKAGE_NAME)
 
@@ -172,6 +179,7 @@ def test_service_becomes_healthy_after_all_agents_are_partitioned():
     check_health()
 
 
+@pytest.mark.recovery
 def test_config_update_eventually_succeeds_after_broker_fails():
     host = get_broker_host()
     run_planned_operation(
@@ -182,6 +190,7 @@ def test_config_update_eventually_succeeds_after_broker_fails():
     check_health()
 
 
+@pytest.mark.recovery
 def test_config_update_eventually_succeeds_after_all_brokers_fail():
     hosts = shakedown.get_service_ips(PACKAGE_NAME)
     run_planned_operation(
@@ -192,6 +201,7 @@ def test_config_update_eventually_succeeds_after_all_brokers_fail():
     check_health()
 
 
+@pytest.mark.recovery
 def test_config_update_eventually_succeeds_after_scheduler_fails():
     host = get_scheduler_host()
     run_planned_operation(
@@ -202,6 +212,7 @@ def test_config_update_eventually_succeeds_after_scheduler_fails():
     check_health()
 
 
+@pytest.mark.recovery
 def test_config_update_eventually_succeeds_after_master_fails():
     run_planned_operation(
         increment_broker_port_config,
@@ -211,6 +222,7 @@ def test_config_update_eventually_succeeds_after_master_fails():
     check_health()
 
 
+@pytest.mark.recovery
 def test_config_update_eventually_succeeds_after_zk_fails():
     run_planned_operation(
         increment_broker_port_config,
@@ -220,6 +232,7 @@ def test_config_update_eventually_succeeds_after_zk_fails():
     check_health()
 
 
+@pytest.mark.recovery
 def test_config_update_eventually_succeeds_after_agent_is_partitioned():
     host = get_broker_host()
 
@@ -232,6 +245,7 @@ def test_config_update_eventually_succeeds_after_agent_is_partitioned():
     check_health()
 
 
+@pytest.mark.recovery
 def test_config_update_eventually_succeeds_after_all_agents_are_partitioned():
     hosts = shakedown.get_service_ips(PACKAGE_NAME)
 

@@ -81,14 +81,17 @@ def teardown_module(module):
     test_utils.uninstall()
 
 
+@pytest.mark.sanity
 def test_dynamic_port_comes_online(dynamic_port_config):
     check_health()
 
 
+@pytest.mark.sanity
 def test_static_port_comes_online(static_port_config):
     check_health()
 
 
+@pytest.mark.sanity
 def test_can_adjust_config_from_static_to_static_port():
     check_health()
 
@@ -110,6 +113,7 @@ def test_can_adjust_config_from_static_to_static_port():
         assert hostport.split(':')[-1] == '9095'
 
 
+@pytest.mark.sanity
 def test_can_adjust_config_from_static_to_dynamic_port():
     check_health()
 
@@ -131,6 +135,7 @@ def test_can_adjust_config_from_static_to_dynamic_port():
         assert 9092 <= int(hostport.split(':')[-1]) <= 10092
 
 
+@pytest.mark.sanity
 def test_can_adjust_config_from_dynamic_to_dynamic_port():
     check_health()
 
@@ -153,6 +158,7 @@ def test_can_adjust_config_from_dynamic_to_dynamic_port():
     )
 
 
+@pytest.mark.sanity
 def test_can_adjust_config_from_dynamic_to_static_port():
     check_health()
 

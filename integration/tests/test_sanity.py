@@ -38,6 +38,7 @@ def teardown_module(module):
     uninstall()
 
 
+@pytest.mark.sanity
 def test_scheduler_connection_setup_is_correct():
     def fn():
         return get_kafka_command('connection')
@@ -57,12 +58,14 @@ def test_scheduler_connection_setup_is_correct():
     )
 
 
+@pytest.mark.sanity
 def test_expected_brokers_exist():
     broker_info = get_kafka_command('broker list')
 
     assert set(broker_info) == set([str(i) for i in range(3)])
 
 
+@pytest.mark.sanity
 def test_topic_creation_succeeds():
     create_info = get_kafka_command(
         'topic create {}'.format(EPHEMERAL_TOPIC_NAME)
@@ -86,6 +89,7 @@ def test_topic_creation_succeeds():
     assert len(topic_info['partitions']) == DEFAULT_PARTITION_COUNT
 
 
+@pytest.mark.sanity
 def test_topic_deletion_succeeds():
     delete_info = get_kafka_command(
         'topic delete {}'.format(EPHEMERAL_TOPIC_NAME)
@@ -104,6 +108,7 @@ def test_topic_deletion_succeeds():
     assert len(topic_info['partitions']) == DEFAULT_PARTITION_COUNT
 
 
+@pytest.mark.sanity
 def test_topic_partition_count_is_correct(default_topic):
     topic_info = get_kafka_command(
         'topic describe {}'.format(DEFAULT_TOPIC_NAME)
@@ -111,6 +116,7 @@ def test_topic_partition_count_is_correct(default_topic):
     assert len(topic_info['partitions']) == DEFAULT_PARTITION_COUNT
 
 
+@pytest.mark.sanity
 def test_topic_offsets_increase_with_writes():
     offset_info = get_kafka_command(
         'topic offsets --time="-1" {}'.format(DEFAULT_TOPIC_NAME)
@@ -123,7 +129,7 @@ def test_topic_offsets_increase_with_writes():
         offsets.update(o)
 
     assert len(offsets) == DEFAULT_PARTITION_COUNT
-    
+
     num_messages = 10
     write_info = get_kafka_command(
         'topic producer_test {} {}'.format(DEFAULT_TOPIC_NAME, num_messages)
@@ -146,6 +152,7 @@ def test_topic_offsets_increase_with_writes():
     assert not offsets == post_write_offsets
 
 
+@pytest.mark.sanity
 def test_decreasing_topic_partitions_fails():
     partition_info = get_kafka_command(
         'topic partitions {} {}'.format(
@@ -163,6 +170,7 @@ def test_decreasing_topic_partitions_fails():
     )
 
 
+@pytest.mark.sanity
 def test_setting_topic_partitions_to_same_value_fails():
     partition_info = get_kafka_command(
         'topic partitions {} {}'.format(
@@ -180,6 +188,7 @@ def test_setting_topic_partitions_to_same_value_fails():
     )
 
 
+@pytest.mark.sanity
 def test_increasing_topic_partitions_succeeds():
     partition_info = get_kafka_command(
         'topic partitions {} {}'.format(
@@ -197,6 +206,7 @@ def test_increasing_topic_partitions_succeeds():
     )
 
 
+@pytest.mark.sanity
 def test_no_under_replicated_topics_exist():
     partition_info = get_kafka_command(
         'topic under_replicated_partitions'
@@ -206,6 +216,7 @@ def test_no_under_replicated_topics_exist():
     assert partition_info['message'] == ''
 
 
+@pytest.mark.sanity
 def test_no_unavailable_partitions_exist():
     partition_info = get_kafka_command('topic unavailable_partitions')
 
@@ -213,6 +224,7 @@ def test_no_unavailable_partitions_exist():
     assert partition_info['message'] == ''
 
 
+@pytest.mark.sanity
 def test_invalid_broker_id_returns_null():
     restart_info = get_kafka_command('broker restart {}'.format(DEFAULT_BROKER_COUNT + 1))
 
@@ -220,6 +232,7 @@ def test_invalid_broker_id_returns_null():
     assert restart_info[0] is None
 
 
+@pytest.mark.sanity
 def test_single_broker_restart_succeeds():
     for i in range(DEFAULT_BROKER_COUNT):
         restart_info = get_kafka_command('broker restart {}'.format(i))

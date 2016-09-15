@@ -2,8 +2,8 @@ import json
 import os
 import time
 
+import dcos
 import pytest
-import requests
 import shakedown
 import tests.test_utils as test_utils
 
@@ -27,23 +27,13 @@ from tests.test_utils import (
 
 WAIT_TIME_IN_SECONDS = 300
 
-MARATHON_REQUEST_HEADERS = {
-    'authorization': 'token=%s' % (
-        shakedown.run_dcos_command(
-            'config show core.dcos_acs_token'
-        )[0].strip()
-    ),
-}
-
 
 def get_connection_info():
     def fn():
         return shakedown.run_dcos_command('kafka connection')
 
     def success_predicate(result):
-        deployments = requests.get(
-            marathon_api_url('deployments'), headers=test_utils.REQUEST_HEADERS
-        ).json()
+        deployments = dcos.http.get(marathon_api_url('deployments')).json()
         if deployments:
             return False, 'Deployment is ongoing'
 
@@ -98,10 +88,9 @@ def test_can_adjust_config_from_static_to_static_port():
     config = get_kafka_config()
     config['env']['BROKER_PORT'] = '9095'
     r = request(
-        requests.put,
+        dcos.http.put,
         marathon_api_url('apps/kafka'),
-        json=config,
-        headers=test_utils.REQUEST_HEADERS
+        json=config
     )
 
     check_health()
@@ -120,10 +109,9 @@ def test_can_adjust_config_from_static_to_dynamic_port():
     config = get_kafka_config()
     config['env']['BROKER_PORT'] = '0'
     r = request(
-        requests.put,
+        dcos.http.put,
         marathon_api_url('apps/kafka'),
-        json=config,
-        headers=test_utils.REQUEST_HEADERS
+        json=config
     )
 
     check_health()
@@ -143,10 +131,9 @@ def test_can_adjust_config_from_dynamic_to_dynamic_port():
     config = get_kafka_config()
     config['env']['KAFKA_VER_NAME'] = 'kafka-nonce-ver'
     r = request(
-        requests.put,
+        dcos.http.put,
         marathon_api_url('apps/kafka'),
-        json=config,
-        headers=test_utils.REQUEST_HEADERS
+        json=config
     )
 
     check_health()
@@ -165,10 +152,9 @@ def test_can_adjust_config_from_dynamic_to_static_port():
     config = get_kafka_config()
     config['env']['BROKER_PORT'] = '9092'
     r = request(
-        requests.put,
+        dcos.http.put,
         marathon_api_url('apps/kafka'),
-        json=config,
-        headers=test_utils.REQUEST_HEADERS
+        json=config
     )
 
     check_health()

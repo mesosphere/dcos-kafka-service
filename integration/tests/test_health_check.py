@@ -1,6 +1,7 @@
 import os
 import pytest
-import requests
+
+import dcos
 import shakedown
 import tests.test_utils as test_utils
 
@@ -60,9 +61,7 @@ def test_failing_health_check(static_port_config):
 
 def get_running_broker_task_id(broker_name):
     tasks_url = test_utils.DCOS_URL + '/mesos/tasks'
-    tasks_json = requests.get(
-        tasks_url, headers=test_utils.REQUEST_HEADERS
-    ).json()
+    tasks_json = dcos.http.get(tasks_url).json()
 
     for task in tasks_json['tasks']:
         task_name = task['name']
@@ -77,9 +76,7 @@ def get_running_broker_task_id(broker_name):
 
 def broker_killed(task_id):
     tasks_url = test_utils.DCOS_URL + '/mesos/tasks'
-    tasks_json = requests.get(
-        tasks_url, headers=test_utils.REQUEST_HEADERS
-    ).json()
+    tasks_json = dcos.http.get(tasks_url).json()
 
     for task in tasks_json['tasks']:
         curr_task_id = task['id']

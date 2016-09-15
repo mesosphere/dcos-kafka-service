@@ -1,13 +1,13 @@
 import json
 import pytest
-import requests
+
+import dcos
 import shakedown
 
 from tests.test_utils import (
     DEFAULT_BROKER_COUNT,
     STATIC_PORT_OPTIONS_FILE,
     PACKAGE_NAME,
-    REQUEST_HEADERS,
     check_health,
     get_dcos_command,
     get_kafka_config,
@@ -31,18 +31,15 @@ def increment_broker_port_config():
     config = get_kafka_config()
     config['env']['BROKER_PORT'] = str(int(config['env']['BROKER_PORT']) + 1)
     r = request(
-        requests.put,
+        dcos.http.put,
         marathon_api_url('apps/kafka'),
         json=config,
-        headers=REQUEST_HEADERS
     )
 
 
 def get_and_verify_plan(predicate=lambda r: True):
     def fn():
-        return requests.get(
-            kafka_api_url('plan'), headers=REQUEST_HEADERS
-        )
+        return dcos.http.get(kafka_api_url('plan'))
 
     def success_predicate(result):
         message = 'Request to /plan failed'
@@ -76,9 +73,7 @@ def kill_task_with_pattern(pattern, host=None):
 
 def wait_for_deployment_lock_release():
     def fn():
-        return requests.get(
-            marathon_api_url('deployments'), headers=REQUEST_HEADERS
-        )
+        return dcos.http.get(marathon_api_url('deployments'))
 
     def pred(result):
         try:

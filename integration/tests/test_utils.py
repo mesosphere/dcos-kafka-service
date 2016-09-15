@@ -4,14 +4,12 @@ import time
 from functools import wraps
 
 import dcos
-import requests
 import shakedown
 
 
 PACKAGE_NAME = 'kafka'
 WAIT_TIME_IN_SECONDS = 300
 
-ACS_TOKEN = shakedown.run_dcos_command('config show core.dcos_acs_token')[0].strip()
 DCOS_URL = shakedown.run_dcos_command('config show core.dcos_url')[0].strip()
 
 DEFAULT_PARTITION_COUNT = 1
@@ -23,10 +21,6 @@ DYNAMIC_PORT_OPTIONS_FILE = os.path.join(OPTIONS_DIR, 'dynamic_port.json')
 STATIC_PORT_OPTIONS_FILE = os.path.join(OPTIONS_DIR, 'static_port.json')
 
 TASK_RUNNING_STATE = 'TASK_RUNNING'
-
-REQUEST_HEADERS = {
-    'authorization': 'token=%s' % ACS_TOKEN
-}
 
 
 def as_json(fn):
@@ -96,18 +90,12 @@ def get_kafka_command(command):
 
 
 def get_kafka_config():
-    response = requests.get(
-        marathon_api_url('apps/kafka/versions'),
-        headers=REQUEST_HEADERS
-    )
+    response = dcos.http.get(marathon_api_url('apps/{}/versions'.format(PACKAGE_NAME)))
     assert response.status_code == 200, 'Marathon versions request failed'
 
     version = response.json()['versions'][0]
 
-    response = requests.get(
-        marathon_api_url('apps/kafka/versions/%s' % version),
-        headers=REQUEST_HEADERS
-    )
+    response = dcos.http.get(marathon_api_url('apps/{}/versions/{}'.format(PACKAGE_NAME, version)))
     assert response.status_code == 200
 
     config = response.json()
@@ -118,7 +106,7 @@ def get_kafka_config():
 
 
 def kafka_api_url(basename):
-    return '{}/v1/{}'.format(shakedown.dcos_service_url('kafka'), basename)
+    return '{}/v1/{}'.format(shakedown.dcos_service_url(PACKAGE_NAME), basename)
 
 
 def marathon_api_url(basename):

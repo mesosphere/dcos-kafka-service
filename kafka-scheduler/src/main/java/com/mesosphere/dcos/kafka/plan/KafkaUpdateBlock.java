@@ -1,24 +1,23 @@
 package com.mesosphere.dcos.kafka.plan;
 
 import com.mesosphere.dcos.kafka.offer.KafkaOfferRequirementProvider;
+import com.mesosphere.dcos.kafka.offer.OfferUtils;
 import com.mesosphere.dcos.kafka.scheduler.KafkaScheduler;
+import com.mesosphere.dcos.kafka.state.FrameworkState;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.mesos.Protos;
 import org.apache.mesos.Protos.TaskID;
 import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.Protos.TaskState;
 import org.apache.mesos.Protos.TaskStatus;
-import com.mesosphere.dcos.kafka.offer.OfferUtils;
-import com.mesosphere.dcos.kafka.state.FrameworkState;
 import org.apache.mesos.offer.OfferRequirement;
 import org.apache.mesos.offer.TaskRequirement;
 import org.apache.mesos.offer.TaskUtils;
 import org.apache.mesos.scheduler.plan.Block;
 import org.apache.mesos.scheduler.plan.Status;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class KafkaUpdateBlock implements Block {
   private final Log log = LogFactory.getLog(KafkaUpdateBlock.class);
@@ -66,19 +65,19 @@ public class KafkaUpdateBlock implements Block {
   }
 
   @Override
-  public OfferRequirement start() {
+  public Optional<OfferRequirement> start() {
     log.info("Starting block: " + getName() + " with status: " + Block.getStatus(this));
 
     if (!isPending()) {
       log.warn("Block is not pending.  start() should not be called.");
-      return null;
+      return Optional.empty();
     }
 
-    TaskStatus taskStatus = fetchTaskStatus();
+    Optional<TaskStatus> taskStatus = fetchTaskStatus();
     if (taskIsRunningOrStaging(taskStatus)) {
-      log.info("Adding task to restart list. Block: " + getName() + " Status: " + taskStatus);
+      log.info("Adding task to restart list. Block: " + getName() + " Status: " + taskStatus.get());
       KafkaScheduler.restartTasks(fetchTaskInfo());
-      return null;
+      return Optional.empty();
     }
 
     try {
@@ -91,17 +90,17 @@ public class KafkaUpdateBlock implements Block {
       synchronized (pendingTaskIdsLock) {
         pendingTaskIds = newPendingTasks;
       }
-      return offerReq;
+      return Optional.of(offerReq);
     } catch (Exception e) {
       log.error("Error getting offerRequirement: ", e);
     }
 
-    return null;
+    return Optional.empty();
   }
 
   @Override
-  public void updateOfferStatus(boolean accepted) {
-    if (accepted) {
+  public void updateOfferStatus(Collection<Protos.Offer.Operation> optionalOperations) {
+    if (optionalOperations.size() > 0) {
       setStatus(Status.IN_PROGRESS);
     } else {
       setStatus(Status.PENDING);
@@ -174,7 +173,7 @@ public class KafkaUpdateBlock implements Block {
 
   @Override
   public String getName() {
-    return OfferUtils.idToName(getBrokerId());
+    return OfferUtils.brokerIdToTaskName(getBrokerId());
   }
 
   public int getBrokerId() {
@@ -217,18 +216,24 @@ public class KafkaUpdateBlock implements Block {
     log.info(getName() + ": changed status from: " + oldStatus + " to: " + newStatus);
   }
 
-  private TaskStatus fetchTaskStatus() {
+  private Optional<TaskStatus> fetchTaskStatus() {
     try {
       return state.getTaskStatusForBroker(getBrokerId());
     } catch (Exception ex) {
       log.error(String.format("Failed to retrieve TaskStatus for broker %d", getBrokerId()), ex);
-      return null;
+      return Optional.empty();
     }
   }
 
   private TaskInfo fetchTaskInfo() {
     try {
-      return state.getTaskInfoForBroker(getBrokerId());
+      Optional<TaskInfo> taskInfoOptional = state.getTaskInfoForBroker(getBrokerId());
+      if (taskInfoOptional.isPresent()) {
+        return taskInfoOptional.get();
+      } else {
+        log.warn("TaskInfo not present for broker: " + getBrokerId());
+        return null;
+      }
     } catch (Exception ex) {
       log.error(String.format("Failed to retrieve TaskInfo for broker %d", getBrokerId()), ex);
       return null;
@@ -245,15 +250,16 @@ public class KafkaUpdateBlock implements Block {
     return taskIds;
   }
 
-  private static boolean taskIsRunningOrStaging(TaskStatus taskStatus) {
-    if (null == taskStatus) {
-      return false;
-    }
-    switch (taskStatus.getState()) {
-    case TASK_RUNNING:
-    case TASK_STAGING:
-      return true;
-    default:
+  private static boolean taskIsRunningOrStaging(Optional<TaskStatus> taskStatus) {
+    if (taskStatus.isPresent()) {
+      switch (taskStatus.get().getState()) {
+        case TASK_RUNNING:
+        case TASK_STAGING:
+          return true;
+        default:
+          return false;
+      }
+    } else {
       return false;
     }
   }

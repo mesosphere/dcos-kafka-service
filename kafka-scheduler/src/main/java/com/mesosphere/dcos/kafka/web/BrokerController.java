@@ -63,15 +63,15 @@ public class BrokerController {
 
     try {
       int idVal = Integer.parseInt(id);
-      Protos.TaskInfo taskInfo = frameworkState.getTaskInfoForBroker(idVal);
-      if (taskInfo == null) {
+      Optional<Protos.TaskInfo> taskInfoOptional = frameworkState.getTaskInfoForBroker(idVal);
+      if (!taskInfoOptional.isPresent()) {
         // Tests expect an array containing a single null element in this case. May make sense to
         // revisit this strange behavior someday...
         log.error(String.format(
             "Broker %d doesn't exist in FrameworkState, returning null entry in response", idVal));
         return killResponse(Arrays.asList((String)null));
       }
-      return killBroker(taskInfo, Boolean.parseBoolean(replace));
+      return killBroker(taskInfoOptional.get(), Boolean.parseBoolean(replace));
     } catch (Exception ex) {
       log.error("Failed to kill brokers", ex);
       return Response.serverError().build();

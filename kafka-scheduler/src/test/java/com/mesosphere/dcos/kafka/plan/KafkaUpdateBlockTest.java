@@ -9,14 +9,20 @@ import com.mesosphere.dcos.kafka.test.KafkaTestUtils;
 import org.apache.mesos.Protos;
 import org.apache.mesos.dcos.Capabilities;
 import org.apache.mesos.offer.OfferRequirement;
+import org.apache.mesos.state.StateStore;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Optional;
 import java.util.UUID;
 
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
@@ -30,10 +36,19 @@ public class KafkaUpdateBlockTest {
     private PersistentOfferRequirementProvider offerRequirementProvider;
     private KafkaUpdateBlock updateBlock;
 
+    private static final Protos.Offer.Operation operation = Protos.Offer.Operation.newBuilder()
+            .setType(Protos.Offer.Operation.Type.LAUNCH)
+            .build();
+    private static final Collection<Protos.Offer.Operation> nonEmptyOperations =
+            Arrays.asList(operation);
+
     @Before
     public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
-        when(frameworkState.getFrameworkId()).thenReturn(KafkaTestUtils.testFrameworkId);
+        StateStore stateStore = mock(StateStore.class);
+        when(stateStore.fetchFrameworkId()).thenReturn(Optional.of(KafkaTestUtils.testFrameworkId));
+        when(frameworkState.getStateStore()).thenReturn(stateStore);
+        when(frameworkState.getTaskStatusForBroker(any())).thenReturn(Optional.empty());
         when(configState.fetch(UUID.fromString(KafkaTestUtils.testConfigName))).thenReturn(
                 ConfigTestUtils.getTestKafkaSchedulerConfiguration());
         when(capabilities.supportsNamedVips()).thenReturn(true);
@@ -54,7 +69,7 @@ public class KafkaUpdateBlockTest {
 
     @Test
     public void testStart() {
-        OfferRequirement offerRequirement = updateBlock.start();
+        OfferRequirement offerRequirement = updateBlock.start().get();
         Assert.assertNotNull(offerRequirement);
         Assert.assertEquals(1, offerRequirement.getTaskRequirements().size());
         Assert.assertNotNull(offerRequirement.getExecutorRequirement());
@@ -71,7 +86,7 @@ public class KafkaUpdateBlockTest {
     public void testUpdateUnknownTaskId() {
         Assert.assertTrue(updateBlock.isPending());
         updateBlock.start();
-        updateBlock.updateOfferStatus(true);
+        updateBlock.updateOfferStatus(nonEmptyOperations);
         Assert.assertTrue(updateBlock.isInProgress());
         updateBlock.update(getRunningTaskStatus("bad-task-id"));
         Assert.assertTrue(updateBlock.isInProgress());
@@ -81,7 +96,7 @@ public class KafkaUpdateBlockTest {
     public void testReconciliationUpdate() {
         Assert.assertTrue(updateBlock.isPending());
         updateBlock.start();
-        updateBlock.updateOfferStatus(true);
+        updateBlock.updateOfferStatus(nonEmptyOperations);
         Assert.assertTrue(updateBlock.isInProgress());
         Protos.TaskID taskId = updateBlock.getPendingTaskIds().get(0);
         Protos.TaskStatus reconciliationTaskStatus = getRunningTaskStatus(taskId.getValue());
@@ -96,7 +111,7 @@ public class KafkaUpdateBlockTest {
     public void testUpdateExpectedTaskIdRunning() {
         Assert.assertTrue(updateBlock.isPending());
         updateBlock.start();
-        updateBlock.updateOfferStatus(true);
+        updateBlock.updateOfferStatus(nonEmptyOperations);
         Assert.assertTrue(updateBlock.isInProgress());
         Protos.TaskID taskId = updateBlock.getPendingTaskIds().get(0);
         updateBlock.update(getRunningTaskStatus(taskId.getValue()));
@@ -107,7 +122,7 @@ public class KafkaUpdateBlockTest {
     public void testUpdateExpectedTaskIdTerminated() {
         Assert.assertTrue(updateBlock.isPending());
         updateBlock.start();
-        updateBlock.updateOfferStatus(true);
+        updateBlock.updateOfferStatus(nonEmptyOperations);
         Assert.assertTrue(updateBlock.isInProgress());
         Protos.TaskID taskId = updateBlock.getPendingTaskIds().get(0);
         updateBlock.update(getFailedTaskStatus(taskId.getValue()));

@@ -23,7 +23,7 @@ public class KafkaRecoveryTestConstrainer implements LaunchConstrainer {
         Set<String> names = recoveryRequirement.getOfferRequirement().getTaskRequirements().stream()
                 .map(it -> it.getTaskInfo().getName())
                 .collect(Collectors.toSet());
-        if (names.contains(OfferUtils.idToName(2))) {
+        if (names.contains(OfferUtils.brokerIdToTaskName(2))) {
             return false;
         }
         return true;

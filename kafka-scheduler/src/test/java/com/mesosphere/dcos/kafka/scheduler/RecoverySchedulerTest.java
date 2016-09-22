@@ -15,7 +15,6 @@ import com.mesosphere.dcos.kafka.test.KafkaTestUtils;
 import org.apache.mesos.Protos;
 import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.config.ConfigStore;
-import org.apache.mesos.config.ConfigStoreException;
 import org.apache.mesos.config.RecoveryConfiguration;
 import org.apache.mesos.dcos.Capabilities;
 import org.apache.mesos.offer.OfferAccepter;
@@ -30,26 +29,20 @@ import org.apache.mesos.state.StateStore;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.*;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Mockito.*;
 
 /**
- * This class tests the Kafka RepairScheduler
+ * This class tests the Kafka RecoveryScheduler
  */
-public class RepairSchedulerTest {
+public class RecoverySchedulerTest {
     private static final UUID testTargetConfig = UUID.randomUUID();
-    @Mock private FrameworkState frameworkState;
+    @Mock private FrameworkState schedulerState;
     @Mock private ConfigStore configStore;
     @Mock private KafkaSchedulerConfiguration kafkaSchedulerConfiguration;
     @Mock private StateStore stateStore;
@@ -64,9 +57,11 @@ public class RepairSchedulerTest {
     @Captor private ArgumentCaptor<Collection<Protos.Offer.Operation>> operationCaptor;
 
     @Before
-    public void beforeEach() throws ConfigStoreException {
+    public void beforeEach() throws Exception {
         MockitoAnnotations.initMocks(this);
-        when(frameworkState.getFrameworkId()).thenReturn(KafkaTestUtils.testFrameworkId);
+        StateStore stateStore = mock(StateStore.class);
+        when(stateStore.fetchFrameworkId()).thenReturn(Optional.of(KafkaTestUtils.testFrameworkId));
+        when(schedulerState.getStateStore()).thenReturn(stateStore);
         when(configState.fetch(UUID.fromString(KafkaTestUtils.testConfigName)))
             .thenReturn(ConfigTestUtils.getTestKafkaSchedulerConfiguration());
         when(serviceConfiguration.getCount()).thenReturn(3);
@@ -77,8 +72,8 @@ public class RepairSchedulerTest {
     }
 
     @Test
-    public void testKafkaRepairSchedulerConstruction() throws Exception {
-        Assert.assertNotNull(getTestKafkaRepairScheduler());
+    public void testKafkaRecoverySchedulerConstruction() throws Exception {
+        Assert.assertNotNull(getTestKafkaRecoveryScheduler());
     }
 
     @Test
@@ -93,8 +88,11 @@ public class RepairSchedulerTest {
         when(stateStore.fetchTasks()).thenReturn(taskInfos);
         when(stateStore.fetchTerminatedTasks()).thenReturn(Arrays.asList(replaceTaskInfo));
 
-        DefaultRecoveryScheduler repairScheduler = getTestKafkaRepairScheduler();
-        List<Protos.OfferID> acceptedOfferIds = repairScheduler.resourceOffers(driver, Arrays.asList(getTestOfferSufficientForNewBroker()), null);
+        DefaultRecoveryScheduler recoveryScheduler = getTestKafkaRecoveryScheduler();
+        List<Protos.OfferID> acceptedOfferIds = recoveryScheduler.resourceOffers(
+                driver,
+                Arrays.asList(getTestOfferSufficientForNewBroker()),
+                Optional.empty());
         Assert.assertEquals(1, acceptedOfferIds.size());
         Assert.assertEquals(KafkaTestUtils.testOfferId, acceptedOfferIds.get(0).getValue());
         verify(driver, times(1)).acceptOffers(
@@ -122,8 +120,11 @@ public class RepairSchedulerTest {
         when(stateStore.fetchTasks()).thenReturn(taskInfos);
         when(stateStore.fetchTerminatedTasks()).thenReturn(Arrays.asList(replaceTaskInfo));
 
-        DefaultRecoveryScheduler repairScheduler = getTestKafkaRepairScheduler(new TestingLaunchConstrainer(), new KafkaFailureMonitor(recoveryConfiguration));
-        List<Protos.OfferID> acceptedOfferIds = repairScheduler.resourceOffers(driver, Arrays.asList(getTestOfferSufficientForNewBroker()), null);
+        DefaultRecoveryScheduler recoveryScheduler = getTestKafkaRecoveryScheduler(new TestingLaunchConstrainer(), new KafkaFailureMonitor(recoveryConfiguration));
+        List<Protos.OfferID> acceptedOfferIds = recoveryScheduler.resourceOffers(
+                driver,
+                Arrays.asList(getTestOfferSufficientForNewBroker()),
+                Optional.empty());
         Assert.assertEquals(0, acceptedOfferIds.size());
     }
 
@@ -139,8 +140,11 @@ public class RepairSchedulerTest {
         when(stateStore.fetchTasks()).thenReturn(taskInfos);
         when(stateStore.fetchTerminatedTasks()).thenReturn(Arrays.asList(replaceTaskInfo));
 
-        DefaultRecoveryScheduler repairScheduler = getTestKafkaRepairScheduler();
-        List<Protos.OfferID> acceptedOfferIds = repairScheduler.resourceOffers(driver, Arrays.asList(getTestOfferSufficientForNewBroker()), null);
+        DefaultRecoveryScheduler recoveryScheduler = getTestKafkaRecoveryScheduler();
+        List<Protos.OfferID> acceptedOfferIds = recoveryScheduler.resourceOffers(
+                driver,
+                Arrays.asList(getTestOfferSufficientForNewBroker()),
+                Optional.empty());
         Assert.assertEquals(1, acceptedOfferIds.size());
         Assert.assertEquals(KafkaTestUtils.testOfferId, acceptedOfferIds.get(0).getValue());
         verify(driver, times(1)).acceptOffers(
@@ -168,8 +172,13 @@ public class RepairSchedulerTest {
         when(stateStore.fetchTasks()).thenReturn(taskInfos);
         when(stateStore.fetchTerminatedTasks()).thenReturn(Arrays.asList(replaceTaskInfo));
 
-        DefaultRecoveryScheduler repairScheduler = getTestKafkaRepairScheduler(new TestingLaunchConstrainer(), new KafkaFailureMonitor(recoveryConfiguration));
-        List<Protos.OfferID> acceptedOfferIds = repairScheduler.resourceOffers(driver, Arrays.asList(getTestOfferSufficientForNewBroker()), null);
+        DefaultRecoveryScheduler recoveryScheduler = getTestKafkaRecoveryScheduler(
+                new TestingLaunchConstrainer(),
+                new KafkaFailureMonitor(recoveryConfiguration));
+        List<Protos.OfferID> acceptedOfferIds = recoveryScheduler.resourceOffers(
+                driver,
+                Arrays.asList(getTestOfferSufficientForNewBroker()),
+                Optional.empty());
         Assert.assertEquals(0, acceptedOfferIds.size());
     }
 
@@ -185,11 +194,15 @@ public class RepairSchedulerTest {
                 .build();
     }
 
-    private DefaultRecoveryScheduler getTestKafkaRepairScheduler() throws Exception {
-        return getTestKafkaRepairScheduler(new UnconstrainedLaunchConstrainer(), new KafkaFailureMonitor(recoveryConfiguration));
+    private DefaultRecoveryScheduler getTestKafkaRecoveryScheduler() throws Exception {
+        return getTestKafkaRecoveryScheduler(
+                new UnconstrainedLaunchConstrainer(),
+                new KafkaFailureMonitor(recoveryConfiguration));
     }
 
-    private DefaultRecoveryScheduler getTestKafkaRepairScheduler(LaunchConstrainer constrainer, FailureMonitor monitor) throws Exception {
+    private DefaultRecoveryScheduler getTestKafkaRecoveryScheduler(
+            LaunchConstrainer constrainer,
+            FailureMonitor monitor) throws Exception {
         return new DefaultRecoveryScheduler(
                 stateStore,
                 failureListener,
@@ -201,11 +214,11 @@ public class RepairSchedulerTest {
     }
 
     private OfferAccepter getTestOfferAccepter() {
-        return new OfferAccepter(Arrays.asList(new PersistentOperationRecorder(frameworkState)));
+        return new OfferAccepter(Arrays.asList(new PersistentOperationRecorder(schedulerState)));
     }
 
     private KafkaRecoveryRequirementProvider getTestOfferRequirementProvider() throws Exception {
-        KafkaOfferRequirementProvider kafkaOfferRequirementProvider = new PersistentOfferRequirementProvider(frameworkState, configState, clusterState);
+        KafkaOfferRequirementProvider kafkaOfferRequirementProvider = new PersistentOfferRequirementProvider(schedulerState, configState, clusterState);
         Capabilities capabilities = mock(Capabilities.class);
         when(capabilities.supportsNamedVips()).thenReturn(false);
         when(clusterState.getCapabilities()).thenReturn(capabilities);

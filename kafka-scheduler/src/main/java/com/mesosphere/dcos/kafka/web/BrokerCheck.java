@@ -13,11 +13,11 @@ public class BrokerCheck extends HealthCheck {
   public static final String NAME = "broker_count";
   private final Log log = LogFactory.getLog(BrokerCheck.class);
 
-  private final StageManager stageManager;
+  private final PlanManager planManager;
   private final FrameworkState state;
 
-  public BrokerCheck(StageManager stageManager, FrameworkState state) {
-    this.stageManager = stageManager;
+  public BrokerCheck(PlanManager planManager, FrameworkState state) {
+    this.planManager = planManager;
     this.state = state;
   }
 
@@ -52,9 +52,9 @@ public class BrokerCheck extends HealthCheck {
   }
 
   private Phase getUpdatePhase() {
-    Stage stage = stageManager.getStage();
+    Plan plan = planManager.getPlan();
 
-    for (Phase phase : stage.getPhases()) {
+    for (Phase phase : plan.getPhases()) {
       if (phase instanceof KafkaUpdatePhase) {
         return phase;
       }

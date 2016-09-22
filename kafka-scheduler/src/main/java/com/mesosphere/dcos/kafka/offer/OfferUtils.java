@@ -14,7 +14,7 @@ public class OfferUtils {
     return null;
   }
 
-  public static String idToName(Integer brokerId) {
+  public static String brokerIdToTaskName(Integer brokerId) {
     return "broker-" + Integer.toString(brokerId);
   }
 

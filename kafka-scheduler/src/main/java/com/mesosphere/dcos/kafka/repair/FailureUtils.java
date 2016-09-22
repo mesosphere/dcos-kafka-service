@@ -29,7 +29,7 @@ public class FailureUtils {
                                     .setValue(String.valueOf(true))))
                     .build();
         } else {
-            return  taskInfo;
+            return taskInfo;
         }
     }
 }

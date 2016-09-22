@@ -12,7 +12,6 @@ import org.apache.mesos.config.ConfigStoreException;
 import com.mesosphere.dcos.kafka.offer.PersistentOfferRequirementProvider;
 import com.mesosphere.dcos.kafka.state.FrameworkState;
 import org.apache.mesos.curator.CuratorConfigStore;
-import org.apache.mesos.protobuf.LabelBuilder;
 
 import java.util.*;
 
@@ -192,8 +191,10 @@ public class KafkaConfigState {
 
       for (String duplicateConfig : duplicateConfigs) {
         if (taskConfig.equals(duplicateConfig)) {
-          Labels labels = new LabelBuilder()
-                  .addLabel(PersistentOfferRequirementProvider.CONFIG_TARGET_KEY, targetName.toString())
+          Labels labels = Labels.newBuilder()
+                  .addLabels(Label.newBuilder()
+                          .setKey(PersistentOfferRequirementProvider.CONFIG_TARGET_KEY)
+                          .setValue(targetName.toString()))
                   .build();
 
           TaskInfo newTaskInfo = TaskInfo.newBuilder(taskInfo).setLabels(labels).build();

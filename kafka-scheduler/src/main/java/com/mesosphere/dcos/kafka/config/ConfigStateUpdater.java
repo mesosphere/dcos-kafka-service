@@ -35,7 +35,7 @@ public class ConfigStateUpdater {
   /**
    * Validates, stores, and returns the current target config based off the scheduler system environment.
    *
-   * @throws StateStoreException if the new config fails to be written to persistent storage
+   * @throws ConfigStoreException if the new config fails to be written to persistent storage
    * @throws ValidationException if the new config is invalid or has invalid changes compared to the active config
    */
   public KafkaSchedulerConfiguration getTargetConfig() throws ConfigStoreException, ValidationException {

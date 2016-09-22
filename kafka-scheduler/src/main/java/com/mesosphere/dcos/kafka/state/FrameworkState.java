@@ -8,7 +8,7 @@ import org.apache.mesos.curator.CuratorStateStore;
 import org.apache.mesos.offer.TaskException;
 import org.apache.mesos.offer.TaskUtils;
 import org.apache.mesos.reconciliation.TaskStatusProvider;
-import org.apache.mesos.state.StateStore;
+import org.apache.mesos.state.SchedulerState;
 import org.apache.mesos.state.StateStoreException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,37 +19,11 @@ import java.util.*;
  * Read/write interface for storing and retrieving information about Framework tasks. The underlying data is stored
  * against Executor IDs of "broker-0", "broker-1", etc.
  */
-public class FrameworkState implements TaskStatusProvider {
+public class FrameworkState extends SchedulerState implements TaskStatusProvider {
     private static final Logger log = LoggerFactory.getLogger(FrameworkState.class);
 
-    private final StateStore stateStore;
-
     public FrameworkState(ZookeeperConfiguration zkConfig) {
-        this.stateStore = new CuratorStateStore(zkConfig.getFrameworkName(), zkConfig.getMesosZkUri());
-    }
-
-    public StateStore getStateStore() {
-        return stateStore;
-    }
-
-    public FrameworkID getFrameworkId() {
-        try {
-            return stateStore.fetchFrameworkId();
-        } catch (StateStoreException ex) {
-            log.warn("Failed to get FrameworkID. "
-                    + "This is expected when the service is starting for the first time.", ex);
-        }
-        return null;
-    }
-
-    public void setFrameworkId(FrameworkID fwkId) throws StateStoreException {
-        try {
-            log.info(String.format("Storing framework id: %s", fwkId));
-            stateStore.storeFrameworkId(fwkId);
-        } catch (StateStoreException ex) {
-            log.error("Failed to set FrameworkID: " + fwkId, ex);
-            throw ex;
-        }
+        super(new CuratorStateStore(zkConfig.getFrameworkName(), zkConfig.getMesosZkUri()));
     }
 
     public void recordTasks(List<TaskInfo> taskInfos) throws StateStoreException {
@@ -66,7 +40,7 @@ public class FrameworkState implements TaskStatusProvider {
             taskStatuses.add(taskStatus);
         }
 
-        stateStore.storeTasks(taskInfos);
+        getStateStore().storeTasks(taskInfos);
         for (TaskStatus taskStatus : taskStatuses) {
             recordTaskStatus(taskStatus);
         }
@@ -78,7 +52,7 @@ public class FrameworkState implements TaskStatusProvider {
     }
 
     public List<TaskInfo> getTerminatedTaskInfos() throws Exception {
-        return new ArrayList(stateStore.fetchTerminatedTasks());
+        return new ArrayList(getStateStore().fetchTerminatedTasks());
     }
 
     public int getRunningBrokersCount() throws StateStoreException {
@@ -96,13 +70,13 @@ public class FrameworkState implements TaskStatusProvider {
     @Override
     public Set<TaskStatus> getTaskStatuses() throws StateStoreException {
         Set<TaskStatus> taskStatuses = new HashSet<TaskStatus>();
-        taskStatuses.addAll(stateStore.fetchStatuses());
+        taskStatuses.addAll(getStateStore().fetchStatuses());
         return taskStatuses;
     }
 
     public List<TaskInfo> getTaskInfos() throws StateStoreException {
         List<TaskInfo> taskInfos = new ArrayList<TaskInfo>();
-        taskInfos.addAll(stateStore.fetchTasks());
+        taskInfos.addAll(getStateStore().fetchTasks());
         return taskInfos;
     }
 
@@ -126,41 +100,41 @@ public class FrameworkState implements TaskStatusProvider {
      * Returns the full Task ID (including UUID) for the provided Broker index, or {@code null} if none is found.
      */
     public TaskID getTaskIdForBroker(Integer brokerId) throws Exception {
-        TaskInfo taskInfo = getTaskInfoForBroker(brokerId);
-        return (taskInfo != null) ? taskInfo.getTaskId() : null;
+        Optional<TaskInfo> taskInfoOptional = getTaskInfoForBroker(brokerId);
+        return taskInfoOptional.isPresent() ? taskInfoOptional.get().getTaskId() : null;
     }
 
     /**
      * Returns the TaskInfo for the provided Broker index, or {@code null} if none is found.
      */
-    public TaskInfo getTaskInfoForBroker(Integer brokerId) throws Exception {
+    public Optional<TaskInfo> getTaskInfoForBroker(Integer brokerId) throws Exception {
         try {
-            return stateStore.fetchTask(OfferUtils.idToName(brokerId));
+            return getStateStore().fetchTask(OfferUtils.brokerIdToTaskName(brokerId));
         } catch (StateStoreException e) {
             log.warn(String.format(
                     "Failed to get TaskInfo for broker %d. This is expected when the service is "
-                    + "starting for the first time.", brokerId), e);
-            return null;
+                            + "starting for the first time.", brokerId), e);
+            return Optional.empty();
         }
     }
 
     /**
      * Returns the TaskStatus for the provided Broker index, or {@code null} if none is found.
      */
-    public TaskStatus getTaskStatusForBroker(Integer brokerId) throws Exception {
+    public Optional<TaskStatus> getTaskStatusForBroker(Integer brokerId) throws Exception {
         try {
-            return stateStore.fetchStatus(OfferUtils.idToName(brokerId));
+            return getStateStore().fetchStatus(OfferUtils.brokerIdToTaskName(brokerId));
         } catch (StateStoreException e) {
             log.warn(String.format(
                     "Failed to get TaskStatus for broker %d. This is expected when the service is "
-                    + "starting for the first time.", brokerId), e);
-            return null;
+                            + "starting for the first time.", brokerId), e);
+            return Optional.empty();
         }
     }
 
     public void recordTaskInfo(TaskInfo taskInfo) throws StateStoreException {
         log.info(String.format("Recording updated TaskInfo to state store: %s", taskInfo));
-        stateStore.storeTasks(Arrays.asList(taskInfo));
+        getStateStore().storeTasks(Arrays.asList(taskInfo));
     }
 
     private void recordTaskStatus(TaskStatus taskStatus) throws StateStoreException {
@@ -169,7 +143,7 @@ public class FrameworkState implements TaskStatusProvider {
             log.warn("Dropping non-STAGING status update because the ZK path doesn't exist: "
                     + taskStatus);
         } else {
-            stateStore.storeStatus(taskStatus);
+            getStateStore().storeStatus(taskStatus);
         }
     }
 
@@ -182,7 +156,7 @@ public class FrameworkState implements TaskStatusProvider {
                     "Failed to get TaskName/ExecName from TaskStatus %s", taskStatus), e);
         }
         try {
-            stateStore.fetchStatus(taskName);
+            getStateStore().fetchStatus(taskName);
             return true;
         } catch (Exception e) {
             return false;

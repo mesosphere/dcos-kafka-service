@@ -17,8 +17,9 @@ import io.dropwizard.setup.Environment;
 import org.apache.commons.lang3.text.StrSubstitutor;
 import org.apache.mesos.config.api.ConfigResource;
 import org.apache.mesos.dcos.DcosCluster;
-import org.apache.mesos.scheduler.plan.api.StageResource;
-import org.apache.mesos.scheduler.recovery.RecoveryResource;
+import org.apache.mesos.scheduler.plan.api.PlanResource;
+import org.apache.mesos.scheduler.recovery.api.RecoveryResource;
+import org.apache.mesos.state.api.JsonPropertyDeserializer;
 import org.apache.mesos.state.api.StateResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -96,7 +97,7 @@ public final class Main extends Application<DropwizardConfiguration> {
           DropwizardConfiguration configuration) throws URISyntaxException {
     final KafkaState kafkaState = kafkaScheduler.getKafkaState();
     final KafkaConfigState configState = kafkaScheduler.getConfigState();
-    final FrameworkState frameworkState = kafkaScheduler.getFrameworkState();
+    final FrameworkState schedulerState = kafkaScheduler.getFrameworkState();
 
     // Kafka-specific APIs:
     environment.jersey().register(new ConnectionController(
@@ -105,7 +106,7 @@ public final class Main extends Application<DropwizardConfiguration> {
             kafkaState,
             new ClusterState(new DcosCluster()),
             configuration.getSchedulerConfiguration().getZookeeperConfig().getFrameworkName()));
-    environment.jersey().register(new BrokerController(kafkaState, frameworkState));
+    environment.jersey().register(new BrokerController(kafkaState, schedulerState));
     environment.jersey().register(new TopicController(
             new CmdExecutor(configuration.getSchedulerConfiguration(), kafkaState),
             kafkaState));
@@ -114,8 +115,8 @@ public final class Main extends Application<DropwizardConfiguration> {
     // APIs from dcos-commons:
     environment.jersey().register(new ConfigResource<>(
             configState.getConfigStore(), KafkaSchedulerConfiguration.getFactoryInstance()));
-    environment.jersey().register(new StateResource(frameworkState.getStateStore()));
-    environment.jersey().register(new StageResource(kafkaScheduler.getStageManager()));
+    environment.jersey().register(new StateResource(schedulerState.getStateStore(), new JsonPropertyDeserializer()));
+    environment.jersey().register(new PlanResource(kafkaScheduler.getPlanManager()));
   }
 
   private void registerHealthChecks(
@@ -124,7 +125,7 @@ public final class Main extends Application<DropwizardConfiguration> {
 
     environment.healthChecks().register(
         BrokerCheck.NAME,
-        new BrokerCheck(kafkaScheduler.getStageManager(), kafkaScheduler.getFrameworkState()));
+        new BrokerCheck(kafkaScheduler.getPlanManager(), kafkaScheduler.getFrameworkState()));
     environment.healthChecks().register(
             RegisterCheck.NAME,
             new RegisterCheck(kafkaScheduler));

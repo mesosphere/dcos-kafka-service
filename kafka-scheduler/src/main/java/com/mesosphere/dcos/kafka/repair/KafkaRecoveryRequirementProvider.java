@@ -40,7 +40,7 @@ public class KafkaRecoveryRequirementProvider implements RecoveryRequirementProv
      * @return A list of OfferRequirements generated from the failed Tasks.
      */
     @Override
-    public List<RecoveryRequirement> getTransientRecoveryOfferRequirements(List<TaskInfo> stoppedTasks) {
+    public List<RecoveryRequirement> getTransientRecoveryRequirements(List<TaskInfo> stoppedTasks) {
         List<RecoveryRequirement> transientRecoveryRequirements = new ArrayList<>();
 
         for (TaskInfo taskInfo : stoppedTasks) {
@@ -66,7 +66,7 @@ public class KafkaRecoveryRequirementProvider implements RecoveryRequirementProv
      * @return A list of OfferRequirements generated from the failed Tasks.
      */
     @Override
-    public List<RecoveryRequirement> getPermanentRecoveryOfferRequirements(List<TaskInfo> failedTasks) {
+    public List<RecoveryRequirement> getPermanentRecoveryRequirements(List<TaskInfo> failedTasks) {
         List<RecoveryRequirement> permanentRecoveryRequirements = new ArrayList<>();
 
         for (TaskInfo taskInfo : failedTasks) {

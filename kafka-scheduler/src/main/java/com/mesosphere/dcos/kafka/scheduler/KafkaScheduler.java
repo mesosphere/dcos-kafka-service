@@ -69,10 +69,6 @@ public class KafkaScheduler implements Scheduler, Runnable {
   private final PlanManager planManager;
   private final AtomicReference<RecoveryStatus> recoveryStatusRef;
   private SchedulerDriver driver;
-  private static final Integer restartLock = 0;
-  private static List<TaskInfo> tasksToRestart = new ArrayList<>();
-  private static final Integer rescheduleLock = 0;
-  private static List<TaskInfo> tasksToReschedule = new ArrayList<>();
 
   private boolean isRegistered = false;
 
@@ -280,7 +276,6 @@ public class KafkaScheduler implements Scheduler, Runnable {
     try {
       logOffers(offers);
       reconciler.reconcile(driver);
-      processTaskOperations(driver);
 
       List<OfferID> acceptedOffers = new ArrayList<>();
 
@@ -349,42 +344,6 @@ public class KafkaScheduler implements Scheduler, Runnable {
     }
 
     return false;
-  }
-
-  private void processTaskOperations(SchedulerDriver driver) {
-    processTasksToRestart(driver);
-    processTasksToReschedule(driver);
-  }
-
-  private void processTasksToRestart(SchedulerDriver driver) {
-    synchronized (restartLock) {
-      for (TaskInfo taskInfo : tasksToRestart) {
-        if (taskInfo != null) {
-          log.info("Restarting task: " + taskInfo.getTaskId().getValue());
-          driver.killTask(taskInfo.getTaskId());
-        } else {
-          log.warn("Asked to restart null task.");
-        }
-      }
-
-      tasksToRestart = new ArrayList<>();
-    }
-  }
-
-  private void processTasksToReschedule(SchedulerDriver driver) {
-    synchronized (rescheduleLock) {
-      for (TaskInfo taskInfo : tasksToReschedule) {
-        if (taskInfo != null) {
-          log.info("Rescheduling task: " + taskInfo.getTaskId().getValue());
-          kafkaTaskFailureListener.taskFailed(taskInfo.getTaskId());
-          driver.killTask(taskInfo.getTaskId());
-        } else {
-          log.warn("Asked to reschedule null task.");
-        }
-      }
-
-      tasksToReschedule = new ArrayList<>();
-    }
   }
 
   @Override

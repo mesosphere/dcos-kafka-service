@@ -4,6 +4,7 @@ ext {
   jsonVer = '20160212'
   loggingVer = '1.1.1'
   curatorTestVer = '2.9.1'
+  systemRulesVer = '1.16.0'
 }
 
 dependencies {
@@ -16,6 +17,7 @@ dependencies {
   testCompile "org.apache.curator:curator-test:${curatorTestVer}"
   testCompile "io.dropwizard:dropwizard-testing:${dropwizardVer}"
   testCompile project(':kafka-test-commons').sourceSets.test.output
+  testCompile "com.github.stefanbirkner:system-rules:${systemRulesVer}"
 }
 
 task wrapper(type: Wrapper) {

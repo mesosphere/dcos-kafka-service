@@ -51,10 +51,6 @@ public class FrameworkState extends SchedulerState implements TaskStatusProvider
         recordTaskStatus(taskStatus);
     }
 
-    public List<TaskInfo> getTerminatedTaskInfos() throws Exception {
-        return new ArrayList(getStateStore().fetchTerminatedTasks());
-    }
-
     public int getRunningBrokersCount() throws StateStoreException {
         int count = 0;
 

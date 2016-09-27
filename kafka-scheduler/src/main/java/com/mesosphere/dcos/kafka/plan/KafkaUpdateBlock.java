@@ -14,12 +14,13 @@ import org.apache.mesos.Protos.TaskStatus;
 import org.apache.mesos.offer.OfferRequirement;
 import org.apache.mesos.offer.TaskRequirement;
 import org.apache.mesos.offer.TaskUtils;
+import org.apache.mesos.scheduler.DefaultObservable;
 import org.apache.mesos.scheduler.plan.Block;
 import org.apache.mesos.scheduler.plan.Status;
 
 import java.util.*;
 
-public class KafkaUpdateBlock implements Block {
+public class KafkaUpdateBlock extends DefaultObservable implements Block {
   private final Log log = LogFactory.getLog(KafkaUpdateBlock.class);
 
   private final KafkaOfferRequirementProvider offerReqProvider;
@@ -147,8 +148,8 @@ public class KafkaUpdateBlock implements Block {
       if (taskStatus.getState().equals(TaskState.TASK_RUNNING)) {
         pendingTaskIds.remove(taskStatus.getTaskId());
         log.info(getName() + " has updated pending tasks: " + pendingTaskIds);
-      } else if (isInProgress() && TaskUtils.isTerminated(taskStatus)) {
-        log.info("Received terminal TaskStatus while " + getName() + " is InProgress: " + taskStatus);
+      } else if (isInProgress() && TaskUtils.needsRecovery(taskStatus)) {
+        log.info("Received TaskStatus indicating recovery needed while " + getName() + " is InProgress: " + taskStatus);
         setStatus(Status.PENDING);
         return;
       } else {

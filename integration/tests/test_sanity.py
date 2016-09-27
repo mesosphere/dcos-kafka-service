@@ -10,6 +10,7 @@ from tests.test_utils import (
     DEFAULT_BROKER_COUNT,
     DYNAMIC_PORT_OPTIONS_FILE,
     PACKAGE_NAME,
+    TASK_RUNNING_STATE,
     check_health,
     get_broker_list,
     get_kafka_command,
@@ -235,14 +236,27 @@ def test_invalid_broker_id_returns_null():
     assert restart_info[0] is None
 
 
-@pytest.mark.sanity
-def test_single_broker_restart_succeeds():
+@pytest.mark.special
+def test_restart_all_brokers_succeeds():
     for i in range(DEFAULT_BROKER_COUNT):
+        broker_task = get_running_broker_task('broker-{}'.format(i))[0]
+        broker_id = broker_task['id']
+        assert broker_id.startswith('broker-{}__'.format(i))
         restart_info = get_kafka_command('broker restart {}'.format(i))
+        task_id_changes('broker-{}'.format(i), broker_id)
         assert len(restart_info) == 1
         assert restart_info[0].startswith('broker-{}__'.format(i))
 
-    get_broker_list()
+
+@pytest.mark.sanity
+def test_single_broker_replace_succeeds():
+    broker_0_task = get_running_broker_task('broker-0')[0]
+    broker_0_id = broker_0_task['id']
+    assert broker_0_id.startswith('broker-0__')
+    
+    replace_info = get_kafka_command('broker replace 0')
+    task_id_changes('broker-0', broker_0_id)
+
 
 @pytest.mark.sanity
 def test_is_suppressed():
@@ -251,3 +265,31 @@ def test_is_suppressed():
     response = dcos.http.get(suppressed_url)
     response.raise_for_status()
     assert response.text == "true"
+
+
+def get_running_broker_task(broker_name):
+    def fn():
+        try:
+            tasks = shakedown.get_service_tasks(PACKAGE_NAME)
+            return [t for t in tasks if t['state'] == TASK_RUNNING_STATE and t['name'] == broker_name]
+        except dcos.errors.DCOSHTTPException:
+            return []
+
+    def success_predicate(tasks):
+        return (len(tasks) == 1, 'Failed to get task')
+
+    return spin(fn, success_predicate)
+
+
+def task_id_changes(broker_name, task_id):
+    def fn():
+        try:
+            tasks = shakedown.get_service_tasks(PACKAGE_NAME)
+            return [t for t in tasks if t['state'] == TASK_RUNNING_STATE and t['name'] == broker_name]
+        except dcos.errors.DCOSHTTPException:
+            return []
+
+    def success_predicate(tasks):
+        return (len(tasks) == 1 and tasks[0]['id'] != task_id, "Task ID didn't change.")
+
+    return spin(fn, success_predicate)

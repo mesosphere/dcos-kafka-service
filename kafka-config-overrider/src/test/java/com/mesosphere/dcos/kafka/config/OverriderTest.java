@@ -41,8 +41,8 @@ public class OverriderTest {
         testingServer.start();
 
         final Main main = (Main) RULE.getApplication();
-        kafkaSchedulerConfiguration = main.getKafkaSchedulerConfiguration();
-        zookeeperConfiguration = main.getKafkaSchedulerConfiguration().getZookeeperConfig();
+        kafkaSchedulerConfiguration = main.getDropwizardConfiguration().getSchedulerConfiguration();
+        zookeeperConfiguration = kafkaSchedulerConfiguration.getZookeeperConfig();
 
         when(dropwizardConfiguration.getSchedulerConfiguration())
                 .thenReturn(kafkaSchedulerConfiguration);

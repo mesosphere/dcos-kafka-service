@@ -16,7 +16,6 @@ DC/OS Apache Kafka Service Guide
 - [Minimal Installation](#minimal-installation)
 - [Custom Installation](#custom-installation)
 - [Multiple Kafka cluster installation](#multiple-kafka-cluster-installation)
-- [Running Integration Tests](#running-integration-tests)
 - [Uninstall](#uninstall)
 
 [Configuring](#configuring)
@@ -207,17 +206,6 @@ Installing multiple Kafka clusters is identical to installing Kafka clusters wit
     }
 
     $ dcos package install kafka --options=kafka1.json
-
-## Running Integration Tests
-
-The Kafka framework uses [shakedown]() for specifying integration tests against a DC/OS cluster. The environment setup logic is specified in `integration/run.sh`, which relies for now on the `dcos-tests` repo having been cloned into this one. The `shakedown` test suite is easily run manually if you have a DC/OS cluster already on hand. In this case, you need only install `shakedown` and its dependencies into a virtualenv and then run it with your DC/OS cluster URL as a command-line argument:
-
-    $ cd integration
-    $ virtualenv -p python3.5 env
-    $ source env/bin/activate
-    (env) $ pip install -r requirements.txt
-    (env) $ shakedown --dcos-url $(dcos config show core.dcos_url) --ssh-key-file $CLUSTER_KEY_FILE tests/
-
 
 ## Uninstall
 

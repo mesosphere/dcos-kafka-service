@@ -1,24 +1,22 @@
 package com.mesosphere.dcos.kafka.web;
 
 import com.codahale.metrics.health.HealthCheck;
-
 import com.mesosphere.dcos.kafka.plan.KafkaUpdatePhase;
+import com.mesosphere.dcos.kafka.scheduler.KafkaScheduler;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import com.mesosphere.dcos.kafka.state.FrameworkState;
-import org.apache.mesos.scheduler.plan.*;
+import org.apache.mesos.scheduler.plan.Block;
+import org.apache.mesos.scheduler.plan.Phase;
+import org.apache.mesos.scheduler.plan.Plan;
 
 public class BrokerCheck extends HealthCheck {
   public static final String NAME = "broker_count";
   private final Log log = LogFactory.getLog(BrokerCheck.class);
 
-  private final PlanManager planManager;
-  private final FrameworkState state;
+  private final KafkaScheduler kafkaScheduler;
 
-  public BrokerCheck(PlanManager planManager, FrameworkState state) {
-    this.planManager = planManager;
-    this.state = state;
+  public BrokerCheck(KafkaScheduler kafkaScheduler) {
+    this.kafkaScheduler = kafkaScheduler;
   }
 
   @Override
@@ -34,7 +32,7 @@ public class BrokerCheck extends HealthCheck {
         return Result.unhealthy(errMsg);
       }
 
-      int runningBrokerCount = state.getRunningBrokersCount();
+      int runningBrokerCount = kafkaScheduler.getFrameworkState().getRunningBrokersCount();
       int completedBrokerBlockCount = getCompleteBrokerBlockCount(updatePhase);
 
       if (runningBrokerCount < completedBrokerBlockCount) {
@@ -52,7 +50,7 @@ public class BrokerCheck extends HealthCheck {
   }
 
   private Phase getUpdatePhase() {
-    Plan plan = planManager.getPlan();
+    Plan plan = kafkaScheduler.getPlanManager().getPlan();
 
     for (Phase phase : plan.getPhases()) {
       if (phase instanceof KafkaUpdatePhase) {

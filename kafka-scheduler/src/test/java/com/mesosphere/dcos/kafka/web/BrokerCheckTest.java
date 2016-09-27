@@ -1,6 +1,7 @@
 package com.mesosphere.dcos.kafka.web;
 
 import com.mesosphere.dcos.kafka.plan.KafkaUpdatePhase;
+import com.mesosphere.dcos.kafka.scheduler.KafkaScheduler;
 import com.mesosphere.dcos.kafka.state.FrameworkState;
 import org.apache.mesos.scheduler.plan.Block;
 import org.apache.mesos.scheduler.plan.Phase;
@@ -28,12 +29,15 @@ public class BrokerCheckTest {
     @Mock private FrameworkState frameworkState;
     @Mock private KafkaUpdatePhase kafkaUpdatePhase;
     @Mock private Block block;
+    @Mock private KafkaScheduler kafkaScheduler;
     private BrokerCheck brokerCheck;
 
     @Before
     public void beforeEach() {
         MockitoAnnotations.initMocks(this);
-        brokerCheck = new BrokerCheck(planManager, frameworkState);
+        when(kafkaScheduler.getPlanManager()).thenReturn(planManager);
+        when(kafkaScheduler.getFrameworkState()).thenReturn(frameworkState);
+        brokerCheck = new BrokerCheck(kafkaScheduler);
     }
 
     @Test

@@ -1,12 +1,9 @@
 package com.mesosphere.dcos.kafka.scheduler;
 
 import com.mesosphere.dcos.kafka.cmd.CmdExecutor;
-import com.mesosphere.dcos.kafka.commons.state.KafkaState;
 import com.mesosphere.dcos.kafka.config.DropwizardConfiguration;
-import com.mesosphere.dcos.kafka.config.KafkaConfigState;
 import com.mesosphere.dcos.kafka.config.KafkaSchedulerConfiguration;
 import com.mesosphere.dcos.kafka.state.ClusterState;
-import com.mesosphere.dcos.kafka.state.FrameworkState;
 import com.mesosphere.dcos.kafka.web.*;
 import io.dropwizard.Application;
 import io.dropwizard.configuration.EnvironmentVariableLookup;
@@ -64,8 +61,8 @@ public final class Main extends Application<DropwizardConfiguration> {
                     strSubstitutor));
   }
 
-  public KafkaSchedulerConfiguration getKafkaSchedulerConfiguration() {
-    return dropwizardConfiguration.getSchedulerConfiguration();
+  public DropwizardConfiguration getDropwizardConfiguration() {
+    return dropwizardConfiguration;
   }
 
   Environment getEnvironment() {
@@ -78,7 +75,8 @@ public final class Main extends Application<DropwizardConfiguration> {
     this.dropwizardConfiguration = dropwizardConfiguration;
     this.environment = environment;
 
-    final KafkaScheduler kafkaScheduler = new KafkaScheduler(getKafkaSchedulerConfiguration(), getEnvironment());
+    final KafkaScheduler kafkaScheduler =
+            new KafkaScheduler(dropwizardConfiguration.getSchedulerConfiguration(), getEnvironment());
 
     registerJerseyResources(kafkaScheduler, getEnvironment(), this.dropwizardConfiguration);
     registerHealthChecks(kafkaScheduler, getEnvironment());
@@ -95,27 +93,25 @@ public final class Main extends Application<DropwizardConfiguration> {
           KafkaScheduler kafkaScheduler,
           Environment environment,
           DropwizardConfiguration configuration) throws URISyntaxException {
-    final KafkaState kafkaState = kafkaScheduler.getKafkaState();
-    final KafkaConfigState configState = kafkaScheduler.getConfigState();
-    final FrameworkState schedulerState = kafkaScheduler.getFrameworkState();
-
     // Kafka-specific APIs:
     environment.jersey().register(new ConnectionController(
             configuration.getSchedulerConfiguration().getFullKafkaZookeeperPath(),
-            configState,
-            kafkaState,
+            kafkaScheduler.getConfigState(),
+            kafkaScheduler.getKafkaState(),
             new ClusterState(new DcosCluster()),
             configuration.getSchedulerConfiguration().getZookeeperConfig().getFrameworkName()));
-    environment.jersey().register(new BrokerController(kafkaState, schedulerState));
+    environment.jersey().register(new BrokerController(kafkaScheduler));
     environment.jersey().register(new TopicController(
-            new CmdExecutor(configuration.getSchedulerConfiguration(), kafkaState),
-            kafkaState));
+            new CmdExecutor(configuration.getSchedulerConfiguration(), kafkaScheduler),
+            kafkaScheduler));
     environment.jersey().register(new RecoveryResource(kafkaScheduler.getRecoveryStatusRef()));
 
     // APIs from dcos-commons:
     environment.jersey().register(new ConfigResource<>(
-            configState.getConfigStore(), KafkaSchedulerConfiguration.getFactoryInstance()));
-    environment.jersey().register(new StateResource(schedulerState.getStateStore(), new JsonPropertyDeserializer()));
+            kafkaScheduler.getConfigState().getConfigStore(), KafkaSchedulerConfiguration.getFactoryInstance()));
+    environment.jersey().register(new StateResource(
+            kafkaScheduler.getFrameworkState().getStateStore(),
+            new JsonPropertyDeserializer()));
     environment.jersey().register(new PlanResource(kafkaScheduler.getPlanManager()));
   }
 
@@ -125,7 +121,7 @@ public final class Main extends Application<DropwizardConfiguration> {
 
     environment.healthChecks().register(
         BrokerCheck.NAME,
-        new BrokerCheck(kafkaScheduler.getPlanManager(), kafkaScheduler.getFrameworkState()));
+        new BrokerCheck(kafkaScheduler));
     environment.healthChecks().register(
             RegisterCheck.NAME,
             new RegisterCheck(kafkaScheduler));

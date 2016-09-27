@@ -86,7 +86,7 @@ public class RecoverySchedulerTest {
                 getDummyBrokerTaskInfo(1),
                 getDummyBrokerTaskInfo(2));
         when(stateStore.fetchTasks()).thenReturn(taskInfos);
-        when(stateStore.fetchTerminatedTasks()).thenReturn(Arrays.asList(replaceTaskInfo));
+        when(stateStore.fetchTasksNeedingRecovery()).thenReturn(Arrays.asList(replaceTaskInfo));
 
         DefaultRecoveryScheduler recoveryScheduler = getTestKafkaRecoveryScheduler();
         List<Protos.OfferID> acceptedOfferIds = recoveryScheduler.resourceOffers(
@@ -118,7 +118,7 @@ public class RecoverySchedulerTest {
                 getDummyBrokerTaskInfo(1),
                 getDummyBrokerTaskInfo(2));
         when(stateStore.fetchTasks()).thenReturn(taskInfos);
-        when(stateStore.fetchTerminatedTasks()).thenReturn(Arrays.asList(replaceTaskInfo));
+        when(stateStore.fetchTasksNeedingRecovery()).thenReturn(Arrays.asList(replaceTaskInfo));
 
         DefaultRecoveryScheduler recoveryScheduler = getTestKafkaRecoveryScheduler(new TestingLaunchConstrainer(), new KafkaFailureMonitor(recoveryConfiguration));
         List<Protos.OfferID> acceptedOfferIds = recoveryScheduler.resourceOffers(
@@ -138,7 +138,7 @@ public class RecoverySchedulerTest {
                 getDummyBrokerTaskInfo(1),
                 replaceTaskInfo);
         when(stateStore.fetchTasks()).thenReturn(taskInfos);
-        when(stateStore.fetchTerminatedTasks()).thenReturn(Arrays.asList(replaceTaskInfo));
+        when(stateStore.fetchTasksNeedingRecovery()).thenReturn(Arrays.asList(replaceTaskInfo));
 
         DefaultRecoveryScheduler recoveryScheduler = getTestKafkaRecoveryScheduler();
         List<Protos.OfferID> acceptedOfferIds = recoveryScheduler.resourceOffers(
@@ -170,7 +170,7 @@ public class RecoverySchedulerTest {
                 getDummyBrokerTaskInfo(1),
                 replaceTaskInfo);
         when(stateStore.fetchTasks()).thenReturn(taskInfos);
-        when(stateStore.fetchTerminatedTasks()).thenReturn(Arrays.asList(replaceTaskInfo));
+        when(stateStore.fetchTasksNeedingRecovery()).thenReturn(Arrays.asList(replaceTaskInfo));
 
         DefaultRecoveryScheduler recoveryScheduler = getTestKafkaRecoveryScheduler(
                 new TestingLaunchConstrainer(),

@@ -1,16 +1,17 @@
 package com.mesosphere.dcos.kafka.plan;
 
+import com.mesosphere.dcos.kafka.config.KafkaSchedulerConfiguration;
+import com.mesosphere.dcos.kafka.offer.KafkaOfferRequirementProvider;
+import com.mesosphere.dcos.kafka.state.FrameworkState;
+import org.apache.mesos.scheduler.ChainedObserver;
+import org.apache.mesos.scheduler.plan.Block;
+import org.apache.mesos.scheduler.plan.Phase;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import com.mesosphere.dcos.kafka.config.KafkaSchedulerConfiguration;
-import com.mesosphere.dcos.kafka.offer.KafkaOfferRequirementProvider;
-import com.mesosphere.dcos.kafka.state.FrameworkState;
-import org.apache.mesos.scheduler.plan.Block;
-import org.apache.mesos.scheduler.plan.Phase;
-
-public class KafkaUpdatePhase implements Phase {
+public class KafkaUpdatePhase extends ChainedObserver implements Phase {
   private final List<Block> blocks;
   private final String configName;
   private final KafkaSchedulerConfiguration config;

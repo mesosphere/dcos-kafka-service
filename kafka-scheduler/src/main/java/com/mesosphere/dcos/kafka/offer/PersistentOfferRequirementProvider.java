@@ -14,10 +14,7 @@ import org.apache.mesos.Protos.Environment.Variable;
 import org.apache.mesos.Protos.Value.Range;
 import org.apache.mesos.Protos.Value.Ranges;
 import org.apache.mesos.config.ConfigStoreException;
-import org.apache.mesos.offer.InvalidRequirementException;
-import org.apache.mesos.offer.OfferRequirement;
-import org.apache.mesos.offer.PlacementStrategy;
-import org.apache.mesos.offer.ResourceUtils;
+import org.apache.mesos.offer.*;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -330,7 +327,6 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     envMap.put(KafkaEnvConfigUtils.toEnvName("log.dirs"), containerPath + "/" + brokerName);
     envMap.put(KafkaEnvConfigUtils.toEnvName("listeners"), "PLAINTEXT://:" + port);
     envMap.put(KafkaEnvConfigUtils.toEnvName("port"), Long.toString(port));
-    envMap.put("KAFKA_DYNAMIC_BROKER_PORT", Boolean.toString(isDynamicPort));
     envMap.put("KAFKA_HEAP_OPTS", getKafkaHeapOpts(brokerConfig.getHeap()));
     CommandInfo brokerTask = CommandInfo.newBuilder()
             .setValue(kafkaLaunchCommand)
@@ -339,11 +335,9 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
 
     // Launch command for custom executor
     final String executorCommand = "./executor/bin/kafka-executor server ./executor/conf/executor.yml";
-    Long adminPort = getDynamicPort();
     Map<String, String> executorEnvMap = new HashMap<>();
     executorEnvMap.put("JAVA_HOME", "jre1.8.0_91");
     executorEnvMap.put("FRAMEWORK_NAME", frameworkName);
-    executorEnvMap.put("API_PORT", String.valueOf(adminPort));
     executorEnvMap.put("KAFKA_ZOOKEEPER_URI", zkConfig.getKafkaZkUri());
     executorEnvMap.put(KafkaEnvConfigUtils.KAFKA_OVERRIDE_PREFIX + "BROKER_ID", Integer.toString(brokerId));
     CommandInfo executorCommandBuilder = CommandInfo.newBuilder()
@@ -359,38 +353,31 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     final ExecutorInfo.Builder executorBuilder = ExecutorInfo.newBuilder();
 
     executorBuilder
-      .setName(brokerName)
-      .setExecutorId(ExecutorID.newBuilder().setValue("").build()) // Set later by ExecutorRequirement
-      .setFrameworkId(schedulerState.getStateStore().fetchFrameworkId().get())
-      .setCommand(executorCommandBuilder)
-      .addResources(ResourceUtils.getDesiredScalar(role, principal, "cpus", executorConfig.getCpus()))
-      .addResources(ResourceUtils.getDesiredScalar(role, principal, "mem", executorConfig.getMem()))
-      .addResources(ResourceUtils.getDesiredRanges(
-            role,
-            principal,
-            "ports",
-            Arrays.asList(
-              Range.newBuilder()
-                .setBegin(adminPort)
-                .setEnd(adminPort).build())));
+            .setName(brokerName)
+            .setExecutorId(ExecutorID.newBuilder().setValue("").build()) // Set later by ExecutorRequirement
+            .setFrameworkId(schedulerState.getStateStore().fetchFrameworkId().get())
+            .setCommand(executorCommandBuilder)
+            .addResources(ResourceUtils.getDesiredScalar(role, principal, "cpus", executorConfig.getCpus()))
+            .addResources(ResourceUtils.getDesiredScalar(role, principal, "mem", executorConfig.getMem()))
+            .addResources(DynamicPortRequirement.getDesiredDynamicPort("API_PORT", role, principal));
 
     // Build Task
     TaskInfo.Builder taskBuilder = TaskInfo.newBuilder();
     taskBuilder
-      .setName(brokerName)
-      .setTaskId(TaskID.newBuilder().setValue("").build()) // Set later by TaskRequirement
-      .setSlaveId(SlaveID.newBuilder().setValue("").build()) // Set later
-      .setData(brokerTask.toByteString())
-      .addResources(ResourceUtils.getDesiredScalar(role, principal, "cpus", brokerConfig.getCpus()))
-      .addResources(ResourceUtils.getDesiredScalar(role, principal, "mem", brokerConfig.getMem()))
-      .addResources(ResourceUtils.getDesiredRanges(
-            role,
-            principal,
-            "ports",
-            Arrays.asList(
-              Range.newBuilder()
-              .setBegin(port)
-              .setEnd(port).build())));
+            .setName(brokerName)
+            .setTaskId(TaskID.newBuilder().setValue("").build()) // Set later by TaskRequirement
+            .setSlaveId(SlaveID.newBuilder().setValue("").build()) // Set later
+            .setData(brokerTask.toByteString())
+            .addResources(ResourceUtils.getDesiredScalar(role, principal, "cpus", brokerConfig.getCpus()))
+            .addResources(ResourceUtils.getDesiredScalar(role, principal, "mem", brokerConfig.getMem()))
+            .addResources(ResourceUtils.getDesiredRanges(
+                    role,
+                    principal,
+                    "ports",
+                    Arrays.asList(
+                            Range.newBuilder()
+                                    .setBegin(port)
+                                    .setEnd(port).build())));
 
     if (brokerConfig.getDiskType().equals("MOUNT")) {
       taskBuilder.addResources(ResourceUtils.getDesiredMountVolume(
@@ -430,10 +417,6 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
               .setConsecutiveFailures(healthCheckConfiguration.getHealthCheckMaxFailures())
               .setGracePeriodSeconds(healthCheckConfiguration.getHealthCheckGracePeriod().getSeconds())
               .setCommand(CommandInfo.newBuilder()
-                      .setEnvironment(Environment.newBuilder()
-                              .addVariables(Variable.newBuilder()
-                                      .setName("API_PORT")
-                                      .setValue(String.valueOf(adminPort))))
                       .setValue("curl -f localhost:$API_PORT/admin/healthcheck")
                       .build()));
     }
@@ -457,9 +440,11 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
             Optional.of(executorInfo),
             avoidAgents,
             colocateAgents);
+
     log.info(String.format("Got new OfferRequirement: TaskInfo: '%s' ExecutorInfo: '%s'",
             TextFormat.shortDebugString(taskInfo),
             TextFormat.shortDebugString(executorInfo)));
+
     return offerRequirement;
   }
 

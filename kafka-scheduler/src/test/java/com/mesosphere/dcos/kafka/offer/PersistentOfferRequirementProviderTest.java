@@ -153,10 +153,11 @@ public class PersistentOfferRequirementProviderTest {
     expectedEnvMap.put("KAFKA_VER_NAME", KafkaTestUtils.testKafkaVerName);
     expectedEnvMap.put("CONFIG_ID", KafkaTestUtils.testConfigName);
     expectedEnvMap.put("KAFKA_OVERRIDE_PORT", portString);
-    expectedEnvMap.put("KAFKA_DYNAMIC_BROKER_PORT", Boolean.toString(false));
     expectedEnvMap.put("KAFKA_OVERRIDE_BROKER_ID", String.valueOf(0));
     expectedEnvMap.put("KAFKA_HEAP_OPTS", "-Xms500M -Xmx500M");
     expectedEnvMap.put("TASK_TYPE", KafkaTask.BROKER.name());
+
+    System.out.println(envFromTask);
 
     Assert.assertEquals(expectedEnvMap.size(), envFromTask.size());
 

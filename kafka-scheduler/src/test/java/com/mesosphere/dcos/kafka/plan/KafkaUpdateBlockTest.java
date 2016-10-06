@@ -72,7 +72,7 @@ public class KafkaUpdateBlockTest {
         OfferRequirement offerRequirement = updateBlock.start().get();
         Assert.assertNotNull(offerRequirement);
         Assert.assertEquals(1, offerRequirement.getTaskRequirements().size());
-        Assert.assertNotNull(offerRequirement.getExecutorRequirement());
+        Assert.assertTrue(offerRequirement.getExecutorRequirementOptional().isPresent());
     }
 
     @Test

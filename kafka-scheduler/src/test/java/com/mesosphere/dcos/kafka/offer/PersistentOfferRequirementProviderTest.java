@@ -130,7 +130,7 @@ public class PersistentOfferRequirementProviderTest {
     Assert.assertEquals(3, healthCheck.getConsecutiveFailures(), 0.0);
     Assert.assertEquals(10, healthCheck.getGracePeriodSeconds(), 0.0);
 
-    final ExecutorInfo executorInfo = req.getExecutorRequirement().getExecutorInfo();
+    final ExecutorInfo executorInfo = req.getExecutorRequirementOptional().get().getExecutorInfo();
 
     CommandInfo cmd = executorInfo.getCommand();
     Assert.assertEquals(4, cmd.getUrisList().size());

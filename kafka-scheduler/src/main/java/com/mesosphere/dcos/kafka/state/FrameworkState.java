@@ -7,7 +7,6 @@ import org.apache.mesos.Protos.*;
 import org.apache.mesos.curator.CuratorStateStore;
 import org.apache.mesos.offer.TaskException;
 import org.apache.mesos.offer.TaskUtils;
-import org.apache.mesos.reconciliation.TaskStatusProvider;
 import org.apache.mesos.state.SchedulerState;
 import org.apache.mesos.state.StateStoreException;
 import org.slf4j.Logger;
@@ -19,7 +18,7 @@ import java.util.*;
  * Read/write interface for storing and retrieving information about Framework tasks. The underlying data is stored
  * against Executor IDs of "broker-0", "broker-1", etc.
  */
-public class FrameworkState extends SchedulerState implements TaskStatusProvider {
+public class FrameworkState extends SchedulerState {
     private static final Logger log = LoggerFactory.getLogger(FrameworkState.class);
 
     public FrameworkState(ZookeeperConfiguration zkConfig) {
@@ -63,7 +62,6 @@ public class FrameworkState extends SchedulerState implements TaskStatusProvider
         return count;
     }
 
-    @Override
     public Set<TaskStatus> getTaskStatuses() throws StateStoreException {
         Set<TaskStatus> taskStatuses = new HashSet<TaskStatus>();
         taskStatuses.addAll(getStateStore().fetchStatuses());

@@ -23,10 +23,7 @@ import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.config.ConfigStoreException;
 import org.apache.mesos.config.RecoveryConfiguration;
-import org.apache.mesos.offer.InvalidRequirementException;
-import org.apache.mesos.offer.OfferAccepter;
-import org.apache.mesos.offer.ResourceCleaner;
-import org.apache.mesos.offer.ResourceCleanerScheduler;
+import org.apache.mesos.offer.*;
 import org.apache.mesos.reconciliation.DefaultReconciler;
 import org.apache.mesos.reconciliation.Reconciler;
 import org.apache.mesos.scheduler.DefaultTaskKiller;
@@ -98,7 +95,7 @@ public class KafkaScheduler implements Scheduler, Runnable {
         kafkaState = configStateUpdater.getKafkaState();
 
         envConfig = targetConfigToUse;
-        reconciler = new DefaultReconciler(frameworkState);
+        reconciler = new DefaultReconciler(frameworkState.getStateStore());
         clusterState = new ClusterState();
 
         offerAccepter =
@@ -129,6 +126,7 @@ public class KafkaScheduler implements Scheduler, Runnable {
         taskKiller = new DefaultTaskKiller(frameworkState.getStateStore(), taskFailureListener, driver);
         planScheduler = new DefaultPlanScheduler(
                 offerAccepter,
+                new OfferEvaluator(frameworkState.getStateStore()),
                 taskKiller);
     }
 
@@ -265,11 +263,12 @@ public class KafkaScheduler implements Scheduler, Runnable {
         // Store status, then pass status to StageManager => Plan => Blocks
         try {
             frameworkState.updateStatus(status);
-            planManager.update(status);
         } catch (Exception e) {
             log.warn("Failed to update TaskStatus received from Mesos. "
                     + "This may be expected if Mesos sent stale status information: " + status, e);
         }
+
+        planManager.update(status);
 
         if (hasOperations()) {
             reviveOffers(driver);

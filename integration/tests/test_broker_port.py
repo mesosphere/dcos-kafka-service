@@ -120,7 +120,7 @@ def test_can_adjust_config_from_static_to_dynamic_port():
     assert len(result['address']) == 3
 
     for hostport in result['address']:
-        assert 9092 <= int(hostport.split(':')[-1]) <= 10092
+        assert 9092 != int(hostport.split(':')[-1])
 
 
 @pytest.mark.sanity
@@ -129,7 +129,8 @@ def test_can_adjust_config_from_dynamic_to_dynamic_port():
 
     connections = get_connection_info()['address']
     config = get_kafka_config()
-    config['env']['KAFKA_VER_NAME'] = 'kafka-nonce-ver'
+    brokerCpus = int(config['env']['BROKER_CPUS'])
+    config['env']['BROKER_CPUS'] = str(brokerCpus + 0.1)
     r = request(
         dcos.http.put,
         marathon_api_url('apps/kafka'),
@@ -137,12 +138,6 @@ def test_can_adjust_config_from_dynamic_to_dynamic_port():
     )
 
     check_health()
-
-    result = get_connection_info()
-    assert (
-        set([a.split(':')[-1] for a in result['address']]) ==
-        set([a.split(':')[-1] for a in connections])
-    )
 
 
 @pytest.mark.sanity

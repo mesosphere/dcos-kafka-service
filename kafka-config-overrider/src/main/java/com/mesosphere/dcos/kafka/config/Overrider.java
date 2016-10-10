@@ -134,7 +134,8 @@ public final class Overrider extends Application<DropwizardConfiguration> {
   }
 
   private static Map<String, String> getKafkaOverrides(
-      KafkaConfiguration kafkaConfigZk, KafkaConfiguration kafkaConfigEnv) {
+          KafkaConfiguration kafkaConfigZk,
+          KafkaConfiguration kafkaConfigEnv) {
     // Use treemap for ordered printing in logs:
     Map<String, String> kafkaProperties = new TreeMap<>();
 
@@ -147,6 +148,7 @@ public final class Overrider extends Application<DropwizardConfiguration> {
     // embedded into the container environment at launch-time by PersistentOfferRequirementProvider.
     log.info("Overrides from System Environment: " + kafkaConfigEnv.getOverrides());
     kafkaProperties.putAll(kafkaConfigEnv.getOverrides());
+    kafkaProperties.put("listeners", "PLAINTEXT://:" + kafkaConfigEnv.getOverrides().get("port"));
 
     // One additional override which is only determined *after* the container has started:
     if (kafkaConfigZk.isKafkaAdvertiseHostIp()) {

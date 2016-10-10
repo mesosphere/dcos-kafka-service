@@ -111,7 +111,8 @@ public final class Main extends Application<DropwizardConfiguration> {
             kafkaScheduler.getConfigState().getConfigStore(), KafkaSchedulerConfiguration.getFactoryInstance()));
     environment.jersey().register(new StateResource(
             kafkaScheduler.getFrameworkState().getStateStore(),
-            new JsonPropertyDeserializer()));
+            new JsonPropertyDeserializer(),
+            configuration.getSchedulerConfiguration().getServiceConfiguration().getName()));
     environment.jersey().register(new PlanResource(kafkaScheduler.getPlanManager()));
   }
 

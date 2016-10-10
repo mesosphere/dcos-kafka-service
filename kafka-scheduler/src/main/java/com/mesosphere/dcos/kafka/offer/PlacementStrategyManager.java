@@ -1,15 +1,18 @@
 package com.mesosphere.dcos.kafka.offer;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import com.mesosphere.dcos.kafka.config.KafkaSchedulerConfiguration;
 import com.mesosphere.dcos.kafka.state.FrameworkState;
-import org.apache.mesos.offer.AnyPlacementStrategy;
-import org.apache.mesos.offer.PlacementStrategy;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.mesos.Protos;
+import org.apache.mesos.offer.constrain.PlacementRuleGenerator;
+import org.apache.mesos.offer.constrain.PlacementUtils;
+
+import java.util.Collections;
+import java.util.Optional;
 
 class PlacementStrategyManager {
-  private static final Log log = LogFactory.getLog(PlacementStrategy.class);
+  private static final Log log = LogFactory.getLog(PlacementStrategyManager.class);
 
   private final FrameworkState frameworkState;
 
@@ -17,7 +20,9 @@ class PlacementStrategyManager {
     this.frameworkState = frameworkState;
   }
 
-  public PlacementStrategy getPlacementStrategy(KafkaSchedulerConfiguration config) {
+  public Optional<PlacementRuleGenerator> getPlacementStrategy(
+          KafkaSchedulerConfiguration config,
+          Protos.TaskInfo taskInfo) {
     String placementStrategy = config.getServiceConfiguration().getPlacementStrategy();
 
     log.info("Using placement strategy: " + placementStrategy);
@@ -25,13 +30,16 @@ class PlacementStrategyManager {
     switch (placementStrategy) {
       case "ANY":
         log.info("Returning ANY strategy");
-        return new AnyPlacementStrategy();
+        return Optional.empty();
       case "NODE":
         log.info("Returning NODE strategy");
-        return new NodePlacementStrategy(frameworkState);
+        NodePlacementStrategy nodePlacementStrategy = new NodePlacementStrategy(frameworkState);
+        return PlacementUtils.getAgentPlacementRule(
+                nodePlacementStrategy.getAgentsToAvoid(taskInfo),
+                Collections.emptyList());
       default:
         log.info("Returning DEFAULT strategy");
-        return new AnyPlacementStrategy();
+        return Optional.empty();
     }
   }
 }

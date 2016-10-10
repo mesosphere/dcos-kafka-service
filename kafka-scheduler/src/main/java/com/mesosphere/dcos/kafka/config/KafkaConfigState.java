@@ -4,6 +4,7 @@ import com.mesosphere.dcos.kafka.offer.OfferUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.curator.RetryPolicy;
+import org.apache.mesos.Protos;
 import org.apache.mesos.Protos.Label;
 import org.apache.mesos.Protos.Labels;
 import org.apache.mesos.Protos.TaskInfo;
@@ -197,7 +198,21 @@ public class KafkaConfigState {
                           .setValue(targetName.toString()))
                   .build();
 
-          TaskInfo newTaskInfo = TaskInfo.newBuilder(taskInfo).setLabels(labels).build();
+          Map<String, String> executorEnv =
+                  OfferUtils.fromEnvironmentToMap(taskInfo.getExecutor().getCommand().getEnvironment());
+          executorEnv.put(PersistentOfferRequirementProvider.CONFIG_ID_KEY, targetName.toString());
+
+          Protos.CommandInfo executorCommandInfo = Protos.CommandInfo.newBuilder(taskInfo.getExecutor().getCommand())
+                  .setEnvironment(OfferUtils.environment(executorEnv))
+                  .build();
+          Protos.ExecutorInfo executorInfo = Protos.ExecutorInfo.newBuilder(taskInfo.getExecutor())
+                  .setCommand(executorCommandInfo)
+                  .build();
+          TaskInfo newTaskInfo = TaskInfo.newBuilder(taskInfo)
+                  .setExecutor(executorInfo)
+                  .setLabels(labels)
+                  .build();
+
           state.recordTaskInfo(newTaskInfo);
           return;
         }

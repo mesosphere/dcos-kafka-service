@@ -10,7 +10,7 @@
     "DCOS_MIGRATION_API_PATH": "/v1/plan",
     "MARATHON_SINGLE_INSTANCE_APP":"true",
     "DCOS_SERVICE_NAME": "{{service.name}}",
-    "DCOS_SERVICE_PORT_INDEX": "0",
+    "DCOS_SERVICE_PORT_INDEX": "1",
     "DCOS_SERVICE_SCHEME": "http"
   },
   "env": {
@@ -175,6 +175,12 @@
   "portDefinitions": [
     {
       "port": 0,
+      "protocol": "tcp",
+      "name": "health",
+      "labels": {}
+    },
+    {
+      "port": 1,
       "protocol": "tcp",
       "name": "api",
       "labels": {}

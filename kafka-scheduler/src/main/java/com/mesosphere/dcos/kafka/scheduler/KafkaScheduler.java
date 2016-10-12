@@ -1,6 +1,7 @@
 package com.mesosphere.dcos.kafka.scheduler;
 
 import com.google.protobuf.TextFormat;
+import com.mesosphere.dcos.kafka.cmd.CmdExecutor;
 import com.mesosphere.dcos.kafka.commons.state.KafkaState;
 import com.mesosphere.dcos.kafka.config.ConfigStateUpdater;
 import com.mesosphere.dcos.kafka.config.ConfigStateValidator.ValidationError;
@@ -15,14 +16,20 @@ import com.mesosphere.dcos.kafka.repair.KafkaFailureMonitor;
 import com.mesosphere.dcos.kafka.repair.KafkaRecoveryRequirementProvider;
 import com.mesosphere.dcos.kafka.state.ClusterState;
 import com.mesosphere.dcos.kafka.state.FrameworkState;
+import com.mesosphere.dcos.kafka.web.BrokerController;
+import com.mesosphere.dcos.kafka.web.ConnectionController;
+import com.mesosphere.dcos.kafka.web.TopicController;
 import io.dropwizard.setup.Environment;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.Protos.*;
 import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
+import org.apache.mesos.api.JettyApiServer;
 import org.apache.mesos.config.ConfigStoreException;
 import org.apache.mesos.config.RecoveryConfiguration;
+import org.apache.mesos.config.api.ConfigResource;
+import org.apache.mesos.dcos.DcosCluster;
 import org.apache.mesos.offer.*;
 import org.apache.mesos.reconciliation.DefaultReconciler;
 import org.apache.mesos.reconciliation.Reconciler;
@@ -30,14 +37,21 @@ import org.apache.mesos.scheduler.DefaultTaskKiller;
 import org.apache.mesos.scheduler.SchedulerDriverFactory;
 import org.apache.mesos.scheduler.SchedulerErrorCode;
 import org.apache.mesos.scheduler.TaskKiller;
+import org.apache.mesos.scheduler.api.TaskResource;
 import org.apache.mesos.scheduler.plan.*;
+import org.apache.mesos.scheduler.plan.api.PlanResource;
 import org.apache.mesos.scheduler.recovery.*;
+import org.apache.mesos.scheduler.recovery.api.RecoveryResource;
 import org.apache.mesos.scheduler.recovery.constrain.LaunchConstrainer;
 import org.apache.mesos.scheduler.recovery.constrain.TimedLaunchConstrainer;
+import org.apache.mesos.state.api.JsonPropertyDeserializer;
+import org.apache.mesos.state.api.StateResource;
 
 import java.net.URISyntaxException;
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -49,6 +63,7 @@ public class KafkaScheduler implements Scheduler, Runnable {
     private static final int TWO_WEEK_SEC = 2 * 7 * 24 * 60 * 60;
     private static TaskKiller taskKiller;
 
+    private final ExecutorService executor = Executors.newCachedThreadPool();
     private final KafkaConfigState configState;
     private final KafkaSchedulerConfiguration envConfig;
     private final FrameworkState frameworkState;
@@ -128,6 +143,42 @@ public class KafkaScheduler implements Scheduler, Runnable {
                 offerAccepter,
                 new OfferEvaluator(frameworkState.getStateStore()),
                 taskKiller);
+        startApiServer();
+    }
+
+    private void startApiServer() {
+        // Kafka-specific APIs:
+        Collection<Object> resources = new ArrayList<>();
+        resources.add(new ConnectionController(
+                kafkaSchedulerConfiguration.getFullKafkaZookeeperPath(),
+                getConfigState(),
+                getKafkaState(),
+                new ClusterState(new DcosCluster()),
+                kafkaSchedulerConfiguration.getZookeeperConfig().getFrameworkName()));
+        resources.add(new BrokerController(this));
+        resources.add(new TopicController(
+                new CmdExecutor(kafkaSchedulerConfiguration, this),
+                this));
+        resources.add(new RecoveryResource(getRecoveryStatusRef()));
+
+        // APIs from dcos-commons:
+        resources.add(new ConfigResource<>(
+                getConfigState().getConfigStore(),
+                KafkaSchedulerConfiguration.getFactoryInstance()));
+        resources.add(new TaskResource(
+                getFrameworkState().getStateStore(),
+                taskKiller,
+                kafkaSchedulerConfiguration.getServiceConfiguration().getName()));
+        resources.add(new PlanResource(getPlanManager()));
+        resources.add(new StateResource(frameworkState.getStateStore(), new JsonPropertyDeserializer()));
+
+        executor.execute(() -> {
+            try {
+                new JettyApiServer(Integer.valueOf(System.getenv("PORT1")), resources).start();
+            } catch (Exception e) {
+                log.error("Failed to start API server.", e);
+            }
+        });
     }
 
     protected DefaultRecoveryScheduler createRecoveryScheduler(KafkaOfferRequirementProvider offerRequirementProvider) {

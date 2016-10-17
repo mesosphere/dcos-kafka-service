@@ -49,8 +49,12 @@ public class ConnectionController {
             connectionInfo.put(ZOOKEEPER_KEY, zookeeperEndpoint);
             connectionInfo.put(ADDRESS_KEY, getBrokerList());
             connectionInfo.put(DNS_KEY, getBrokerDNSList());
-            if (clusterState.getCapabilities().supportsNamedVips()) {
-                connectionInfo.put(VIP_KEY, String.format("broker.%s.l4lb.thisdcos.directory:9092", frameworkName));
+            try {
+                if (clusterState.getCapabilities().supportsNamedVips()) {
+                    connectionInfo.put(VIP_KEY, String.format("broker.%s.l4lb.thisdcos.directory:9092", frameworkName));
+                }
+            } catch (Exception e) {
+                log.info("Unable to query for named VIP support.", e);
             }
             return Response.ok(connectionInfo.toString(), MediaType.APPLICATION_JSON).build();
         } catch (Exception ex) {

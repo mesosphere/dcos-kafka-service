@@ -19,6 +19,7 @@ import org.apache.mesos.offer.constrain.PlacementRuleGenerator;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class PersistentOfferRequirementProvider implements KafkaOfferRequirementProvider {
     private final Log log = LogFactory.getLog(PersistentOfferRequirementProvider.class);
@@ -26,9 +27,6 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     public static final String CONFIG_ID_KEY = "CONFIG_ID";
     public static final String CONFIG_TARGET_KEY = "target_configuration";
     public static final String BROKER_TASK_TYPE = "broker";
-    public static final String VOLUME_PATH_PREFIX = "kafka-volume-";
-    public static final String JAVA_HOME_KEY = "JAVA_HOME";
-    public static final String JAVA_HOME_VALUE = "jre1.8.0_91";
 
     private final KafkaConfigState configState;
     private final FrameworkState schedulerState;
@@ -100,7 +98,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
         taskBuilder = updateCpu(taskBuilder, brokerConfig);
         taskBuilder = updateMem(taskBuilder, brokerConfig);
         taskBuilder = updateTaskCmd(taskBuilder, config);
-        taskBuilder = updatePort(taskBuilder, config);
+        taskBuilder = updatePort(taskBuilder, brokerConfig);
         taskBuilder.setTaskId(TaskID.newBuilder().setValue("").build()); // Set later by TaskRequirement
         taskBuilder.clearExecutor();
         TaskInfo updatedTaskInfo = taskBuilder.build();
@@ -141,24 +139,17 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
         return updateValue(taskBuilder, "mem", scalar(brokerConfig.getMem()));
     }
 
-    private TaskInfo.Builder updatePort(TaskInfo.Builder taskBuilder, KafkaSchedulerConfiguration config) {
-        final String PORTS = "ports";
-        BrokerConfiguration brokerConfiguration = config.getBrokerConfiguration();
+    private TaskInfo.Builder updatePort(TaskInfo.Builder taskBuilder, BrokerConfiguration brokerConfiguration) {
         Long port = brokerConfiguration.getPort();
         if (port == 0) {
-            taskBuilder = removeResource(taskBuilder, PORTS);
-            taskBuilder.addResources(DynamicPortRequirement.getDesiredDynamicPort(
-                    KafkaEnvConfigUtils.toEnvName("port"),
-                    config.getServiceConfiguration().getRole(),
-                    config.getServiceConfiguration().getPrincipal()));
-            return taskBuilder;
-        } else {
-            return updateValue(taskBuilder, PORTS, range(port, port));
+            port = getDynamicPort();
         }
+
+        return updateValue(taskBuilder, "ports", range(port, port));
     }
 
     private TaskInfo.Builder updateValue(TaskInfo.Builder taskBuilder, String name, Value updatedValue) {
-        List<Resource> updatedResources = new ArrayList<>();
+        List<Resource> updatedResources = new ArrayList<Resource>();
 
         for (Resource resource : taskBuilder.getResourcesList()) {
             if (name.equals(resource.getName())) {
@@ -170,20 +161,6 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
 
         taskBuilder.clearResources();
         taskBuilder.addAllResources(updatedResources);
-        return taskBuilder;
-    }
-
-    private TaskInfo.Builder removeResource(TaskInfo.Builder taskBuilder, String name) {
-        List<Resource> remainingResources = new ArrayList<>();
-
-        for (Resource resource : taskBuilder.getResourcesList()) {
-            if (!name.equals(resource.getName())) {
-                remainingResources.add(resource);
-            }
-        }
-
-        taskBuilder.clearResources();
-        taskBuilder.addAllResources(remainingResources);
         return taskBuilder;
     }
 
@@ -226,7 +203,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
         final ZookeeperConfiguration zkConfig = config.getZookeeperConfig();
 
         Map<String, String> envMap = new HashMap<>();
-        envMap.put(JAVA_HOME_KEY, JAVA_HOME_VALUE);
+        envMap.put("JAVA_HOME", "jre1.8.0_91");
         envMap.put("FRAMEWORK_NAME", frameworkName);
         envMap.put(CONFIG_ID_KEY, configName);
         envMap.put("KAFKA_ZOOKEEPER_URI", zkConfig.getKafkaZkUri());
@@ -281,6 +258,10 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
         return updatedExecutor.setCommand(cmdBuilder);
     }
 
+    private static Long getDynamicPort() {
+        return 9092 + ThreadLocalRandom.current().nextLong(0, 1000);
+    }
+
     private TaskInfo getNewTaskInfo(KafkaSchedulerConfiguration config, String configName, int brokerId)
             throws IOException, URISyntaxException {
 
@@ -289,12 +270,19 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
         String role = config.getServiceConfiguration().getRole();
         String principal = config.getServiceConfiguration().getPrincipal();
 
-        String containerPath = VOLUME_PATH_PREFIX + UUID.randomUUID();
+        String containerPath = "kafka-volume-" + UUID.randomUUID();
+        Long port = config.getBrokerConfiguration().getPort();
+        if (port == 0) {
+            port = getDynamicPort();
+        }
 
-        TaskInfo.Builder taskBuilder = TaskInfo.newBuilder()
+        CommandInfo commandInfo = getNewBrokerCmd(config, brokerId, port, containerPath);
+
+        TaskInfo.Builder taskBuilder =TaskInfo.newBuilder()
                 .setName(brokerName)
                 .setTaskId(TaskID.newBuilder().setValue("").build()) // Set later by TaskRequirement
                 .setSlaveId(SlaveID.newBuilder().setValue("").build()) // Set later
+                .setCommand(commandInfo)
                 .addResources(ResourceUtils.getDesiredScalar(
                         role,
                         principal,
@@ -304,29 +292,17 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
                         role,
                         principal,
                         "mem",
-                        config.getBrokerConfiguration().getMem()));
+                        config.getBrokerConfiguration().getMem()))
+                .addResources(ResourceUtils.getDesiredRanges(
+                        role,
+                        principal,
+                        "ports",
+                        Arrays.asList(
+                                Range.newBuilder()
+                                        .setBegin(port)
+                                        .setEnd(port).build())));
 
-        Long port = brokerConfiguration.getPort();
-        if (port == 0) {
-            taskBuilder.addResources(DynamicPortRequirement.getDesiredDynamicPort(
-                    KafkaEnvConfigUtils.toEnvName("port"),
-                    role,
-                    principal));
-        } else {
-            taskBuilder.addResources(ResourceUtils.getDesiredRanges(
-                    role,
-                    principal,
-                    "ports",
-                    Arrays.asList(
-                            Range.newBuilder()
-                                    .setBegin(port)
-                                    .setEnd(port).build())));
-        }
-
-        CommandInfo commandInfo = getNewBrokerCmd(config, brokerId, port, containerPath);
-        taskBuilder.setCommand(commandInfo);
-
-        if (brokerConfiguration.getDiskType().equals(Resource.DiskInfo.Source.Type.MOUNT.name())) {
+        if (brokerConfiguration.getDiskType().equals("MOUNT")) {
             taskBuilder.addResources(ResourceUtils.getDesiredMountVolume(
                     role,
                     principal,
@@ -392,10 +368,6 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
         String brokerName = OfferUtils.brokerIdToTaskName(brokerId);
 
         Map<String, String> envMap = new HashMap<>();
-        if (port != 0) {
-            envMap.put(KafkaEnvConfigUtils.toEnvName("port"), Long.toString(port));
-        }
-
         envMap.put("TASK_TYPE", KafkaTask.BROKER.name());
         envMap.put("FRAMEWORK_NAME", config.getServiceConfiguration().getName());
         envMap.put("KAFKA_VER_NAME", config.getKafkaConfiguration().getKafkaVerName());
@@ -403,8 +375,9 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
         envMap.put(KafkaEnvConfigUtils.toEnvName("zookeeper.connect"), config.getFullKafkaZookeeperPath());
         envMap.put(KafkaEnvConfigUtils.toEnvName("broker.id"), Integer.toString(brokerId));
         envMap.put(KafkaEnvConfigUtils.toEnvName("log.dirs"), containerPath + "/" + brokerName);
+        envMap.put(KafkaEnvConfigUtils.toEnvName("listeners"), "PLAINTEXT://:" + port);
+        envMap.put(KafkaEnvConfigUtils.toEnvName("port"), Long.toString(port));
         envMap.put("KAFKA_HEAP_OPTS", getKafkaHeapOpts(config.getBrokerConfiguration().getHeap()));
-
         return CommandInfo.newBuilder()
                 .setValue(brokerCmd)
                 .setEnvironment(OfferUtils.environment(envMap))
@@ -420,7 +393,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
 
         final String executorCommand = "./executor/bin/kafka-executor server ./executor/conf/executor.yml";
         Map<String, String> executorEnvMap = new HashMap<>();
-        executorEnvMap.put(JAVA_HOME_KEY, JAVA_HOME_VALUE);
+        executorEnvMap.put("JAVA_HOME", "jre1.8.0_91");
         executorEnvMap.put("FRAMEWORK_NAME", frameworkName);
         executorEnvMap.put("KAFKA_ZOOKEEPER_URI", zookeeperConfiguration.getKafkaZkUri());
         executorEnvMap.put(KafkaEnvConfigUtils.KAFKA_OVERRIDE_PREFIX + "BROKER_ID", Integer.toString(brokerId));
@@ -443,17 +416,15 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
         String role = config.getServiceConfiguration().getRole();
         String principal = config.getServiceConfiguration().getPrincipal();
 
-        ExecutorInfo.Builder builder = ExecutorInfo.newBuilder()
+        return ExecutorInfo.newBuilder()
                 .setName(brokerName)
                 .setExecutorId(ExecutorID.newBuilder().setValue("").build()) // Set later by ExecutorRequirement
                 .setFrameworkId(schedulerState.getStateStore().fetchFrameworkId().get())
                 .setCommand(getNewExecutorCmd(config, configName, brokerId))
                 .addResources(ResourceUtils.getDesiredScalar(role, principal, "cpus", executorConfiguration.getCpus()))
                 .addResources(ResourceUtils.getDesiredScalar(role, principal, "mem", executorConfiguration.getMem()))
-                .addResources(DynamicPortRequirement.getDesiredDynamicPort("API_PORT", role, principal));
-
-
-        return builder.build();
+                .addResources(DynamicPortRequirement.getDesiredDynamicPort("API_PORT", role, principal))
+                .build();
     }
 
     private OfferRequirement getNewOfferRequirementInternal(String configName, int brokerId)

@@ -38,7 +38,7 @@ DC/OS Apache Kafka Service Guide
 - [Configuration Update Errors](#configuration-update-errors)
 - [Replacing a Permanently Failed Server](#replacing-a-permanently-failed-server)
 
-[API Reference](#api-reference)
+[REST API Reference](#api-reference)
 - [Connection Information](#connection-information)
 - [Broker Operations](#broker-operations)
 - [Topic Operations](#topic-operations)
@@ -128,6 +128,12 @@ See also [Connecting clients][3].
 
 <a name="install-and-customize"></a>
 # Install and Customize
+
+## About installing Kafka on Enterprise DC/OS
+
+In Enterprise DC/OS `strict` [security mode](/1.8/administration/installing/custom/configuration-parameters/#security), Kafka requires a service account. In `permissive`, a service account is
+optional. Only someone with `superuser` permission can create the service account. Refer to [Provisioning
+Kafka](http://docs.mesosphere.com/1.8/administration/id-and-access-mgt/service-auth/kafka-auth/) for instructions.
 
 ## Default Installation
 
@@ -722,25 +728,11 @@ The following command can be executed from the CLI in order to retrieve a set of
 
     dcos kafka --name=<name> connection
 
+## Using the REST API
 
-## The REST API
+The following `curl` example demonstrates how to retrive connection a set of brokers to connect to using the REST API. See [REST API authentication][10] for information on how this request must be authenticated.
 
-<a name="#rest-auth"></a>
-### REST API Authentication
-
-Rest API requests must be authenticated. This authentication is only applicable for interacting with the Kafka REST API directly. You do not need the token to access the Kafka brokers themselves.
- 
-If you are using Enterprise DC/OS, follow these instructions to [create a service account and an authentication token](https://docs.mesosphere.com/1.8/administration/id-and-access-mgt/service-auth/custom-service-auth/). You can then configure your service to automatically refresh the authentication token when it expires. To get started more quickly, you can also [get the authentication token without a service account](https://docs.mesosphere.com/1.8/administration/id-and-access-mgt/iam-api/), but you will need to manually refresh the token.
-
-If you are using open source DC/OS, follow these instructions to [pass your HTTP API token to the DC/OS endpoint](https://dcos.io/docs/1.8/administration/id-and-access-mgt/auth-api/#passing-your-http-api-token-to-dc-os-endpoints). 
-
-Once you have the authentication token, you can store it in an environment variable and reference it in your REST API calls:
-
-```
-$ export AUTH_TOKEN=uSeR_t0k3n
-```
-
-The `curl` examples in this document assume that an auth token has been stored in an environment variable named `AUTH_TOKEN`.
+    $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/connection"
 
 ## Using the REST API
 
@@ -982,13 +974,63 @@ In the example below, the broker with id `0` will be replaced on new machine as 
     $ dcos kafka broker replace 0
 
 <a name="api-reference"></a>
-# API Reference
+# REST API Reference
 
 For ongoing maintenance of the Kafka cluster itself, the Kafka service exposes an HTTP API whose structure is designed to roughly match the tools provided by the Kafka distribution, such as `bin/kafka-topics.sh`.
 
 The examples here provide equivalent commands using both the [DC/OS CLI](https://github.com/mesosphere/dcos-cli) (with the `kafka` CLI module installed) and `curl`. These examples assume a service named `kafka` (the default), and the `curl` examples assume a DC/OS cluster path of `<dcos_url>`. Replace these with appropriate values as needed.
 
 The `dcos kafka` CLI commands have a `--name` argument, allowing the user to specify which Kafka instance to query. The value defaults to `kafka`, so it's technically redundant to specify `--name=kafka` in these examples.
+
+Depending on your version of DC/OS and the configuration of your cluster, you may need to authenticate your REST calls. See [REST API Authentication](#rest-api-authentication) for more information.
+
+<a name="rest-api-authentication"></a>
+## REST API Authentication
+
+Depending on how the cluster is configured, commands using the REST API may need to be authenticated. These instructions only apply to interacting with the Kafka REST API directly. Access the underlying Kafka Brokers themselves with the standard Kafka APIs.
+
+If your DC/OS Enterprise installation requires encryption, you must also use the `ca-cert` flag when making REST calls. Refer to [Obtaining and passing the DC/OS
+certificate in cURL requests](https://docs.mesosphere.com/1.8/administration/tls-ssl/#get-dcos-cert) for information on how to use the `--cacert` flag. [If encryption is not
+required](https://docs.mesosphere.com/1.8/administration/tls-ssl/), you can omit the --cacert flags.
+
+All `curl` examples in this document assume that an auth token has already been retrieved using one of the following methods and stored in an environment variable named `AUTH_TOKEN`. See the following documentation for how to retrieve this token from the authentication service.
+
+#### User token authentication
+
+DC/OS Enterprise Edition comes with support for [user ACLs][13]. To interact with the Kafka REST API you must first retrieve an auth token from the [auth HTTP endpoint][14], then provide this token in following requests.
+
+First, we retrieve `uSeR_t0k3n` with our user credentials and store the token as an environment variable:
+
+    $ curl --data '{"uid":"username", "password":"password"}' -H "Content-Type:application/json" "$DCOS_URI/acs/api/v1/auth/login"
+    POST /acs/api/v1/auth/login HTTP/1.1
+
+    {
+      "token": "uSeR_t0k3n"
+    }
+
+    $ export AUTH_TOKEN=uSeR_t0k3n
+
+
+Then, use this token to authenticate requests to the Kafka Service:
+
+    $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/connection"
+    GET /service/kafka/v1/connection HTTP/1.1
+
+    {
+        "address": [
+            "10.0.0.211:9843",
+            "10.0.0.217:10056",
+            "10.0.0.214:9689"
+        ],
+        "dns": [
+            "broker-0.kafka.mesos:9843",
+            "broker-1.kafka.mesos:10056",
+            "broker-2.kafka.mesos:9689"
+        ],
+        "vip": "broker.kafka.l4lb.thisdcos.directory:9092",
+        "zookeeper": "master.mesos:2181/kafka"
+    }
+
 
 ## Connection Information
 
@@ -1739,7 +1781,7 @@ The security features introduced in Apache Kafka 0.9 are not supported at this t
  [4]: #custom-install-configuration
  [5]: https://github.com/mesosphere/dcos-vagrant
  [6]: #configuration-options
- [7]: https://docs.mesosphere.com/framework_cleaner/
+ [7]: https://docs.mesosphere.com/1.8/usage/managing-services/uninstall/#framework-cleaner 
  [8]: #broker-count
  [9]: #using-the-rest-api
  [10]: #rest-auth

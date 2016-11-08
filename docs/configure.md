@@ -47,7 +47,7 @@ After specifying that an update should continue, one block representing one brok
 
 There are two phases in the update plans for Kafka: Mesos task reconciliation and update. Mesos task reconciliation is always executed without need for human interaction.
 
-Make the REST request below to view the current plan. See REST API Authentication part of the REST API Reference section for information on how this request must be authenticated.
+Make the REST request below to view the current plan. See the REST API Authentication part of the REST API Reference section for information on how this request must be authenticated.
 
     $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan"
     GET $DCOS_URI/service/kafka/v1/plan HTTP/1.1

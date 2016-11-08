@@ -2,7 +2,7 @@
 post_title: Connecting Clients
 menu_order: 40
 feature_maturity: preview
-enterprise: 'no'
+enterprise: 'yes'
 ---
 
 
@@ -65,42 +65,6 @@ Then, use this token to authenticate requests to the Kafka Service:
     
 
 You do not need the token to access the Kafka brokers themselves.
-
-<!--
-#### OAuth token authentication
-
-Similar to user token authentication, OAuth token authentication produces a token which must then be included in REST API requests. TODO link to OAuth docs once they exist
-
-~~~
-$ TODO command for getting an OAuth token.. once docs describing OAuth exist
-{
-  "token": "uSeR_t0k3n"
-}
-
-$ export AUTH_TOKEN=uSeR_t0k3n
-~~~
-
-This token is then used to authenticate requests to the Kafka Service:
-
-~~~
-$ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/connection"
-GET /service/kafka/v1/connection HTTP/1.1
-
-{
-    "address": [
-        "10.0.0.211:9843",
-        "10.0.0.217:10056",
-        "10.0.0.214:9689"
-    ],
-    "dns": [
-        "broker-0.kafka.mesos:9843",
-        "broker-1.kafka.mesos:10056",
-        "broker-2.kafka.mesos:9689"
-    ],
-    "zookeeper": "master.mesos:2181/kafka"
-}
-~~~
--->
 
 # Connection Info Response
 

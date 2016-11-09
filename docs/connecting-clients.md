@@ -77,15 +77,16 @@ The response, for both the CLI and the REST API is as below.
             "10.0.0.214:9689"
         ],
         "dns": [
-            "broker-0.kafka.mesos:9843",
-            "broker-1.kafka.mesos:10056",
-            "broker-2.kafka.mesos:9689"
+             "broker-0.kafka.mesos:9843",
+             "broker-1.kafka.mesos:10056",
+             "broker-2.kafka.mesos:9689"
         ],
-        "zookeeper": "master.mesos:2181/kafka"
+             "vip": "broker.kafka.l4lb.thisdcos.directory:9092",
+             "zookeeper": "master.mesos:2181/kafka"
     }
     
 
-This JSON array contains a list of valid brokers that the client can use to connect to the Kafka cluster. For availability reasons, it is best to specify multiple brokers in configuration of the client.
+This JSON array contains a list of valid brokers that the client can use to connect to the Kafka cluster. For availability reasons, it is best to specify multiple brokers in configuration of the client. Use the VIP to address any one of the Kafka brokers in the cluster. [Learn more about load balancing and VIPs in DC/OS](https://docs.mesosphere.com/docs/1.8/usage/service-discovery/load-balancing-vips/).
 
 # Configuring the Kafka Client Library
 
@@ -176,10 +177,11 @@ The following code connects to a DC/OS-hosted Kafka instance using `bin/kafka-co
             "10.0.0.214:9689"
         ],
         "dns": [
-            "broker-0.kafka.mesos:9843",
-            "broker-1.kafka.mesos:10056",
-            "broker-2.kafka.mesos:9689"
-        ],
+             "broker-0.kafka.mesos:9843",
+             "broker-1.kafka.mesos:10056",
+                "broker-2.kafka.mesos:9689"
+            ],
+        "vip": "broker.kafka.l4lb.thisdcos.directory:9092",
         "zookeeper": "master.mesos:2181/kafka"
     }
     

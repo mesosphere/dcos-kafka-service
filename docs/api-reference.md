@@ -48,6 +48,7 @@ Kafka comes with many useful tools of its own that often require either Zookeepe
             "broker-1.kafka.mesos:10056",
             "broker-2.kafka.mesos:9689"
         ],
+        "vip": "broker.kafka.l4lb.thisdcos.directory:9092",
         "zookeeper": "master.mesos:2181/kafka"
     }
     
@@ -66,6 +67,7 @@ The same information can be retrieved through the DC/OS CLI:
             "broker-1.kafka.mesos:10056",
             "broker-2.kafka.mesos:9689"
         ],
+        "vip": "broker.kafka.l4lb.thisdcos.directory:9092",
         "zookeeper": "master.mesos:2181/kafka"
     }
     

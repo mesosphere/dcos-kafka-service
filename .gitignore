@@ -36,4 +36,5 @@ dcos-kafka-service.log.*
 
 # test
 integration/.cache/
+.cache/
 integration/env/

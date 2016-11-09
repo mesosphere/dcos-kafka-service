@@ -8,12 +8,13 @@ from tests.test_utils import (
     DEFAULT_PARTITION_COUNT,
     DEFAULT_REPLICATION_FACTOR,
     DEFAULT_BROKER_COUNT,
-    DYNAMIC_PORT_OPTIONS_FILE,
+    DYNAMIC_PORT_OPTIONS_DICT,
     PACKAGE_NAME,
     TASK_RUNNING_STATE,
     check_health,
     get_broker_list,
     get_kafka_command,
+    install,
     spin,
     uninstall,
 )
@@ -32,9 +33,7 @@ def default_topic():
 
 def setup_module(module):
     uninstall()
-    shakedown.install_package_and_wait(
-        PACKAGE_NAME, options_file=DYNAMIC_PORT_OPTIONS_FILE
-    )
+    install(DYNAMIC_PORT_OPTIONS_DICT)
     check_health()
 
 
@@ -253,7 +252,7 @@ def test_single_broker_replace_succeeds():
     broker_0_task = get_running_broker_task('broker-0')[0]
     broker_0_id = broker_0_task['id']
     assert broker_0_id.startswith('broker-0__')
-    
+
     replace_info = get_kafka_command('broker replace 0')
     task_id_changes('broker-0', broker_0_id)
 

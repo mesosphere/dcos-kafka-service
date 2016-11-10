@@ -2,7 +2,7 @@
 post_title: API Reference
 menu_order: 60
 feature_maturity: preview
-enterprise: 'yes'
+enterprise: 'no'
 ---
 
 

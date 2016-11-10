@@ -2,7 +2,7 @@
 post_title: Install and Customize
 menu_order: 10
 feature_maturity: preview
-enterprise: 'yes'
+enterprise: 'no'
 ---
 
 # About installing Kafka on Enterprise DC/OS

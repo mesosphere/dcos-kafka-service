@@ -2,7 +2,7 @@
 post_title: Configure
 menu_order: 30
 feature_maturity: preview
-enterprise: 'yes'
+enterprise: 'no'
 ---
 
 

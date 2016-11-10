@@ -2,7 +2,7 @@
 post_title: Limitations
 menu_order: 80
 feature_maturity: preview
-enterprise: 'yes'
+enterprise: 'no'
 ---
 
 

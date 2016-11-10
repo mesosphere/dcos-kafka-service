@@ -2,7 +2,7 @@
 post_title: Troubleshooting
 menu_order: 70
 feature_maturity: preview
-enterprise: 'yes'
+enterprise: 'no'
 ---
 
 The Kafka service will be listed as "Unhealthy" when it detects any underreplicated partitions. This error condition usually indicates a malfunctioning broker. Use the `dcos kafka topic under_replicated_partitions` and `dcos kafka topic describe <topic-name>` commands to find the problem broker and determine what actions are required.

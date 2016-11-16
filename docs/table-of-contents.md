@@ -1,4 +1,6 @@
-# DC/OS Apache Kafka Service Table of Contents
+# DC/OS Apache Kafka Service Documentation
+
+## Table of Contents
 
 - [Overview](index.md)
 - [Quick Start](quick-start.md)

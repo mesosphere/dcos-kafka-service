@@ -142,6 +142,10 @@ def marathon_api_url(basename):
     return '{}/v2/{}'.format(shakedown.dcos_service_url('marathon'), basename)
 
 
+def marathon_api_url_with_param(basename, path_param):
+    return '{}/{}'.format(marathon_api_url(basename), path_param)
+
+
 def request(request_fn, *args, **kwargs):
     def success_predicate(response):
         return (

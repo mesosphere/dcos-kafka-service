@@ -60,7 +60,7 @@ Then, use this token to authenticate requests to the Kafka Service:
             "broker-1.kafka.mesos:10056",
             "broker-2.kafka.mesos:9689"
         ],
-        "zookeeper": "master.mesos:2181/kafka"
+        "zookeeper": "master.mesos:2181/dcos-service-kafka"
     }
     
 
@@ -82,7 +82,7 @@ The response, for both the CLI and the REST API is as below.
              "broker-2.kafka.mesos:9689"
         ],
              "vip": "broker.kafka.l4lb.thisdcos.directory:9092",
-             "zookeeper": "master.mesos:2181/kafka"
+             "zookeeper": "master.mesos:2181/dcos-service-kafka"
     }
     
 
@@ -182,7 +182,7 @@ The following code connects to a DC/OS-hosted Kafka instance using `bin/kafka-co
                 "broker-2.kafka.mesos:9689"
             ],
         "vip": "broker.kafka.l4lb.thisdcos.directory:9092",
-        "zookeeper": "master.mesos:2181/kafka"
+        "zookeeper": "master.mesos:2181/dcos-service-kafka"
     }
     
     $ dcos node ssh --master-proxy --leader

@@ -29,7 +29,8 @@ def teardown_module(module):
 
 
 @pytest.mark.sanity
-def test_upgrade():
+@pytest.mark.upgrade
+def test_upgrade_downgrade():
     test_repo_name, test_repo_url = get_test_repo_info()
     test_version = get_pkg_version()
     print('Found test version: {}'.format(test_version))
@@ -40,13 +41,19 @@ def test_upgrade():
     print('Installing master version')
     install({'package_version': master_version})
     check_health()
+    topics_are_available()
     write_messages()
 
     print('Upgrading to test version')
     destroy_service()
     add_repo(test_repo_name, test_repo_url, master_version)
     install({'package_version': test_version})
-    check_post_upgrade_health()
+    check_post_version_change_health()
+
+    print('Downgrading to master version')
+    destroy_service()
+    install({'package_version': master_version})
+    check_post_version_change_health()
 
 
 def get_test_repo_info():
@@ -83,6 +90,20 @@ def new_default_version_available(prev_version):
     spin(fn, success_predicate)
 
 
+def topics_are_available():
+    def fn():
+        try:
+            get_kafka_command('topic list')
+            return True
+        except RuntimeError:
+            return False
+
+    def success_predicate(topics_available):
+        return (topics_available,
+                'Topics are not available')
+
+    spin(fn, success_predicate)
+
 def write_messages():
     get_kafka_command(
         'topic producer_test {} {}'.format(TOPIC_NAME, NUM_TEST_MSGS)
@@ -102,7 +123,7 @@ def destroy_service():
     spin(fn, success_predicate)
 
 
-def check_post_upgrade_health():
+def check_post_version_change_health():
     check_health()
     check_scheduler_health()
     check_offsets()
@@ -124,6 +145,7 @@ def check_scheduler_health():
 
 
 def check_offsets():
+    topics_are_available()
     offset_info = get_kafka_command(
         'topic offsets {}'.format(TOPIC_NAME)
     )

@@ -112,7 +112,20 @@ def write_messages():
 
 def destroy_service():
     destroy_endpoint = marathon_api_url_with_param('apps', PACKAGE_NAME)
-    request(dcos.http.delete, destroy_endpoint)
+
+    # Keep trying until marathon request succeeds
+    def fn():
+        try:
+            request(dcos.http.delete, destroy_endpoint)
+            return True
+        except dcos.errors.DCOSHTTPException:
+            return False
+
+    def success_predicate(success):
+        return (success, 'Destroy request failed')
+
+    spin(fn, success_predicate)
+
     # Make sure the scheduler has been destroyed
     def fn():
         shakedown.get_service(PACKAGE_NAME)
@@ -146,8 +159,18 @@ def check_scheduler_health():
 
 def check_offsets():
     topics_are_available()
-    offset_info = get_kafka_command(
-        'topic offsets {}'.format(TOPIC_NAME)
-    )
-    offset = int(offset_info[0]['0'])
-    assert offset == NUM_TEST_MSGS
+
+    # Keep trying to read the offsets until the kafka command succeeds
+    def fn():
+        try:
+            offset_info = get_kafka_command('topic offsets {}'.format(TOPIC_NAME))
+            offset = int(offset_info[0]['0'])
+            assert offset == NUM_TEST_MSGS
+            return True
+        except RuntimeError:
+            return False
+
+    def success_predicate(got_offset):
+        return (got_offset, 'Unable to get offset')
+
+    spin(fn, success_predicate)

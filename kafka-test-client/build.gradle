@@ -4,7 +4,7 @@ plugins {
 
 ext {
   jsonVer = "20151123"
-  kafkaClientsVer = "0.10.0.0"
+  kafkaClientsVer = "0.10.1.0"
   logbackVer = "1.1.2"
 }
 

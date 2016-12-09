@@ -81,8 +81,8 @@ The response, for both the CLI and the REST API is as below.
              "broker-1.kafka.mesos:10056",
              "broker-2.kafka.mesos:9689"
         ],
-             "vip": "broker.kafka.l4lb.thisdcos.directory:9092",
-             "zookeeper": "master.mesos:2181/dcos-service-kafka"
+        "vip": "broker.kafka.l4lb.thisdcos.directory:9092",
+        "zookeeper": "master.mesos:2181/dcos-service-kafka"
     }
     
 

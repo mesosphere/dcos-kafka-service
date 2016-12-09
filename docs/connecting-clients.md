@@ -5,13 +5,13 @@ feature_maturity: preview
 enterprise: 'no'
 ---
 
-
-
-
-
-
-
 The only supported client library is the official Kafka Java library, i.e., `org.apache.kafka.clients.consumer.KafkaConsumer` and `org.apache.kafka.clients.producer.KafkaProducer`. Other clients are at the user's risk.
+
+# Kafka Client API Compatibility
+
+1. The Kafka client protocol is versioned and the cluster supports multiple versions.
+2. Kafka is backwards compatible: Newer versions of Kafka always continue to support older versions of the protocol. The implication of this is older clients continue to work with newer versions of Kafka.
+3. Clients are not forward compatible: There is no effort to have newer versions of the client support older versions of Kafka the protocol. The implication of this is newer clients are not compatible older versions of Kafka.
 
 # Using the DC/OS CLI
 

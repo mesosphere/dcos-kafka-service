@@ -108,6 +108,7 @@ def write_messages():
     get_kafka_command(
         'topic producer_test {} {}'.format(TOPIC_NAME, NUM_TEST_MSGS)
     )
+    check_offsets()
 
 
 def destroy_service():

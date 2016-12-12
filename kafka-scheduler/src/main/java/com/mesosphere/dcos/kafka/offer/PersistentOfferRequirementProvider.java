@@ -1,5 +1,6 @@
 package com.mesosphere.dcos.kafka.offer;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.TextFormat;
@@ -11,10 +12,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.Protos.*;
 import org.apache.mesos.Protos.Value.Range;
-import org.apache.mesos.Protos.Value.Ranges;
 import org.apache.mesos.config.ConfigStoreException;
 import org.apache.mesos.offer.*;
-import org.apache.mesos.offer.constrain.PlacementRuleGenerator;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -22,7 +21,10 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class PersistentOfferRequirementProvider implements KafkaOfferRequirementProvider {
-    private final Log log = LogFactory.getLog(PersistentOfferRequirementProvider.class);
+    private static final Log log = LogFactory.getLog(PersistentOfferRequirementProvider.class);
+
+    private static final String LOG_DIR_ENV_NAME = KafkaEnvConfigUtils.toEnvName("log.dirs");
+    private static final String BROKER_ID_ENV_NAME = KafkaEnvConfigUtils.toEnvName("broker.id");
 
     public static final String CONFIG_ID_KEY = "CONFIG_ID";
     public static final String CONFIG_TARGET_KEY = "target_configuration";
@@ -46,8 +48,39 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     @Override
     public OfferRequirement getNewOfferRequirement(String configName, int brokerId)
             throws InvalidRequirementException, IOException, URISyntaxException {
-        OfferRequirement offerRequirement = getNewOfferRequirementInternal(configName, brokerId);
-        return offerRequirement;
+        KafkaSchedulerConfiguration config = configState.fetch(UUID.fromString(configName));
+        String containerPath = "kafka-volume-" + getUUID();
+        Long port = config.getBrokerConfiguration().getPort();
+        if (port == 0) {
+            port = getDynamicPort();
+        }
+
+        TaskInfo taskInfo = getNewTaskInfo(config, configName, brokerId, containerPath, port);
+
+        ExecutorConfiguration executorConfiguration = config.getExecutorConfiguration();
+        String role = config.getServiceConfiguration().getRole();
+        String principal = config.getServiceConfiguration().getPrincipal();
+        String logdir = containerPath + "/" + OfferUtils.brokerIdToTaskName(brokerId);
+
+        ExecutorInfo executorInfo = ExecutorInfo.newBuilder()
+                .setName(OfferUtils.brokerIdToTaskName(brokerId))
+                .setExecutorId(ExecutorID.newBuilder().setValue("").build()) // Set later by ExecutorRequirement
+                .setFrameworkId(schedulerState.getStateStore().fetchFrameworkId().get())
+                .setCommand(getExecutorCmd(config, configName, brokerId, logdir, port))
+                .addResources(ResourceUtils.getDesiredScalar(role, principal, "cpus", executorConfiguration.getCpus()))
+                .addResources(ResourceUtils.getDesiredScalar(role, principal, "mem", executorConfiguration.getMem()))
+                .addResources(DynamicPortRequirement.getDesiredDynamicPort("API_PORT", role, principal))
+                .build();
+
+        log.info(String.format("Got new OfferRequirement: TaskInfo: '%s' ExecutorInfo: '%s'",
+                TextFormat.shortDebugString(taskInfo),
+                TextFormat.shortDebugString(executorInfo)));
+
+        return new OfferRequirement(
+                BROKER_TASK_TYPE,
+                Arrays.asList(taskInfo),
+                Optional.of(executorInfo),
+                placementStrategyManager.getPlacementStrategy(config, taskInfo));
     }
 
     @Override
@@ -61,14 +94,14 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
             throw new InvalidRequirementException(e);
         }
 
-        replacementTaskInfo.clearExecutor();
-        replacementTaskInfo.setTaskId(TaskID.newBuilder().setValue("").build()); // Set later by TaskRequirement
+        TaskInfo replaceTaskInfo = replacementTaskInfo
+                .clearExecutor()
+                .setTaskId(TaskID.newBuilder().setValue("").build()) // Set later by TaskRequirement
+                .build();
+        ExecutorInfo replaceExecutorInfo = ExecutorInfo.newBuilder(existingTaskInfo.getExecutor())
+                .setExecutorId(ExecutorID.newBuilder().setValue("").build()) // Set later by ExecutorRequirement
+                .build();
 
-        final ExecutorInfo.Builder replacementExecutor = ExecutorInfo.newBuilder(existingTaskInfo.getExecutor());
-        replacementExecutor.setExecutorId(ExecutorID.newBuilder().setValue("").build()); // Set later by ExecutorRequirement
-
-        TaskInfo replaceTaskInfo = replacementTaskInfo.build();
-        ExecutorInfo replaceExecutorInfo = replacementExecutor.build();
         OfferRequirement offerRequirement = new OfferRequirement(
                 BROKER_TASK_TYPE,
                 Arrays.asList(replaceTaskInfo),
@@ -95,29 +128,63 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
 
         TaskInfo.Builder taskBuilder = TaskInfo.newBuilder(taskInfo);
         taskBuilder = updateConfigTarget(taskBuilder, configName);
-        taskBuilder = updateCpu(taskBuilder, brokerConfig);
-        taskBuilder = updateMem(taskBuilder, brokerConfig);
-        taskBuilder = updateTaskCmd(taskBuilder, config);
-        taskBuilder = updatePort(taskBuilder, brokerConfig);
-        taskBuilder.setTaskId(TaskID.newBuilder().setValue("").build()); // Set later by TaskRequirement
-        taskBuilder.clearExecutor();
-        TaskInfo updatedTaskInfo = taskBuilder.build();
-        updatedTaskInfo = TaskUtils.setTargetConfiguration(updatedTaskInfo, UUID.fromString(configName));
 
-        ExecutorInfo.Builder updatedExecutor = ExecutorInfo.newBuilder(taskInfo.getExecutor());
-        updatedExecutor = updateExecutorCmd(updatedExecutor, config, configName);
-        updatedExecutor.setExecutorId(ExecutorID.newBuilder().setValue("").build()); // Set later by ExecutorRequirement
+        Value.Builder valueBuilder = Value.newBuilder().setType(Value.Type.SCALAR);
+        valueBuilder.getScalarBuilder().setValue(brokerConfig.getCpus());
+        taskBuilder = updateValue(taskBuilder, "cpus", valueBuilder.build());
+
+        valueBuilder.getScalarBuilder().setValue(brokerConfig.getMem());
+        taskBuilder = updateValue(taskBuilder, "mem", valueBuilder.build());
+
+        taskBuilder.clearData();
+        taskBuilder.setCommand(CommandInfo.newBuilder(taskBuilder.getCommand())
+                .setValue(getBrokerCmd(config))
+                .clearEnvironment() // Clear any task envvars from Kafka 1.1.16-0.1.0.0 and older
+                .build());
+
+        Long port = brokerConfig.getPort();
+        if (port != 0) {
+            // only override previous port if non-random value is specified:
+            valueBuilder = Value.newBuilder().setType(Value.Type.RANGES);
+            valueBuilder.getRangesBuilder().addRangeBuilder().setBegin(port).setEnd(port);
+            taskBuilder = updateValue(taskBuilder, "ports", valueBuilder.build());
+        }
+
+        taskBuilder.setTaskId(TaskID.newBuilder().setValue("").build()); // Set later by TaskRequirement
+
+        taskBuilder.clearExecutor();
+
+        // determine our broker id and log dir by searching the prior environment:
+        Environment taskEnv = taskInfo.getCommand().getEnvironment();
+        Environment executorEnv = taskInfo.getExecutor().getCommand().getEnvironment();
+        String brokerIdStr = getEnvVal(taskEnv, executorEnv, BROKER_ID_ENV_NAME);
+        String logdir = getEnvVal(taskEnv, executorEnv, LOG_DIR_ENV_NAME);
+        if (brokerIdStr == null || logdir == null) {
+            String errStr = String.format("Unable to find %s and/or %s in prior environments: executorEnv[%s] taskEnv[%s]",
+                    BROKER_ID_ENV_NAME,
+                    LOG_DIR_ENV_NAME,
+                    TextFormat.shortDebugString(executorEnv),
+                    TextFormat.shortDebugString(taskEnv));
+            log.error(errStr);
+            throw new InvalidRequirementException(errStr);
+        }
+
+        TaskInfo updatedTaskInfo = TaskUtils.setTargetConfiguration(taskBuilder.build(), UUID.fromString(configName));
+        // Throw away any prior executor command state (except for brokerId and logdir retrieved from prior env):
+        ExecutorInfo updatedExecutorInfo = ExecutorInfo.newBuilder(taskInfo.getExecutor())
+                .setCommand(getExecutorCmd(config, configName, Integer.valueOf(brokerIdStr), logdir, port))
+                .setExecutorId(ExecutorID.newBuilder().setValue("").build()) // Set later by ExecutorRequirement
+                .build();
 
         try {
-            ExecutorInfo updateExecutorInfo = updatedExecutor.build();
             OfferRequirement offerRequirement = new OfferRequirement(
                     BROKER_TASK_TYPE,
                     Arrays.asList(updatedTaskInfo),
-                    Optional.of(updateExecutorInfo));
+                    Optional.of(updatedExecutorInfo));
 
             log.info(String.format("Got updated OfferRequirement: TaskInfo: '%s' ExecutorInfo: '%s'",
                     TextFormat.shortDebugString(updatedTaskInfo),
-                    TextFormat.shortDebugString(updateExecutorInfo)));
+                    TextFormat.shortDebugString(updatedExecutorInfo)));
 
             return offerRequirement;
         } catch (InvalidRequirementException e) {
@@ -127,28 +194,15 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
         }
     }
 
-    private String getKafkaHeapOpts(HeapConfig heapConfig) {
-        return String.format("-Xms%1$dM -Xmx%1$dM", heapConfig.getSizeMb());
+    /**
+     * Exposed to allow enforcing consistent behavior in test subclasses.
+     */
+    @VisibleForTesting
+    protected UUID getUUID() {
+        return UUID.randomUUID();
     }
 
-    private TaskInfo.Builder updateCpu(TaskInfo.Builder taskBuilder, BrokerConfiguration brokerConfig) {
-        return updateValue(taskBuilder, "cpus", scalar(brokerConfig.getCpus()));
-    }
-
-    private TaskInfo.Builder updateMem(TaskInfo.Builder taskBuilder, BrokerConfiguration brokerConfig) {
-        return updateValue(taskBuilder, "mem", scalar(brokerConfig.getMem()));
-    }
-
-    private TaskInfo.Builder updatePort(TaskInfo.Builder taskBuilder, BrokerConfiguration brokerConfiguration) {
-        Long port = brokerConfiguration.getPort();
-        if (port == 0) {
-            port = getDynamicPort();
-        }
-
-        return updateValue(taskBuilder, "ports", range(port, port));
-    }
-
-    private TaskInfo.Builder updateValue(TaskInfo.Builder taskBuilder, String name, Value updatedValue) {
+    private static TaskInfo.Builder updateValue(TaskInfo.Builder taskBuilder, String name, Value updatedValue) {
         List<Resource> updatedResources = new ArrayList<Resource>();
 
         for (Resource resource : taskBuilder.getResourcesList()) {
@@ -164,7 +218,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
         return taskBuilder;
     }
 
-    private TaskInfo.Builder updateConfigTarget(TaskInfo.Builder taskBuilder, String configName) {
+    private static TaskInfo.Builder updateConfigTarget(TaskInfo.Builder taskBuilder, String configName) {
         Map<String, String> labelMap = new HashMap<>();
 
         // Copy everything except config target label
@@ -178,91 +232,20 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
         }
 
         labelMap.put(CONFIG_TARGET_KEY, configName);
-        taskBuilder.setLabels(labels(labelMap));
-        return taskBuilder;
-    }
 
-    private Map<String, String> getUpdatedTaskEnvironment(KafkaSchedulerConfiguration config, Environment oldEnvironment)
-            throws ConfigStoreException {
-        final KafkaConfiguration kafkaConfiguration = config.getKafkaConfiguration();
-        final BrokerConfiguration brokerConfig = config.getBrokerConfiguration();
-
-        Map<String, String> envMap = OfferUtils.fromEnvironmentToMap(oldEnvironment);
-        envMap.put("KAFKA_VER_NAME", kafkaConfiguration.getKafkaVerName());
-        envMap.put("KAFKA_HEAP_OPTS", getKafkaHeapOpts(brokerConfig.getHeap()));
-        Long port = config.getBrokerConfiguration().getPort();
-        if (port != 0) {
-            envMap.put(KafkaEnvConfigUtils.toEnvName("port"), Long.toString(port));
+        for (Map.Entry<String, String> entry : labelMap.entrySet()) {
+            taskBuilder.getLabelsBuilder().addLabelsBuilder()
+                .setKey(entry.getKey())
+                .setValue(entry.getValue());
         }
-        return envMap;
-    }
-
-    private Map<String, String> getUpdatedExecutorEnvironment(KafkaSchedulerConfiguration config, String configName)
-            throws ConfigStoreException {
-        final String frameworkName = config.getServiceConfiguration().getName();
-        final ZookeeperConfiguration zkConfig = config.getZookeeperConfig();
-
-        Map<String, String> envMap = new HashMap<>();
-        envMap.put("JAVA_HOME", "jre1.8.0_91");
-        envMap.put("FRAMEWORK_NAME", frameworkName);
-        envMap.put(CONFIG_ID_KEY, configName);
-        envMap.put("KAFKA_ZOOKEEPER_URI", zkConfig.getKafkaZkUri());
-        return envMap;
-    }
-
-    private List<CommandInfo.URI> getUpdatedUris(KafkaSchedulerConfiguration config) throws ConfigStoreException {
-        BrokerConfiguration brokerConfiguration = config.getBrokerConfiguration();
-        ExecutorConfiguration executorConfiguration = config.getExecutorConfiguration();
-
-        List<CommandInfo.URI> uris = new ArrayList<>();
-        uris.add(uri(brokerConfiguration.getJavaUri()));
-        uris.add(uri(brokerConfiguration.getKafkaUri()));
-        uris.add(uri(brokerConfiguration.getOverriderUri()));
-        uris.add(uri(executorConfiguration.getExecutorUri()));
-        return uris;
-    }
-
-    private TaskInfo.Builder updateTaskCmd(TaskInfo.Builder taskBuilder, KafkaSchedulerConfiguration config)
-            throws ConfigStoreException {
-        final CommandInfo existingCommandInfo = taskBuilder.getCommand();
-        final Environment oldEnvironment = existingCommandInfo.getEnvironment();
-        final Map<String, String> newEnvMap = OfferUtils.fromEnvironmentToMap(oldEnvironment);
-        newEnvMap.putAll(getUpdatedTaskEnvironment(config, taskBuilder.getCommand().getEnvironment()));
-
-        CommandInfo.Builder cmdBuilder = CommandInfo.newBuilder(existingCommandInfo);
-
-        String brokerCmd = getBrokerCmd(config);
-        cmdBuilder.setValue(brokerCmd);
-
-        cmdBuilder.setEnvironment(OfferUtils.environment(newEnvMap));
-        taskBuilder.setCommand(cmdBuilder.build());
-        taskBuilder.clearData();
         return taskBuilder;
-    }
-
-    private ExecutorInfo.Builder updateExecutorCmd(
-            ExecutorInfo.Builder updatedExecutor,
-            KafkaSchedulerConfiguration config,
-            String configName) throws ConfigStoreException {
-
-        final CommandInfo existingCommandInfo = updatedExecutor.getCommand();
-        final Environment oldEnvironment = existingCommandInfo.getEnvironment();
-        final Map<String, String> newEnvMap = OfferUtils.fromEnvironmentToMap(oldEnvironment);
-        newEnvMap.putAll(getUpdatedExecutorEnvironment(config, configName));
-
-        CommandInfo.Builder cmdBuilder = CommandInfo.newBuilder(existingCommandInfo);
-        cmdBuilder.setEnvironment(OfferUtils.environment(newEnvMap))
-                .clearUris()
-                .addAllUris(getUpdatedUris(config));
-
-        return updatedExecutor.setCommand(cmdBuilder);
     }
 
     private static Long getDynamicPort() {
         return 9092 + ThreadLocalRandom.current().nextLong(0, 1000);
     }
 
-    private TaskInfo getNewTaskInfo(KafkaSchedulerConfiguration config, String configName, int brokerId)
+    private TaskInfo getNewTaskInfo(KafkaSchedulerConfiguration config, String configName, int brokerId, String containerPath, long port)
             throws IOException, URISyntaxException {
 
         BrokerConfiguration brokerConfiguration = config.getBrokerConfiguration();
@@ -270,19 +253,13 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
         String role = config.getServiceConfiguration().getRole();
         String principal = config.getServiceConfiguration().getPrincipal();
 
-        String containerPath = "kafka-volume-" + UUID.randomUUID();
-        Long port = config.getBrokerConfiguration().getPort();
-        if (port == 0) {
-            port = getDynamicPort();
-        }
-
-        CommandInfo commandInfo = getNewBrokerCmd(config, brokerId, port, containerPath);
-
-        TaskInfo.Builder taskBuilder =TaskInfo.newBuilder()
+        TaskInfo.Builder taskBuilder = TaskInfo.newBuilder()
                 .setName(brokerName)
                 .setTaskId(TaskID.newBuilder().setValue("").build()) // Set later by TaskRequirement
                 .setSlaveId(SlaveID.newBuilder().setValue("").build()) // Set later
-                .setCommand(commandInfo)
+                .setCommand(CommandInfo.newBuilder()
+                        .setValue(getBrokerCmd(config))
+                        .build())
                 .addResources(ResourceUtils.getDesiredScalar(
                         role,
                         principal,
@@ -318,17 +295,15 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
 
         try {
             if (clusterState.getCapabilities().supportsNamedVips()) {
-                DiscoveryInfo discoveryInfo = DiscoveryInfo.newBuilder()
+                DiscoveryInfo.Builder discoveryInfoBuilder = taskBuilder.getDiscoveryBuilder()
                         .setVisibility(DiscoveryInfo.Visibility.EXTERNAL)
-                        .setName(brokerName)
-                        .setPorts(Ports.newBuilder()
-                                .addPorts(Port.newBuilder()
-                                        .setNumber((int) (long) port)
-                                        .setProtocol("tcp")
-                                        .setLabels(labels("VIP_" + UUID.randomUUID(), "broker:9092")))
-                                .build())
-                        .build();
-                taskBuilder.setDiscovery(discoveryInfo);
+                        .setName(brokerName);
+                discoveryInfoBuilder.getPortsBuilder().addPortsBuilder()
+                        .setNumber((int) port)
+                        .setProtocol("tcp")
+                        .getLabelsBuilder().addLabelsBuilder()
+                                .setKey("VIP_" + getUUID())
+                                .setValue("broker:9092");
             }
         } catch (Exception e) {
             log.error("Error querying for named vip support. Named VIP support will be unavailable.", e);
@@ -351,136 +326,62 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
         return TaskUtils.setTargetConfiguration(taskBuilder.build(), UUID.fromString(configName));
     }
 
-    private String getBrokerCmd(KafkaSchedulerConfiguration config) {
-        List<String> commands = new ArrayList<>();
-        commands.add("export PATH=$(ls -d $MESOS_SANDBOX/jre*/bin):$PATH"); // find directory that starts with "jre" containing "bin"
-        commands.add("$MESOS_SANDBOX/overrider/bin/kafka-config-overrider server $MESOS_SANDBOX/overrider/conf/scheduler.yml");
-        commands.add(String.format(
-                "exec $MESOS_SANDBOX/%1$s/bin/kafka-server-start.sh "+
-                        "$MESOS_SANDBOX/%1$s/config/server.properties ",
-                config.getKafkaConfiguration().getKafkaVerName()));
-        return Joiner.on(" && ").join(commands);
+    private static String getBrokerCmd(KafkaSchedulerConfiguration config) {
+        return Joiner.on(" && ").join(Arrays.asList(
+                "export JAVA_HOME=$(ls -d $MESOS_SANDBOX/jre*/)", // find directory that starts with "jre"
+                "export PATH=$JAVA_HOME/bin:$PATH",
+                "env",
+                "$MESOS_SANDBOX/overrider/bin/kafka-config-overrider server $MESOS_SANDBOX/overrider/conf/scheduler.yml",
+                String.format(
+                        "exec $MESOS_SANDBOX/%1$s/bin/kafka-server-start.sh "+
+                                "$MESOS_SANDBOX/%1$s/config/server.properties ",
+                        config.getKafkaConfiguration().getKafkaVerName())));
     }
 
-    private CommandInfo getNewBrokerCmd(KafkaSchedulerConfiguration config, int brokerId, Long port, String containerPath)
+    private static CommandInfo.Builder getExecutorCmd(
+            KafkaSchedulerConfiguration config, String configName, int brokerId, String logdir, long port)
             throws ConfigStoreException {
-        String brokerCmd = getBrokerCmd(config);
-        String brokerName = OfferUtils.brokerIdToTaskName(brokerId);
+        BrokerConfiguration brokerConfiguration = config.getBrokerConfiguration();
 
         Map<String, String> envMap = new HashMap<>();
         envMap.put("TASK_TYPE", KafkaTask.BROKER.name());
         envMap.put("FRAMEWORK_NAME", config.getServiceConfiguration().getName());
         envMap.put("KAFKA_VER_NAME", config.getKafkaConfiguration().getKafkaVerName());
         envMap.put("KAFKA_ZOOKEEPER_URI", config.getKafkaConfiguration().getKafkaZkUri());
+        envMap.put("KAFKA_HEAP_OPTS", String.format("-Xms%1$dM -Xmx%1$dM", config.getBrokerConfiguration().getHeap().getSizeMb()));
+        envMap.put(CONFIG_ID_KEY, configName);
         envMap.put(KafkaEnvConfigUtils.toEnvName("zookeeper.connect"), config.getFullKafkaZookeeperPath());
-        envMap.put(KafkaEnvConfigUtils.toEnvName("broker.id"), Integer.toString(brokerId));
-        envMap.put(KafkaEnvConfigUtils.toEnvName("log.dirs"), containerPath + "/" + brokerName);
+        envMap.put(BROKER_ID_ENV_NAME, Integer.toString(brokerId));
+        envMap.put(LOG_DIR_ENV_NAME, logdir);
         envMap.put(KafkaEnvConfigUtils.toEnvName("listeners"), "PLAINTEXT://:" + port);
         envMap.put(KafkaEnvConfigUtils.toEnvName("port"), Long.toString(port));
-        envMap.put("KAFKA_HEAP_OPTS", getKafkaHeapOpts(config.getBrokerConfiguration().getHeap()));
-        return CommandInfo.newBuilder()
-                .setValue(brokerCmd)
-                .setEnvironment(OfferUtils.environment(envMap))
-                .build();
+
+        CommandInfo.Builder cmdBuilder = CommandInfo.newBuilder()
+                .setValue(Joiner.on(" && ").join(Arrays.asList(
+                        "export JAVA_HOME=$(ls -d $MESOS_SANDBOX/jre*/)", // find directory that starts with "jre"
+                        "env",
+                        "./executor/bin/kafka-executor server ./executor/conf/executor.yml")))
+                .setEnvironment(OfferUtils.environment(envMap));
+
+        cmdBuilder.addUrisBuilder().setValue(brokerConfiguration.getJavaUri());
+        cmdBuilder.addUrisBuilder().setValue(brokerConfiguration.getKafkaUri());
+        cmdBuilder.addUrisBuilder().setValue(brokerConfiguration.getOverriderUri());
+        cmdBuilder.addUrisBuilder().setValue(config.getExecutorConfiguration().getExecutorUri());
+
+        return cmdBuilder;
     }
 
-    private CommandInfo getNewExecutorCmd(KafkaSchedulerConfiguration config, String configName, int brokerId)
-            throws ConfigStoreException {
-        BrokerConfiguration brokerConfiguration = config.getBrokerConfiguration();
-        ZookeeperConfiguration zookeeperConfiguration = config.getZookeeperConfig();
-        ExecutorConfiguration executorConfiguration = config.getExecutorConfiguration();
-        String frameworkName = config.getServiceConfiguration().getName();
-
-        final String executorCommand = "./executor/bin/kafka-executor server ./executor/conf/executor.yml";
-        Map<String, String> executorEnvMap = new HashMap<>();
-        executorEnvMap.put("JAVA_HOME", "jre1.8.0_91");
-        executorEnvMap.put("FRAMEWORK_NAME", frameworkName);
-        executorEnvMap.put("KAFKA_ZOOKEEPER_URI", zookeeperConfiguration.getKafkaZkUri());
-        executorEnvMap.put(KafkaEnvConfigUtils.KAFKA_OVERRIDE_PREFIX + "BROKER_ID", Integer.toString(brokerId));
-        executorEnvMap.put(CONFIG_ID_KEY, configName);
-        return CommandInfo.newBuilder()
-                .setValue(executorCommand)
-                .setEnvironment(OfferUtils.environment(executorEnvMap))
-                .addUris(uri(brokerConfiguration.getJavaUri()))
-                .addUris(uri(brokerConfiguration.getKafkaUri()))
-                .addUris(uri(brokerConfiguration.getOverriderUri()))
-                .addUris(uri(executorConfiguration.getExecutorUri()))
-                .build();
-    }
-
-    private ExecutorInfo getNewExecutorInfo(KafkaSchedulerConfiguration config, String configName, int brokerId)
-            throws ConfigStoreException {
-
-        ExecutorConfiguration executorConfiguration = config.getExecutorConfiguration();
-        String brokerName = OfferUtils.brokerIdToTaskName(brokerId);
-        String role = config.getServiceConfiguration().getRole();
-        String principal = config.getServiceConfiguration().getPrincipal();
-
-        return ExecutorInfo.newBuilder()
-                .setName(brokerName)
-                .setExecutorId(ExecutorID.newBuilder().setValue("").build()) // Set later by ExecutorRequirement
-                .setFrameworkId(schedulerState.getStateStore().fetchFrameworkId().get())
-                .setCommand(getNewExecutorCmd(config, configName, brokerId))
-                .addResources(ResourceUtils.getDesiredScalar(role, principal, "cpus", executorConfiguration.getCpus()))
-                .addResources(ResourceUtils.getDesiredScalar(role, principal, "mem", executorConfiguration.getMem()))
-                .addResources(DynamicPortRequirement.getDesiredDynamicPort("API_PORT", role, principal))
-                .build();
-    }
-
-    private OfferRequirement getNewOfferRequirementInternal(String configName, int brokerId)
-            throws InvalidRequirementException, IOException, URISyntaxException {
-
-        KafkaSchedulerConfiguration config = configState.fetch(UUID.fromString(configName));
-        TaskInfo taskInfo = getNewTaskInfo(config, configName, brokerId);
-        ExecutorInfo executorInfo = getNewExecutorInfo(config, configName, brokerId);
-
-        Optional<PlacementRuleGenerator> placement = placementStrategyManager.getPlacementStrategy(config, taskInfo);
-
-        OfferRequirement offerRequirement = new OfferRequirement(
-                BROKER_TASK_TYPE,
-                Arrays.asList(taskInfo),
-                Optional.of(executorInfo),
-                placement);
-
-        log.info(String.format("Got new OfferRequirement: TaskInfo: '%s' ExecutorInfo: '%s'",
-                TextFormat.shortDebugString(taskInfo),
-                TextFormat.shortDebugString(executorInfo)));
-
-        return offerRequirement;
-    }
-
-
-    private Value scalar(double d) {
-        return Value.newBuilder().setType(Value.Type.SCALAR)
-                .setScalar(Value.Scalar.newBuilder().setValue(d))
-                .build();
-    }
-
-    private Value range(long begin, long end) {
-        Range range = Range.newBuilder().setBegin(begin).setEnd(end).build();
-        Ranges ranges = Ranges.newBuilder().addRange(range).build();
-        return Value.newBuilder().setType(Value.Type.RANGES)
-                .setRanges(ranges)
-                .build();
-    }
-
-    private Label label(String key, String value) {
-        return Label.newBuilder().setKey(key).setValue(value).build();
-    }
-
-    private Labels labels(String key, String value) {
-        return Labels.newBuilder().addLabels(label(key, value)).build();
-    }
-
-    private Labels labels(Map<String, String> map) {
-        Labels.Builder labels = Labels.newBuilder();
-        for (String key : map.keySet()) {
-            labels.addLabels(label(key, map.get(key)));
+    private static String getEnvVal(Environment taskEnv, Environment executorEnv, String name) {
+        for (Environment.Variable var : taskEnv.getVariablesList()) {
+            if (var.getName().equals(name)) {
+                return var.getValue();
+            }
         }
-        return labels.build();
-    }
-
-    private CommandInfo.URI uri(String uri) {
-        return CommandInfo.URI.newBuilder().setValue(uri).build();
+        for (Environment.Variable var : executorEnv.getVariablesList()) {
+            if (var.getName().equals(name)) {
+                return var.getValue();
+            }
+        }
+        return null;
     }
 }

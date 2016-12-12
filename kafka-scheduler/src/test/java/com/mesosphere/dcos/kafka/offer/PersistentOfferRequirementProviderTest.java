@@ -1,7 +1,5 @@
 package com.mesosphere.dcos.kafka.offer;
 
-import com.mesosphere.dcos.kafka.commons.KafkaTask;
-import com.mesosphere.dcos.kafka.config.HeapConfig;
 import com.mesosphere.dcos.kafka.config.KafkaConfigState;
 import com.mesosphere.dcos.kafka.config.KafkaSchedulerConfiguration;
 import com.mesosphere.dcos.kafka.state.ClusterState;
@@ -30,6 +28,8 @@ import static org.mockito.Mockito.when;
 
 public class PersistentOfferRequirementProviderTest {
 
+  private static final String TEST_UUID_STR = UUID.randomUUID().toString();
+
   @Mock private FrameworkState state;
   @Mock private KafkaConfigState configState;
   @Mock private ClusterState clusterState;
@@ -49,10 +49,7 @@ public class PersistentOfferRequirementProviderTest {
 
   @Test
   public void testConstructor() {
-    PersistentOfferRequirementProvider provider = new PersistentOfferRequirementProvider(
-            state,
-            configState,
-            clusterState);
+    PersistentOfferRequirementProvider provider = new TestPersistentOfferRequirementProvider();
     Assert.assertNotNull(provider);
   }
 
@@ -61,10 +58,7 @@ public class PersistentOfferRequirementProviderTest {
     when(configState.fetch(UUID.fromString(KafkaTestUtils.testConfigName))).thenReturn(schedulerConfig);
     when(state.getStateStore().fetchFrameworkId()).thenReturn(
             Optional.of(FrameworkID.newBuilder().setValue("abcd").build()));
-    PersistentOfferRequirementProvider provider = new PersistentOfferRequirementProvider(
-            state,
-            configState,
-            clusterState);
+    PersistentOfferRequirementProvider provider = new TestPersistentOfferRequirementProvider();
     OfferRequirement req = provider.getNewOfferRequirement(KafkaTestUtils.testConfigName, 0);
 
     TaskInfo taskInfo = req.getTaskRequirements().iterator().next().getTaskInfo();
@@ -132,57 +126,43 @@ public class PersistentOfferRequirementProviderTest {
 
     final ExecutorInfo executorInfo = req.getExecutorRequirementOptional().get().getExecutorInfo();
 
-    CommandInfo cmd = executorInfo.getCommand();
-    Assert.assertEquals(4, cmd.getUrisList().size());
-    Assert.assertEquals(KafkaTestUtils.testJavaUri, cmd.getUrisList().get(0).getValue());
-    Assert.assertEquals(KafkaTestUtils.testKafkaUri, cmd.getUrisList().get(1).getValue());
-    Assert.assertEquals(KafkaTestUtils.testOverriderUri, cmd.getUrisList().get(2).getValue());
-    Assert.assertEquals(KafkaTestUtils.testExecutorUri, cmd.getUrisList().get(3).getValue());
+    CommandInfo executorCmd = executorInfo.getCommand();
+    Assert.assertEquals(4, executorCmd.getUrisList().size());
+    Assert.assertEquals(KafkaTestUtils.testJavaUri, executorCmd.getUrisList().get(0).getValue());
+    Assert.assertEquals(KafkaTestUtils.testKafkaUri, executorCmd.getUrisList().get(1).getValue());
+    Assert.assertEquals(KafkaTestUtils.testOverriderUri, executorCmd.getUrisList().get(2).getValue());
+    Assert.assertEquals(KafkaTestUtils.testExecutorUri, executorCmd.getUrisList().get(3).getValue());
 
     String portString = String.valueOf(portsResource.getRanges().getRangeList().get(0).getBegin());
 
+    // task env should only contain KAFKA_OVERRIDE_*:
     final Map<String, String> envFromTask = TaskUtils.fromEnvironmentToMap(taskInfo.getCommand().getEnvironment());
+    Assert.assertTrue(envFromTask.isEmpty());
 
+    // executor env should contain everything that isnt KAFKA_OVERRIDE_*:
+    final Map<String, String> envFromExecutor = TaskUtils.fromEnvironmentToMap(executorCmd.getEnvironment());
     Map<String, String> expectedEnvMap = new HashMap<>();
     expectedEnvMap.put("KAFKA_ZOOKEEPER_URI", KafkaTestUtils.testKafkaZkUri);
-    expectedEnvMap.put("KAFKA_OVERRIDE_ZOOKEEPER_CONNECT", KafkaTestUtils.testKafkaZkUri + DcosConstants.SERVICE_ROOT_PATH_PREFIX + KafkaTestUtils.testFrameworkName);
-    expectedEnvMap.put("FRAMEWORK_NAME", KafkaTestUtils.testFrameworkName);
-    expectedEnvMap.put("KAFKA_OVERRIDE_LOG_DIRS", "kafka-volume-9a67ba10-644c-4ef2-b764-e7df6e6a66e5/broker-0");
-    expectedEnvMap.put("KAFKA_OVERRIDE_LISTENERS", "PLAINTEXT://:123a");
+    expectedEnvMap.put("TASK_TYPE", "BROKER");
+    expectedEnvMap.put("KAFKA_HEAP_OPTS", "-Xms500M -Xmx500M");
     expectedEnvMap.put("KAFKA_VER_NAME", KafkaTestUtils.testKafkaVerName);
+    expectedEnvMap.put("FRAMEWORK_NAME", KafkaTestUtils.testFrameworkName);
+    expectedEnvMap.put("CONFIG_ID", KafkaTestUtils.testConfigName);
+    expectedEnvMap.put("KAFKA_OVERRIDE_ZOOKEEPER_CONNECT",
+            KafkaTestUtils.testKafkaZkUri + DcosConstants.SERVICE_ROOT_PATH_PREFIX + KafkaTestUtils.testFrameworkName);
+    expectedEnvMap.put("KAFKA_OVERRIDE_LOG_DIRS", "kafka-volume-" + TEST_UUID_STR + "/broker-0");
+    expectedEnvMap.put("KAFKA_OVERRIDE_LISTENERS", "PLAINTEXT://:" + portString);
     expectedEnvMap.put("KAFKA_OVERRIDE_PORT", portString);
     expectedEnvMap.put("KAFKA_OVERRIDE_BROKER_ID", String.valueOf(0));
-    expectedEnvMap.put("KAFKA_HEAP_OPTS", "-Xms500M -Xmx500M");
-    expectedEnvMap.put("TASK_TYPE", KafkaTask.BROKER.name());
+    Assert.assertEquals(envFromExecutor.toString(), expectedEnvMap, envFromExecutor);
 
-    System.out.println(envFromTask);
-
-    Assert.assertEquals(expectedEnvMap.size(), envFromTask.size());
-
-    System.out.println(expectedEnvMap);
-
-    for (String expectedEnvKey : expectedEnvMap.keySet()) {
-      Assert.assertTrue("Cannot find env key: " + expectedEnvKey, envFromTask.containsKey(expectedEnvKey));
-
-      final String envVarValue = envFromTask.get(expectedEnvKey);
-      if ("KAFKA_OVERRIDE_LOG_DIRS".equals(expectedEnvKey)) {
-        Assert.assertTrue(envVarValue.contains("kafka-volume"));
-        Assert.assertTrue(envVarValue.contains(KafkaTestUtils.testTaskName));
-      } else if ("KAFKA_OVERRIDE_LISTENERS".equals(expectedEnvKey)) {
-        Assert.assertTrue(envVarValue.contains("PLAINTEXT"));
-        Assert.assertTrue(envVarValue.contains(portString));
-      } else {
-        Assert.assertTrue("Cannot find env value: " + envVarValue, expectedEnvMap.containsValue(envVarValue));
-      }
-    }
-
-    Assert.assertEquals(286, taskInfo.getCommand().getValue().length());
-    Assert.assertEquals(65, cmd.getValue().length());
+    Assert.assertEquals(325, taskInfo.getCommand().getValue().length());
+    Assert.assertEquals(122, executorCmd.getValue().length());
   }
 
   @Test
   public void testReplaceOfferRequirement() throws Exception {
-    PersistentOfferRequirementProvider provider = new PersistentOfferRequirementProvider(state, configState, clusterState);
+    PersistentOfferRequirementProvider provider = new TestPersistentOfferRequirementProvider();
     Resource cpu = ResourceUtils.getDesiredScalar(
             KafkaTestUtils.testRole,
             KafkaTestUtils.testPrincipal,
@@ -212,12 +192,19 @@ public class PersistentOfferRequirementProviderTest {
             KafkaTestUtils.testPrincipal,
             "disk",
             2500);
-    final HeapConfig oldHeapConfig = new HeapConfig(256);
 
-    TaskInfo oldTaskInfo = getTaskInfo(Arrays.asList(oldCpu, oldMem, oldDisk));
-    oldTaskInfo = configKafkaHeapOpts(oldTaskInfo, oldHeapConfig);
+    TaskInfo.Builder oldTaskInfoBuilder = getTaskInfo(Arrays.asList(oldCpu, oldMem, oldDisk)).toBuilder();
+    // one setting in executor:
+    oldTaskInfoBuilder.getExecutorBuilder().getCommandBuilder().getEnvironmentBuilder().addVariablesBuilder()
+        .setName("KAFKA_OVERRIDE_LOG_DIRS")
+        .setValue("oldLogDirs");
+    // other setting in task:
+    oldTaskInfoBuilder.getCommandBuilder().getEnvironmentBuilder().addVariablesBuilder()
+        .setName("KAFKA_OVERRIDE_BROKER_ID")
+        .setValue("1234");
+    TaskInfo oldTaskInfo = TaskUtils.packTaskInfo(oldTaskInfoBuilder.build());
 
-    PersistentOfferRequirementProvider provider = new PersistentOfferRequirementProvider(state, configState, clusterState);
+    PersistentOfferRequirementProvider provider = new TestPersistentOfferRequirementProvider();
     OfferRequirement req = provider.getUpdateOfferRequirement(KafkaTestUtils.testConfigName, oldTaskInfo);
     Assert.assertNotNull(req);
 
@@ -230,19 +217,29 @@ public class PersistentOfferRequirementProviderTest {
     Assert.assertEquals(1000, updatedMem.getScalar().getValue(), 0.0);
 
     Assert.assertEquals(1, req.getTaskRequirements().size());
-    TaskInfo taskInfo = req.getTaskRequirements().iterator().next().getTaskInfo();
-    taskInfo = TaskUtils.unpackTaskInfo(taskInfo);
-    final Environment environment = taskInfo.getCommand().getEnvironment();
-    List<Environment.Variable> variablesList = environment.getVariablesList();
-    List<Environment.Variable> envVariables = new ArrayList<>(variablesList);
-    envVariables.sort((v1, v2) -> v1.getName().compareTo(v2.getName()));
-    Assert.assertEquals(3, envVariables.size());
-    Assert.assertEquals("KAFKA_HEAP_OPTS", envVariables.get(0).getName());
-    Assert.assertEquals("-Xms500M -Xmx500M", envVariables.get(0).getValue());
-    Assert.assertEquals("KAFKA_OVERRIDE_PORT", envVariables.get(1).getName());
-    Assert.assertEquals("9092", envVariables.get(1).getValue());
-    Assert.assertEquals("KAFKA_VER_NAME", envVariables.get(2).getName());
-    Assert.assertEquals("test-kafka-ver-name", envVariables.get(2).getValue());
+
+    // task env should contain nothing:
+    TaskInfo taskInfo = TaskUtils.unpackTaskInfo(req.getTaskRequirements().iterator().next().getTaskInfo());
+    final Map<String, String> envFromTask = TaskUtils.fromEnvironmentToMap(taskInfo.getCommand().getEnvironment());
+    Assert.assertTrue(envFromTask.toString(), envFromTask.isEmpty());
+
+    // executor env should contain everything that isn't KAFKA_OVERRIDE_*:
+    ExecutorInfo executorInfo = req.getExecutorRequirementOptional().get().getExecutorInfo();
+    Map<String, String> expectedEnvMap = new HashMap<>();
+    expectedEnvMap.put("KAFKA_ZOOKEEPER_URI", KafkaTestUtils.testKafkaZkUri);
+    expectedEnvMap.put("TASK_TYPE", "BROKER");
+    expectedEnvMap.put("KAFKA_HEAP_OPTS", "-Xms500M -Xmx500M");
+    expectedEnvMap.put("KAFKA_VER_NAME", KafkaTestUtils.testKafkaVerName);
+    expectedEnvMap.put("FRAMEWORK_NAME", KafkaTestUtils.testFrameworkName);
+    expectedEnvMap.put("CONFIG_ID", KafkaTestUtils.testConfigName);
+    expectedEnvMap.put("KAFKA_OVERRIDE_ZOOKEEPER_CONNECT",
+            KafkaTestUtils.testKafkaZkUri + DcosConstants.SERVICE_ROOT_PATH_PREFIX + KafkaTestUtils.testFrameworkName);
+    expectedEnvMap.put("KAFKA_OVERRIDE_LOG_DIRS", "oldLogDirs");
+    expectedEnvMap.put("KAFKA_OVERRIDE_LISTENERS", "PLAINTEXT://:9092");
+    expectedEnvMap.put("KAFKA_OVERRIDE_PORT", "9092");
+    expectedEnvMap.put("KAFKA_OVERRIDE_BROKER_ID", "1234");
+    final Map<String, String> envFromExecutor = TaskUtils.fromEnvironmentToMap(executorInfo.getCommand().getEnvironment());
+    Assert.assertEquals(envFromExecutor.toString(), expectedEnvMap, envFromExecutor);
   }
 
   private static Resource getResource(OfferRequirement req, String name) {
@@ -255,21 +252,6 @@ public class PersistentOfferRequirementProviderTest {
     }
 
     return null;
-  }
-
-  private TaskInfo configKafkaHeapOpts(TaskInfo taskInfo, HeapConfig heapConfig) {
-    final CommandInfo oldCommand = taskInfo.getCommand();
-    final TaskInfo.Builder taskBuilder = TaskInfo.newBuilder(taskInfo);
-
-    final CommandInfo newCommand = CommandInfo.newBuilder(oldCommand)
-            .setEnvironment(Environment.newBuilder()
-                    .addVariables(Environment.Variable
-                            .newBuilder()
-                            .setName("KAFKA_HEAP_OPTS")
-                            .setValue("-Xms" + heapConfig.getSizeMb() + "M -Xmx" + heapConfig.getSizeMb() + "M")))
-            .build();
-    taskBuilder.setCommand(newCommand);
-    return TaskUtils.packTaskInfo(taskBuilder.build());
   }
 
   private TaskInfo getTaskInfo(List<Resource> resources) {
@@ -292,5 +274,17 @@ public class PersistentOfferRequirementProviderTest {
             .build());
 
     return builder.build();
+  }
+
+  private class TestPersistentOfferRequirementProvider extends PersistentOfferRequirementProvider {
+
+    public TestPersistentOfferRequirementProvider() {
+      super(state, configState, clusterState);
+    }
+
+    @Override
+    protected UUID getUUID() {
+      return UUID.fromString(TEST_UUID_STR);
+    }
   }
 }

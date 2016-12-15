@@ -20,7 +20,7 @@ def static_port_config():
 
 
 @pytest.mark.sanity
-@pytest.mark.timeout(120)
+@pytest.mark.timeout(600)
 def test_failing_health_check(static_port_config):
     broker_id = '0'
     broker_name = 'broker-' + broker_id

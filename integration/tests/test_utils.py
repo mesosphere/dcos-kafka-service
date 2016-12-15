@@ -44,7 +44,8 @@ def as_json(fn):
     def wrapper(*args, **kwargs):
         try:
             return json.loads(fn(*args, **kwargs))
-        except ValueError:
+        except ValueError as e:
+            print("ValueError: {}".format(e))
             return None
 
     return wrapper
@@ -83,26 +84,26 @@ def get_broker_list():
 
 @as_json
 def get_dcos_command(command):
-    result, error = shakedown.run_dcos_command(command)
+    stdout, stderr, error = shakedown.run_dcos_command(command)
     if error:
         raise RuntimeError(
-            'command dcos {} {} failed'.format(command, PACKAGE_NAME)
+            'command dcos {} {} failed: {} {}'.format(command, PACKAGE_NAME, stdout, stderr)
         )
 
-    return result
+    return stdout
 
 
 @as_json
 def get_kafka_command(command):
-    result, error = shakedown.run_dcos_command(
+    stdout, stderr, error = shakedown.run_dcos_command(
         '{} {}'.format(PACKAGE_NAME, command)
     )
     if error:
         raise RuntimeError(
-            'command dcos {} {} failed'.format(command, PACKAGE_NAME)
+            'command dcos {} {} failed: {} {}'.format(command, PACKAGE_NAME, stdout, stderr)
         )
 
-    return result
+    return stdout
 
 
 def get_kafka_config():

@@ -38,6 +38,16 @@ scheduler_configuration:
     kafka_uri: ${KAFKA_URI}
     overrider_uri: ${OVERRIDER_URI}
     port: ${BROKER_PORT:-0}
+    jmx:
+      remote: ${BROKER_JMX_REMOTE_ENABLE:-false}
+      remote_port: ${BROKER_JMX_REMOTE_PORT:-9999}
+      remote_registry_ssl: ${BROKER_JMX_REMOTE_REGISTRY_SSL:-false}
+      remote_ssl: ${BROKER_JMX_REMOTE_SSL:-false}
+      remote_authenticate: ${BROKER_JMX_REMOTE_AUTH:-false}
+      remote_ssl_need_client_auth: ${BROKER_JMX_REMOTE_SSL_NEED_CLIENT_AUTH:-false}
+    statsd:
+      host: "${BROKER_STATSD_HOST:-}"
+      port: ${BROKER_STATSD_PORT:-0}
 
   kafka:
     kafka_advertise_host_ip: ${KAFKA_ADVERTISE_HOST_IP:-true}

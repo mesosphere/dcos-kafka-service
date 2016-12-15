@@ -32,12 +32,18 @@ scheduler_configuration:
     mem: ${BROKER_MEM:-2304}
     heap:
       size_mb: ${BROKER_HEAP_MB:-2048}
+    jmx:
+      remote_port: 9010
+    statsd:
+      host: "localhost"
+      port: 8123
     disk: ${BROKER_DISK:-5000}
     disk_type: ${DISK_TYPE:-ROOT}
     java_uri: ${JAVA_URI}
     kafka_uri: ${KAFKA_URI}
     overrider_uri: ${OVERRIDER_URI}
     port: ${BROKER_PORT:-0}
+
 
   kafka:
     kafka_advertise_host_ip: ${KAFKA_ADVERTISE_HOST_IP:-true}

@@ -266,6 +266,42 @@ def test_is_suppressed():
     assert response.text == "true"
 
 
+@pytest.mark.sanity
+def test_help():
+    get_kafka_command('help')
+
+
+@pytest.mark.sanity
+def test_config():
+    configs = get_kafka_command('config list')
+    assert len(configs) == 1
+
+    assert get_kafka_command('config show {}'.format(configs[0]))
+    assert get_kafka_command('config target')
+    assert get_kafka_command('config target_id')
+
+
+@pytest.mark.sanity
+def test_plan():
+    assert get_kafka_command('plan active')
+    assert get_kafka_command('plan show')
+    assert get_kafka_command('plan continue')
+    assert get_kafka_command('plan interrupt')
+
+
+@pytest.mark.sanity
+def test_state():
+    assert get_kafka_command('state framework_id')
+    tasks = get_kafka_command('state tasks')
+    assert tasks
+    assert get_kafka_command('state status {}'.format(tasks[0]))
+
+
+@pytest.mark.sanity
+def test_help():
+    get_kafka_command('help')
+
+
 def get_running_broker_task(broker_name):
     def fn():
         try:

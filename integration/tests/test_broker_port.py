@@ -28,14 +28,14 @@ def get_connection_info():
         if deployments:
             return False, 'Deployment is ongoing'
 
-        stdout, stderr, error = result
+        stdout, stderr, rc = result
         try:
-            stdout = json.loads(stdout)
-        except Exception as e:
-            return False, 'Command did not return JSON: {}'.format(e)
+            result = json.loads(stdout)
+        except Exception:
+            return False, 'Command did not return JSON'
         else:
             return (
-                not error and len(stdout['address']) == 3,
+                not rc and len(result['address']) == 3,
                 'Command errored or expected number of brokers are not up',
             )
 

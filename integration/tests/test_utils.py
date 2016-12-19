@@ -84,10 +84,12 @@ def get_broker_list():
 
 @as_json
 def get_dcos_command(command):
-    stdout, stderr, error = shakedown.run_dcos_command(command)
-    if error:
+    stdout, stderr, return_code = shakedown.run_dcos_command(command)
+    if return_code:
         raise RuntimeError(
-            'command dcos {} {} failed: {} {}'.format(command, PACKAGE_NAME, stdout, stderr)
+            ('command `dcos {}` failed (return_code = {}).\n'
+             'stdout: {}\n'
+             'stderr: {}').format(command, return_code, stdout, stderr)
         )
 
     return stdout
@@ -95,13 +97,13 @@ def get_dcos_command(command):
 
 @as_json
 def get_kafka_command(command):
-    stdout, stderr, error = shakedown.run_dcos_command(
-        '{} {}'.format(PACKAGE_NAME, command)
-    )
-    if error:
+    full_command = '{} {}'.format(PACKAGE_NAME, command)
+    stdout, stderr, return_code = shakedown.run_dcos_command(full_command)
+    if return_code:
         raise RuntimeError(
-            'command dcos {} {} failed: {} {}'.format(command, PACKAGE_NAME, stdout, stderr)
-        )
+            ('command `dcos {}` failed (return_code = {}).\n'
+             'stdout: {}\n'
+             'stderr: {}').format(full_command, return_code, stdout, stderr))
 
     return stdout
 

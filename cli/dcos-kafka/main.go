@@ -25,13 +25,13 @@ func main() {
 		log.Fatalf(err.Error())
 	}
 
+	cli.HandleCommonFlags(app, modName, fmt.Sprintf("%s DC/OS CLI Module", strings.Title(modName)))
+	cli.HandleConfigSection(app)
+	cli.HandleConnectionSection(app, []string{"address", "dns"})
+	cli.HandlePlanSection(app)
+	cli.HandleStateSection(app)
 	handleBrokerSection(app)
 	handleTopicSection(app)
-	cli.HandleCommonArgs(
-		app,
-		modName,
-		fmt.Sprintf("%s DC/OS CLI Module", strings.Title(modName)),
-		[]string{"address","dns"})
 
 	// Omit modname:
 	kingpin.MustParse(app.Parse(os.Args[2:]))

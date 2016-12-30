@@ -1,5 +1,6 @@
 package com.mesosphere.dcos.kafka.scheduler;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.TextFormat;
 import com.mesosphere.dcos.kafka.cmd.CmdExecutor;
 import com.mesosphere.dcos.kafka.commons.state.KafkaState;
@@ -33,15 +34,14 @@ import org.apache.mesos.dcos.DcosCluster;
 import org.apache.mesos.offer.*;
 import org.apache.mesos.reconciliation.DefaultReconciler;
 import org.apache.mesos.reconciliation.Reconciler;
-import org.apache.mesos.scheduler.DefaultTaskKiller;
-import org.apache.mesos.scheduler.SchedulerDriverFactory;
-import org.apache.mesos.scheduler.SchedulerErrorCode;
-import org.apache.mesos.scheduler.TaskKiller;
+import org.apache.mesos.scheduler.*;
 import org.apache.mesos.scheduler.api.TaskResource;
 import org.apache.mesos.scheduler.plan.*;
-import org.apache.mesos.scheduler.plan.api.PlanResource;
+import org.apache.mesos.scheduler.plan.api.PlansResource;
+import org.apache.mesos.scheduler.plan.strategy.CanaryStrategy;
+import org.apache.mesos.scheduler.plan.strategy.SerialStrategy;
+import org.apache.mesos.scheduler.plan.strategy.Strategy;
 import org.apache.mesos.scheduler.recovery.*;
-import org.apache.mesos.scheduler.recovery.api.RecoveryResource;
 import org.apache.mesos.scheduler.recovery.constrain.LaunchConstrainer;
 import org.apache.mesos.scheduler.recovery.constrain.TimedLaunchConstrainer;
 import org.apache.mesos.state.api.JsonPropertyDeserializer;
@@ -52,7 +52,6 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Kafka Framework Scheduler.
@@ -74,19 +73,19 @@ public class KafkaScheduler implements Scheduler, Runnable {
 
     private final OfferAccepter offerAccepter;
     private final Reconciler reconciler;
-    private final AtomicReference<RecoveryStatus> recoveryStatusRef;
     private final DefaultPlan installPlan;
     private final PersistentOfferRequirementProvider offerRequirementProvider;
     private final Environment environment;
     private final KafkaSchedulerConfiguration kafkaSchedulerConfiguration;
     private PlanManager planManager;
-    private DefaultPlanScheduler planScheduler;
-    private DefaultRecoveryScheduler repairScheduler;
+    private PlanManager repairPlanManager;
+    private PlanScheduler planScheduler;
     private SchedulerDriver driver;
 
     private boolean isRegistered = false;
 
-    public KafkaScheduler(KafkaSchedulerConfiguration configuration, Environment environment) throws ConfigStoreException, URISyntaxException {
+    public KafkaScheduler(KafkaSchedulerConfiguration configuration, Environment environment)
+            throws ConfigStoreException, URISyntaxException {
         this.kafkaSchedulerConfiguration = configuration;
         this.environment = environment;
         ConfigStateUpdater configStateUpdater = new ConfigStateUpdater(configuration);
@@ -121,20 +120,18 @@ public class KafkaScheduler implements Scheduler, Runnable {
 
         List<Phase> phases = Arrays.asList(
                 ReconciliationPhase.create(reconciler),
-                new KafkaUpdatePhase(
+                KafkaUpdatePhase.create(
                         configState.getTargetName().toString(),
                         envConfig,
                         frameworkState,
                         offerRequirementProvider));
         // If config validation had errors, expose them via the Stage.
         this.installPlan = stageErrors.isEmpty()
-                ? DefaultPlan.fromList(phases)
-                : DefaultPlan.withErrors(phases, stageErrors);
-
-        recoveryStatusRef = new AtomicReference<>(new RecoveryStatus(Collections.emptyList(), Collections.emptyList()));
+                ? new DefaultPlan("deploy", phases, getPhaseStrategyFactory(envConfig))
+                : new DefaultPlan("deploy", phases, getPhaseStrategyFactory(envConfig),stageErrors);
         taskFailureListener = new DefaultTaskFailureListener(frameworkState.getStateStore());
-        planManager = createDeploymentPlanManager(installPlan, getPhaseStrategyFactory(envConfig));
-        repairScheduler = createRecoveryScheduler(offerRequirementProvider);
+        planManager = createDeployPlanManager(installPlan);
+        repairPlanManager = createRecoveryPlanManager(offerRequirementProvider);
     }
 
     private void initialize(SchedulerDriver driver) {
@@ -147,6 +144,8 @@ public class KafkaScheduler implements Scheduler, Runnable {
     }
 
     private void startApiServer() {
+        // TODO(Mehmet): use DefaultPlanCoordinator in the next commit, not now!!!
+
         // Kafka-specific APIs:
         Collection<Object> resources = new ArrayList<>();
         resources.add(new ConnectionController(
@@ -159,19 +158,18 @@ public class KafkaScheduler implements Scheduler, Runnable {
         resources.add(new TopicController(
                 new CmdExecutor(kafkaSchedulerConfiguration, this),
                 this));
-        resources.add(new RecoveryResource(getRecoveryStatusRef()));
 
         // APIs from dcos-commons:
         resources.add(new ConfigResource<>(
-                getConfigState().getConfigStore(),
-                KafkaSchedulerConfiguration.getFactoryInstance()));
+                getConfigState().getConfigStore()));
         resources.add(new TaskResource(
                 getFrameworkState().getStateStore(),
                 taskKiller,
                 kafkaSchedulerConfiguration.getServiceConfiguration().getName()));
-        resources.add(new PlanResource(getPlanManager()));
+        resources.add(new PlansResource(ImmutableMap.of(
+                "deploy", getPlanManager(),
+                "recovery", getRepairManager())));
         resources.add(new StateResource(frameworkState.getStateStore(), new JsonPropertyDeserializer()));
-
         executor.execute(() -> {
             try {
                 new JettyApiServer(Integer.valueOf(System.getenv("PORT1")), resources).start();
@@ -180,8 +178,12 @@ public class KafkaScheduler implements Scheduler, Runnable {
             }
         });
     }
+    // dcos-commons 0.8.1 upgrade: just to be consistent with the existing java tests (see KafkaSchedulerTest.java)
+    protected PlanManager createDeployPlanManager(Plan installPlan) {
+        return new DefaultPlanManager(installPlan);
+    }
 
-    protected DefaultRecoveryScheduler createRecoveryScheduler(KafkaOfferRequirementProvider offerRequirementProvider) {
+    protected PlanManager createRecoveryPlanManager(KafkaOfferRequirementProvider offerRequirementProvider) {
         RecoveryConfiguration recoveryConfiguration = envConfig.getRecoveryConfiguration();
         LaunchConstrainer constrainer = new TimedLaunchConstrainer(
                 Duration.ofSeconds(recoveryConfiguration.getRecoveryDelaySecs()));
@@ -189,31 +191,24 @@ public class KafkaScheduler implements Scheduler, Runnable {
                 new KafkaRecoveryRequirementProvider(
                         offerRequirementProvider,
                         configState.getConfigStore());
-        return new DefaultRecoveryScheduler(
-                frameworkState.getStateStore(),
-                taskFailureListener,
-                recoveryRequirementProvider,
-                offerAccepter,
-                constrainer,
-                new KafkaFailureMonitor(recoveryConfiguration),
-                recoveryStatusRef);
+
+            return new DefaultRecoveryPlanManager(
+                    frameworkState.getStateStore(),
+                    recoveryRequirementProvider,
+                    constrainer,
+                    new KafkaFailureMonitor(recoveryConfiguration));
     }
 
-    protected PlanManager createDeploymentPlanManager(Plan deploymentPlan, PhaseStrategyFactory strategyFactory) {
-        return new DefaultPlanManager(deploymentPlan, strategyFactory);
-    }
-
-    private static PhaseStrategyFactory getPhaseStrategyFactory(KafkaSchedulerConfiguration config) {
+    private static Strategy getPhaseStrategyFactory(KafkaSchedulerConfiguration config) {
         String strategy = config.getServiceConfiguration().getPhaseStrategy();
-
         switch (strategy) {
             case "INSTALL":
-                return new DefaultStrategyFactory();
+                return new SerialStrategy<>();
             case "STAGE":
-                return new StageStrategyFactory();
+                return new CanaryStrategy<>();
             default:
                 log.warn("Unknown strategy: " + strategy);
-                return new StageStrategyFactory();
+                return new CanaryStrategy<>();
         }
     }
 
@@ -267,9 +262,8 @@ public class KafkaScheduler implements Scheduler, Runnable {
     }
 
     private boolean hasOperations() {
-        boolean hasOperations = !planManager.getPlan().isComplete() ||
-                repairScheduler.hasOperations(Optional.empty());
-
+        boolean hasOperations = !(planManager.getPlan().isComplete() &&
+                repairPlanManager.getPlan().isComplete());
         log.debug(hasOperations ?
                 "Scheduler has operations to perform." :
                 "Scheduler has no operations to perform.");
@@ -310,18 +304,18 @@ public class KafkaScheduler implements Scheduler, Runnable {
                 status.getTaskId().getValue(),
                 status.getState().toString(),
                 status.getMessage()));
-
-        // Store status, then pass status to StageManager => Plan => Blocks
+        // Store status, then pass status to StageManager => Plan => Steps
         try {
             frameworkState.updateStatus(status);
         } catch (Exception e) {
             log.warn("Failed to update TaskStatus received from Mesos. "
                     + "This may be expected if Mesos sent stale status information: " + status, e);
         }
-
         planManager.update(status);
+        repairPlanManager.update(status);
+        reconciler.update(status);
 
-        if (hasOperations()) {
+        if (TaskUtils.needsRecovery(status) || hasOperations()) {
             reviveOffers(driver);
         }
     }
@@ -329,6 +323,7 @@ public class KafkaScheduler implements Scheduler, Runnable {
     @Override
     public void resourceOffers(SchedulerDriver driver, List<Offer> offers) {
         try {
+            //TODO(Mehmet): use DefaultPlanCoordinator next commit, not now!!!
             logOffers(offers);
             reconciler.reconcile(driver);
 
@@ -337,25 +332,19 @@ public class KafkaScheduler implements Scheduler, Runnable {
             if (!reconciler.isReconciled()) {
                 log.info("Accepting no offers: Reconciler is still in progress");
             } else {
-                Optional<Block> blockOptional = planManager.getCurrentBlock();
-                if (blockOptional.isPresent()) {
-                    Block block = blockOptional.get();
-                    acceptedOffers = planScheduler.resourceOffers(driver, offers, block);
-                }
 
+                Collection<? extends Step> stepCollection = planManager.getCandidates(Collections.emptyList());
+                acceptedOffers = new ArrayList<>(planScheduler.resourceOffers(driver, offers, stepCollection));
                 List<Offer> unacceptedOffers = filterAcceptedOffers(offers, acceptedOffers);
-                try {
-                    acceptedOffers.addAll(repairScheduler.resourceOffers(driver, unacceptedOffers, blockOptional));
-                } catch (InvalidRequirementException e) {
-                    log.error("Error repairing block: " + blockOptional.get() + " Reason: " + e);
-                }
+
+                Collection<? extends Step> recoveryStepCollection = repairPlanManager.getCandidates(planManager.getDirtyAssets());
+                acceptedOffers.addAll(planScheduler.resourceOffers(driver, unacceptedOffers, recoveryStepCollection));
 
                 ResourceCleanerScheduler cleanerScheduler = getCleanerScheduler();
                 if (cleanerScheduler != null) {
                     acceptedOffers.addAll(getCleanerScheduler().resourceOffers(driver, offers));
                 }
             }
-
             log.info(String.format("Accepted %d of %d offers: %s",
                     acceptedOffers.size(), offers.size(), acceptedOffers));
             declineOffers(driver, acceptedOffers, offers);
@@ -386,7 +375,6 @@ public class KafkaScheduler implements Scheduler, Runnable {
                 filteredOffers.add(offer);
             }
         }
-
         return filteredOffers;
     }
 
@@ -396,7 +384,6 @@ public class KafkaScheduler implements Scheduler, Runnable {
                 return true;
             }
         }
-
         return false;
     }
 
@@ -409,30 +396,6 @@ public class KafkaScheduler implements Scheduler, Runnable {
         FrameworkInfo fwkInfo = getFrameworkInfo();
         log.info("Registering framework with: " + fwkInfo);
         registerFramework(this, fwkInfo, zkPath);
-    }
-
-    private void reconcile() {
-        Block recBlock = getReconciliationBlock();
-
-        if (recBlock != null) {
-            recBlock.restart();
-        } else {
-            log.error("Failed to reconcile because unable to find the Reconciliation Block");
-        }
-    }
-
-    private Block getReconciliationBlock() {
-        Plan plan = planManager.getPlan();
-
-        for (Phase phase : plan.getPhases()) {
-            for (Block block : phase.getBlocks()) {
-                if (block instanceof ReconciliationBlock) {
-                    return block;
-                }
-            }
-        }
-
-        return null;
     }
 
     private FrameworkInfo getFrameworkInfo() {
@@ -448,7 +411,6 @@ public class KafkaScheduler implements Scheduler, Runnable {
         if (fwkId.isPresent()) {
             fwkInfoBuilder.setId(fwkId.get());
         }
-
         return fwkInfoBuilder.build();
     }
 
@@ -508,9 +470,8 @@ public class KafkaScheduler implements Scheduler, Runnable {
     public PlanManager getPlanManager() {
         return planManager;
     }
-
-    public AtomicReference<RecoveryStatus> getRecoveryStatusRef() {
-        return recoveryStatusRef;
+    public PlanManager getRepairManager() {
+        return repairPlanManager;
     }
 
     public static void restartTasks(TaskInfo taskInfo) {

@@ -24,14 +24,24 @@ func main() {
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
-
+	
+	// Adding dcos-common cli section manually
 	cli.HandleCommonFlags(app, modName, fmt.Sprintf("%s DC/OS CLI Module", strings.Title(modName)))
 	cli.HandleConfigSection(app)
 	cli.HandleConnectionSection(app, []string{"address", "dns"})
 	cli.HandlePlanSection(app)
 	cli.HandleStateSection(app)
+  
+	// Keep this comment as a placeholder reminder
+	//cli.HandleCommonArgs(
+	//	app,
+	//	modName,
+	//	fmt.Sprintf("%s DC/OS CLI Module", strings.Title(modName)),
+	//	[]string{"address","dns"})
+
 	handleBrokerSection(app)
 	handleTopicSection(app)
+	
 
 	// Omit modname:
 	kingpin.MustParse(app.Parse(os.Args[2:]))

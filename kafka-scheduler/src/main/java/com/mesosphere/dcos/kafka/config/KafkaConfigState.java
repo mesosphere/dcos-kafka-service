@@ -32,6 +32,7 @@ public class KafkaConfigState {
    */
   public KafkaConfigState(ZookeeperConfiguration zkConfig) {
     this.configStore = new CuratorConfigStore<>(
+            KafkaSchedulerConfiguration.getFactoryInstance(),
             zkConfig.getFrameworkName(), zkConfig.getMesosZkUri());
   }
 
@@ -43,6 +44,7 @@ public class KafkaConfigState {
    */
   public KafkaConfigState(String zkRoot, String zkHost, RetryPolicy retryPolicy) {
     this.configStore = new CuratorConfigStore<>(
+            KafkaSchedulerConfiguration.getFactoryInstance(),
             zkRoot, zkHost, retryPolicy);
   }
 
@@ -55,7 +57,7 @@ public class KafkaConfigState {
 
   public KafkaSchedulerConfiguration fetch(UUID version) throws ConfigStoreException {
     try {
-      return configStore.fetch(version, KafkaSchedulerConfiguration.getFactoryInstance());
+      return configStore.fetch(version);
     } catch (ConfigStoreException e) {
       log.error("Unable to fetch version: " + version, e);
       throw new ConfigStoreException(e);

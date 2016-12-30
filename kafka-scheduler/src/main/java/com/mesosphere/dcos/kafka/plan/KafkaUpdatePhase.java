@@ -3,86 +3,56 @@ package com.mesosphere.dcos.kafka.plan;
 import com.mesosphere.dcos.kafka.config.KafkaSchedulerConfiguration;
 import com.mesosphere.dcos.kafka.offer.KafkaOfferRequirementProvider;
 import com.mesosphere.dcos.kafka.state.FrameworkState;
-import org.apache.mesos.scheduler.ChainedObserver;
-import org.apache.mesos.scheduler.plan.Block;
-import org.apache.mesos.scheduler.plan.Phase;
+import org.apache.mesos.scheduler.plan.DefaultPhase;
+import org.apache.mesos.scheduler.plan.Step;
+import org.apache.mesos.scheduler.plan.strategy.SerialStrategy;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
-public class KafkaUpdatePhase extends ChainedObserver implements Phase {
-  private final List<Block> blocks;
-  private final String configName;
-  private final KafkaSchedulerConfiguration config;
-  private final UUID id;
+public class KafkaUpdatePhase extends DefaultPhase {
 
-  public KafkaUpdatePhase(
-      String targetConfigName,
-      KafkaSchedulerConfiguration targetConfig,
-      FrameworkState frameworkState,
-      KafkaOfferRequirementProvider offerReqProvider) {
-    this.configName = targetConfigName;
-    this.config = targetConfig;
-    this.blocks = createBlocks(configName, config.getServiceConfiguration().getCount(), frameworkState, offerReqProvider);
-    this.id = UUID.randomUUID();
+  public static KafkaUpdatePhase create(
+    String targetConfigName,
+    KafkaSchedulerConfiguration targetConfig,
+    FrameworkState frameworkState,
+    KafkaOfferRequirementProvider offerReqProvider) {
+      return new KafkaUpdatePhase(targetConfigName,
+              createSteps(targetConfigName,
+                      targetConfig.getServiceConfiguration().getCount(),
+                      frameworkState, offerReqProvider)
+      );
   }
-
-  @Override
-  public List<Block> getBlocks() {
-    return blocks;
-  }
-
-  @Override
-  public Block getBlock(UUID id) {
-    for (Block block : getBlocks()) {
-      if (block.getId().equals(id)) {
-        return block;
-      }
-    }
-
-    return null;
-  }
-
-  @Override
-  public Block getBlock(int index){
-    return getBlocks().get(index);
-  }
-
-
-  @Override
-  public UUID getId() {
-    return id;
+  public KafkaUpdatePhase(String name, List<Step> steps) {
+    super(name, steps, new SerialStrategy<>(), new ArrayList<>());
   }
 
   @Override
   public String getName() {
-    return "Update to: " + configName;
+    return "Update to: " + super.getName();
   }
 
   @Override
   public boolean isComplete() {
-    for (Block block : blocks) {
-      if (!block.isComplete()) {
+    for (Step step : getChildren()) {
+      if (!step.isComplete()) {
         return false;
       }
     }
-
     return true;
   }
 
-  private static List<Block> createBlocks(
+  private static List<Step> createSteps(
       String configName,
       int brokerCount,
       FrameworkState frameworkState,
       KafkaOfferRequirementProvider offerReqProvider) {
 
-    List<Block> blocks = new ArrayList<Block>();
+    List<Step> steps = new ArrayList<Step>();
 
     for (int i=0; i<brokerCount; i++) {
-      blocks.add(new KafkaUpdateBlock(frameworkState, offerReqProvider, configName, i));
+      steps.add(new KafkaUpdateStep(frameworkState, offerReqProvider, configName, i));
     }
-
-    return blocks;
+    return steps;
   }
 }

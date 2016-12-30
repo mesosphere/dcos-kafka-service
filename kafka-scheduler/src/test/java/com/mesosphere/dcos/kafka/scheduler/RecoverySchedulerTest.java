@@ -18,8 +18,11 @@ import org.apache.mesos.config.ConfigStore;
 import org.apache.mesos.config.RecoveryConfiguration;
 import org.apache.mesos.dcos.Capabilities;
 import org.apache.mesos.offer.OfferAccepter;
+import org.apache.mesos.offer.OfferEvaluator;
 import org.apache.mesos.offer.ResourceUtils;
-import org.apache.mesos.scheduler.recovery.DefaultRecoveryScheduler;
+import org.apache.mesos.scheduler.DefaultTaskKiller;
+import org.apache.mesos.scheduler.plan.DefaultPlanScheduler;
+import org.apache.mesos.scheduler.recovery.DefaultRecoveryPlanManager;
 import org.apache.mesos.scheduler.recovery.TaskFailureListener;
 import org.apache.mesos.scheduler.recovery.constrain.LaunchConstrainer;
 import org.apache.mesos.scheduler.recovery.constrain.TestingLaunchConstrainer;
@@ -32,11 +35,11 @@ import org.junit.Test;
 import org.mockito.*;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Mockito.*;
 
+//TODO(Mehmet): this file is really not testing anything specific Kafka,
 /**
  * This class tests the Kafka RecoveryScheduler
  */
@@ -73,7 +76,7 @@ public class RecoverySchedulerTest {
 
     @Test
     public void testKafkaRecoverySchedulerConstruction() throws Exception {
-        Assert.assertNotNull(getTestKafkaRecoveryScheduler());
+        Assert.assertNotNull(getTestKafkaRecoveryPlanManager());
     }
 
     @Test
@@ -85,14 +88,22 @@ public class RecoverySchedulerTest {
                 replaceTaskInfo,
                 getDummyBrokerTaskInfo(1),
                 getDummyBrokerTaskInfo(2));
+        List<Protos.TaskStatus> statuses = getTestKafkaStatuses(replaceTaskInfo,taskInfos);
         when(stateStore.fetchTasks()).thenReturn(taskInfos);
-        when(stateStore.fetchTasksNeedingRecovery()).thenReturn(Arrays.asList(replaceTaskInfo));
+        when(stateStore.fetchStatuses()).thenReturn(statuses);
+        when(stateStore.fetchTask(any())).thenReturn(Optional.of(replaceTaskInfo));
+        when(stateStore.fetchStatus(any())).thenReturn(Optional.of(statuses.get(0)));
 
-        DefaultRecoveryScheduler recoveryScheduler = getTestKafkaRecoveryScheduler();
-        List<Protos.OfferID> acceptedOfferIds = recoveryScheduler.resourceOffers(
-                driver,
-                Arrays.asList(getTestOfferSufficientForNewBroker()),
-                Optional.empty());
+        DefaultRecoveryPlanManager recoveryPlanManager = getTestKafkaRecoveryPlanManager();
+        DefaultPlanScheduler planScheduler = getTestKafkaScheduler();
+
+        List<Protos.OfferID> acceptedOfferIds = new ArrayList<>(
+                planScheduler.resourceOffers(
+                      driver,
+                      Arrays.asList(getTestOfferSufficientForNewBroker()),
+                      recoveryPlanManager.getCandidates(Collections.emptyList()))
+        );
+
         Assert.assertEquals(1, acceptedOfferIds.size());
         Assert.assertEquals(KafkaTestUtils.testOfferId, acceptedOfferIds.get(0).getValue());
         verify(driver, times(1)).acceptOffers(
@@ -117,14 +128,22 @@ public class RecoverySchedulerTest {
                 replaceTaskInfo,
                 getDummyBrokerTaskInfo(1),
                 getDummyBrokerTaskInfo(2));
+        List<Protos.TaskStatus> statuses = getTestKafkaStatuses(replaceTaskInfo,taskInfos);
         when(stateStore.fetchTasks()).thenReturn(taskInfos);
-        when(stateStore.fetchTasksNeedingRecovery()).thenReturn(Arrays.asList(replaceTaskInfo));
+        when(stateStore.fetchStatuses()).thenReturn(statuses);
+        when(stateStore.fetchTask(any())).thenReturn(Optional.of(replaceTaskInfo));
+        when(stateStore.fetchStatus(any())).thenReturn(Optional.of(statuses.get(0)));
 
-        DefaultRecoveryScheduler recoveryScheduler = getTestKafkaRecoveryScheduler(new TestingLaunchConstrainer(), new KafkaFailureMonitor(recoveryConfiguration));
-        List<Protos.OfferID> acceptedOfferIds = recoveryScheduler.resourceOffers(
-                driver,
-                Arrays.asList(getTestOfferSufficientForNewBroker()),
-                Optional.empty());
+        DefaultRecoveryPlanManager recoveryPlanManager = getTestKafkaRecoveryPlanManager(
+                new TestingLaunchConstrainer(), new KafkaFailureMonitor(recoveryConfiguration));
+        DefaultPlanScheduler planScheduler = getTestKafkaScheduler();
+
+        List<Protos.OfferID> acceptedOfferIds = new ArrayList<>(
+                planScheduler.resourceOffers(
+                        driver,
+                        Arrays.asList(getTestOfferSufficientForNewBroker()),
+                        recoveryPlanManager.getCandidates(Collections.emptyList()))
+        );
         Assert.assertEquals(0, acceptedOfferIds.size());
     }
 
@@ -137,14 +156,21 @@ public class RecoverySchedulerTest {
                 getDummyBrokerTaskInfo(0),
                 getDummyBrokerTaskInfo(1),
                 replaceTaskInfo);
+        List<Protos.TaskStatus> statuses = getTestKafkaStatuses(replaceTaskInfo,taskInfos);
         when(stateStore.fetchTasks()).thenReturn(taskInfos);
-        when(stateStore.fetchTasksNeedingRecovery()).thenReturn(Arrays.asList(replaceTaskInfo));
+        when(stateStore.fetchStatuses()).thenReturn(statuses);
+        when(stateStore.fetchTask(any())).thenReturn(Optional.of(replaceTaskInfo));
+        when(stateStore.fetchStatus(any())).thenReturn(Optional.of(statuses.get(0)));
 
-        DefaultRecoveryScheduler recoveryScheduler = getTestKafkaRecoveryScheduler();
-        List<Protos.OfferID> acceptedOfferIds = recoveryScheduler.resourceOffers(
-                driver,
-                Arrays.asList(getTestOfferSufficientForNewBroker()),
-                Optional.empty());
+        DefaultRecoveryPlanManager recoveryPlanManager = getTestKafkaRecoveryPlanManager();
+        DefaultPlanScheduler planScheduler = getTestKafkaScheduler();
+
+        List<Protos.OfferID> acceptedOfferIds = new ArrayList<>(
+                planScheduler.resourceOffers(
+                        driver,
+                        Arrays.asList(getTestOfferSufficientForNewBroker()),
+                        recoveryPlanManager.getCandidates(Collections.emptyList()))
+        );
         Assert.assertEquals(1, acceptedOfferIds.size());
         Assert.assertEquals(KafkaTestUtils.testOfferId, acceptedOfferIds.get(0).getValue());
         verify(driver, times(1)).acceptOffers(
@@ -169,16 +195,23 @@ public class RecoverySchedulerTest {
                 getDummyBrokerTaskInfo(0),
                 getDummyBrokerTaskInfo(1),
                 replaceTaskInfo);
+        List<Protos.TaskStatus> statuses = getTestKafkaStatuses(replaceTaskInfo,taskInfos);
         when(stateStore.fetchTasks()).thenReturn(taskInfos);
-        when(stateStore.fetchTasksNeedingRecovery()).thenReturn(Arrays.asList(replaceTaskInfo));
+        when(stateStore.fetchStatuses()).thenReturn(statuses);
+        when(stateStore.fetchTask(any())).thenReturn(Optional.of(replaceTaskInfo));
+        when(stateStore.fetchStatus(any())).thenReturn(Optional.of(statuses.get(2)));
 
-        DefaultRecoveryScheduler recoveryScheduler = getTestKafkaRecoveryScheduler(
+        DefaultRecoveryPlanManager recoveryPlanManager = getTestKafkaRecoveryPlanManager(
                 new TestingLaunchConstrainer(),
                 new KafkaFailureMonitor(recoveryConfiguration));
-        List<Protos.OfferID> acceptedOfferIds = recoveryScheduler.resourceOffers(
-                driver,
-                Arrays.asList(getTestOfferSufficientForNewBroker()),
-                Optional.empty());
+        DefaultPlanScheduler planScheduler = getTestKafkaScheduler();
+
+        List<Protos.OfferID> acceptedOfferIds = new ArrayList<>(
+                planScheduler.resourceOffers(
+                        driver,
+                        Arrays.asList(getTestOfferSufficientForNewBroker()),
+                        recoveryPlanManager.getCandidates(Collections.emptyList()))
+        );
         Assert.assertEquals(0, acceptedOfferIds.size());
     }
 
@@ -194,23 +227,49 @@ public class RecoverySchedulerTest {
                 .build();
     }
 
-    private DefaultRecoveryScheduler getTestKafkaRecoveryScheduler() throws Exception {
-        return getTestKafkaRecoveryScheduler(
+    private List<Protos.TaskStatus> getTestKafkaStatuses(Protos.TaskInfo failedTask,
+                                    Collection<Protos.TaskInfo> allTasks) {
+        List<Protos.TaskStatus> statuses = new ArrayList<>();
+        for (Protos.TaskInfo task : allTasks) {
+            if (task.getTaskId().equals(failedTask.getTaskId())) {
+                statuses.add(getDummyBrokerTaskStatusFail(failedTask));
+            } else {
+                statuses.add(getDummyBrokerTaskStatus(task));
+            }
+        }
+        return statuses;
+    }
+
+    private Protos.TaskStatus getDummyBrokerTaskStatus(Protos.TaskInfo taskInfo) {
+        return Protos.TaskStatus
+                    .newBuilder().setState(Protos.TaskState.TASK_STAGING).setTaskId(taskInfo.getTaskId()).build();
+    }
+
+    private Protos.TaskStatus getDummyBrokerTaskStatusFail(Protos.TaskInfo taskInfo) {
+         return Protos.TaskStatus.newBuilder()
+                 .setTaskId(taskInfo.getTaskId())
+                 .setState(Protos.TaskState.TASK_FAILED).build();
+    }
+
+    private DefaultPlanScheduler getTestKafkaScheduler(){
+        return new DefaultPlanScheduler(
+                getTestOfferAccepter(),
+                new OfferEvaluator(stateStore),
+                new DefaultTaskKiller(stateStore,failureListener,driver));
+    }
+
+    private DefaultRecoveryPlanManager getTestKafkaRecoveryPlanManager() throws Exception {
+        return getTestKafkaRecoveryPlanManager(
                 new UnconstrainedLaunchConstrainer(),
                 new KafkaFailureMonitor(recoveryConfiguration));
     }
 
-    private DefaultRecoveryScheduler getTestKafkaRecoveryScheduler(
-            LaunchConstrainer constrainer,
-            FailureMonitor monitor) throws Exception {
-        return new DefaultRecoveryScheduler(
-                stateStore,
-                failureListener,
-                getTestOfferRequirementProvider(),
-                getTestOfferAccepter(),
-                constrainer,
-                monitor,
-                new AtomicReference<>());
+    private DefaultRecoveryPlanManager getTestKafkaRecoveryPlanManager(
+                                             LaunchConstrainer constrainer,
+                                             FailureMonitor monitor) throws Exception {
+        return new DefaultRecoveryPlanManager(stateStore, getTestOfferRequirementProvider(),
+                    constrainer,
+                    monitor);
     }
 
     private OfferAccepter getTestOfferAccepter() {

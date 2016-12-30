@@ -5,9 +5,9 @@ import com.mesosphere.dcos.kafka.plan.KafkaUpdatePhase;
 import com.mesosphere.dcos.kafka.scheduler.KafkaScheduler;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.mesos.scheduler.plan.Block;
 import org.apache.mesos.scheduler.plan.Phase;
 import org.apache.mesos.scheduler.plan.Plan;
+import org.apache.mesos.scheduler.plan.Step;
 
 public class BrokerCheck extends HealthCheck {
   public static final String NAME = "broker_count";
@@ -33,10 +33,10 @@ public class BrokerCheck extends HealthCheck {
       }
 
       int runningBrokerCount = kafkaScheduler.getFrameworkState().getRunningBrokersCount();
-      int completedBrokerBlockCount = getCompleteBrokerBlockCount(updatePhase);
+      int completedBrokerStepCount = getCompleteBrokerStepCount(updatePhase);
 
-      if (runningBrokerCount < completedBrokerBlockCount) {
-        errMsg = "Health check failed because running Broker count is less than completed Broker Blocks: running = " + runningBrokerCount + " completed blocks = " + completedBrokerBlockCount;
+      if (runningBrokerCount < completedBrokerStepCount) {
+        errMsg = "Health check failed because running Broker count is less than completed Broker Steps: running = " + runningBrokerCount + " completed blocks = " + completedBrokerStepCount;
         log.warn(errMsg);
         return Result.unhealthy(errMsg);
       }
@@ -52,7 +52,7 @@ public class BrokerCheck extends HealthCheck {
   private Phase getUpdatePhase() {
     Plan plan = kafkaScheduler.getPlanManager().getPlan();
 
-    for (Phase phase : plan.getPhases()) {
+    for (Phase phase : plan.getChildren()) {
       if (phase instanceof KafkaUpdatePhase) {
         return phase;
       }
@@ -61,11 +61,11 @@ public class BrokerCheck extends HealthCheck {
     return null;
   }
 
-  private int getCompleteBrokerBlockCount(Phase phase) {
+  private int getCompleteBrokerStepCount(Phase phase) {
     int completeCount = 0;
 
-    for (Block block : phase.getBlocks()) {
-      if (block.isComplete()) {
+    for (Step step : phase.getChildren()) {
+      if (step.isComplete()) {
         completeCount++;
       }
     }

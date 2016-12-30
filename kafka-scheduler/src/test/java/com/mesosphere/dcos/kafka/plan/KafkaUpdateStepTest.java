@@ -26,15 +26,15 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * This class tests the KafkaUpdateBlock class.
+ * This class tests the KafkaUpdateStep class.
  */
-public class KafkaUpdateBlockTest {
+public class KafkaUpdateStepTest {
     @Mock private FrameworkState frameworkState;
     @Mock private KafkaConfigState configState;
     @Mock private ClusterState clusterState;
     @Mock private Capabilities capabilities;
     private PersistentOfferRequirementProvider offerRequirementProvider;
-    private KafkaUpdateBlock updateBlock;
+    private KafkaUpdateStep updateStep;
 
     private static final Protos.Offer.Operation operation = Protos.Offer.Operation.newBuilder()
             .setType(Protos.Offer.Operation.Type.LAUNCH)
@@ -54,8 +54,8 @@ public class KafkaUpdateBlockTest {
         when(capabilities.supportsNamedVips()).thenReturn(true);
         when(clusterState.getCapabilities()).thenReturn(capabilities);
         offerRequirementProvider = new PersistentOfferRequirementProvider(frameworkState, configState, clusterState);
-        updateBlock =
-                new KafkaUpdateBlock(
+        updateStep =
+                new KafkaUpdateStep(
                         frameworkState,
                         offerRequirementProvider,
                         KafkaTestUtils.testConfigName,
@@ -63,13 +63,13 @@ public class KafkaUpdateBlockTest {
     }
 
     @Test
-    public void testKafkaUpdateBlockConstruction() {
-        Assert.assertNotNull(updateBlock);
+    public void testKafkaUpdateStepConstruction() {
+        Assert.assertNotNull(updateStep);
     }
 
     @Test
     public void testStart() {
-        OfferRequirement offerRequirement = updateBlock.start().get();
+        OfferRequirement offerRequirement = updateStep.start().get();
         Assert.assertNotNull(offerRequirement);
         Assert.assertEquals(1, offerRequirement.getTaskRequirements().size());
         Assert.assertTrue(offerRequirement.getExecutorRequirementOptional().isPresent());
@@ -77,56 +77,56 @@ public class KafkaUpdateBlockTest {
 
     @Test
     public void testUpdateWhilePending() {
-        Assert.assertTrue(updateBlock.isPending());
-        updateBlock.update(getRunningTaskStatus("bad-task-id"));
-        Assert.assertTrue(updateBlock.isPending());
+        Assert.assertTrue(updateStep.isPending());
+        updateStep.update(getRunningTaskStatus("bad-task-id"));
+        Assert.assertTrue(updateStep.isPending());
     }
 
     @Test
     public void testUpdateUnknownTaskId() {
-        Assert.assertTrue(updateBlock.isPending());
-        updateBlock.start();
-        updateBlock.updateOfferStatus(nonEmptyOperations);
-        Assert.assertTrue(updateBlock.isInProgress());
-        updateBlock.update(getRunningTaskStatus("bad-task-id"));
-        Assert.assertTrue(updateBlock.isInProgress());
+        Assert.assertTrue(updateStep.isPending());
+        updateStep.start();
+        updateStep.updateOfferStatus(nonEmptyOperations);
+        Assert.assertTrue(updateStep.isInProgress());
+        updateStep.update(getRunningTaskStatus("bad-task-id"));
+        Assert.assertTrue(updateStep.isInProgress());
     }
 
     @Test
     public void testReconciliationUpdate() {
-        Assert.assertTrue(updateBlock.isPending());
-        updateBlock.start();
-        updateBlock.updateOfferStatus(nonEmptyOperations);
-        Assert.assertTrue(updateBlock.isInProgress());
-        Protos.TaskID taskId = updateBlock.getPendingTaskIds().get(0);
+        Assert.assertTrue(updateStep.isPending());
+        updateStep.start();
+        updateStep.updateOfferStatus(nonEmptyOperations);
+        Assert.assertTrue(updateStep.isInProgress());
+        Protos.TaskID taskId = updateStep.getPendingTaskIds().get(0);
         Protos.TaskStatus reconciliationTaskStatus = getRunningTaskStatus(taskId.getValue());
         reconciliationTaskStatus = Protos.TaskStatus.newBuilder(reconciliationTaskStatus)
                 .setReason(Protos.TaskStatus.Reason.REASON_RECONCILIATION)
                 .build();
-        updateBlock.update(reconciliationTaskStatus);
-        Assert.assertTrue(updateBlock.isInProgress());
+        updateStep.update(reconciliationTaskStatus);
+        Assert.assertTrue(updateStep.isInProgress());
     }
 
     @Test
     public void testUpdateExpectedTaskIdRunning() {
-        Assert.assertTrue(updateBlock.isPending());
-        updateBlock.start();
-        updateBlock.updateOfferStatus(nonEmptyOperations);
-        Assert.assertTrue(updateBlock.isInProgress());
-        Protos.TaskID taskId = updateBlock.getPendingTaskIds().get(0);
-        updateBlock.update(getRunningTaskStatus(taskId.getValue()));
-        Assert.assertTrue(updateBlock.isComplete());
+        Assert.assertTrue(updateStep.isPending());
+        updateStep.start();
+        updateStep.updateOfferStatus(nonEmptyOperations);
+        Assert.assertTrue(updateStep.isInProgress());
+        Protos.TaskID taskId = updateStep.getPendingTaskIds().get(0);
+        updateStep.update(getRunningTaskStatus(taskId.getValue()));
+        Assert.assertTrue(updateStep.isComplete());
     }
 
     @Test
     public void testUpdateExpectedTaskIdTerminated() {
-        Assert.assertTrue(updateBlock.isPending());
-        updateBlock.start();
-        updateBlock.updateOfferStatus(nonEmptyOperations);
-        Assert.assertTrue(updateBlock.isInProgress());
-        Protos.TaskID taskId = updateBlock.getPendingTaskIds().get(0);
-        updateBlock.update(getFailedTaskStatus(taskId.getValue()));
-        Assert.assertTrue(updateBlock.isPending());
+        Assert.assertTrue(updateStep.isPending());
+        updateStep.start();
+        updateStep.updateOfferStatus(nonEmptyOperations);
+        Assert.assertTrue(updateStep.isInProgress());
+        Protos.TaskID taskId = updateStep.getPendingTaskIds().get(0);
+        updateStep.update(getFailedTaskStatus(taskId.getValue()));
+        Assert.assertTrue(updateStep.isPending());
     }
 
     private Protos.TaskStatus getRunningTaskStatus(String taskId) {

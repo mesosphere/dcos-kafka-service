@@ -14,37 +14,32 @@ import org.apache.mesos.Protos.TaskStatus;
 import org.apache.mesos.offer.OfferRequirement;
 import org.apache.mesos.offer.TaskRequirement;
 import org.apache.mesos.offer.TaskUtils;
-import org.apache.mesos.scheduler.DefaultObservable;
-import org.apache.mesos.scheduler.plan.Block;
+import org.apache.mesos.scheduler.plan.DefaultStep;
 import org.apache.mesos.scheduler.plan.Status;
 
 import java.util.*;
 
-public class KafkaUpdateBlock extends DefaultObservable implements Block {
-  private final Log log = LogFactory.getLog(KafkaUpdateBlock.class);
+public class KafkaUpdateStep extends DefaultStep {
+  private final Log log = LogFactory.getLog(KafkaUpdateStep.class);
 
   private final KafkaOfferRequirementProvider offerReqProvider;
   private final String targetConfigName;
   private final FrameworkState state;
   private final int brokerId;
-  private final UUID blockUuid;
 
   private final Object pendingTaskIdsLock = new Object();
   private List<TaskID> pendingTaskIds;
-  private Status status = Status.PENDING;
 
-  public KafkaUpdateBlock(
+  public KafkaUpdateStep(
     FrameworkState state,
     KafkaOfferRequirementProvider offerReqProvider,
     String targetConfigName,
     int brokerId) {
-
+    super(targetConfigName, Optional.empty(), Status.PENDING, Collections.emptyList());
     this.state = state;
     this.offerReqProvider = offerReqProvider;
     this.targetConfigName = targetConfigName;
     this.brokerId = brokerId;
-    this.blockUuid = UUID.randomUUID();
-
     TaskInfo taskInfo = fetchTaskInfo();
     pendingTaskIds = getUpdateIds(taskInfo);
     initializeStatus(taskInfo);
@@ -52,31 +47,31 @@ public class KafkaUpdateBlock extends DefaultObservable implements Block {
 
   @Override
   public boolean isPending() {
-    return status == Status.PENDING;
+    return getStatus() == Status.PENDING;
   }
 
   @Override
   public boolean isInProgress() {
-    return status == Status.IN_PROGRESS;
+    return getStatus() == Status.IN_PROGRESS;
   }
 
   @Override
   public boolean isComplete() {
-    return status == Status.COMPLETE;
+    return getStatus() == Status.COMPLETE;
   }
 
   @Override
   public Optional<OfferRequirement> start() {
-    log.info("Starting block: " + getName() + " with status: " + Block.getStatus(this));
+    log.info("Starting step: " + getName() + " with status: " + getStatus());
 
     if (!isPending()) {
-      log.warn("Block is not pending.  start() should not be called.");
+      log.warn("Step is not pending.  start() should not be called.");
       return Optional.empty();
     }
 
     Optional<TaskStatus> taskStatus = fetchTaskStatus();
     if (taskIsRunningOrStaging(taskStatus)) {
-      log.info("Adding task to restart list. Block: " + getName() + " Status: " + taskStatus.get());
+      log.info("Adding task to restart list. Step: " + getName() + " Status: " + taskStatus.get());
       KafkaScheduler.restartTasks(fetchTaskInfo());
       return Optional.empty();
     }
@@ -118,7 +113,7 @@ public class KafkaUpdateBlock extends DefaultObservable implements Block {
     try {
       KafkaScheduler.rescheduleTask(fetchTaskInfo());
     } catch (Exception ex) {
-      log.error("Failed to force completion of Block: " + getId() + "with exception: ", ex);
+      log.error("Failed to force completion of Step: " + getId() + "with exception: ", ex);
       return;
     }
   }
@@ -126,11 +121,11 @@ public class KafkaUpdateBlock extends DefaultObservable implements Block {
   @Override
   public void update(TaskStatus taskStatus) {
     synchronized (pendingTaskIdsLock) {
-      log.info(Block.getStatus(this) + " Block " + getName() + " received TaskStatus. "
+      log.info(getStatus() + " Step " + getName() + " received TaskStatus. "
           + "Pending tasks: " + pendingTaskIds);
 
       if (isPending()) {
-        log.info("Ignoring TaskStatus (Block " + getName() + " is Pending): " + taskStatus);
+        log.info("Ignoring TaskStatus (Step " + getName() + " is Pending): " + taskStatus);
         return;
       }
 
@@ -163,13 +158,8 @@ public class KafkaUpdateBlock extends DefaultObservable implements Block {
   }
 
   @Override
-  public UUID getId() {
-    return blockUuid;
-  }
-
-  @Override
   public String getMessage() {
-    return "Broker-" + getBrokerId() + " is " + Block.getStatus(this);
+    return "Broker-" + getBrokerId() + " is " + getStatus();
   }
 
   @Override
@@ -200,7 +190,7 @@ public class KafkaUpdateBlock extends DefaultObservable implements Block {
       }
     }
 
-    log.info("Status initialized as " + Block.getStatus(this) + " for block: " + getName());
+    log.info("Status initialized as " + getStatus() + " for block: " + getName());
   }
 
   private OfferRequirement getOfferRequirement(TaskInfo taskInfo) throws Exception {
@@ -209,12 +199,6 @@ public class KafkaUpdateBlock extends DefaultObservable implements Block {
     } else {
       return offerReqProvider.getUpdateOfferRequirement(targetConfigName, taskInfo);
     }
-  }
-
-  private void setStatus(Status newStatus) {
-    Status oldStatus = status;
-    status = newStatus;
-    log.info(getName() + ": changed status from: " + oldStatus + " to: " + newStatus);
   }
 
   private Optional<TaskStatus> fetchTaskStatus() {

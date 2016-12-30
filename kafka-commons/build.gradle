@@ -3,7 +3,7 @@ ext {
 }
 
 dependencies {
-    compile "mesosphere:dcos-commons:0.7.12"
+    compile "mesosphere:dcos-commons:0.8.1.1"
     compile "org.apache.mesos:mesos:${mesosVer}"
 }
 

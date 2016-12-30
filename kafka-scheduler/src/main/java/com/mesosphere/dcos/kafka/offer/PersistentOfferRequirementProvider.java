@@ -76,7 +76,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
                 TextFormat.shortDebugString(taskInfo),
                 TextFormat.shortDebugString(executorInfo)));
 
-        return new OfferRequirement(
+        return OfferRequirement.create(
                 BROKER_TASK_TYPE,
                 Arrays.asList(taskInfo),
                 Optional.of(executorInfo),
@@ -102,10 +102,11 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
                 .setExecutorId(ExecutorID.newBuilder().setValue("").build()) // Set later by ExecutorRequirement
                 .build();
 
-        OfferRequirement offerRequirement = new OfferRequirement(
+        OfferRequirement offerRequirement = OfferRequirement.create(
                 BROKER_TASK_TYPE,
                 Arrays.asList(replaceTaskInfo),
-                Optional.of(replaceExecutorInfo));
+                Optional.of(replaceExecutorInfo),
+                Optional.empty());
 
         log.info(String.format("Got replacement OfferRequirement: TaskInfo: '%s' ExecutorInfo: '%s'",
                 TextFormat.shortDebugString(replaceTaskInfo),
@@ -169,7 +170,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
             throw new InvalidRequirementException(errStr);
         }
 
-        TaskInfo updatedTaskInfo = TaskUtils.setTargetConfiguration(taskBuilder.build(), UUID.fromString(configName));
+        TaskInfo updatedTaskInfo = TaskUtils.setTargetConfiguration(taskBuilder, UUID.fromString(configName)).build();
         // Throw away any prior executor command state (except for brokerId and logdir retrieved from prior env):
         ExecutorInfo updatedExecutorInfo = ExecutorInfo.newBuilder(taskInfo.getExecutor())
                 .setCommand(getExecutorCmd(config, configName, Integer.valueOf(brokerIdStr), logdir, port))
@@ -177,7 +178,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
                 .build();
 
         try {
-            OfferRequirement offerRequirement = new OfferRequirement(
+            OfferRequirement offerRequirement = OfferRequirement.create(
                     BROKER_TASK_TYPE,
                     Arrays.asList(updatedTaskInfo),
                     Optional.of(updatedExecutorInfo));
@@ -323,7 +324,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
                             .build()));
         }
 
-        return TaskUtils.setTargetConfiguration(taskBuilder.build(), UUID.fromString(configName));
+        return TaskUtils.setTargetConfiguration(taskBuilder, UUID.fromString(configName)).build();
     }
 
     private static String getBrokerCmd(KafkaSchedulerConfiguration config) {

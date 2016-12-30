@@ -3,13 +3,14 @@ package com.mesosphere.dcos.kafka.config;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.config.*;
 import org.apache.mesos.dcos.DcosConstants;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 @JsonSerialize
@@ -165,7 +166,7 @@ public class KafkaSchedulerConfiguration implements Configuration {
     @Override
     public byte[] getBytes() throws ConfigStoreException {
         try {
-            return JsonUtils.MAPPER.writeValueAsBytes(this);
+            return SerializationUtils.toJsonString(this).getBytes(StandardCharsets.UTF_8);
         } catch (Exception e) {
             LOGGER.error("Error occured while serializing the object: " + e);
             throw new ConfigStoreException(e);
@@ -181,7 +182,9 @@ public class KafkaSchedulerConfiguration implements Configuration {
         @Override
         public KafkaSchedulerConfiguration parse(byte[] bytes) throws ConfigStoreException {
             try {
-                return JsonUtils.MAPPER.readValue(bytes, KafkaSchedulerConfiguration.class);
+                return SerializationUtils.fromJsonString(
+                        new String(bytes, StandardCharsets.UTF_8),
+                        KafkaSchedulerConfiguration.class);
             } catch (Exception e) {
                 throw new ConfigStoreException(e);
             }
@@ -189,7 +192,11 @@ public class KafkaSchedulerConfiguration implements Configuration {
     }
 
     @Override
-    public String toJsonString() throws Exception {
-        return new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(this);
+    public String toJsonString() throws ConfigStoreException {
+        try {
+            return SerializationUtils.toJsonString(this);
+        } catch (IOException e) {
+            throw new ConfigStoreException(e);
+        }
     }
 }

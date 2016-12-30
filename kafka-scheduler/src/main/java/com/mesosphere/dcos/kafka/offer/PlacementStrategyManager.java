@@ -5,7 +5,7 @@ import com.mesosphere.dcos.kafka.state.FrameworkState;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.mesos.Protos;
-import org.apache.mesos.offer.constrain.PlacementRuleGenerator;
+import org.apache.mesos.offer.constrain.PlacementRule;
 import org.apache.mesos.offer.constrain.PlacementUtils;
 
 import java.util.Collections;
@@ -20,7 +20,7 @@ class PlacementStrategyManager {
     this.frameworkState = frameworkState;
   }
 
-  public Optional<PlacementRuleGenerator> getPlacementStrategy(
+  public Optional<PlacementRule> getPlacementStrategy(
           KafkaSchedulerConfiguration config,
           Protos.TaskInfo taskInfo) {
     String placementStrategy = config.getServiceConfiguration().getPlacementStrategy();

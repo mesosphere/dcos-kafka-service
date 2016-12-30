@@ -11,10 +11,8 @@ import org.apache.mesos.Protos;
 import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.curator.CuratorStateStore;
 import org.apache.mesos.scheduler.SchedulerErrorCode;
-import org.apache.mesos.scheduler.plan.PhaseStrategyFactory;
-import org.apache.mesos.scheduler.plan.Plan;
-import org.apache.mesos.scheduler.plan.PlanManager;
-import org.apache.mesos.scheduler.recovery.DefaultRecoveryScheduler;
+import org.apache.mesos.scheduler.plan.*;
+import org.apache.mesos.scheduler.recovery.DefaultRecoveryPlanManager;
 import org.apache.mesos.state.StateStore;
 import org.junit.*;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
@@ -67,6 +65,9 @@ public class KafkaSchedulerTest {
     public static Injector injector;
 
     @Mock private SchedulerDriver driver;
+    @Mock private PlanManager planManager;
+    @Mock private DefaultRecoveryPlanManager recoveryPlanManager;
+    @Mock private Plan plan;
 
     @ClassRule
     public static KafkaDropwizardAppRule<DropwizardConfiguration> RULE =
@@ -130,24 +131,21 @@ public class KafkaSchedulerTest {
     public void testResourceOffersSuppress() throws Exception {
         kafkaScheduler = new KafkaScheduler(dropwizardConfiguration.getSchedulerConfiguration(), environment) {
             // Create install StageManager with no operations
-            @Override
-            protected PlanManager createDeploymentPlanManager(Plan deploymentPlan, PhaseStrategyFactory strategyFactory) {
-                PlanManager planManager = super.createDeploymentPlanManager(deploymentPlan, strategyFactory);
-                PlanManager planManagerSpy = spy(planManager);
-                Plan stage = planManagerSpy.getPlan();
-                Plan stageSpy = spy(stage);
-                when(stageSpy.isComplete()).thenReturn(true);
-                when(planManagerSpy.getPlan()).thenReturn(stageSpy);
-                return planManagerSpy;
-            }
 
+            @Override
+            protected PlanManager createDeployPlanManager(Plan deploymentPlan) {
+                when(planManager.getPlan()).thenReturn(plan);
+                when(plan.isComplete()).thenReturn(true);
+                when(recoveryPlanManager.getCandidates(any())).thenReturn(Collections.emptyList());
+                return planManager;
+            }
             // Create RecoveryScheduler with no operations
             @Override
-            protected DefaultRecoveryScheduler createRecoveryScheduler(KafkaOfferRequirementProvider offerRequirementProvider) {
-                DefaultRecoveryScheduler scheduler = super.createRecoveryScheduler(offerRequirementProvider);
-                DefaultRecoveryScheduler spy = spy(scheduler);
-                when(spy.hasOperations(any())).thenReturn(false);
-                return spy;
+            protected PlanManager createRecoveryPlanManager(KafkaOfferRequirementProvider offerRequirementProvider) {
+                when(recoveryPlanManager.getPlan()).thenReturn(plan);
+                when(plan.isComplete()).thenReturn(true);
+                when(recoveryPlanManager.getCandidates(any())).thenReturn(Collections.emptyList());
+                return recoveryPlanManager;
             }
         };
 

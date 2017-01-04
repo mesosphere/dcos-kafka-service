@@ -553,58 +553,54 @@ These options relate to viewing and controlling rollouts and configuration updat
 
 ## View Plan Status
 
-Displays all Phases and Blocks in the service Plan. If a rollout is currently in progress, this returns a 503 HTTP code with response content otherwise unchanged.
+Displays all Phases and Steps in the service Plan. If a rollout is currently in progress, this returns a 503 HTTP code with response content otherwise unchanged.
 
     $ dcos kafka --name=kafka plan show
     GET /service/kafka/v1/plan HTTP/1.1
     
     {
-        "errors": [],
-        "phases": [
+      "phases": [
+        {
+          "id": "1915bcad-1235-400f-8406-4ac7555a7d34",
+          "name": "Reconciliation",
+          "steps": [
             {
-                "blocks": [
-                    {
-                        "hasDecisionPoint": false,
-                        "id": "019eaab4-4082-4e38-ab01-a5d2a825cf8d",
-                        "message": "Reconciliation complete",
-                        "name": "Reconciliation",
-                        "status": "Complete"
-                    }
-                ],
-                "id": "a58d1e15-15b8-47a3-84d7-ae36b13a5ba8",
-                "name": "Reconciliation",
-                "status": "Complete"
+              "id": "9854a67d-7803-46d0-b278-402785fe3199",
+              "status": "COMPLETE",
+              "name": "Reconciliation",
+              "message": "Reconciliation complete"
+            }
+          ],
+          "status": "COMPLETE"
+        },
+        {
+          "id": "3e72c258-1ead-465f-871e-2a305d29124c",
+          "name": "Update to: 329ef254-7331-48dc-a476-8a0e45752871",
+          "steps": [
+            {
+              "id": "ebf4cb02-1011-452a-897a-8c4083188bb2",
+              "status": "COMPLETE",
+              "name": "broker-0",
+              "message": "Broker-0 is COMPLETE"
             },
             {
-                "blocks": [
-                    {
-                        "hasDecisionPoint": false,
-                        "id": "8a727290-062a-44bf-87ba-3ebfe005aa18",
-                        "message": "Broker-0 is Complete",
-                        "name": "broker-0",
-                        "status": "Complete"
-                    },
-                    {
-                        "hasDecisionPoint": false,
-                        "id": "5d2aa9d9-5eda-4a13-aea1-9d98e4cf7ea7",
-                        "message": "Broker-1 is Complete",
-                        "name": "broker-1",
-                        "status": "Complete"
-                    },
-                    {
-                        "hasDecisionPoint": false,
-                        "id": "7f6762b6-7a51-4df2-bb4d-b82b75623938",
-                        "message": "Broker-2 is Complete",
-                        "name": "broker-2",
-                        "status": "Complete"
-                    }
-                ],
-                "id": "e442fd2e-8f6b-4ddb-ac9f-78cd1da2c422",
-                "name": "Update to: d5c33781-a2b8-4426-86d7-3c6e23d89633",
-                "status": "Complete"
+              "id": "ff9e74a7-04fd-45b7-b44c-00467aaacd5b",
+              "status": "IN_PROGRESS",
+              "name": "broker-1",
+              "message": "Broker-1 is IN_PROGRESS"
+            },
+            {
+              "id": "a2ba3969-cb18-4a05-abd0-4186afe0f840",
+              "status": "PENDING",
+              "name": "broker-2",
+              "message": "Broker-2 is PENDING"
             }
-        ],
-        "status": "Complete"
+          ],
+          "status": "IN_PROGRESS"
+        }
+      ],
+      "errors": [],
+      "status": "IN_PROGRESS"
     }
     
     
@@ -612,133 +608,51 @@ Displays all Phases and Blocks in the service Plan. If a rollout is currently in
     GET /service/kafka/v1/plan HTTP/1.1
     
     {
-        "errors": [],
-        "phases": [
+      "phases": [
+        {
+          "id": "1915bcad-1235-400f-8406-4ac7555a7d34",
+          "name": "Reconciliation",
+          "steps": [
             {
-                "blocks": [
-                    {
-                        "hasDecisionPoint": false,
-                        "id": "019eaab4-4082-4e38-ab01-a5d2a825cf8d",
-                        "message": "Reconciliation complete",
-                        "name": "Reconciliation",
-                        "status": "Complete"
-                    }
-                ],
-                "id": "a58d1e15-15b8-47a3-84d7-ae36b13a5ba8",
-                "name": "Reconciliation",
-                "status": "Complete"
+              "id": "9854a67d-7803-46d0-b278-402785fe3199",
+              "status": "COMPLETE",
+              "name": "Reconciliation",
+              "message": "Reconciliation complete"
+            }
+          ],
+          "status": "COMPLETE"
+        },
+        {
+          "id": "3e72c258-1ead-465f-871e-2a305d29124c",
+          "name": "Update to: 329ef254-7331-48dc-a476-8a0e45752871",
+          "steps": [
+            {
+              "id": "ebf4cb02-1011-452a-897a-8c4083188bb2",
+              "status": "COMPLETE",
+              "name": "broker-0",
+              "message": "Broker-0 is COMPLETE"
             },
             {
-                "blocks": [
-                    {
-                        "hasDecisionPoint": false,
-                        "id": "8a727290-062a-44bf-87ba-3ebfe005aa18",
-                        "message": "Broker-0 is Complete",
-                        "name": "broker-0",
-                        "status": "Complete"
-                    },
-                    {
-                        "hasDecisionPoint": false,
-                        "id": "5d2aa9d9-5eda-4a13-aea1-9d98e4cf7ea7",
-                        "message": "Broker-1 is Complete",
-                        "name": "broker-1",
-                        "status": "Complete"
-                    },
-                    {
-                        "hasDecisionPoint": false,
-                        "id": "7f6762b6-7a51-4df2-bb4d-b82b75623938",
-                        "message": "Broker-2 is Complete",
-                        "name": "broker-2",
-                        "status": "Complete"
-                    }
-                ],
-                "id": "e442fd2e-8f6b-4ddb-ac9f-78cd1da2c422",
-                "name": "Update to: d5c33781-a2b8-4426-86d7-3c6e23d89633",
-                "status": "Complete"
+              "id": "ff9e74a7-04fd-45b7-b44c-00467aaacd5b",
+              "status": "COMPLETE",
+              "name": "broker-1",
+              "message": "Broker-1 is COMPLETE"
+            },
+            {
+              "id": "a2ba3969-cb18-4a05-abd0-4186afe0f840",
+              "status": "COMPLETE",
+              "name": "broker-2",
+              "message": "Broker-2 is COMPLETE"
             }
-        ],
-        "status": "Complete"
-    }
-    
-
-## View Active Plan Entries
-
-When a configuration change is in progresss, this command shows the Block/Phase/Stage which are currently active.
-
-    $ dcos kafka --name=kafka plan active
-    
-    {
-        "block": {
-            "has_decision_point": false,
-            "id": "498d30f5-248d-4e8d-a857-305d3d709c83",
-            "message": "Broker-0 is InProgress",
-            "name": "broker-0",
-            "status": "InProgress"
-        },
-        "phase": {
-            "block_count": 3,
-            "id": "0d3cb059-d94b-4d73-8c8a-586ba3f4c75f",
-            "name": "Update to: 5e56ff27-94c3-415d-aae8-a24f6ed5b42d",
-            "status": "InProgress"
-        },
-        "stage": {
-            "errors": [],
-            "phase_count": 2,
-            "status": "InProgress"
+          ],
+          "status": "COMPLETE"
         }
+      ],
+      "errors": [],
+      "status": "COMPLETE"
     }
-    
-    
-    $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan/status"
-    GET /service/kafka/v1/plan/status HTTP/1.1
-    
-    {
-        "block": {
-            "has_decision_point": false,
-            "id": "498d30f5-248d-4e8d-a857-305d3d709c83",
-            "message": "Broker-0 is InProgress",
-            "name": "broker-0",
-            "status": "InProgress"
-        },
-        "phase": {
-            "block_count": 3,
-            "id": "0d3cb059-d94b-4d73-8c8a-586ba3f4c75f",
-            "name": "Update to: 5e56ff27-94c3-415d-aae8-a24f6ed5b42d",
-            "status": "InProgress"
-        },
-        "stage": {
-            "errors": [],
-            "phase_count": 2,
-            "status": "InProgress"
-        }
-    }
-    
 
-If no upgrade is in progress, then the `block` and `phase` entries are omitted and the `stage` is shown as `Complete`.
-
-    $ dcos kafka --name=kafka plan active
     
-    {
-        "stage": {
-            "errors": [],
-            "phase_count": 2,
-            "status": "Complete"
-        }
-    }
-    
-    
-    $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan/status"
-    GET /service/kafka/v1/plan/status HTTP/1.1
-    
-    {
-        "stage": {
-            "errors": [],
-            "phase_count": 2,
-            "status": "Complete"
-        }
-    }
-    
-
 ## Upgrade Interaction
 
 These operations are only applicable when `PHASE_STRATEGY` is set to `STAGE`, they have no effect when it is set to `INSTALL`. See the Changing Configuration at Runtime part of the Configuring section for more information.
@@ -754,16 +668,5 @@ These operations are only applicable when `PHASE_STRATEGY` is set to `STAGE`, th
     $ dcos kafka --name=kafka plan interrupt
     $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan/interrupt"
     
-
-### Force Complete
-
-    $ dcos kafka --name=kafka plan force
-    $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan/forceComplete"
-    
-
-### Restart
-
-    $ dcos kafka --name=kafka plan restart
-    $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan/restart"
 
  [15]: https://cwiki.apache.org/confluence/display/KAFKA/System+Tools#SystemTools-GetOffsetShell

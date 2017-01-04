@@ -18,53 +18,51 @@ $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan"
 GET /service/kafka/v1/plan HTTP/1.1
 
 {
-    <b>"errors": [
-        "Validation error on field \"BROKER_COUNT\": Decreasing this value (from 3 to 2) is not supported."
-    ],</b>
     "phases": [
         {
-            "blocks": [
+             "id": "c26bec40-3290-4501-b3da-945d0abef55f",
+            "name": "Reconciliation",
+            "steps": [
                 {
-                    "has_decision_point": false,
                     "id": "e56d2e4a-e05b-42ad-b4a0-d74b68d206af",
                     "message": "Reconciliation complete",
                     "name": "Reconciliation",
-                    "status": "Complete"
-                }
-            ],
-            "id": "c26bec40-3290-4501-b3da-945d0abef55f",
-            "name": "Reconciliation",
-            "status": "Complete"
+                    "status": "COMPLETE"
+                },
+                "status": "COMPLETE"
+            ]
         },
         {
-            "blocks": [
-                {
-                    "has_decision_point": false,
-                    "id": "d4e72ee8-4608-423a-9566-1632ff0ab211",
-                    "message": "Broker-0 is Complete",
-                    "name": "broker-0",
-                    "status": "Complete"
-                },
-                {
-                    "has_decision_point": false,
-                    "id": "3ea30deb-9660-42f1-ad23-bd418d718999",
-                    "message": "Broker-1 is Complete",
-                    "name": "broker-1",
-                    "status": "Complete"
-                },
-                {
-                    "has_decision_point": false,
-                    "id": "4da21440-de73-4772-9c85-877f2677e62a",
-                    "message": "Broker-2 is Complete",
-                    "name": "broker-2",
-                    "status": "Complete"
-                }
-            ],
+            
             "id": "226a780e-132f-4fea-b584-7712b07cf357",
             "name": "Update to: 72cecf77-dbc5-4ae6-8f91-c88702b9a6a8",
-            "status": "Complete"
+            "steps": [
+                {
+                    "id": "d4e72ee8-4608-423a-9566-1632ff0ab211",
+                    "message": "Broker-0 is COMPLETE",
+                    "name": "broker-0",
+                    "status": "COMPLETE"
+                },
+                {
+                    "id": "3ea30deb-9660-42f1-ad23-bd418d718999",
+                    "message": "Broker-1 is COMPLETE",
+                    "name": "broker-1",
+                    "status": "COMPLETE"
+                },
+                {
+                    "id": "4da21440-de73-4772-9c85-877f2677e62a",
+                    "message": "Broker-2 is COMPLETE",
+                    "name": "broker-2",
+                    "status": "COMPLETE"
+                }
+            ],
+            "status": "COMPLETE"
         }
     ],
+    
+    <b>"errors": [
+        "Validation error on field \"BROKER_COUNT\": Decreasing this value (from 3 to 2) is not supported."
+    ],</b>
     <b>"status": "Error"</b>
 }
 </pre>

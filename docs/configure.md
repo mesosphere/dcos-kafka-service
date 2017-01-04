@@ -37,11 +37,11 @@ Configuration updates are rolled out through execution of Update Plans. You can 
 
 ## Configuration Update Plans
 
-In brief, "plans" are composed of "phases," which are in turn composed of "blocks." Two possible configuration update strategies specify how the blocks are executed. These strategies are specified by setting the `PHASE_STRATEGY` environment variable on the scheduler. By default, the strategy is `INSTALL`, which rolls changes out to one broker at a time with no pauses.
+In brief, "plans" are composed of "phases," which are in turn composed of "steps." Two possible configuration update strategies specify how the steps are executed. These strategies are specified by setting the `PHASE_STRATEGY` environment variable on the scheduler. By default, the strategy is `INSTALL`, which rolls changes out to one broker at a time with no pauses.
 
 The alternative is the `STAGE` strategy. This strategy injects two mandatory human decision points into the configuration update process. Initially, no configuration update will take place: the service waits for a human to confirm the update plan is correct. You may then decide to either continue the configuration update through a REST API call, or roll back the configuration update by replacing the original configuration through the DC/OS web interface in exactly the same way as a configuration update is specified above.
 
-After specifying that an update should continue, one block representing one broker will be updated and the configuration update will again pause. At this point, you have a second opportunity to roll back or continue. If you decide to continue a second time, the rest of the brokers will be updated one at a time until all the brokers are using the new configuration. You may interrupt an update at any point. After interrupting, you can choose to continue or roll back. Consult the "Configuration Update REST API" for these operations.
+After specifying that an update should continue, one step representing one broker will be updated and the configuration update will again pause. At this point, you have a second opportunity to roll back or continue. If you decide to continue a second time, the rest of the brokers will be updated one at a time until all the brokers are using the new configuration. You may interrupt an update at any point. After interrupting, you can choose to continue or roll back. Consult the "Configuration Update REST API" for these operations.
 
 ## Configuration Update REST API
 
@@ -53,52 +53,48 @@ Make the REST request below to view the current plan. See the REST API Authentic
     GET $DCOS_URI/service/kafka/v1/plan HTTP/1.1
 
     {
-        "errors": [],
-        "phases": [
+      "phases": [
+        {
+          "id": "1915bcad-1235-400f-8406-4ac7555a7d34",
+          "name": "Reconciliation",
+          "steps": [
             {
-                "blocks": [
-                    {
-                        "has_decision_point": false,
-                        "id": "7752c4fe-e998-4f30-bfd3-9748fc8c8354",
-                        "message": "Reconciliation complete",
-                        "name": "Reconciliation",
-                        "status": "Complete"
-                    }
-                ],
-                "id": "60e9359e-6c6a-4da2-a06f-e21ee2ea9c77",
-                "name": "Reconciliation",
-                "status": "Complete"
+              "id": "9854a67d-7803-46d0-b278-402785fe3199",
+              "status": "COMPLETE",
+              "name": "Reconciliation",
+              "message": "Reconciliation complete"
+            }
+          ],
+          "status": "COMPLETE"
+        },
+        {
+          "id": "3e72c258-1ead-465f-871e-2a305d29124c",
+          "name": "Update to: 329ef254-7331-48dc-a476-8a0e45752871",
+          "steps": [
+            {
+              "id": "ebf4cb02-1011-452a-897a-8c4083188bb2",
+              "status": "COMPLETE",
+              "name": "broker-0",
+              "message": "Broker-0 is COMPLETE"
             },
             {
-                "blocks": [
-                    {
-                        "has_decision_point": false,
-                        "id": "918c6019-09af-476d-b0f6-a26f59526bd7",
-                        "message": "Broker-0 is Complete",
-                        "name": "broker-0",
-                        "status": "Complete"
-                    },
-                    {
-                        "has_decision_point": false,
-                        "id": "883945bc-87e7-4156-bda9-fca249aef828",
-                        "message": "Broker-1 is Complete",
-                        "name": "broker-1",
-                        "status": "Complete"
-                    },
-                    {
-                        "has_decision_point": false,
-                        "id": "17e70549-6401-4128-80ee-a9a5f89e0ff7",
-                        "message": "Broker-2 is Complete",
-                        "name": "broker-2",
-                        "status": "Complete"
-                    }
-                ],
-                "id": "c633dd86-8011-466d-81e6-38560e55dc90",
-                "name": "Update to: 85c7946b-6456-463a-85aa-89b05f947a6e",
-                "status": "Complete"
+              "id": "ff9e74a7-04fd-45b7-b44c-00467aaacd5b",
+              "status": "COMPLETE",
+              "name": "broker-1",
+              "message": "Broker-1 is COMPLETE"
+            },
+            {
+              "id": "a2ba3969-cb18-4a05-abd0-4186afe0f840",
+              "status": "COMPLETE",
+              "name": "broker-2",
+              "message": "Broker-2 is COMPLETE"
             }
-        ],
-        "status": "Complete"
+          ],
+          "status": "COMPLETE"
+        }
+      ],
+      "errors": [],
+      "status": "COMPLETE"
     }
 
 
@@ -109,59 +105,55 @@ When using the `STAGE` deployment strategy, an update plan will initially pause 
     GET $DCOS_URI/service/kafka/v1/plan HTTP/1.1
 
     {
-        "errors": [],
-        "phases": [
+      "phases": [
+        {
+          "id": "9f8927de-d0df-4f72-bd0d-55e3f2c3ab21",
+          "name": "Reconciliation",
+          "steps": [
             {
-                "blocks": [
-                    {
-                        "has_decision_point": false,
-                        "id": "8139b860-2011-45fd-acda-738d8b915f30",
-                        "message": "Reconciliation complete",
-                        "name": "Reconciliation",
-                        "status": "Complete"
-                    }
-                ],
-                "id": "7137bceb-67d0-45ef-8fd8-00646967f762",
-                "name": "Reconciliation",
-                "status": "Complete"
+              "id": "2d137273-249b-455e-a65c-3c83228890b3",
+              "status": "COMPLETE",
+              "name": "Reconciliation",
+              "message": "Reconciliation complete"
+            }
+          ],
+          "status": "COMPLETE"
+        },
+        {
+          "id": "a7742963-f7e1-4640-8bd0-2fb28dc04045",
+          "name": "Update to: 6092e4ec-8ffb-49eb-807b-877a85ef8859",
+          "steps": [
+            {
+              "id": "b4453fb0-b4cc-4996-a05c-762673f75e6d",
+              "status": "PENDING",
+              "name": "broker-0",
+              "message": "Broker-0 is WAITING"
             },
             {
-                "blocks": [
-                    {
-                        "has_decision_point": true,
-                        "id": "926fb980-8942-48fb-8eb6-1b63fad4e7e3",
-                        "message": "Broker-0 is Pending",
-                        "name": "broker-0",
-                        "status": "Pending"
-                    },
-                    {
-                        "has_decision_point": true,
-                        "id": "60f6dade-bff8-42b5-b4ac-aa6aa6b705a4",
-                        "message": "Broker-1 is Pending",
-                        "name": "broker-1",
-                        "status": "Pending"
-                    },
-                    {
-                        "has_decision_point": false,
-                        "id": "c98b9e72-b12b-4b47-9193-776a2cb9ed53",
-                        "message": "Broker-2 is Pending",
-                        "name": "broker-2",
-                        "status": "Pending"
-                    }
-                ],
-                "id": "863ab024-ccb2-4fd8-b182-1ce18858b8e8",
-                "name": "Update to: 8902f778-eb2a-4347-94cd-18fcdb557063",
-                "status": "Waiting"
+              "id": "b8a8de9f-8758-4d0f-b785-0a38751a2c94",
+              "status": "PENDING",
+              "name": "broker-1",
+              "message": "Broker-1 is WAITIN"
+            },
+            {
+              "id": "49e85522-1bcf-4edb-9456-712e8a537dbc",
+              "status": "PENDING",
+              "name": "broker-2",
+              "message": "Broker-2 is PENDING"
             }
-        ],
-        "status": "Waiting"
+          ],
+          "status": "WAITING"
+        }
+      ],
+      "errors": [],
+      "status": "WAITING"
     }
 
 
 
 **Note:** After a configuration update, you may see an error from Mesos-DNS; this will go away 10 seconds after the update.
 
-Enter the `continue` command to execute the first block:
+Enter the `continue` command to execute the first step:
 
     $ curl -X PUT -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan?cmd=continue"
     PUT $DCOS_URI/service/kafka/v1/plan?cmd=continue HTTP/1.1
@@ -177,53 +169,49 @@ After you execute the continue operation, the plan will look like this:
     GET $DCOS_URI/service/kafka/v1/plan HTTP/1.1
 
     {
-        "errors": [],
-        "phases": [
+      "phases": [
+        {
+          "id": "9f8927de-d0df-4f72-bd0d-55e3f2c3ab21",
+          "name": "Reconciliation",
+          "steps": [
             {
-                "blocks": [
-                    {
-                        "has_decision_point": false,
-                        "id": "8139b860-2011-45fd-acda-738d8b915f30",
-                        "message": "Reconciliation complete",
-                        "name": "Reconciliation",
-                        "status": "Complete"
-                    }
-                ],
-                "id": "7137bceb-67d0-45ef-8fd8-00646967f762",
-                "name": "Reconciliation",
-                "status": "Complete"
+              "id": "2d137273-249b-455e-a65c-3c83228890b3",
+              "status": "COMPLETE",
+              "name": "Reconciliation",
+              "message": "Reconciliation complete"
+            }
+          ],
+          "status": "COMPLETE"
+        },
+        {
+          "id": "a7742963-f7e1-4640-8bd0-2fb28dc04045",
+          "name": "Update to: 6092e4ec-8ffb-49eb-807b-877a85ef8859",
+          "steps": [
+            {
+              "id": "b4453fb0-b4cc-4996-a05c-762673f75e6d",
+              "status": "IN_PROGRESS",
+              "name": "broker-0",
+              "message": "Broker-0 is IN_PROGRESS"
             },
             {
-                "blocks": [
-                    {
-                        "has_decision_point": false,
-                        "id": "926fb980-8942-48fb-8eb6-1b63fad4e7e3",
-                        "message": "Broker-0 is InProgress",
-                        "name": "broker-0",
-                        "status": "InProgress"
-                    },
-                    {
-                        "has_decision_point": true,
-                        "id": "60f6dade-bff8-42b5-b4ac-aa6aa6b705a4",
-                        "message": "Broker-1 is Pending",
-                        "name": "broker-1",
-                        "status": "Pending"
-                    },
-                    {
-                        "has_decision_point": false,
-                        "id": "c98b9e72-b12b-4b47-9193-776a2cb9ed53",
-                        "message": "Broker-2 is Pending",
-                        "name": "broker-2",
-                        "status": "Pending"
-                    }
-                ],
-                "id": "863ab024-ccb2-4fd8-b182-1ce18858b8e8",
-                "name": "Update to: 8902f778-eb2a-4347-94cd-18fcdb557063",
-                "status": "InProgress"
+              "id": "b8a8de9f-8758-4d0f-b785-0a38751a2c94",
+              "status": "WAITING",
+              "name": "broker-1",
+              "message": "Broker-1 is WAITING"
+            },
+            {
+              "id": "49e85522-1bcf-4edb-9456-712e8a537dbc",
+              "status": "PENDING",
+              "name": "broker-2",
+              "message": "Broker-2 is PENDING"
             }
-        ],
-        "status": "InProgress"
-    }
+          ],
+          "status": "IN_PROGRESS"
+        }
+      ],
+      "errors": [],
+      "status": "IN_PROGRESS"
+    }   
 
 
 
@@ -236,7 +224,7 @@ If you enter `continue` a second time, the rest of the plan will be executed wit
         "Result": "Received cmd: interrupt"
     }
 
-**Note:** The interrupt command can’t stop a block that is `InProgress`, but it will stop the change on the subsequent blocks.
+**Note:** The interrupt command can’t stop a step that is `InProgress`, but it will stop the change on the subsequent steps.
 
 # Configuration Options
 

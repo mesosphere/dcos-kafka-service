@@ -34,7 +34,12 @@ import org.apache.mesos.dcos.DcosCluster;
 import org.apache.mesos.offer.*;
 import org.apache.mesos.reconciliation.DefaultReconciler;
 import org.apache.mesos.reconciliation.Reconciler;
-import org.apache.mesos.scheduler.*;
+import org.apache.mesos.scheduler.Observer;
+import org.apache.mesos.scheduler.TaskKiller;
+import org.apache.mesos.scheduler.SchedulerDriverFactory;
+import org.apache.mesos.scheduler.SchedulerErrorCode;
+import org.apache.mesos.scheduler.DefaultTaskKiller;
+import org.apache.mesos.scheduler.Observable;
 import org.apache.mesos.scheduler.api.TaskResource;
 import org.apache.mesos.scheduler.plan.*;
 import org.apache.mesos.scheduler.plan.api.PlansResource;
@@ -56,7 +61,7 @@ import java.util.concurrent.Executors;
 /**
  * Kafka Framework Scheduler.
  */
-public class KafkaScheduler implements Scheduler, Runnable {
+public class KafkaScheduler implements Scheduler, Observer, Runnable {
     private static final Log log = LogFactory.getLog(KafkaScheduler.class);
 
     private static final int TWO_WEEK_SEC = 2 * 7 * 24 * 60 * 60;
@@ -120,18 +125,27 @@ public class KafkaScheduler implements Scheduler, Runnable {
 
         List<Phase> phases = Arrays.asList(
                 ReconciliationPhase.create(reconciler),
-                KafkaUpdatePhase.create(
+                new KafkaUpdatePhase(
                         configState.getTargetName().toString(),
                         envConfig,
                         frameworkState,
-                        offerRequirementProvider));
+                        offerRequirementProvider,
+                        getPhaseStrategyFactory(envConfig)));
+
+        //TODO(Mehmet): CanaryStrategy does not work!! There is no way to send continue/interrupt to a Phase
+
         // If config validation had errors, expose them via the Stage.
-        this.installPlan = stageErrors.isEmpty()
-                ? new DefaultPlan("deploy", phases, getPhaseStrategyFactory(envConfig))
-                : new DefaultPlan("deploy", phases, getPhaseStrategyFactory(envConfig),stageErrors);
+	this.installPlan = new DefaultPlan("deploy", phases, new SerialStrategy<>(), stageErrors);
+
+        //TODO(Mehmet): pull #409 in dcos-commons. 0.8.1.1 can not give CanaryStrategy to a Plan
+
         taskFailureListener = new DefaultTaskFailureListener(frameworkState.getStateStore());
         planManager = createDeployPlanManager(installPlan);
         repairPlanManager = createRecoveryPlanManager(offerRequirementProvider);
+
+        planManager.subscribe(this);
+        //TODO(Mehmet): any repairPlanManager.update() will call notifySubscriber(), even if there is no repair plan
+        repairPlanManager.subscribe(this);
     }
 
     private void initialize(SchedulerDriver driver) {
@@ -262,6 +276,8 @@ public class KafkaScheduler implements Scheduler, Runnable {
     }
 
     private boolean hasOperations() {
+        log.debug("deploy = isComplete? " + planManager.getPlan().isComplete());
+        log.debug("recovery = isComplete? " + repairPlanManager.getPlan().isComplete());
         boolean hasOperations = !(planManager.getPlan().isComplete() &&
                 repairPlanManager.getPlan().isComplete());
         log.debug(hasOperations ?
@@ -315,7 +331,7 @@ public class KafkaScheduler implements Scheduler, Runnable {
         repairPlanManager.update(status);
         reconciler.update(status);
 
-        if (TaskUtils.needsRecovery(status) || hasOperations()) {
+        if (TaskUtils.needsRecovery(status)) {
             reviveOffers(driver);
         }
     }
@@ -351,7 +367,9 @@ public class KafkaScheduler implements Scheduler, Runnable {
 
             if (!hasOperations()) {
                 suppressOffers(driver);
+                this.driver = driver;
             }
+
         } catch (Exception ex) {
             log.error("Unexpected exception encountered when processing offers", ex);
         }
@@ -396,6 +414,14 @@ public class KafkaScheduler implements Scheduler, Runnable {
         FrameworkInfo fwkInfo = getFrameworkInfo();
         log.info("Registering framework with: " + fwkInfo);
         registerFramework(this, fwkInfo, zkPath);
+    }
+
+    @Override
+    public void update(Observable observable) {
+        // before suppress, we updated this.driver
+        if (hasOperations() && frameworkState.isSuppressed()) {
+            reviveOffers(driver);
+        }
     }
 
     private FrameworkInfo getFrameworkInfo() {

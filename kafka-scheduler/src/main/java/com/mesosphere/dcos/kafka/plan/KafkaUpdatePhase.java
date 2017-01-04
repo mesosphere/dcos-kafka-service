@@ -5,26 +5,27 @@ import com.mesosphere.dcos.kafka.offer.KafkaOfferRequirementProvider;
 import com.mesosphere.dcos.kafka.state.FrameworkState;
 import org.apache.mesos.scheduler.plan.DefaultPhase;
 import org.apache.mesos.scheduler.plan.Step;
-import org.apache.mesos.scheduler.plan.strategy.SerialStrategy;
+import org.apache.mesos.scheduler.plan.strategy.Strategy;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Collections;
 
 public class KafkaUpdatePhase extends DefaultPhase {
 
-  public static KafkaUpdatePhase create(
+  public KafkaUpdatePhase(
     String targetConfigName,
     KafkaSchedulerConfiguration targetConfig,
     FrameworkState frameworkState,
-    KafkaOfferRequirementProvider offerReqProvider) {
-      return new KafkaUpdatePhase(targetConfigName,
+    KafkaOfferRequirementProvider offerReqProvider,
+    Strategy strategy) {
+    super(targetConfigName,
               createSteps(targetConfigName,
                       targetConfig.getServiceConfiguration().getCount(),
-                      frameworkState, offerReqProvider)
-      );
-  }
-  public KafkaUpdatePhase(String name, List<Step> steps) {
-    super(name, steps, new SerialStrategy<>(), new ArrayList<>());
+                      frameworkState, offerReqProvider),
+              strategy,
+              Collections.emptyList() 
+              );
   }
 
   @Override

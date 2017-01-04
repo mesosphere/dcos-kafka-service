@@ -70,12 +70,13 @@ public class KafkaStageTest {
     private Plan getTestPlan(Strategy strategy) {
         List<Phase> phases = Arrays.asList(
                 ReconciliationPhase.create(reconciler),
-                KafkaUpdatePhase.create(
+                new KafkaUpdatePhase(
                         "target-config-name",
                         schedulerConfiguration,
                         frameworkState,
-                        offerRequirementProvider));
+                        offerRequirementProvider,
+                        strategy));
 
-        return new DefaultPlan("test-plan", phases, strategy);
+        return new DefaultPlan("test-plan", phases, new SerialStrategy<>());
     }
 }

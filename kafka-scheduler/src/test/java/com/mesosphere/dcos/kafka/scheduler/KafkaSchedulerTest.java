@@ -154,7 +154,6 @@ public class KafkaSchedulerTest {
         verify(driver, times(1)).suppressOffers();
     }
 
-
     @Test
     public void testStatusUpdateRevive() throws Exception {
         kafkaScheduler.statusUpdate(driver, getTestTaskStatus());

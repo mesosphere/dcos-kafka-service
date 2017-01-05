@@ -29,7 +29,7 @@ func main() {
 	cli.HandleCommonFlags(app, modName, fmt.Sprintf("%s DC/OS CLI Module", strings.Title(modName)))
 	cli.HandleConfigSection(app)
 	cli.HandleConnectionSection(app, []string{"address", "dns"})
-	cli.HandlePlanSection(app)
+	handleKafkaPlanSection(app)
 	cli.HandleStateSection(app)
   
 	// Keep this comment as a placeholder reminder
@@ -46,6 +46,73 @@ func main() {
 	// Omit modname:
 	kingpin.MustParse(app.Parse(os.Args[2:]))
 }
+
+type PlanHandler struct {
+	PhaseId string
+	StepId  string
+}
+
+func (cmd *PlanHandler) RunShow(c *kingpin.ParseContext) error {
+	// custom behavior: ignore 503 error
+	response := cli.HTTPQuery(cli.CreateHTTPRequest("GET", "v1/plan"))
+	if response.StatusCode != 503 {
+		cli.CheckHTTPResponse(response)
+	}
+	cli.PrintJSON(response)
+	return nil
+}
+
+func (cmd *PlanHandler) RunContinue(c *kingpin.ParseContext) error {
+	response := cli.HTTPQuery(cli.CreateHTTPRequest("POST", "v1/continue"))
+	if response.StatusCode != 503 {
+		cli.CheckHTTPResponse(response)
+	}
+	cli.PrintJSON(response)
+	return nil
+}
+func (cmd *PlanHandler) RunInterrupt(c *kingpin.ParseContext) error {
+	response := cli.HTTPQuery(cli.CreateHTTPRequest("POST", "v1/interrupt"))
+	if response.StatusCode != 503 {
+		cli.CheckHTTPResponse(response)
+	}
+	cli.PrintJSON(response)
+	return nil
+}
+
+func (cmd *PlanHandler) RunForce(c *kingpin.ParseContext) error {
+	query := url.Values{}
+	query.Set("plan","deploy")
+	query.Set("phase", cmd.PhaseId)
+	query.Set("step", cmd.StepId)
+	cli.PrintJSON(cli.HTTPPostQuery("v1/plans/deploy/forceComplete", query.Encode()))
+	return nil
+}
+func (cmd *PlanHandler) RunRestart(c *kingpin.ParseContext) error {
+	query := url.Values{}
+	query.Set("plan","deploy")
+	query.Set("phase", cmd.PhaseId)
+	query.Set("step", cmd.StepId)
+	cli.PrintJSON(cli.HTTPPostQuery("v1/plans/deploy/restart", query.Encode()))
+	return nil
+}
+
+func handleKafkaPlanSection(app *kingpin.Application) {
+	// plan <active, continue, force, interrupt, restart, show>
+	cmd := &PlanHandler{}
+	
+	app.Command("plan", "Display full plan").Action(cmd.RunShow)
+	app.Command("continue", "Continue a currently Waiting operation").Action(cmd.RunContinue)
+	app.Command("interrupt", "Interrupt a currently Pending operation").Action(cmd.RunInterrupt)
+
+	force := app.Command("force", "Force the current operation to complete").Action(cmd.RunForce)
+	force.Arg("phase", "UUID of the Phase containing the provided Step").Required().StringVar(&cmd.PhaseId)
+	force.Arg("step", "UUID of Step to be restarted").Required().StringVar(&cmd.StepId)
+
+	restart := app.Command("restart", "Restart the current operation").Action(cmd.RunRestart)
+	restart.Arg("phase", "UUID of the Phase containing the provided Step").Required().StringVar(&cmd.PhaseId)
+	restart.Arg("step", "UUID of Step to be restarted").Required().StringVar(&cmd.StepId)
+}
+
 
 type BrokerHandler struct {
 	broker string

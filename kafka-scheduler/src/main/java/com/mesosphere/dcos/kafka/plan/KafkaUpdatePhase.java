@@ -8,8 +8,8 @@ import org.apache.mesos.scheduler.plan.Step;
 import org.apache.mesos.scheduler.plan.strategy.Strategy;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Collections;
+import java.util.List;
 
 public class KafkaUpdatePhase extends DefaultPhase {
 
@@ -24,13 +24,12 @@ public class KafkaUpdatePhase extends DefaultPhase {
                       targetConfig.getServiceConfiguration().getCount(),
                       frameworkState, offerReqProvider),
               strategy,
-              Collections.emptyList() 
-              );
+              Collections.emptyList());
   }
 
   @Override
   public String getName() {
-    return "Update to: " + super.getName();
+    return "Deployment";
   }
 
   @Override

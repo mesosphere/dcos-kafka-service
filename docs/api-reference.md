@@ -555,7 +555,7 @@ These options relate to viewing and controlling rollouts and configuration updat
 
 Displays all Phases and Steps in the service Plan. If a rollout is currently in progress, this returns a 503 HTTP code with response content otherwise unchanged.
 
-    $ dcos kafka --name=kafka plan show
+    $ dcos kafka --name=kafka plan 
     GET /service/kafka/v1/plan HTTP/1.1
     
     {
@@ -659,13 +659,13 @@ These operations are only applicable when `PHASE_STRATEGY` is set to `STAGE`, th
 
 ### Continue
 
-    $ dcos kafka --name=kafka plan continue
+    $ dcos kafka --name=kafka continue
     $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan/continue"
     
 
 ### Interrupt
 
-    $ dcos kafka --name=kafka plan interrupt
+    $ dcos kafka --name=kafka interrupt
     $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan/interrupt"
     
 

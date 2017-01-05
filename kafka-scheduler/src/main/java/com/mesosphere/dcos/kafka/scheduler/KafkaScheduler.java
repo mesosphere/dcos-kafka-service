@@ -19,6 +19,7 @@ import com.mesosphere.dcos.kafka.state.ClusterState;
 import com.mesosphere.dcos.kafka.state.FrameworkState;
 import com.mesosphere.dcos.kafka.web.BrokerController;
 import com.mesosphere.dcos.kafka.web.ConnectionController;
+import com.mesosphere.dcos.kafka.web.InterruptProceed;
 import com.mesosphere.dcos.kafka.web.TopicController;
 import io.dropwizard.setup.Environment;
 import org.apache.commons.logging.Log;
@@ -86,7 +87,6 @@ public class KafkaScheduler implements Scheduler, Observer, Runnable {
     private PlanManager repairPlanManager;
     private PlanScheduler planScheduler;
     private SchedulerDriver driver;
-
     private boolean isRegistered = false;
 
     public KafkaScheduler(KafkaSchedulerConfiguration configuration, Environment environment)
@@ -120,7 +120,7 @@ public class KafkaScheduler implements Scheduler, Observer, Runnable {
         offerAccepter =
                 new OfferAccepter(Arrays.asList(new PersistentOperationRecorder(frameworkState)));
 
-        this.offerRequirementProvider =
+        offerRequirementProvider =
                 new PersistentOfferRequirementProvider(frameworkState, configState, clusterState);
 
         List<Phase> phases = Arrays.asList(
@@ -132,19 +132,13 @@ public class KafkaScheduler implements Scheduler, Observer, Runnable {
                         offerRequirementProvider,
                         getPhaseStrategyFactory(envConfig)));
 
-        //TODO(Mehmet): CanaryStrategy does not work!! There is no way to send continue/interrupt to a Phase
-
         // If config validation had errors, expose them via the Stage.
-	this.installPlan = new DefaultPlan("deploy", phases, new SerialStrategy<>(), stageErrors);
-
-        //TODO(Mehmet): pull #409 in dcos-commons. 0.8.1.1 can not give CanaryStrategy to a Plan
-
+        installPlan =  new DefaultPlan("deploy", phases, new SerialStrategy<>(), stageErrors);
         taskFailureListener = new DefaultTaskFailureListener(frameworkState.getStateStore());
         planManager = createDeployPlanManager(installPlan);
         repairPlanManager = createRecoveryPlanManager(offerRequirementProvider);
 
         planManager.subscribe(this);
-        //TODO(Mehmet): any repairPlanManager.update() will call notifySubscriber(), even if there is no repair plan
         repairPlanManager.subscribe(this);
     }
 
@@ -158,8 +152,6 @@ public class KafkaScheduler implements Scheduler, Observer, Runnable {
     }
 
     private void startApiServer() {
-        // TODO(Mehmet): use DefaultPlanCoordinator in the next commit, not now!!!
-
         // Kafka-specific APIs:
         Collection<Object> resources = new ArrayList<>();
         resources.add(new ConnectionController(
@@ -180,6 +172,7 @@ public class KafkaScheduler implements Scheduler, Observer, Runnable {
                 getFrameworkState().getStateStore(),
                 taskKiller,
                 kafkaSchedulerConfiguration.getServiceConfiguration().getName()));
+        resources.add(new InterruptProceed(getPlanManager()));
         resources.add(new PlansResource(ImmutableMap.of(
                 "deploy", getPlanManager(),
                 "recovery", getRepairManager())));
@@ -331,7 +324,7 @@ public class KafkaScheduler implements Scheduler, Observer, Runnable {
         repairPlanManager.update(status);
         reconciler.update(status);
 
-        if (TaskUtils.needsRecovery(status)) {
+        if (TaskUtils.needsRecovery(status) && frameworkState.isSuppressed()){
             reviveOffers(driver);
         }
     }
@@ -339,7 +332,6 @@ public class KafkaScheduler implements Scheduler, Observer, Runnable {
     @Override
     public void resourceOffers(SchedulerDriver driver, List<Offer> offers) {
         try {
-            //TODO(Mehmet): use DefaultPlanCoordinator next commit, not now!!!
             logOffers(offers);
             reconciler.reconcile(driver);
 

@@ -291,10 +291,9 @@ def test_config():
 
 @pytest.mark.sanity
 def test_plan():
-    # assert get_kafka_command('plan active')
-    assert get_kafka_command('plan show')
-    assert get_kafka_command('plan continue')
-    assert get_kafka_command('plan interrupt')
+    assert get_kafka_command('plan')
+    assert get_kafka_command('continue')
+    assert get_kafka_command('interrupt')
 
 
 @pytest.mark.sanity

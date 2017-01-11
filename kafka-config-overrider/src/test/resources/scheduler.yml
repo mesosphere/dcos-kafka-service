@@ -3,6 +3,7 @@ scheduler_configuration:
     name: ${FRAMEWORK_NAME}
     user: ${USER}
     placement_strategy: ${PLACEMENT_STRATEGY:-NODE}
+    placement_constraint: ${PLACEMENT_CONSTRAINT:-}
     phase_strategy: ${PHASE_STRATEGY:-INSTALL}
     role: "${FRAMEWORK_NAME}-role"
     principal: "${FRAMEWORK_NAME}-principal"

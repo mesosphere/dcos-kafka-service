@@ -25,6 +25,11 @@
             "type": "string",
             "default": ""
           },
+          "placement_constraint":{
+            "description":"Marathon-style placement constraint for Broker nodes. Example: rack_id:LIKE:rack-foo-.*,rack_id:MAX_PER:2",
+            "type":"string",
+            "default":""
+          },
           "placement_strategy":{
             "description":"Broker placement strategy. See documentation. [ANY, NODE]",
             "type":"string",

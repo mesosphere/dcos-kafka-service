@@ -13,6 +13,7 @@ from tests.test_utils import (
     request,
     spin,
     uninstall,
+    get_plan,
 )
 
 
@@ -31,11 +32,11 @@ def teardown_module(module):
 @pytest.mark.sanity
 @pytest.mark.upgrade
 def test_upgrade_downgrade():
-    # Ensure both Universe and the test repo exist.
+    # Ensure both Universe and the test repo exist. @mgummelt
     if len(shakedown.get_package_repos()['repositories']) != 2:
-          print('No kafka test repo found.  Skipping test_upgrade_downgrade')
-          return
-          
+       print('No kafka test repo found.  Skipping test_upgrade_downgrade')
+       return
+
     test_repo_name, test_repo_url = get_test_repo_info()
     test_version = get_pkg_version()
     print('Found test version: {}'.format(test_version))
@@ -46,6 +47,10 @@ def test_upgrade_downgrade():
     print('Installing master version')
     install({'package_version': master_version})
     check_health()
+
+    plan=get_plan(lambda p: p['status'] == 'COMPLETE')
+    assert plan['status'] == 'COMPLETE'
+
     topics_are_available()
     write_messages()
 
@@ -110,7 +115,6 @@ def topics_are_available():
     spin(fn, success_predicate)
 
 def write_messages():
-    
     # kafka may not be ready to accept all msgs, try till all are done
     def fn(num):
         try:
@@ -126,12 +130,12 @@ def write_messages():
 
     def success_predicate(left_offset):
         return (left_offset <= 0, 'producer_test continues....')
-    
+
     get_kafka_command(
-        'topic producer_test {} {}'.format(TOPIC_NAME, NUM_TEST_MSGS))
+         'topic producer_test {} {}'.format(TOPIC_NAME, NUM_TEST_MSGS))
     spin(fn, success_predicate, NUM_TEST_MSGS)
     print('producer_test is successful {} msg available'.format(NUM_TEST_MSGS))
-    
+
     # double check
     check_offsets()
 

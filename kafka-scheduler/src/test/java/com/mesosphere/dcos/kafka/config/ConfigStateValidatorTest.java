@@ -58,6 +58,7 @@ public class ConfigStateValidatorTest {
                 "bad-framework-name",
                 KafkaTestUtils.testUser,
                 KafkaTestUtils.testPlacementStrategy,
+                KafkaTestUtils.testPlacementConstraint,
                 KafkaTestUtils.testPhaseStrategy,
                 KafkaTestUtils.testRole,
                 KafkaTestUtils.testPrincipal);

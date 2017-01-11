@@ -178,10 +178,13 @@ def spin(fn, success_predicate, *args, **kwargs):
     return result
 
 
+# to be consistent with other upgrade tests i.e. cassandra
 def install(additional_options = {}):
     merged_options = _nested_dict_merge(DEFAULT_OPTIONS_DICT, additional_options)
     print('Installing {} with options: {}'.format(PACKAGE_NAME, merged_options))
-    shakedown.install_package_and_wait(PACKAGE_NAME, options_json=merged_options)
+    shakedown.install_package_and_wait(
+        PACKAGE_NAME,
+        options_json=merged_options)
 
 
 def uninstall():
@@ -201,6 +204,26 @@ def uninstall():
             )[0].strip()
         )
     )
+
+
+def allow_incomplete_plan(status_code):
+    return 200 <= status_code < 300 or status_code == 503
+
+def get_plan(predicate=lambda r: True):
+    def fn():
+        return dcos.http.get(kafka_api_url('plan'), is_success=allow_incomplete_plan)
+
+    def success_predicate(result):
+        message = 'Request to /plan failed'
+
+        try:
+            body = result.json()
+        except:
+            return False, message
+
+        return predicate(body), message
+
+    return spin(fn, success_predicate).json()
 
 
 def _nested_dict_merge(a, b, path=None):

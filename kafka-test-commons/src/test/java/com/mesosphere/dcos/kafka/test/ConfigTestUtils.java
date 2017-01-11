@@ -10,6 +10,7 @@ public class ConfigTestUtils {
                 KafkaTestUtils.testFrameworkName,
                 KafkaTestUtils.testUser,
                 KafkaTestUtils.testPlacementStrategy,
+                KafkaTestUtils.testPlacementConstraint,
                 KafkaTestUtils.testPhaseStrategy,
                 KafkaTestUtils.testRole,
                 KafkaTestUtils.testPrincipal);

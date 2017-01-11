@@ -19,6 +19,7 @@ public class KafkaTestUtils {
     public static final String testFrameworkName = "test-framework-name";
     public static final String testUser = "test-user";
     public static final String testPlacementStrategy = "test-placement-strategy";
+    public static final String testPlacementConstraint = "test-placement-constraint";
     public static final String testPhaseStrategy = "test-phase-strategy";
     public static final String testDiskType = "test-disk-type";
     public static final String testKafkaUri = "test-kafka-uri";

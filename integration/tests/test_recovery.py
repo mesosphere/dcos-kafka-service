@@ -17,6 +17,7 @@ from tests.test_utils import (
     request,
     spin,
     uninstall,
+    get_plan
 )
 
 
@@ -36,24 +37,6 @@ def increment_broker_port_config():
         marathon_api_url('apps/kafka'),
         json=config,
     )
-
-
-def get_and_verify_plan(predicate=lambda r: True):
-    def fn():
-        return dcos.http.get(kafka_api_url('plan'))
-
-    def success_predicate(result):
-        message = 'Request to /plan failed'
-
-        try:
-            body = result.json()
-        except:
-            return False, message
-
-        return predicate(body), message
-
-    return spin(fn, success_predicate).json()
-
 
 def kill_task_with_pattern(pattern, host=None):
     command = (
@@ -90,10 +73,10 @@ def wait_for_deployment_lock_release():
 
 def run_planned_operation(operation, failure=lambda: None):
     wait_for_deployment_lock_release()
-    plan = get_and_verify_plan()
+    plan = get_plan()
 
     operation()
-    next_plan = get_and_verify_plan(
+    next_plan = get_plan(
         lambda p: (
             plan['phases'][1]['id'] != p['phases'][1]['id'] or
             len(plan['phases']) < len(p['phases']) or
@@ -102,7 +85,7 @@ def run_planned_operation(operation, failure=lambda: None):
     )
 
     failure()
-    completed_plan = get_and_verify_plan(lambda p: p['status'] == 'COMPLETE')
+    completed_plan = get_plan(lambda p: p['status'] == 'COMPLETE')
 
 
 def setup_module(module):

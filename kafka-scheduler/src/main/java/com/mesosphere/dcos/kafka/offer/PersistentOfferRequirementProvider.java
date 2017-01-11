@@ -33,7 +33,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     private final KafkaConfigState configState;
     private final FrameworkState schedulerState;
     private final ClusterState clusterState;
-    private final PlacementStrategyManager placementStrategyManager;
+    private final PlacementRuleManager placementRuleManager;
 
     public PersistentOfferRequirementProvider(
             FrameworkState schedulerState,
@@ -42,7 +42,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
         this.configState = configState;
         this.schedulerState = schedulerState;
         this.clusterState = clusterState;
-        this.placementStrategyManager = new PlacementStrategyManager(schedulerState);
+        this.placementRuleManager = new PlacementRuleManager(schedulerState);
     }
 
     @Override
@@ -80,7 +80,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
                 BROKER_TASK_TYPE,
                 Arrays.asList(taskInfo),
                 Optional.of(executorInfo),
-                placementStrategyManager.getPlacementStrategy(config, taskInfo));
+                placementRuleManager.getPlacementRule(config, taskInfo));
     }
 
     @Override

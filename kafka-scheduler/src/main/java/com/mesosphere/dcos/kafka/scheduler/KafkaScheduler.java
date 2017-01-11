@@ -1,5 +1,6 @@
 package com.mesosphere.dcos.kafka.scheduler;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.TextFormat;
 import com.mesosphere.dcos.kafka.cmd.CmdExecutor;
@@ -24,6 +25,7 @@ import com.mesosphere.dcos.kafka.web.TopicController;
 import io.dropwizard.setup.Environment;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.mesos.Protos;
 import org.apache.mesos.Protos.*;
 import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
@@ -85,6 +87,7 @@ public class KafkaScheduler implements Scheduler, Observer, Runnable {
     private final KafkaSchedulerConfiguration kafkaSchedulerConfiguration;
     private PlanManager planManager;
     private PlanManager repairPlanManager;
+    private PlanCoordinator planCoordinator;
     private PlanScheduler planScheduler;
     private SchedulerDriver driver;
     private boolean isRegistered = false;
@@ -148,6 +151,8 @@ public class KafkaScheduler implements Scheduler, Observer, Runnable {
                 offerAccepter,
                 new OfferEvaluator(frameworkState.getStateStore()),
                 taskKiller);
+        planCoordinator = new DefaultPlanCoordinator(ImmutableList.of(planManager, repairPlanManager), planScheduler);
+
         startApiServer();
     }
 
@@ -320,7 +325,9 @@ public class KafkaScheduler implements Scheduler, Observer, Runnable {
             log.warn("Failed to update TaskStatus received from Mesos. "
                     + "This may be expected if Mesos sent stale status information: " + status, e);
         }
-        planManager.update(status);
+        if (!planManager.getPlan().isWaiting()) {
+            planManager.update(status);
+        }
         repairPlanManager.update(status);
         reconciler.update(status);
 
@@ -341,17 +348,19 @@ public class KafkaScheduler implements Scheduler, Observer, Runnable {
                 log.info("Accepting no offers: Reconciler is still in progress");
             } else {
 
-                Collection<? extends Step> stepCollection = planManager.getCandidates(Collections.emptyList());
-                acceptedOffers = new ArrayList<>(planScheduler.resourceOffers(driver, offers, stepCollection));
-                List<Offer> unacceptedOffers = filterAcceptedOffers(offers, acceptedOffers);
+                acceptedOffers.addAll(planCoordinator.processOffers(driver, offers));
 
-                Collection<? extends Step> recoveryStepCollection = repairPlanManager.getCandidates(planManager.getDirtyAssets());
-                acceptedOffers.addAll(planScheduler.resourceOffers(driver, unacceptedOffers, recoveryStepCollection));
+                List<Protos.Offer> unusedOffers = OfferUtils.filterOutAcceptedOffers(offers, acceptedOffers);
+                offers.clear();
+                offers.addAll(unusedOffers);
 
                 ResourceCleanerScheduler cleanerScheduler = getCleanerScheduler();
                 if (cleanerScheduler != null) {
                     acceptedOffers.addAll(getCleanerScheduler().resourceOffers(driver, offers));
                 }
+                unusedOffers = OfferUtils.filterOutAcceptedOffers(offers, acceptedOffers);
+                offers.clear();
+                offers.addAll(unusedOffers);
             }
             log.info(String.format("Accepted %d of %d offers: %s",
                     acceptedOffers.size(), offers.size(), acceptedOffers));
@@ -375,26 +384,6 @@ public class KafkaScheduler implements Scheduler, Observer, Runnable {
             log.error("Failed to construct ResourceCleaner", ex);
             return null;
         }
-    }
-
-    private List<Offer> filterAcceptedOffers(List<Offer> offers, List<OfferID> acceptedOfferIds) {
-        List<Offer> filteredOffers = new ArrayList<Offer>();
-
-        for (Offer offer : offers) {
-            if (!offerAccepted(offer, acceptedOfferIds)) {
-                filteredOffers.add(offer);
-            }
-        }
-        return filteredOffers;
-    }
-
-    private boolean offerAccepted(Offer offer, List<OfferID> acceptedOfferIds) {
-        for (OfferID acceptedOfferId: acceptedOfferIds) {
-            if(acceptedOfferId.equals(offer.getId())) {
-                return true;
-            }
-        }
-        return false;
     }
 
     @Override

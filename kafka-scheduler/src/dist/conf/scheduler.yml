@@ -40,6 +40,7 @@ scheduler_configuration:
     overrider_uri: ${OVERRIDER_URI}
     port: ${BROKER_PORT:-0}
     jmx:
+      enable: ${BROKER_JMX_ENABLE:-false}
       remote: ${BROKER_JMX_REMOTE_ENABLE:-false}
       remote_port: ${BROKER_JMX_REMOTE_PORT:-9999}
       remote_registry_ssl: ${BROKER_JMX_REMOTE_REGISTRY_SSL:-false}

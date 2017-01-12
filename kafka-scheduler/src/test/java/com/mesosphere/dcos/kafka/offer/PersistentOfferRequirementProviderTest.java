@@ -148,7 +148,7 @@ public class PersistentOfferRequirementProviderTest {
     expectedEnvMap.put("TASK_TYPE", "BROKER");
     expectedEnvMap.put("KAFKA_HEAP_OPTS", "-Xms500M -Xmx500M");
     expectedEnvMap.put("KAFKA_JMX_OPTS", KafkaJmxConfigUtils.toJavaOpts(
-            new JmxConfig(true, KafkaTestUtils.testJMXPort, false, false)));
+            new JmxConfig(true, true, KafkaTestUtils.testJMXPort, false, false)));
     expectedEnvMap.put("STATSD_UDP_HOST", KafkaTestUtils.testStatsdHost);
     expectedEnvMap.put("STATSD_UDP_PORT", Integer.toString(KafkaTestUtils.testStatsdPort));
     expectedEnvMap.put("KAFKA_VER_NAME", KafkaTestUtils.testKafkaVerName);
@@ -245,7 +245,7 @@ public class PersistentOfferRequirementProviderTest {
     expectedEnvMap.put("KAFKA_OVERRIDE_PORT", "9092");
     expectedEnvMap.put("KAFKA_OVERRIDE_BROKER_ID", "1234");
     expectedEnvMap.put("KAFKA_JMX_OPTS", KafkaJmxConfigUtils.toJavaOpts(
-            new JmxConfig(true, KafkaTestUtils.testJMXPort, false, false)));
+            new JmxConfig(true, true, KafkaTestUtils.testJMXPort, false, false)));
     expectedEnvMap.put("STATSD_UDP_HOST", KafkaTestUtils.testStatsdHost);
     expectedEnvMap.put("STATSD_UDP_PORT", Integer.toString(KafkaTestUtils.testStatsdPort));
     final Map<String, String> envFromExecutor = TaskUtils.fromEnvironmentToMap(executorInfo.getCommand().getEnvironment());

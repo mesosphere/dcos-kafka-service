@@ -350,7 +350,9 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
         envMap.put("KAFKA_VER_NAME", config.getKafkaConfiguration().getKafkaVerName());
         envMap.put("KAFKA_ZOOKEEPER_URI", config.getKafkaConfiguration().getKafkaZkUri());
         envMap.put("KAFKA_HEAP_OPTS", String.format("-Xms%1$dM -Xmx%1$dM", config.getBrokerConfiguration().getHeap().getSizeMb()));
-        envMap.put("KAFKA_JMX_OPTS", KafkaJmxConfigUtils.toJavaOpts(config.getBrokerConfiguration().getJmx()));
+        if (config.getBrokerConfiguration().getJmx().isEnabled()) {
+            envMap.put("KAFKA_JMX_OPTS", KafkaJmxConfigUtils.toJavaOpts(config.getBrokerConfiguration().getJmx()));
+        }
         if (config.getBrokerConfiguration().getStatsd().isReady()) {
             envMap.put("STATSD_UDP_HOST", config.getBrokerConfiguration().getStatsd().getHost());
             envMap.put("STATSD_UDP_PORT", config.getBrokerConfiguration().getStatsd().getPortString());

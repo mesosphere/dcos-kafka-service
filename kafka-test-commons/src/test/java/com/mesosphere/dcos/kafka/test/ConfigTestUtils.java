@@ -27,7 +27,7 @@ public class ConfigTestUtils {
                 KafkaTestUtils.testJavaUri,
                 KafkaTestUtils.testOverriderUri,
                 KafkaTestUtils.testPort,
-                new JmxConfig(true, KafkaTestUtils.testJMXPort, false, false),
+                new JmxConfig(true, true, KafkaTestUtils.testJMXPort, false, false),
                 new StatsdConfig(KafkaTestUtils.testStatsdHost,KafkaTestUtils.testStatsdPort));
     }
 

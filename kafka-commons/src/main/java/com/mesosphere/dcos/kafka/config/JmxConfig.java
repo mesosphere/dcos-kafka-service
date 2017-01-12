@@ -10,6 +10,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * http://docs.oracle.com/javase/7/docs/technotes/guides/management/agent.html
  */
 public class JmxConfig {
+    @JsonProperty("enable")
+    private boolean enable = false;
+
     @JsonProperty("remote")
     private boolean remote = false;
 
@@ -47,12 +50,23 @@ public class JmxConfig {
 
     }
 
-    public JmxConfig(boolean remote, int remotePort, boolean remoteSsl, boolean remoteAuthenticate) {
+    public JmxConfig(boolean enable, boolean remote, int remotePort, boolean remoteSsl, boolean remoteAuthenticate) {
         super();
+        this.enable = enable;
         this.remote = remote;
         this.remotePort = remotePort;
         this.remoteSsl = remoteSsl;
         this.remoteAuthenticate = remoteAuthenticate;
+    }
+
+    @JsonProperty("enable")
+    public void setEnable(final boolean enable) {
+        this.enable = enable;
+    }
+
+    @JsonIgnore
+    public boolean isEnabled() {
+        return enable;
     }
 
     @JsonIgnore
@@ -160,98 +174,64 @@ public class JmxConfig {
     }
 
     @Override
+    @SuppressWarnings("PMD.IfStmtsMustUseBraces")
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        JmxConfig jmxConfig = (JmxConfig) o;
+
+        if (enable != jmxConfig.enable) return false;
+        if (remote != jmxConfig.remote) return false;
+        if (remotePort != jmxConfig.remotePort) return false;
+        if (remoteRegistrySsl != jmxConfig.remoteRegistrySsl) return false;
+        if (remoteSsl != jmxConfig.remoteSsl) return false;
+        if (remoteSslNeedClientAuth != jmxConfig.remoteSslNeedClientAuth) return false;
+        if (remoteAuthenticate != jmxConfig.remoteAuthenticate) return false;
+        if (remoteSslEnabledProtocols != null ? !remoteSslEnabledProtocols.equals(jmxConfig.remoteSslEnabledProtocols) : jmxConfig.remoteSslEnabledProtocols != null)
+            return false;
+        if (remoteSslEnabledCipherSuites != null ? !remoteSslEnabledCipherSuites.equals(jmxConfig.remoteSslEnabledCipherSuites) : jmxConfig.remoteSslEnabledCipherSuites != null)
+            return false;
+        if (remotePasswordFile != null ? !remotePasswordFile.equals(jmxConfig.remotePasswordFile) : jmxConfig.remotePasswordFile != null)
+            return false;
+        if (remoteAccessFile != null ? !remoteAccessFile.equals(jmxConfig.remoteAccessFile) : jmxConfig.remoteAccessFile != null)
+            return false;
+        return remoteLoginConfig != null ? remoteLoginConfig.equals(jmxConfig.remoteLoginConfig) : jmxConfig.remoteLoginConfig == null;
+
+    }
+
+    @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + (remote ? 1231 : 1237);
-        result = prime * result + ((remoteAccessFile == null) ? 0 : remoteAccessFile.hashCode());
-        result = prime * result + (remoteAuthenticate ? 1231 : 1237);
-        result = prime * result + ((remoteLoginConfig == null) ? 0 : remoteLoginConfig.hashCode());
-        result = prime * result + ((remotePasswordFile == null) ? 0 : remotePasswordFile.hashCode());
-        result = prime * result + remotePort;
-        result = prime * result + (remoteRegistrySsl ? 1231 : 1237);
-        result = prime * result + (remoteSsl ? 1231 : 1237);
-        result = prime * result + ((remoteSslEnabledCipherSuites == null) ? 0 : remoteSslEnabledCipherSuites.hashCode());
-        result = prime * result + ((remoteSslEnabledProtocols == null) ? 0 : remoteSslEnabledProtocols.hashCode());
-        result = prime * result + (remoteSslNeedClientAuth ? 1231 : 1237);
+        int result = (enable ? 1 : 0);
+        result = 31 * result + (remote ? 1 : 0);
+        result = 31 * result + remotePort;
+        result = 31 * result + (remoteRegistrySsl ? 1 : 0);
+        result = 31 * result + (remoteSsl ? 1 : 0);
+        result = 31 * result + (remoteSslEnabledProtocols != null ? remoteSslEnabledProtocols.hashCode() : 0);
+        result = 31 * result + (remoteSslEnabledCipherSuites != null ? remoteSslEnabledCipherSuites.hashCode() : 0);
+        result = 31 * result + (remoteSslNeedClientAuth ? 1 : 0);
+        result = 31 * result + (remoteAuthenticate ? 1 : 0);
+        result = 31 * result + (remotePasswordFile != null ? remotePasswordFile.hashCode() : 0);
+        result = 31 * result + (remoteAccessFile != null ? remoteAccessFile.hashCode() : 0);
+        result = 31 * result + (remoteLoginConfig != null ? remoteLoginConfig.hashCode() : 0);
         return result;
     }
 
     @Override
-    public boolean equals(final Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final JmxConfig other = (JmxConfig) obj;
-        if (remote != other.remote) {
-            return false;
-        }
-        if (remoteAccessFile == null) {
-            if (other.remoteAccessFile != null) {
-                return false;
-            }
-        } else if (!remoteAccessFile.equals(other.remoteAccessFile)) {
-            return false;
-        }
-        if (remoteAuthenticate != other.remoteAuthenticate) {
-            return false;
-        }
-        if (remoteLoginConfig == null) {
-            if (other.remoteLoginConfig != null) {
-                return false;
-            }
-        } else if (!remoteLoginConfig.equals(other.remoteLoginConfig)) {
-            return false;
-        }
-        if (remotePasswordFile == null) {
-            if (other.remotePasswordFile != null) {
-                return false;
-            }
-        } else if (!remotePasswordFile.equals(other.remotePasswordFile)) {
-            return false;
-        }
-        if (remotePort != other.remotePort) {
-            return false;
-        }
-        if (remoteRegistrySsl != other.remoteRegistrySsl) {
-            return false;
-        }
-        if (remoteSsl != other.remoteSsl) {
-            return false;
-        }
-        if (remoteSslEnabledCipherSuites == null) {
-            if (other.remoteSslEnabledCipherSuites != null) {
-                return false;
-            }
-        } else if (!remoteSslEnabledCipherSuites.equals(other.remoteSslEnabledCipherSuites)) {
-            return false;
-        }
-        if (remoteSslEnabledProtocols == null) {
-            if (other.remoteSslEnabledProtocols != null) {
-                return false;
-            }
-        } else if (!remoteSslEnabledProtocols.equals(other.remoteSslEnabledProtocols)) {
-            return false;
-        }
-        if (remoteSslNeedClientAuth != other.remoteSslNeedClientAuth) {
-            return false;
-        }
-        return true;
-    }
-
-    @Override
     public String toString() {
-        return "JmxConfig{remote=" + remote + ", remotePort=" + remotePort + ", remoteRegistrySsl=" + remoteRegistrySsl + ", remoteSsl="
-                + remoteSsl + ", remoteSslEnabledProtocols=" + remoteSslEnabledProtocols + ", remoteSslEnabledCipherSuites="
-                + remoteSslEnabledCipherSuites + ", remoteSslNeedClientAuth=" + remoteSslNeedClientAuth + ", remoteAuthenticate="
-                + remoteAuthenticate + ", remotePasswordFile=" + remotePasswordFile + ", remoteAccessFile=" + remoteAccessFile
-                + ", remoteLoginConfig=" + remoteLoginConfig + "}";
+        return "JmxConfig{" +
+                "enable=" + enable +
+                ", remote=" + remote +
+                ", remotePort=" + remotePort +
+                ", remoteRegistrySsl=" + remoteRegistrySsl +
+                ", remoteSsl=" + remoteSsl +
+                ", remoteSslEnabledProtocols='" + remoteSslEnabledProtocols + '\'' +
+                ", remoteSslEnabledCipherSuites='" + remoteSslEnabledCipherSuites + '\'' +
+                ", remoteSslNeedClientAuth=" + remoteSslNeedClientAuth +
+                ", remoteAuthenticate=" + remoteAuthenticate +
+                ", remotePasswordFile='" + remotePasswordFile + '\'' +
+                ", remoteAccessFile='" + remoteAccessFile + '\'' +
+                ", remoteLoginConfig='" + remoteLoginConfig + '\'' +
+                '}';
     }
-
 }

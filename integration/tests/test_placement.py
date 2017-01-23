@@ -57,7 +57,9 @@ def test_marathon_max_one_per_hostname():
 @pytest.mark.sanity
 @pytest.mark.timeout(120)
 def test_marathon_rack_not_found():
-    install(additional_options = {'service':{'placement_constraint':'rack_id:LIKE:rack-foo-.*'}})
+    # install without waiting, since the install should never succeed and a timeout would result in an
+    # assertion failure
+    install(additional_options = {'service':{'placement_constraint':'rack_id:LIKE:rack-foo-.*'}}, wait=False)
     try:
         check_health()
         assert False, "Should have failed healthcheck"

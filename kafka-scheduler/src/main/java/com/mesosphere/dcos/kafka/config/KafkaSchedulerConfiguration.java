@@ -3,6 +3,8 @@ package com.mesosphere.dcos.kafka.config;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -179,12 +181,21 @@ public class KafkaSchedulerConfiguration implements Configuration {
 
     private static class Factory implements ConfigurationFactory<KafkaSchedulerConfiguration> {
 
+        private final ObjectMapper objectMapper;
+
+        private Factory() {
+            // Be permissive of unknown fields, to avoid causing problems during downgrades:
+            objectMapper = SerializationUtils.registerDefaultModules(new ObjectMapper())
+                    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        }
+
         @Override
         public KafkaSchedulerConfiguration parse(byte[] bytes) throws ConfigStoreException {
             try {
-                return SerializationUtils.fromJsonString(
+                return SerializationUtils.fromString(
                         new String(bytes, StandardCharsets.UTF_8),
-                        KafkaSchedulerConfiguration.class);
+                        KafkaSchedulerConfiguration.class,
+                        objectMapper);
             } catch (Exception e) {
                 throw new ConfigStoreException(e);
             }

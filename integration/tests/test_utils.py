@@ -179,11 +179,12 @@ def spin(fn, success_predicate, *args, **kwargs):
 
 
 # to be consistent with other upgrade tests i.e. cassandra
-def install(additional_options = {}, wait=True):
+def install(additional_options={}, package_version=None, wait=True):
     merged_options = _nested_dict_merge(DEFAULT_OPTIONS_DICT, additional_options)
-    print('Installing {} with options: {}'.format(PACKAGE_NAME, merged_options))
+    print('Installing {} with options: {}, package_version: {}'.format(PACKAGE_NAME, merged_options, package_version))
     shakedown.install_package_and_wait(
         PACKAGE_NAME,
+        package_version,
         options_json=merged_options,
         wait_for_completion=wait)
 

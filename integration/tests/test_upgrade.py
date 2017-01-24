@@ -45,7 +45,7 @@ def test_upgrade_downgrade():
     print('Found master version: {}'.format(master_version))
 
     print('Installing master version')
-    install({'package_version': master_version})
+    install(package_version=master_version)
     check_health()
 
     plan=get_plan(lambda p: p['status'] == 'COMPLETE')
@@ -57,12 +57,12 @@ def test_upgrade_downgrade():
     print('Upgrading to test version')
     destroy_service()
     add_repo(test_repo_name, test_repo_url, master_version)
-    install({'package_version': test_version})
+    install(package_version=test_version)
     check_post_version_change_health()
 
     print('Downgrading to master version')
     destroy_service()
-    install({'package_version': master_version})
+    install(package_version=master_version)
     check_post_version_change_health()
 
 
@@ -170,6 +170,8 @@ def check_post_version_change_health():
     check_health()
     check_scheduler_health()
     check_offsets()
+    plan = get_plan(lambda p: p['status'] == 'COMPLETE')
+    assert plan['status'] == 'COMPLETE'
 
 
 def check_scheduler_health():

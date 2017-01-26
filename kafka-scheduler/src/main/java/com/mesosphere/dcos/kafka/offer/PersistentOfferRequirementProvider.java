@@ -54,8 +54,10 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
         if (port == 0) {
             port = getDynamicPort();
         }
+        Optional<Integer> jmxPort = config.getBrokerConfiguration().getJmx().isEnabled()
+                ? Optional.of(config.getBrokerConfiguration().getJmx().getRemotePort()) : Optional.empty();
 
-        TaskInfo taskInfo = getNewTaskInfo(config, configName, brokerId, containerPath, port);
+        TaskInfo taskInfo = getNewTaskInfo(config, configName, brokerId, containerPath, port, jmxPort);
 
         ExecutorConfiguration executorConfiguration = config.getExecutorConfiguration();
         String role = config.getServiceConfiguration().getRole();
@@ -143,13 +145,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
                 .clearEnvironment() // Clear any task envvars from Kafka 1.1.16-0.1.0.0 and older
                 .build());
 
-        Long port = brokerConfig.getPort();
-        if (port != 0) {
-            // only override previous port if non-random value is specified:
-            valueBuilder = Value.newBuilder().setType(Value.Type.RANGES);
-            valueBuilder.getRangesBuilder().addRangeBuilder().setBegin(port).setEnd(port);
-            taskBuilder = updateValue(taskBuilder, "ports", valueBuilder.build());
-        }
+        taskBuilder = updatePorts(taskBuilder, brokerConfig.getPort(), brokerConfig.getJmx());
 
         taskBuilder.setTaskId(TaskID.newBuilder().setValue("").build()); // Set later by TaskRequirement
 
@@ -173,7 +169,7 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
         TaskInfo updatedTaskInfo = TaskUtils.setTargetConfiguration(taskBuilder, UUID.fromString(configName)).build();
         // Throw away any prior executor command state (except for brokerId and logdir retrieved from prior env):
         ExecutorInfo updatedExecutorInfo = ExecutorInfo.newBuilder(taskInfo.getExecutor())
-                .setCommand(getExecutorCmd(config, configName, Integer.valueOf(brokerIdStr), logdir, port))
+                .setCommand(getExecutorCmd(config, configName, Integer.valueOf(brokerIdStr), logdir, brokerConfig.getPort()))
                 .setExecutorId(ExecutorID.newBuilder().setValue("").build()) // Set later by ExecutorRequirement
                 .build();
 
@@ -201,6 +197,39 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
     @VisibleForTesting
     protected UUID getUUID() {
         return UUID.randomUUID();
+    }
+
+    private static TaskInfo.Builder updatePorts(TaskInfo.Builder taskBuilder, long brokerPort, JmxConfig jmxConfig)
+            throws InvalidRequirementException {
+        List<Long> portsToUse = new ArrayList<>();
+
+        if (brokerPort != 0) {
+            // non-random value: override any previous value
+            portsToUse.add(brokerPort);
+        } else {
+            // random value: leave as-is
+            for (Resource resource : taskBuilder.getResourcesList()) {
+                if (resource.getName().equals("ports")) {
+                    portsToUse.add(resource.getRanges().getRange(0).getBegin());
+                    break;
+                }
+            }
+            if (portsToUse.isEmpty()) {
+                throw new InvalidRequirementException(String.format(
+                        "Unable to find broker port in previous resources: %s", taskBuilder.getResourcesList()));
+            }
+        }
+
+        if (jmxConfig.isEnabled()) {
+            // include configured jmx port if enabled
+            portsToUse.add((long)jmxConfig.getRemotePort());
+        }
+
+        Value.Builder valueBuilder = Value.newBuilder().setType(Value.Type.RANGES);
+        for (long portToUse : portsToUse) {
+            valueBuilder.getRangesBuilder().addRangeBuilder().setBegin(portToUse).setEnd(portToUse);
+        }
+        return updateValue(taskBuilder, "ports", valueBuilder.build());
     }
 
     private static TaskInfo.Builder updateValue(TaskInfo.Builder taskBuilder, String name, Value updatedValue) {
@@ -246,8 +275,14 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
         return 9092 + ThreadLocalRandom.current().nextLong(0, 1000);
     }
 
-    private TaskInfo getNewTaskInfo(KafkaSchedulerConfiguration config, String configName, int brokerId, String containerPath, long port)
-            throws IOException, URISyntaxException {
+    private TaskInfo getNewTaskInfo(
+            KafkaSchedulerConfiguration config,
+            String configName,
+            int brokerId,
+            String containerPath,
+            long port,
+            Optional<Integer> jmxPort)
+                    throws IOException, URISyntaxException {
 
         BrokerConfiguration brokerConfiguration = config.getBrokerConfiguration();
         String brokerName = OfferUtils.brokerIdToTaskName(brokerId);
@@ -270,15 +305,13 @@ public class PersistentOfferRequirementProvider implements KafkaOfferRequirement
                         role,
                         principal,
                         "mem",
-                        config.getBrokerConfiguration().getMem()))
-                .addResources(ResourceUtils.getDesiredRanges(
-                        role,
-                        principal,
-                        "ports",
-                        Arrays.asList(
-                                Range.newBuilder()
-                                        .setBegin(port)
-                                        .setEnd(port).build())));
+                        config.getBrokerConfiguration().getMem()));
+        List<Range> portRanges = new ArrayList<>();
+        portRanges.add(Range.newBuilder().setBegin(port).setEnd(port).build());
+        if (jmxPort.isPresent()) {
+            portRanges.add(Range.newBuilder().setBegin(jmxPort.get()).setEnd(jmxPort.get()).build());
+        }
+        taskBuilder.addResources(ResourceUtils.getDesiredRanges(role, principal, "ports", portRanges));
 
         if (brokerConfiguration.getDiskType().equals("MOUNT")) {
             taskBuilder.addResources(ResourceUtils.getDesiredMountVolume(

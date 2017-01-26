@@ -92,8 +92,11 @@ public class PersistentOfferRequirementProviderTest {
     Resource portsResource = resources.get(2);
     Assert.assertEquals("ports", portsResource.getName());
     Assert.assertEquals(Value.Type.RANGES, portsResource.getType());
+    Assert.assertEquals(portsResource.getRanges().getRangeList().size(), 2);
     Assert.assertTrue(portsResource.getRanges().getRangeList().get(0).getBegin() >= 9092);
     Assert.assertTrue(portsResource.getRanges().getRangeList().get(0).getEnd() >= 9092);
+    Assert.assertEquals(portsResource.getRanges().getRangeList().get(1).getBegin(), KafkaTestUtils.testJMXPort);
+    Assert.assertEquals(portsResource.getRanges().getRangeList().get(1).getEnd(), KafkaTestUtils.testJMXPort);
     Assert.assertEquals(KafkaTestUtils.testRole, portsResource.getRole());
     Assert.assertEquals(KafkaTestUtils.testPrincipal, portsResource.getReservation().getPrincipal());
     Assert.assertEquals("resource_id", portsResource.getReservation().getLabels().getLabelsList().get(0).getKey());

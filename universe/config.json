@@ -58,7 +58,7 @@
           "enable_health_check":{
             "description":"Enable automated detection of Broker failures which did not result in a Broker process exit.",
             "type":"boolean",
-            "default":true
+            "default":false
           },
           "health_check_delay_sec":{
             "description":"The period of time (in seconds) waited before the health-check begins execution.",

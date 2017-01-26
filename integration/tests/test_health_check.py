@@ -16,7 +16,7 @@ def teardown_module(module):
 
 @pytest.fixture
 def static_port_config():
-    test_utils.install(test_utils.STATIC_PORT_OPTIONS_DICT)
+    test_utils.install(test_utils.HEALTH_CHECK_ENABLED_DICT)
 
 
 @pytest.mark.sanity

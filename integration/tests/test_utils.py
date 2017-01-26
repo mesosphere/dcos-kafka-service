@@ -31,6 +31,7 @@ else:
 
 STATIC_PORT_OPTIONS_DICT = { "brokers": { "port": 9092 } }
 DYNAMIC_PORT_OPTIONS_DICT = { "brokers": { "port": 0 } }
+HEALTH_CHECK_ENABLED_DICT = { "service": { "enable_health_check": True } }
 
 DEFAULT_PARTITION_COUNT = 1
 DEFAULT_REPLICATION_FACTOR = 1

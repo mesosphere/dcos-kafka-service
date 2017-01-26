@@ -8,11 +8,11 @@ enterprise: 'no'
 # About installing Kafka on Enterprise DC/OS
 
  <a name="install-enterprise"></a>
- In Enterprise DC/OS `strict` [security mode](https://docs.mesosphere.com/1.8/administration/installing/custom/configuration-parameters/#security), Kafka requires a service account. In `permissive`, a service account is optional. Only someone with `superuser` permission can create the service account. Refer to [Provisioning Kafka](https://docs.mesosphere.com/1.8/administration/id-and-access-mgt/service-auth/kafka-auth/) for instructions.
+ In Enterprise DC/OS `strict` [security mode](https://docs.mesosphere.com/1.9/administration/installing/custom/configuration-parameters/#security), Kafka requires a service account. In `permissive`, a service account is optional. Only someone with `superuser` permission can create the service account. Refer to [Provisioning Kafka](https://docs.mesosphere.com/1.9/administration/id-and-access-mgt/service-auth/kafka-auth/) for instructions.
 
 # Default Installation
 
-To start a basic test cluster with three brokers, run the following command on the DC/OS CLI. Enterprise DC/OS users must follow additional instructions. See the [About installing Kafka on Enterprise DC/OS](#install-enterprise) for more information.
+To start a basic test cluster with three brokers, run the following command on the DC/OS CLI. Enterprise DC/OS users must follow additional instructions. [More information about installing Kafka on Enterprise DC/OS](#install-enterprise).
 
     $ dcos package install kafka
     
@@ -23,6 +23,7 @@ All `dcos kafka` CLI commands have a `--name` argument allowing the user to spec
 
     $ dcos kafka --name kafka-dev <cmd>
     
+**Note:** You can also [install Kafka from the DC/OS GUI](https://docs.mesosphere.com/1.8/usage/managing-services/install/).
 
 # Minimal Installation
 
@@ -87,4 +88,4 @@ Installing multiple Kafka clusters is identical to installing Kafka clusters wit
 
  [4]: #custom-installation
  [5]: https://github.com/mesosphere/dcos-vagrant
- [6]: https://docs.mesosphere.com/1.8/usage/service-guides/kafka/configure#configuration-options
+ [6]: https://docs.mesosphere.com/1.9/usage/service-guides/kafka/configure#configuration-options

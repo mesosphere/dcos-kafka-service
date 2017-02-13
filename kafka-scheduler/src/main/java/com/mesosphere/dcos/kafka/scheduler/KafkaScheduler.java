@@ -33,23 +33,24 @@ import org.apache.mesos.api.JettyApiServer;
 import org.apache.mesos.config.ConfigStoreException;
 import org.apache.mesos.config.RecoveryConfiguration;
 import org.apache.mesos.config.api.ConfigResource;
+import org.apache.mesos.dcos.DCOSCertInstaller;
 import org.apache.mesos.dcos.DcosCluster;
 import org.apache.mesos.offer.*;
 import org.apache.mesos.reconciliation.DefaultReconciler;
 import org.apache.mesos.reconciliation.Reconciler;
-import org.apache.mesos.scheduler.Observer;
-import org.apache.mesos.scheduler.TaskKiller;
-import org.apache.mesos.scheduler.SchedulerDriverFactory;
-import org.apache.mesos.scheduler.SchedulerErrorCode;
-import org.apache.mesos.scheduler.DefaultTaskKiller;
+import org.apache.mesos.scheduler.*;
 import org.apache.mesos.scheduler.Observable;
+import org.apache.mesos.scheduler.Observer;
 import org.apache.mesos.scheduler.api.TaskResource;
 import org.apache.mesos.scheduler.plan.*;
 import org.apache.mesos.scheduler.plan.api.PlansResource;
 import org.apache.mesos.scheduler.plan.strategy.CanaryStrategy;
 import org.apache.mesos.scheduler.plan.strategy.SerialStrategy;
 import org.apache.mesos.scheduler.plan.strategy.Strategy;
-import org.apache.mesos.scheduler.recovery.*;
+import org.apache.mesos.scheduler.recovery.DefaultRecoveryPlanManager;
+import org.apache.mesos.scheduler.recovery.DefaultTaskFailureListener;
+import org.apache.mesos.scheduler.recovery.RecoveryRequirementProvider;
+import org.apache.mesos.scheduler.recovery.TaskFailureListener;
 import org.apache.mesos.scheduler.recovery.constrain.LaunchConstrainer;
 import org.apache.mesos.scheduler.recovery.constrain.TimedLaunchConstrainer;
 import org.apache.mesos.state.api.JsonPropertyDeserializer;
@@ -154,6 +155,10 @@ public class KafkaScheduler implements Scheduler, Observer, Runnable {
         planCoordinator = new DefaultPlanCoordinator(ImmutableList.of(planManager, repairPlanManager), planScheduler);
 
         startApiServer();
+
+        String javaHome = System.getenv("JAVA_HOME");
+        boolean certInstalled = DCOSCertInstaller.installCertificate(javaHome);
+        log.info("Attempt to install cert into: " + javaHome + " was " + (certInstalled ? "successful" : "a failure"));
     }
 
     private void startApiServer() {

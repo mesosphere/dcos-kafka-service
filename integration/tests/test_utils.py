@@ -2,6 +2,7 @@ import json
 import os
 import time
 import sys
+import collections
 from functools import wraps
 
 import dcos
@@ -181,7 +182,10 @@ def spin(fn, success_predicate, *args, **kwargs):
 
 # to be consistent with other upgrade tests i.e. cassandra
 def install(additional_options={}, package_version=None, wait=True):
-    merged_options = _nested_dict_merge(DEFAULT_OPTIONS_DICT, additional_options)
+    print ('Default_options {} \n'.format(DEFAULT_OPTIONS_DICT))
+    print ('Additional_options {} \n'.format(additional_options))
+    merged_options = _merge_dictionary(DEFAULT_OPTIONS_DICT, additional_options)
+    print ('Merged_options {} \n'.format(merged_options))
     print('Installing {} with options: {}, package_version: {}'.format(PACKAGE_NAME, merged_options, package_version))
     shakedown.install_package_and_wait(
         PACKAGE_NAME,
@@ -229,18 +233,16 @@ def get_plan(predicate=lambda r: True):
     return spin(fn, success_predicate).json()
 
 
-def _nested_dict_merge(a, b, path=None):
-    "ripped from http://stackoverflow.com/questions/7204805/dictionaries-of-dictionaries-merge"
-    if path is None: path = []
-    a = a.copy()
-    for key in b:
-        if key in a:
-            if isinstance(a[key], dict) and isinstance(b[key], dict):
-                _nested_dict_merge(a[key], b[key], path + [str(key)])
-            elif a[key] == b[key]:
-                pass # same leaf value
-            else:
-                raise Exception('Conflict at %s' % '.'.join(path + [str(key)]))
+def _merge_dictionary(dict1, dict2):
+    if (not isinstance(dict2, dict)):
+        return dict1
+    ret = {}
+    for k, v in dict1.items():
+        ret[k] = v
+    for k, v in dict2.items():
+        if (k in dict1 and isinstance(dict1[k], dict)
+                 and isinstance(dict2[k], collections.Mapping)):
+            ret[k] = _merge_dictionary(dict1[k], dict2[k])
         else:
-            a[key] = b[key]
-    return a
+            ret[k] = dict2[k]
+    return ret

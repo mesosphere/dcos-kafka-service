@@ -5,7 +5,8 @@
       "kafka_tgz": "https://downloads.mesosphere.com/kafka/assets/kafka_2.11-0.10.1.0.tgz",
       "scheduler-zip": "{{artifact-dir}}/scheduler.zip",
       "executor-zip": "{{artifact-dir}}/executor.zip",
-      "overrider-zip": "{{artifact-dir}}/overrider.zip"
+      "overrider-zip": "{{artifact-dir}}/overrider.zip",
+      "libmesos-bundle-tar-gz": "https://downloads.mesosphere.com/libmesos-bundle/libmesos-bundle-1.9-argus-1.1.x-3.tar.gz"
     }
   },
   "images": {

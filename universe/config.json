@@ -6,9 +6,14 @@
         "description": "DC/OS service configuration properties",
         "properties":{
           "name" : {
-            "description":"The name of the Kafka service instance",
+            "description":"Apache Kafka",
             "type":"string",
             "default":"kafka"
+          },
+          "mesos_api_version" : {
+            "description":"Configures the Mesos API version to use. Possible values: V0 (non-HTTP), V1 (HTTP)",
+            "type":"string",
+            "default":"V0"
           },
           "user": {
             "type": "string",
@@ -28,67 +33,16 @@
           "placement_constraint":{
             "description":"Marathon-style placement constraint for Broker nodes. Example: rack_id:LIKE:rack-foo-.*,rack_id:MAX_PER:2",
             "type":"string",
-            "default":""
+            "default":"hostname:MAX_PER:1"
           },
-          "placement_strategy":{
-            "description":"Broker placement strategy. See documentation. [ANY, NODE]",
+          "deploy_strategy":{
+            "description":"Deployment phase strategy. See documentation. [serial, serial-canary, parallel-canary, parallel]",
             "type":"string",
-            "default":"NODE"
-          },
-          "phase_strategy":{
-            "description":"Broker rollout strategy. See documentation. [INSTALL, STAGE]",
-            "type":"string",
-            "default":"INSTALL"
-          },
-          "enable_replacement":{
-            "description":"Enable automated replacement of Brokers. WARNING: May cause data loss. See documentation.",
-            "type":"boolean",
-            "default":false
-          },
-          "recover_in_place_grace_period_secs":{
-            "description":"The minimum amount of time (in seconds) which must pass before a Broker may be destructively replaced.",
-            "type":"number",
-            "default":1200
-          },
-          "min_delay_between_recovers_secs":{
-            "description":"The minimum amount of time (in seconds) which must pass between destructive replacements of Brokers.",
-            "type":"number",
-            "default":600
-          },
-          "enable_health_check":{
-            "description":"Enable automated detection of Broker failures which did not result in a Broker process exit.",
-            "type":"boolean",
-            "default":false
-          },
-          "health_check_delay_sec":{
-            "description":"The period of time (in seconds) waited before the health-check begins execution.",
-            "type":"number",
-            "default":15
-          },
-          "health_check_interval_sec":{
-            "description":"The period of time (in seconds) between health-check executions.",
-            "type":"number",
-            "default":10
-          },
-          "health_check_timeout_sec":{
-            "description":"The duration (in seconds) allowed for a health-check to complete before it is considered a failure.",
-            "type":"number",
-            "default":20
-          },
-          "health_check_grace_period_sec":{
-            "description":"The period of time after the delay (in seconds) before health-check failures count towards the maximum consecutive failures.",
-            "type":"number",
-            "default":10
-          },
-          "health_check_max_consecutive_failures":{
-            "description":"The the number of consecutive failures which cause a Broker process to exit.",
-            "type":"number",
-            "default":3
+            "default":"serial"
           }
         },
         "required":[
-          "placement_strategy",
-          "phase_strategy"
+          "deploy_strategy"
         ]
       },
       "brokers":{
@@ -111,7 +65,7 @@
             "properties":{
               "size": {
                 "type":"integer",
-                "description":"The amound of JVM heap, in MB, allocated to the Kafka broker process.",
+                "description":"The amount of JVM heap, in MB, allocated to the Kafka broker process.",
                 "default": 2048
               }
             },
@@ -129,6 +83,11 @@
             "type": "string",
             "description": "Disk type to be used for storing broker data. See documentation. [ROOT, MOUNT]",
             "default": "ROOT"
+          },          
+          "disk_path": {
+            "type": "string",
+            "description": "Relative path of consistent disk",
+            "default": "kafka-broker-data"
           },
           "count":{
             "description":"Number of brokers to run",
@@ -141,7 +100,7 @@
             "default": 0
           },
           "jmx": {
-            "description":"JMX options",
+            "description":"[DEPRECATED] JMX options",
             "type":"object",
             "properties": {
               "enable": {
@@ -178,11 +137,16 @@
                 "description": "Whether to enable SSL client authentication for remote access",
                 "type": "boolean",
                 "default": false
+              },
+              "additional_kafka_jmx_opts": {
+                "description": "JMX argument string (i.e. \"-Dcom.sun.management.jmxremote.access.file=somefile\") to be appended to KAFKA_JMX_OPTS environment variable",
+                "type": "string",
+                "default": ""
               }
             }
           },
           "statsd": {
-            "description":"Statsd configuration",
+            "description":"[DEPRECATED] Statsd configuration",
             "type":"object",
             "properties": {
               "host": {
@@ -205,51 +169,19 @@
           "count"
         ]
       },
-      "executor":{
-        "description":"Kafka executor configuration properties",
-        "type":"object",
-        "properties":{
-          "cpus":{
-            "description":"Executor cpu requirements",
-            "type":"number",
-            "default":0.5
-          },
-          "mem":{
-            "description":"Executor mem requirements",
-            "type":"integer",
-            "default":256
-          },
-          "disk":{
-            "description":"Executor disk requirements",
-            "type":"integer",
-            "default":0
-          }
-        },
-        "required":[
-          "cpus",
-          "mem",
-          "disk"
-        ]
-      },
       "kafka":{
         "description":"Kafka service configuration properties",
         "type":"object",
         "additionalProperties":false,
         "properties":{
-          "kafka_zookeeper_uri":{
-            "title":"The address of the Zookeeper cluster used by Kafka.",
-            "description":"This should be the address of the Zookeeper cluster Kafka will use.",
-            "type":"string",
-            "default":"master.mesos:2181"
-          },
-          "kafka_advertise_host_ip":{
-            "description":"Automatically configure advertised.host.name with the IP address detected by /opt/mesosphere/detect_ip",
-            "type":"boolean",
-            "default":true
-          },
           "auto_create_topics_enable":{
             "title":"auto.create.topics.enable",
             "description":"Enables auto creation of topic on the server",
+            "type":"boolean",
+            "default":true
+          },
+          "kafka_advertise_host_ip":{
+            "description":"Automatically configure advertised.host.name with the tasks' IP address",
             "type":"boolean",
             "default":true
           },

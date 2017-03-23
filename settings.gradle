@@ -1,9 +1,0 @@
-rootProject.name = 'kafka'
-
-include "kafka-scheduler"
-include "kafka-executor"
-include "kafka-commons"
-include "kafka-config-overrider"
-include "kafka-test-client"
-include 'kafka-test-commons'
-

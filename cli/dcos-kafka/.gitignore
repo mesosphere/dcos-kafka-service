@@ -1,3 +1,2 @@
-dcos-kafka
-dcos-kafka-*
-dcos-kafka.exe
+dcos-*
+*.whl

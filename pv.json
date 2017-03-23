@@ -1,6 +1,0 @@
-{
-  "kafka": {
-    "name": "kafka",
-    "placement_strategy": "NODE"
-  }
-}

@@ -1,5 +1,4 @@
-# DC/OS Apache Kafka Service 
-All DC/OS Kafka documentation is in the `docs` folder of this repository.
+# DC/OS Apache Kafka Service Documentation
 
 ## Table of Contents
 
@@ -8,8 +7,8 @@ All DC/OS Kafka documentation is in the `docs` folder of this repository.
 - [Install and Customize](docs/install-and-customize.md)
 - [Uninstall](docs/uninstall.md)
 - [Configure](docs/configure.md)
-- [Connect Clients](docs/connecting-clients.md)
-- [Manage](docs/managing.md)
+- [Connecting Clients](docs/connecting-clients.md)
+- [Managing](docs/managing.md)
 - [API Reference](docs/api-reference.md)
 - [Troubleshooting](docs/troubleshooting.md)
 - [Limitations](docs/limitations.md)

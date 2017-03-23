@@ -1,82 +1,59 @@
-buildscript {
-  repositories {
+group 'com.mesosphere.sdk.kafka'
+version '1.1.20-SNAPSHOT'
+
+apply plugin: 'java'
+apply plugin: 'application'
+apply plugin: 'jacoco'
+
+
+repositories {
     mavenCentral()
-  }
-}
-
-plugins {
-  id 'com.github.ksoichiro.console.reporter' version '0.4.0'
-}
-
-apply from: "$rootDir/gradle/universe.gradle"
-
-allprojects {
-  apply plugin: 'idea'
-  apply plugin: 'eclipse'
-  apply plugin: 'jacoco'
-  apply plugin: 'com.github.ksoichiro.console.reporter'
-
-  group = "com.apache.mesos.kafka"
-  version = "1.0.8"
+    maven {
+        url "https://downloads.mesosphere.com/maven/"
+    }
+    maven {
+        url "https://downloads.mesosphere.com/maven-snapshot/"
+    }
+    maven {
+	url  'https://repository.apache.org/content/repositories/snapshots'
+    }
 }
 
 ext {
-  cliVersion = "0.2.5"
-  serviceVersion = "0.10.1.0"
+    mesosVer = "0.28.0"
+    junitVer = "4.12"
+    systemRulesVer = "1.16.0"
+    mockitoVer = "1.9.5"
 }
 
-idea {
-  project {
-    jdkName = '1.8'
-    languageLevel = '1.8'
-    ipr {
-      withXml { provider ->
-        provider.node.component
-          .find { it.@name == 'VcsDirectoryMappings' }
-          .mapping.@vcs = 'Git'
-      }
-    }
-  }
+dependencies {
+    compile "mesosphere:common:0.13.0"
+    compile "mesosphere:executor:0.13.0"
+    compile "mesosphere:scheduler:0.13.0"
+    compile "org.apache.mesos:mesos:${mesosVer}"
+    compile group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.21'
+    testCompile "mesosphere:testing:0.13.0"
 }
 
-subprojects {
-  apply plugin: 'java'
-  apply plugin: 'application'
-  apply from: "$rootDir/gradle/quality.gradle"
-
-  sourceCompatibility = 1.8
-  targetCompatibility = 1.8
-
-  mainClassName = "com.mesosphere.dcos.kafka.scheduler.Main"
-
-  repositories {
-    mavenLocal()
-    mavenCentral()
-    maven {
-      url "https://downloads.mesosphere.com/maven/"
-    }
-    maven {
-      url "https://downloads.mesosphere.com/maven-snapshot/"
-    }
-  }
-
-  // Print results on the fly
-  test {
+test {
     testLogging {
-      events "passed", "skipped", "failed"
+         events "passed", "skipped", "failed"
     }
-  }
+}
 
-  // Include unit test report in 'check'
-  // (jacoco itself depends on 'test')
-  check.dependsOn jacocoTestReport
-  jacocoTestReport {
+check.dependsOn jacocoTestReport
+jacocoTestReport {
     reports {
-      html.destination "${buildDir}/jacoco"
+        html.destination "${buildDir}/jacoco"
     }
-  }
 }
 
-task cliVersion << {
-  print cliVersion
+distributions {
+    main{
+        baseName = 'kafka-scheduler'
+        applicationName = 'kafka'
+        version = ''
+    }
 }
+
+mainClassName = 'com.mesosphere.sdk.kafka.scheduler.Main'

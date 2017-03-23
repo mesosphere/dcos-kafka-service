@@ -1,8 +1,0 @@
-{
-  "kafka": {
-    "name": "kafkaprod",
-    "placement_strategy": "NODE",
-    "brokers.disk": 10000,
-    "brokers.count": 5
-  }
-}

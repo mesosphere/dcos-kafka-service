@@ -30,11 +30,12 @@ dcos-kafka-service.log.*
 # OS X
 .DS_Store
 
-# created by build scripts (see build.sh/build-docker.sh)
-/Dockerfile
-/dcos-commons-tools/
-
 # test
 integration/.cache/
 .cache/
 integration/env/
+
+# tools
+tools/shakedown_env
+*.pyc
+

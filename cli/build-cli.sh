@@ -8,6 +8,18 @@ if [ -z "$GOPATH" -o -z "$(which go)" ]; then
   exit 1
 fi
 
+GOPATH_MESOSPHERE="$GOPATH/src/github.com/mesosphere/dcos-commons"
+REPO_ROOT_DIR=`pwd`/dcos-commons/cli
+SYMLINK_LOCATION="$GOPATH_MESOSPHERE/cli"
+if [ ! -h "$SYMLINK_LOCATION" -o "$(readlink $SYMLINK_LOCATION)" != "$REPO_ROOT_DIR" ]; then
+    echo "Creating symlink to GOPATH=$SYMLINK_LOCATION from REPOPATH=$REPO_ROOT_DIR"
+    rm -rf "$SYMLINK_LOCATION"
+    mkdir -p "$GOPATH_MESOSPHERE"
+    cd $GOPATH_MESOSPHERE
+    ln -s "$REPO_ROOT_DIR" cli
+    cd -
+fi
+
 # The name of the binary produced by Go:
 if [ -z "$EXE_NAME" ]; then
     EXE_NAME="dcos-kafka"

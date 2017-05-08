@@ -28,7 +28,7 @@ logging.basicConfig(level=logging.DEBUG, format="%(message)s")
 class CITester(object):
 
     def __init__(self, dcos_url, github_label):
-        self._CLI_URL_TEMPLATE = 'https://downloads.dcos.io/binaries/cli/{}/x86-64/latest/{}'
+        self._CLI_URL_TEMPLATE = 'https://downloads.dcos.io/binaries/cli/{}/x86-64/dcos-1.9/{}'
         self._dcos_url = dcos_url
         self._sandbox_path = ''
         self._github_updater = github_update.GithubStatusUpdater('test:{}'.format(github_label))

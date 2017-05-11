@@ -8,17 +8,24 @@ if [ -z "$GOPATH" -o -z "$(which go)" ]; then
   exit 1
 fi
 
-GOPATH_MESOSPHERE="$GOPATH/src/github.com/mesosphere/dcos-commons"
-REPO_ROOT_DIR=`pwd`/dcos-commons/cli
-SYMLINK_LOCATION="$GOPATH_MESOSPHERE/cli"
+REPO_NAME=dcos-kafka-service
+ORG_PATH=${ORG_PATH:=github.com/mesosphere}
+GOPATH_ORG="$GOPATH/src/$ORG_PATH"
+GOPATH_EXE_DIR="$GOPATH_ORG/$REPO_NAME/cli/dcos-kafka"
+
+# Add symlink from GOPATH which points into the repository directory:
+SYMLINK_LOCATION="$GOPATH_ORG/$REPO_NAME"
+
 if [ ! -h "$SYMLINK_LOCATION" -o "$(readlink $SYMLINK_LOCATION)" != "$REPO_ROOT_DIR" ]; then
-    echo "Creating symlink to GOPATH=$SYMLINK_LOCATION from REPOPATH=$REPO_ROOT_DIR"
+    echo "Creating symlink from GOPATH=$SYMLINK_LOCATION to REPOPATH=$REPO_ROOT_DIR"
     rm -rf "$SYMLINK_LOCATION"
-    mkdir -p "$GOPATH_MESOSPHERE"
-    cd $GOPATH_MESOSPHERE
-    ln -s "$REPO_ROOT_DIR" cli
-    cd -
+    mkdir -p "$GOPATH_ORG"
+    cd $GOPATH_ORG
+    ln -s "$REPO_ROOT_DIR" $REPO_NAME
 fi
+
+# Run 'go get'/'go build' from within GOPATH:
+cd $GOPATH_EXE_DIR
 
 # The name of the binary produced by Go:
 if [ -z "$EXE_NAME" ]; then
@@ -35,9 +42,6 @@ print_file_and_shasum() {
 }
 
 # ---
-
-# go (static binaries containing the CLI itself)
-cd $EXE_NAME/
 
 # this may be omitted in 1.6+, left here for compatibility with 1.5:
 export GO15VENDOREXPERIMENT=1

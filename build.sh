@@ -3,7 +3,7 @@
 # Prevent jenkins from immediately killing the script when a step fails, allowing us to notify github:
 set +e
 
-REPO_ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+export REPO_ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd $REPO_ROOT_DIR
 
 # GitHub notifier config
@@ -31,7 +31,7 @@ fi
 
 # CLI (Go):
 
-cd cli/ && ./build-cli.sh
+./cli/build-cli.sh
 if [ $? -ne 0 ]; then
   _notify_github failure "CLI build failed"
   exit 1

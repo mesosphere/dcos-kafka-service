@@ -26,7 +26,7 @@ REST API requests must be authenticated. See the REST API Authentication part of
 
 The following `curl` example demonstrates how to retrive connection a set of brokers to connect to using the REST API. 
 
-    $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/connection"
+    curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/connection"
 
 ## User token authentication
 
@@ -34,19 +34,19 @@ DC/OS Enterprise Edition comes with support for [user ACLs][13]. To interact wit
 
 First, we retrieve `uSeR_t0k3n` with our user credentials and store the token as an environment variable:
 
-    $ curl --data '{"uid":"username", "password":"password"}' -H "Content-Type:application/json" "$DCOS_URI/acs/api/v1/auth/login"
+    curl --data '{"uid":"username", "password":"password"}' -H "Content-Type:application/json" "$DCOS_URI/acs/api/v1/auth/login"
     POST /acs/api/v1/auth/login HTTP/1.1
     
     {
       "token": "uSeR_t0k3n"
     }
     
-    $ export AUTH_TOKEN=uSeR_t0k3n
+    export AUTH_TOKEN=uSeR_t0k3n
     
 
 Then, use this token to authenticate requests to the Kafka Service:
 
-    $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/connection"
+    curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/connection"
     GET /service/kafka/v1/connection HTTP/1.1
     
     {
@@ -86,7 +86,7 @@ The response, for both the CLI and the REST API is as below.
     }
     
 
-This JSON array contains a list of valid brokers that the client can use to connect to the Kafka cluster. For availability reasons, it is best to specify multiple brokers in configuration of the client. Use the VIP to address any one of the Kafka brokers in the cluster. [Learn more about load balancing and VIPs in DC/OS](https://docs.mesosphere.com/1.8/usage/service-discovery/).
+This JSON array contains a list of valid brokers that the client can use to connect to the Kafka cluster. For availability reasons, it is best to specify multiple brokers in configuration of the client. Use the VIP to address any one of the Kafka brokers in the cluster. [Learn more about load balancing and VIPs in DC/OS](https://docs.mesosphere.com/1.9/usage/service-discovery/).
 
 # Configuring the Kafka Client Library
 
@@ -169,7 +169,7 @@ The code snippet below demonstrates how to connect a Kafka Consumer to the clust
 
 The following code connects to a DC/OS-hosted Kafka instance using `bin/kafka-console-producer.sh` and `bin/kafka-console-consumer.sh` as an example:
 
-    $ dcos kafka connection
+    dcos kafka connection
     {
         "address": [
             "10.0.0.211:9843",
@@ -185,14 +185,14 @@ The following code connects to a DC/OS-hosted Kafka instance using `bin/kafka-co
         "zookeeper": "master.mesos:2181/dcos-service-kafka"
     }
     
-    $ dcos node ssh --master-proxy --leader
+    dcos node ssh --master-proxy --leader
     
-    core@ip-10-0-6-153 ~ $ docker run -it mesosphere/kafka-client
+    core@ip-10-0-6-153 ~ docker run -it mesosphere/kafka-client
     
     root@7d0aed75e582:/bin# echo "Hello, World." | ./kafka-console-producer.sh --broker-list 10.0.0.211:9843, 10.0.0.217:10056, 10.0.0.214:9689 --topic topic1
     
     root@7d0aed75e582:/bin# ./kafka-console-consumer.sh --zookeeper master.mesos:2181/kafka --topic topic1 --from-beginning
     Hello, World.
 
- [13]: https://docs.mesosphere.com/1.8/administration/id-and-access-mgt/
- [14]: https://docs.mesosphere.com/1.8/administration/id-and-access-mgt/iam-api/
+ [13]: https://docs.mesosphere.com/1.9/administration/id-and-access-mgt/
+ [14]: https://docs.mesosphere.com/1.9/administration/id-and-access-mgt/iam-api/

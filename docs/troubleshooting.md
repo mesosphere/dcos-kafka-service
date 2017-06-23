@@ -14,7 +14,7 @@ Possible repair actions include `dcos kafka broker restart <broker-id>` and `dco
 The bolded entries below indicate the necessary changes needed to create a valid configuration:
 
 <pre>
-$ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan"
+curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan"
 GET /service/kafka/v1/plan HTTP/1.1
 
 {
@@ -73,5 +73,5 @@ If a machine has permanently failed, manual intervention is required to replace 
 
 In the example below, the broker with id `0` will be replaced on new machine as long as cluster resources are sufficient to satisfy the service’s placement constraints and resource requirements.
 
-    $ dcos kafka broker replace 0
+    dcos kafka broker replace 0
 

@@ -17,7 +17,7 @@ If you are using open source DC/OS, follow these instructions to [pass your auth
 Once you have the authentication token, you can store it in an environment variable and reference it in your REST API calls:
 
 ```
-$ export AUTH_TOKEN=uSeR_t0k3n
+export AUTH_TOKEN=uSeR_t0k3n
 ```
 
 The `curl` examples in this document assume that an auth token has been stored in an environment variable named `AUTH_TOKEN`.
@@ -32,9 +32,9 @@ The `dcos kafka` CLI commands have a `--name` argument, allowing the user to spe
 
 # Connection Information
 
-Kafka comes with many useful tools of its own that often require either Zookeeper connection information or the list of broker endpoints. This information can be retrieved in an easily consumable format from the `/connection` endpoint:
+Kafka comes with many useful tools of its own that often require either ZooKeeper connection information or the list of broker endpoints. This information can be retrieved in an easily consumable format from the `/connection` endpoint:
 
-    $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/connection"
+    curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/connection"
     GET /service/kafka/v1/connection HTTP/1.1
     
     {
@@ -55,7 +55,7 @@ Kafka comes with many useful tools of its own that often require either Zookeepe
 
 The same information can be retrieved through the DC/OS CLI:
 
-    $ dcos kafka connection
+    dcos kafka connection
     {
         "address": [
             "10.0.0.211:9843",
@@ -80,7 +80,7 @@ Increase the `BROKER_COUNT` value via Marathon. This should be rolled as in any 
 
 ## List All Brokers
 
-    $ dcos kafka --name=kafka broker list
+    dcos kafka --name=kafka broker list
     {
         "brokers": [
             "0",
@@ -90,7 +90,7 @@ Increase the `BROKER_COUNT` value via Marathon. This should be rolled as in any 
     }
     
     
-    $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/brokers"
+    curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/brokers"
     GET /service/kafka/v1/brokers HTTP/1.1
     
     {
@@ -106,13 +106,13 @@ Increase the `BROKER_COUNT` value via Marathon. This should be rolled as in any 
 
 Restarts the broker in-place.
 
-    $ dcos kafka --name=kafka broker restart 0
+    dcos kafka --name=kafka broker restart 0
     [
         "broker-0__9c426c50-1087-475c-aa36-cd00d24ccebb"
     ]
     
     
-    $ curl -X PUT -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/brokers/0"
+    curl -X PUT -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/brokers/0"
     PUT /service/kafka/v1/brokers/0 HTTP/1.1
     
     [
@@ -124,13 +124,13 @@ Restarts the broker in-place.
 
 Restarts the broker and replaces its existing resource/volume allocations. The new broker instance may also be placed on a different machine.
 
-    $ dcos kafka --name=kafka broker replace 0
+    dcos kafka --name=kafka broker replace 0
     [
         "broker-0__9c426c50-1087-475c-aa36-cd00d24ccebb"
     ]
     
     
-    $ curl -X PUT -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/brokers/0?replace=true"
+    curl -X PUT -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/brokers/0?replace=true"
     PUT /service/kafka/v1/brokers/0 HTTP/1.1
     
     [
@@ -144,14 +144,14 @@ These operations mirror what is available with `bin/kafka-topics.sh`.
 
 ## List Topics
 
-    $ dcos kafka --name=kafka topic list
+    dcos kafka --name=kafka topic list
     [
         "topic1",
         "topic0"
     ]
     
     
-    $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics"
+    curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics"
     GET /service/kafka/v1/topics HTTP/1.1
     
     [
@@ -162,7 +162,7 @@ These operations mirror what is available with `bin/kafka-topics.sh`.
 
 ## Describe Topic
 
-    $ dcos kafka --name=kafka topic describe topic1
+    dcos kafka --name=kafka topic describe topic1
     {
         "partitions": [
             {
@@ -208,7 +208,7 @@ These operations mirror what is available with `bin/kafka-topics.sh`.
     }
     
     
-    $ curl -X POST -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics/topic1"
+    curl -X POST -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics/topic1"
     GET /service/kafka/v1/topics/topic1 HTTP/1.1
     
     {
@@ -258,13 +258,13 @@ These operations mirror what is available with `bin/kafka-topics.sh`.
 
 ## Create Topic
 
-    $ dcos kafka --name=kafka topic create topic1 --partitions=3 --replication=3
+    dcos kafka --name=kafka topic create topic1 --partitions=3 --replication=3
     {
         "message": "Output: Created topic "topic1".n"
     }
     
     
-    $ curl -X POST -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics?name=topic1&partitions=3&replication=3"
+    curl -X POST -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics?name=topic1&partitions=3&replication=3"
     POST /service/kafka/v1/topics?replication=3&name=topic1&partitions=3 HTTP/1.1
     
     {
@@ -276,7 +276,7 @@ These operations mirror what is available with `bin/kafka-topics.sh`.
 
 There is an optional `--time` parameter which may be set to either "first", "last", or a timestamp in milliseconds as [described in the Kafka documentation][15].
 
-    $ dcos kafka --name=kafka topic offsets topic1 --time=last
+    dcos kafka --name=kafka topic offsets topic1 --time=last
     [
         {
             "2": "334"
@@ -290,7 +290,7 @@ There is an optional `--time` parameter which may be set to either "first", "las
     ]
     
     
-    $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics/topic1/offsets?time=last"
+    curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics/topic1/offsets?time=last"
     GET /service/kafka/v1/topics/topic1/offsets?time=last HTTP/1.1
     
     [
@@ -308,13 +308,13 @@ There is an optional `--time` parameter which may be set to either "first", "las
 
 ## Alter Topic Partition Count
 
-    $ dcos kafka --name=kafka topic partitions topic1 2
+    dcos kafka --name=kafka topic partitions topic1 2
     {
         "message": "Output: WARNING: If partitions are increased for a topic that has a key, the partition logic or ordering of the messages will be affectednAdding partitions succeeded!n"
     }
     
     
-    $ curl -X PUT -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics/topic1?operation=partitions&partitions=2"
+    curl -X PUT -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics/topic1?operation=partitions&partitions=2"
     PUT /service/kafka/v1/topics/topic1?operation=partitions&partitions=2 HTTP/1.1
     
     {
@@ -324,14 +324,14 @@ There is an optional `--time` parameter which may be set to either "first", "las
 
 ## Run Producer Test on Topic
 
-    $ dcos kafka --name=kafka topic producer_test topic1 10
+    dcos kafka --name=kafka topic producer_test topic1 10
     
     {
         "message": "10 records sent, 70.422535 records/sec (0.07 MB/sec), 24.20 ms avg latency, 133.00 ms max latency, 13 ms 50th, 133 ms 95th, 133 ms 99th, 133 ms 99.9th.n"
     }
     
     
-    $ curl -X PUT -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics/topic1?operation=producer-test&messages=10"
+    curl -X PUT -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics/topic1?operation=producer-test&messages=10"
     PUT /service/kafka/v1/topics/topic1?operation=producer-test&messages=10 HTTP/1.1
     
     {
@@ -351,14 +351,14 @@ Runs the equivalent of the following command from the machine running the Kafka 
 
 ## Delete Topic
 
-    $ dcos kafka --name=kafka topic delete topic1
+    dcos kafka --name=kafka topic delete topic1
     
     {
         "message": "Topic topic1 is marked for deletion.nNote: This will have no impact if delete.topic.enable is not set to true.n"
     }
     
     
-    $ curl -X DELETE -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics/topic1"
+    curl -X DELETE -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics/topic1"
     DELETE /service/kafka/v1/topics/topic1 HTTP/1.1
     
     {
@@ -370,14 +370,14 @@ Note the warning in the output from the commands above. You can change the indic
 
 ## List Under Replicated Partitions
 
-    $ dcos kafka --name=kafka topic under_replicated_partitions
+    dcos kafka --name=kafka topic under_replicated_partitions
     
     {
         "message": ""
     }
     
     
-    $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics/under_replicated_partitions"
+    curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics/under_replicated_partitions"
     GET /service/kafka/v1/topics/under_replicated_partitions HTTP/1.1
     
     {
@@ -387,14 +387,14 @@ Note the warning in the output from the commands above. You can change the indic
 
 ## List Unavailable Partitions
 
-    $ dcos kafka --name=kafka topic unavailable_partitions
+    dcos kafka --name=kafka topic unavailable_partitions
     
     {
         "message": ""
     }
     
     
-    $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics/unavailable_partitions"
+    curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/topics/unavailable_partitions"
     GET /service/kafka/v1/topics/unavailable_partitions HTTP/1.1
     
     {
@@ -408,7 +408,7 @@ These operations relate to viewing the service's configuration history.
 
 ## List Configuration IDs
 
-    $ dcos kafka --name=kafka config list
+    dcos kafka --name=kafka config list
     
     [
         "319ebe89-42e2-40e2-9169-8568e2421023",
@@ -416,7 +416,7 @@ These operations relate to viewing the service's configuration history.
     ]
     
     
-    $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/configurations"
+    curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/configurations"
     GET /service/kafka/v1/configurations HTTP/1.1
     
     [
@@ -429,7 +429,7 @@ These operations relate to viewing the service's configuration history.
 
 This configuration shows a default per-broker memory allocation of 2048 (configured via the `BROKER_MEM` parameter):
 
-    $ dcos kafka --name=kafka config describe 319ebe89-42e2-40e2-9169-8568e2421023
+    dcos kafka --name=kafka config describe 319ebe89-42e2-40e2-9169-8568e2421023
     
     {
         "brokerConfiguration": {
@@ -457,7 +457,7 @@ This configuration shows a default per-broker memory allocation of 2048 (configu
     }
     
     
-    $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/configurations/319ebe89-42e2-40e2-9169-8568e2421023"
+    curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/configurations/319ebe89-42e2-40e2-9169-8568e2421023"
     GET /service/kafka/v1/configurations/319ebe89-42e2-40e2-9169-8568e2421023 HTTP/1.1
     
     {
@@ -490,7 +490,7 @@ This configuration shows a default per-broker memory allocation of 2048 (configu
 
 The target configuration, meanwhile, shows an increase of configured per-broker memory from 2048 to 4096 (again, configured as `BROKER_MEM`):
 
-    $ dcos kafka --name=kafka config target
+    dcos kafka --name=kafka config target
     
     {
         "brokerConfiguration": {
@@ -518,7 +518,7 @@ The target configuration, meanwhile, shows an increase of configured per-broker 
     }
     
     
-    $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/configurations/target"
+    curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/configurations/target"
     GET /service/kafka/v1/configurations/target HTTP/1.1
     
     {
@@ -555,7 +555,7 @@ These options relate to viewing and controlling rollouts and configuration updat
 
 Displays all Phases and Steps in the service Plan. If a rollout is currently in progress, this returns a 503 HTTP code with response content otherwise unchanged.
 
-    $ dcos kafka --name=kafka plan 
+    dcos kafka --name=kafka plan 
     GET /service/kafka/v1/plan HTTP/1.1
     
     {
@@ -604,7 +604,7 @@ Displays all Phases and Steps in the service Plan. If a rollout is currently in 
     }
     
     
-    $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan"
+    curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan"
     GET /service/kafka/v1/plan HTTP/1.1
     
     {
@@ -659,14 +659,14 @@ These operations are only applicable when `PHASE_STRATEGY` is set to `STAGE`, th
 
 ### Continue
 
-    $ dcos kafka --name=kafka continue
-    $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan/continue"
+    dcos kafka --name=kafka continue
+    curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan/continue"
     
 
 ### Interrupt
 
-    $ dcos kafka --name=kafka interrupt
-    $ curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan/interrupt"
+    dcos kafka --name=kafka interrupt
+    curl -H "Authorization: token=$AUTH_TOKEN" "$DCOS_URI/service/kafka/v1/plan/interrupt"
     
 
  [15]: https://cwiki.apache.org/confluence/display/KAFKA/System+Tools#SystemTools-GetOffsetShell

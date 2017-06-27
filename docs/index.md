@@ -1,6 +1,8 @@
 ---
-post_title: Kafka
-menu_order: 90
+post_title: Kafka version 1.1.19-0.10.1.0
+nav_title: v1.1.19-0.10.1.0
+menu_order: 0
+post_excerpt: ""
 feature_maturity: preview
 enterprise: 'no'
 ---

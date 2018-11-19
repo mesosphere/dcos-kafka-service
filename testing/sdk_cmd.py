@@ -1,10 +1,10 @@
-'''Utilities relating to running commands and HTTP requests
+"""Utilities relating to running commands and HTTP requests
 
 ************************************************************************
 FOR THE TIME BEING WHATEVER MODIFICATIONS ARE APPLIED TO THIS FILE
 SHOULD ALSO BE APPLIED TO sdk_cmd IN ANY OTHER PARTNER REPOS
 ************************************************************************
-'''
+"""
 import json as jsonlib
 import os
 import logging
@@ -25,15 +25,16 @@ DEFAULT_TIMEOUT_SECONDS = 30 * 60
 
 
 def service_request(
-        method,
-        service_name,
-        service_path,
-        retry=True,
-        raise_on_error=True,
-        log_args=True,
-        verify=None,
-        timeout_seconds=60,
-        **kwargs):
+    method,
+    service_name,
+    service_path,
+    retry=True,
+    raise_on_error=True,
+    log_args=True,
+    verify=None,
+    timeout_seconds=60,
+    **kwargs,
+):
     """Used to query a service running on the cluster. See `cluster_request()` for arg meanings.
     :param service_name: The name of the service, e.g. 'marathon' or 'hello-world'
     :param service_path: HTTP path to be queried against the service, e.g. '/v2/apps'. Leading slash is optional.
@@ -41,19 +42,23 @@ def service_request(
     # Sanitize leading slash on service_path before calling urljoin() to avoid this:
     # 'http://example.com/service/myservice/' + '/v1/rpc' = 'http://example.com/v1/rpc'
     cluster_path = urllib.parse.urljoin(
-        '/service/{}/'.format(service_name), service_path.lstrip('/'))
-    return cluster_request(method, cluster_path, retry, raise_on_error, log_args, verify, timeout_seconds, **kwargs)
+        "/service/{}/".format(service_name), service_path.lstrip("/")
+    )
+    return cluster_request(
+        method, cluster_path, retry, raise_on_error, log_args, verify, timeout_seconds, **kwargs
+    )
 
 
 def cluster_request(
-        method,
-        cluster_path,
-        retry=True,
-        raise_on_error=True,
-        log_args=True,
-        verify=None,
-        timeout_seconds=60,
-        **kwargs):
+    method,
+    cluster_path,
+    retry=True,
+    raise_on_error=True,
+    log_args=True,
+    verify=None,
+    timeout_seconds=60,
+    **kwargs,
+):
     """Queries the provided cluster HTTP path using the provided method, with the following handy features:
     - The DCOS cluster's URL is automatically applied to the provided path.
     - Auth headers are automatically added.
@@ -73,7 +78,7 @@ def cluster_request(
 
     url = shakedown.dcos_url_path(cluster_path)
     # consistently include slash prefix for clearer logging below
-    cluster_path = '/' + cluster_path.lstrip('/')
+    cluster_path = "/" + cluster_path.lstrip("/")
 
     def fn():
         # Underlying dcos.http.request will wrap responses in custom exceptions. This messes with
@@ -86,45 +91,51 @@ def cluster_request(
         except dcos.errors.DCOSUnprocessableException as e:
             # unlike the the above, this directly extends DCOSHTTPException
             response = e.response
-        log_msg = 'Got {} for {} {}'.format(
-            response.status_code, method.upper(), cluster_path)
+        log_msg = "Got {} for {} {}".format(response.status_code, method.upper(), cluster_path)
         if kwargs:
             # log arg content (or just arg names, with hack to avoid 'dict_keys([...])') if present
-            log_msg += ' (args: {})'.format(
-                kwargs if log_args else [e for e in kwargs.keys()])
+            log_msg += " (args: {})".format(kwargs if log_args else [e for e in kwargs.keys()])
         log.info(log_msg)
         if not response.ok:
             # Query failed (>= 400). Before (potentially) throwing, print response payload which may
             # include additional error details.
             response_text = response.text
             if response_text:
-                log.info('Response content ({} bytes):\n{}'.format(
-                    len(response_text), response_text))
+                log.info(
+                    "Response content ({} bytes):\n{}".format(len(response_text), response_text)
+                )
             else:
-                log.info('No response content')
+                log.info("No response content")
         if raise_on_error:
             response.raise_for_status()
         return response
 
     if retry:
         # Use wrapper to implement retry:
-        @retrying.retry(
-            wait_fixed=1000,
-            stop_max_delay=timeout_seconds * 1000)
+        @retrying.retry(wait_fixed=1000, stop_max_delay=timeout_seconds * 1000)
         def retry_fn():
             return fn()
+
         return retry_fn()
     else:
         # No retry, invoke directly:
         return fn()
 
 
-def svc_cli(package_name, service_name, service_cmd, json=False, print_output=True, return_stderr_in_stdout=False):
-    full_cmd = '{} --name={} {}'.format(package_name,
-                                        service_name, service_cmd)
+def svc_cli(
+    package_name,
+    service_name,
+    service_cmd,
+    json=False,
+    print_output=True,
+    return_stderr_in_stdout=False,
+):
+    full_cmd = "{} --name={} {}".format(package_name, service_name, service_cmd)
 
     if not json:
-        return run_cli(full_cmd, print_output=print_output, return_stderr_in_stdout=return_stderr_in_stdout)
+        return run_cli(
+            full_cmd, print_output=print_output, return_stderr_in_stdout=return_stderr_in_stdout
+        )
     else:
         # TODO(elezar): We shouldn't use json=True and return_stderr_in_stdout=True together
         # assert not return_stderr_in_stdout, json=True and return_stderr_in_stdout=True should not be used together
@@ -139,16 +150,15 @@ def run_raw_cli(cmd, print_output=True):
     $ dcos package install <package-name>
     """
     dcos_cmd = "dcos {}".format(cmd)
-    result = subprocess.run([dcos_cmd], shell=True,
-                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    result = subprocess.run([dcos_cmd], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout = ""
     stderr = ""
 
     if result.stdout:
-        stdout = result.stdout.decode('utf-8').strip()
+        stdout = result.stdout.decode("utf-8").strip()
 
     if result.stderr:
-        stderr = result.stderr.decode('utf-8').strip()
+        stderr = result.stderr.decode("utf-8").strip()
 
     if print_output:
         if stdout:
@@ -171,19 +181,18 @@ def run_cli(cmd, print_output=True, return_stderr_in_stdout=False):
 
 def kill_task_with_pattern(pattern, agent_host=None, timeout_seconds=DEFAULT_TIMEOUT_SECONDS):
     @retrying.retry(
-        wait_fixed=1000,
-        stop_max_delay=timeout_seconds * 1000,
-        retry_on_result=lambda res: not res)
+        wait_fixed=1000, stop_max_delay=timeout_seconds * 1000, retry_on_result=lambda res: not res
+    )
     def fn():
         command = (
             "sudo kill -9 "
             "$(ps ax | grep {} | grep -v grep | tr -s ' ' | sed 's/^ *//g' | "
-            "cut -d ' ' -f 1)".format(pattern))
+            "cut -d ' ' -f 1)".format(pattern)
+        )
         if agent_host is None:
             exit_status, _ = shakedown.run_command_on_master(command)
         else:
-            exit_status, _ = shakedown.run_command_on_agent(
-                agent_host, command)
+            exit_status, _ = shakedown.run_command_on_agent(agent_host, command)
 
         return exit_status
 
@@ -191,27 +200,27 @@ def kill_task_with_pattern(pattern, agent_host=None, timeout_seconds=DEFAULT_TIM
     fn()
 
 
-@retrying.retry(stop_max_attempt_number=3,
-                wait_fixed=1000,
-                retry_on_result=lambda result: not result)
+@retrying.retry(
+    stop_max_attempt_number=3, wait_fixed=1000, retry_on_result=lambda result: not result
+)
 def create_task_text_file(task_name: str, filename: str, lines: list) -> bool:
     output_cmd = """bash -c \"cat >{output_file} << EOL
 {content}
-EOL\"""".format(output_file=filename, content="\n".join(lines))
+EOL\"""".format(
+        output_file=filename, content="\n".join(lines)
+    )
     log.info("Running: %s", output_cmd)
     rc, stdout, stderr = task_exec(task_name, output_cmd)
 
     if rc or stderr:
-        log.error("Error creating file %s. rc=%s stdout=%s stderr=%s",
-                  filename, rc, stdout, stderr)
+        log.error("Error creating file %s. rc=%s stdout=%s stderr=%s", filename, rc, stdout, stderr)
         return False
 
     linecount_cmd = "wc -l {output_file}".format(output_file=filename)
     rc, stdout, stderr = task_exec(task_name, linecount_cmd)
 
     if rc or stderr:
-        log.error("Error checking file %s. rc=%s stdout=%s stderr=%s",
-                  filename, rc, stdout, stderr)
+        log.error("Error checking file %s. rc=%s stdout=%s stderr=%s", filename, rc, stdout, stderr)
         return False
 
     written_lines = 0
@@ -222,8 +231,12 @@ EOL\"""".format(output_file=filename, content="\n".join(lines))
 
     expected_lines = len("\n".join(lines).split("\n"))
     if written_lines != expected_lines:
-        log.warning("Number of written lines do not match. stdout=%s expected=%s written=%s",
-                    stdout, expected_lines, written_lines)
+        log.warning(
+            "Number of written lines do not match. stdout=%s expected=%s written=%s",
+            stdout,
+            expected_lines,
+            written_lines,
+        )
         return False
 
     return True
@@ -231,36 +244,29 @@ EOL\"""".format(output_file=filename, content="\n".join(lines))
 
 def shutdown_agent(agent_ip, timeout_seconds=DEFAULT_TIMEOUT_SECONDS):
     @retrying.retry(
-        wait_fixed=1000,
-        stop_max_delay=timeout_seconds * 1000,
-        retry_on_result=lambda res: not res)
+        wait_fixed=1000, stop_max_delay=timeout_seconds * 1000, retry_on_result=lambda res: not res
+    )
     def fn():
-        ok, stdout = shakedown.run_command_on_agent(
-            agent_ip, 'sudo shutdown -h +1')
-        log.info('Shutdown agent {}: ok={}, stdout="{}"'.format(
-            agent_ip, ok, stdout))
+        ok, stdout = shakedown.run_command_on_agent(agent_ip, "sudo shutdown -h +1")
+        log.info('Shutdown agent {}: ok={}, stdout="{}"'.format(agent_ip, ok, stdout))
         return ok
+
     # Might not be able to connect to the agent on first try so we repeat until we can
     fn()
 
     # We use a manual check to detect that the host is down. Mesos takes ~5-20 minutes to detect a
     # dead agent, so relying on Mesos to tell us this isn't really feasible for a test.
 
-    log.info(
-        'Waiting for agent {} to appear inactive in /mesos/slaves'.format(agent_ip))
+    log.info("Waiting for agent {} to appear inactive in /mesos/slaves".format(agent_ip))
 
-    @retrying.retry(
-        wait_fixed=1000,
-        stop_max_delay=5 * 60 * 1000,
-        retry_on_result=lambda res: res)
+    @retrying.retry(wait_fixed=1000, stop_max_delay=5 * 60 * 1000, retry_on_result=lambda res: res)
     def wait_for_unresponsive_agent():
         try:
-            response = cluster_request(
-                'GET', '/mesos/slaves', retry=False).json()
+            response = cluster_request("GET", "/mesos/slaves", retry=False).json()
             agent_statuses = {}
-            for agent in response['slaves']:
-                agent_statuses[agent['hostname']] = agent['active']
-            log.info('Wait for {}=False: {}'.format(agent_ip, agent_statuses))
+            for agent in response["slaves"]:
+                agent_statuses[agent["hostname"]] = agent["active"]
+            log.info("Wait for {}=False: {}".format(agent_ip, agent_statuses))
             # If no agents were found, try again
             if len(agent_statuses) == 0:
                 return True
@@ -275,8 +281,7 @@ def shutdown_agent(agent_ip, timeout_seconds=DEFAULT_TIMEOUT_SECONDS):
 
     wait_for_unresponsive_agent()
 
-    log.info(
-        'Agent {} appears inactive in /mesos/slaves, proceeding.'.format(agent_ip))
+    log.info("Agent {} appears inactive in /mesos/slaves, proceeding.".format(agent_ip))
 
 
 def task_exec(task_name: str, cmd: str, return_stderr_in_stdout: bool = False) -> tuple:
@@ -292,12 +297,11 @@ def task_exec(task_name: str, cmd: str, return_stderr_in_stdout: bool = False) -
 
         if cmd.startswith("./bootstrap"):
             # On 1.9 we need to set LIBPROCESS_IP for bootstrap
-            full_cmd = "bash -c \"LIBPROCESS_IP=0.0.0.0 {}\"".format(full_cmd)
+            full_cmd = 'bash -c "LIBPROCESS_IP=0.0.0.0 {}"'.format(full_cmd)
     else:
         full_cmd = cmd
 
-    exec_cmd = "task exec {task_name} {cmd}".format(
-        task_name=task_name, cmd=full_cmd)
+    exec_cmd = "task exec {task_name} {cmd}".format(task_name=task_name, cmd=full_cmd)
     rc, stdout, stderr = run_raw_cli(exec_cmd)
 
     if return_stderr_in_stdout:
@@ -306,24 +310,24 @@ def task_exec(task_name: str, cmd: str, return_stderr_in_stdout: bool = False) -
     return rc, stdout, stderr
 
 
-def resolve_hosts(marathon_task_name: str, hosts: list, bootstrap_cmd: str='./bootstrap') -> bool:
+def resolve_hosts(marathon_task_name: str, hosts: list, bootstrap_cmd: str = "./bootstrap") -> bool:
     """
     Use bootstrap to resolve the specified list of hosts
     """
     bootstrap_cmd = [
         bootstrap_cmd,
-        '-print-env=false',
-        '-template=false',
-        '-install-certs=false',
-        '-self-resolve=false',
-        '-resolve-hosts', ','.join(hosts)]
-    log.info("Running bootstrap to wait for DNS resolution of: %s",
-             ', '.join(hosts))
-    _, bootstrap_stdout, bootstrap_stderr = task_exec(
-        marathon_task_name, ' '.join(bootstrap_cmd))
+        "-print-env=false",
+        "-template=false",
+        "-install-certs=false",
+        "-self-resolve=false",
+        "-resolve-hosts",
+        ",".join(hosts),
+    ]
+    log.info("Running bootstrap to wait for DNS resolution of: %s", ", ".join(hosts))
+    _, bootstrap_stdout, bootstrap_stderr = task_exec(marathon_task_name, " ".join(bootstrap_cmd))
 
     # Note that bootstrap returns its output in STDERR
-    resolved = 'SDK Bootstrap successful.' in bootstrap_stderr
+    resolved = "SDK Bootstrap successful." in bootstrap_stderr
     if not resolved:
         for host in hosts:
             resolved_host_string = "Resolved '{host}' =>".format(host=host)
@@ -358,10 +362,15 @@ def get_task_sandbox_path(task_name: str) -> str:
         if not executor_path:
             executor_path = task_info["id"]
         # Assume the latest run:
-        return os.path.join("/var/lib/mesos/slave/slaves", task_info["slave_id"],
-                            "frameworks", task_info["framework_id"],
-                            "executors", executor_path,
-                            "runs/latest")
+        return os.path.join(
+            "/var/lib/mesos/slave/slaves",
+            task_info["slave_id"],
+            "frameworks",
+            task_info["framework_id"],
+            "executors",
+            executor_path,
+            "runs/latest",
+        )
 
     return ""
 

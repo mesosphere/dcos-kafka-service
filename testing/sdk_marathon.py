@@ -1,10 +1,10 @@
-'''Utilities relating to interaction with Marathon
+"""Utilities relating to interaction with Marathon
 
 ************************************************************************
 FOR THE TIME BEING WHATEVER MODIFICATIONS ARE APPLIED TO THIS FILE
 SHOULD ALSO BE APPLIED TO sdk_marathon IN ANY OTHER PARTNER REPOS
 ************************************************************************
-'''
+"""
 import logging
 import json
 import os
@@ -22,7 +22,7 @@ log = logging.getLogger(__name__)
 
 
 def _get_config_once(app_name):
-    return sdk_cmd.cluster_request('GET', _api_url('apps/{}'.format(app_name)), retry=False)
+    return sdk_cmd.cluster_request("GET", _api_url("apps/{}".format(app_name)), retry=False)
 
 
 def app_exists(app_name):
@@ -35,22 +35,20 @@ def app_exists(app_name):
 
 def get_config(app_name, timeout=TIMEOUT_SECONDS):
     # Be permissive of flakes when fetching the app content:
-    @retrying.retry(
-        wait_fixed=1000,
-        stop_max_delay=timeout * 1000)
+    @retrying.retry(wait_fixed=1000, stop_max_delay=timeout * 1000)
     def wait_for_response():
-        return _get_config_once(app_name).json()['app']
+        return _get_config_once(app_name).json()["app"]
 
     config = wait_for_response()
 
     # The configuration JSON that marathon returns doesn't match the configuration JSON it accepts,
     # so we have to remove some offending fields to make it re-submittable, since it's not possible to
     # submit a partial config with only the desired fields changed.
-    if 'uris' in config:
-        del config['uris']
+    if "uris" in config:
+        del config["uris"]
 
-    if 'version' in config:
-        del config['version']
+    if "version" in config:
+        del config["version"]
 
     return config
 
@@ -111,22 +109,25 @@ def install_app(app_definition: dict) -> (bool, str):
         return install_app_from_file(app_name, app_def_path)
 
 
-def update_app(app_name, config, timeout=TIMEOUT_SECONDS, wait_for_completed_deployment=True, force=True):
+def update_app(
+    app_name, config, timeout=TIMEOUT_SECONDS, wait_for_completed_deployment=True, force=True
+):
     if "env" in config:
-        log.info("Environment for marathon app {} ({} values):".format(
-            app_name, len(config["env"])))
+        log.info(
+            "Environment for marathon app {} ({} values):".format(app_name, len(config["env"]))
+        )
         for k in sorted(config["env"]):
             log.info("  {}={}".format(k, config["env"][k]))
 
     query_string = "?force=true" if force else ""
 
     # throws on failure:
-    sdk_cmd.cluster_request('PUT', _api_url(
-        'apps/{}{}'.format(app_name, query_string)), log_args=False, json=config)
+    sdk_cmd.cluster_request(
+        "PUT", _api_url("apps/{}{}".format(app_name, query_string)), log_args=False, json=config
+    )
 
     if wait_for_completed_deployment:
-        log.info(
-            "Waiting for Marathon deployment of {} to complete...".format(app_name))
+        log.info("Waiting for Marathon deployment of {} to complete...".format(app_name))
         shakedown.deployment_wait(app_id=app_name, timeout=timeout)
 
 
@@ -137,51 +138,54 @@ def destroy_app(app_name):
 def restart_app(app_name):
     log.info("Restarting {}...".format(app_name))
     # throws on failure:
-    sdk_cmd.cluster_request('POST', _api_url(
-        'apps/{}/restart'.format(app_name)))
+    sdk_cmd.cluster_request("POST", _api_url("apps/{}/restart".format(app_name)))
     log.info("Restarted {}.".format(app_name))
 
 
 def _api_url(path):
-    return '/marathon/v2/{}'.format(path)
+    return "/marathon/v2/{}".format(path)
 
 
 def get_scheduler_host(service_name):
     # Marathon mangles foldered paths as follows: "/path/to/svc" => "svc.to.path"
-    task_name_elems = service_name.lstrip('/').split('/')
+    task_name_elems = service_name.lstrip("/").split("/")
     task_name_elems.reverse()
-    app_name = '.'.join(task_name_elems)
-    ips = shakedown.get_service_ips('marathon', app_name)
+    app_name = ".".join(task_name_elems)
+    ips = shakedown.get_service_ips("marathon", app_name)
     if len(ips) == 0:
-        raise Exception('No IPs found for marathon task "{}". Available tasks are: {}'.format(
-            app_name, [task['name'] for task in shakedown.get_service_tasks('marathon')]))
+        raise Exception(
+            'No IPs found for marathon task "{}". Available tasks are: {}'.format(
+                app_name, [task["name"] for task in shakedown.get_service_tasks("marathon")]
+            )
+        )
     return ips.pop()
 
 
 def bump_cpu_count_config(service_name, key_name, delta=0.1):
     config = get_config(service_name)
-    updated_cpus = float(config['env'][key_name]) + delta
-    config['env'][key_name] = str(updated_cpus)
+    updated_cpus = float(config["env"][key_name]) + delta
+    config["env"][key_name] = str(updated_cpus)
     update_app(service_name, config)
     return updated_cpus
 
 
 def bump_task_count_config(service_name, key_name, delta=1):
     config = get_config(service_name)
-    updated_node_count = int(config['env'][key_name]) + delta
-    config['env'][key_name] = str(updated_node_count)
+    updated_node_count = int(config["env"][key_name]) + delta
+    config["env"][key_name] = str(updated_node_count)
     update_app(service_name, config)
 
 
 def get_mesos_api_version(service_name):
-    return get_config(service_name)['env']['MESOS_API_VERSION']
+    return get_config(service_name)["env"]["MESOS_API_VERSION"]
 
 
 def set_mesos_api_version(service_name, api_version, timeout=600):
-    '''Sets the mesos API version to the provided value, and then verifies that the scheduler comes back successfully'''
+    """Sets the mesos API version to the provided value, and then verifies that the scheduler comes back successfully"""
     config = get_config(service_name)
-    config['env']['MESOS_API_VERSION'] = api_version
+    config["env"]["MESOS_API_VERSION"] = api_version
     update_app(service_name, config, timeout=timeout)
     # wait for scheduler to come back and successfully receive/process offers:
     sdk_metrics.wait_for_scheduler_counter_value(
-        service_name, 'offers.processed', 1, timeout_seconds=timeout)
+        service_name, "offers.processed", 1, timeout_seconds=timeout
+    )

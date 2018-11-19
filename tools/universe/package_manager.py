@@ -11,8 +11,10 @@ import os
 import tempfile
 
 from . import package
+
 try:
     import requests
+
     _HAS_REQUESTS = True
 except ImportError:
     _HAS_REQUESTS = False
@@ -23,17 +25,21 @@ LOGGER = logging.getLogger(__name__)
 
 class PackageManager:
     """A simple package manager for retrieving universe packages"""
-    def __init__(self, universe_url="https://universe.mesosphere.com/repo",
-                 dcos_version="1.10",
-                 package_version="4",
-                 dry_run=False):
+
+    def __init__(
+        self,
+        universe_url="https://universe.mesosphere.com/repo",
+        dcos_version="1.10",
+        package_version="4",
+        dry_run=False,
+    ):
 
         self._dry_run = dry_run
         self._universe_url = universe_url
         self._headers = {
             "User-Agent": "dcos/{}".format(dcos_version),
             "Accept": "application/vnd.dcos.universe.repo+json;"
-                      "charset=utf-8;version=v{}".format(package_version),
+            "charset=utf-8;version=v{}".format(package_version),
         }
 
         self.__package_cache = None
@@ -72,13 +78,13 @@ class PackageManager:
 
             package_dict = {}
             for p in raw_package_list:
-                package_name = p['name']
+                package_name = p["name"]
                 package_object = package.Package.from_json(p)
 
                 if package_name in package_dict:
                     package_dict[package_name].append(package_object)
                 else:
-                    package_dict[package_name] = [package_object, ]
+                    package_dict[package_name] = [package_object]
 
             self.__package_cache = {}
             for p, packages in package_dict.items():
@@ -90,15 +96,21 @@ class PackageManager:
 def _get_packages_with_curl(universe_url, headers):
     """Use curl to download the packages from the universe"""
     with tempfile.TemporaryDirectory() as tmp_dir:
-        tmp_filename = os.path.join(tmp_dir, 'packages.json')
+        tmp_filename = os.path.join(tmp_dir, "packages.json")
 
-        cmd = ["curl",
-               "--write-out", "%{http_code}",
-               "--silent",
-               "-L",
-               "--max-time", "5",
-               "-X", "GET",
-               "-o", tmp_filename, ]
+        cmd = [
+            "curl",
+            "--write-out",
+            "%{http_code}",
+            "--silent",
+            "-L",
+            "--max-time",
+            "5",
+            "-X",
+            "GET",
+            "-o",
+            tmp_filename,
+        ]
         for k, header in headers.items():
             cmd.extend(["-H", "{}: {}".format(k, header)])
 
@@ -112,7 +124,7 @@ def _get_packages_with_curl(universe_url, headers):
                 raise Exception("Curl returned status code {}".format(status_code))
 
             with open(tmp_filename, "r") as f:
-                packages = json.load(f)['packages']
+                packages = json.load(f)["packages"]
         except Exception as e:
             LOGGER.error("Retrieving packages with curl failed. %s", e)
             packages = []
@@ -125,7 +137,7 @@ def _get_packages_with_requests(universe_url, headers):
     try:
         response = requests.get(universe_url, headers=headers)
         response.raise_for_status()
-        packages = response.json()['packages']
+        packages = response.json()["packages"]
     except Exception as e:
         LOGGER.error("Retrieving packages with requests failed. %s", e)
         packages = []
@@ -135,5 +147,4 @@ def _get_packages_with_requests(universe_url, headers):
 
 class DryRunPackages:
     def get(self, package_name, default):
-        return [package.Package(package_name,
-                                package.Version(0, "DRY_RUN_VERSION")), ]
+        return [package.Package(package_name, package.Version(0, "DRY_RUN_VERSION"))]

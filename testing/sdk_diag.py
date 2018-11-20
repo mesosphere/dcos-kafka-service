@@ -445,7 +445,7 @@ def _select_log_files(
 
     Results are placed in the 'selected' param.
     """
-    logfile_pattern = re.compile("^.*/(stdout|stderr)(\.[0-9]+)?$")
+    logfile_pattern = re.compile(r"^.*/(stdout|stderr)(\.[0-9]+)?$")
     for file_info in file_infos:
         if not logfile_pattern.match(file_info["path"]):
             continue

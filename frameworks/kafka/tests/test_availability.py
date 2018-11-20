@@ -108,7 +108,7 @@ def test_service_startup_rapid():
     assert (started_time - starting_time).total_seconds() <= max_restart_seconds
 
 
-LOG_TIMESTAMP_RE = re.compile("\[(\d{4}[-]\d{2}[-]\d{2}[ ]\d{2}[:]\d{2}[:]\d{2})")
+LOG_TIMESTAMP_RE = re.compile(r"\[(\d{4}[-]\d{2}[-]\d{2}[ ]\d{2}[:]\d{2}[:]\d{2})")
 
 
 def log_line_ts(log_line):

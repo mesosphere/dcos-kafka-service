@@ -155,7 +155,7 @@ def test_broker_invalid():
         assert False, "Should have failed"
     except AssertionError as arg:
         raise arg
-    except Exception as e:
+    except Exception:
         pass  # expected to fail
 
 

@@ -75,7 +75,7 @@ class UniverseReleaseBuilder(object):
                     'Either remove the "-beta" suffix, or enable BETA mode.'.format(package_version)
                 )
 
-        return stripped_version
+        return package_version
 
     def __init__(
         self,

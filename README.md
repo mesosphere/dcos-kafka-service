@@ -1,15 +1,10 @@
-# DC/OS Apache Kafka Service Documentation
+# DC/OS Apache Kafka Service
 
-## Table of Contents
+This is the source repository for the [DC/OS Apache Kafka](https://mesosphere.com/service-catalog/kafka) package.
 
-- [Overview](docs/index.md)
-- [Quick Start](docs/quick-start.md)
-- [Install and Customize](docs/install-and-customize.md)
-- [Uninstall](docs/uninstall.md)
-- [Configure](docs/configure.md)
-- [Connecting Clients](docs/connecting-clients.md)
-- [Managing](docs/managing.md)
-- [API Reference](docs/api-reference.md)
-- [Troubleshooting](docs/troubleshooting.md)
-- [Limitations](docs/limitations.md)
-- [Release Notes](docs/release-notes.md)
+## Building the package
+
+In order to build a stub-universe hosted on an S3 bucket run:
+```bash
+./frameworks/kafka/build.sh aws
+```

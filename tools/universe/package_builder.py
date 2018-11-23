@@ -20,7 +20,7 @@ _jre_url = "https://downloads.mesosphere.com/java/server-jre-8u192-linux-x64.tar
 _libmesos_bundle_url = (
     "https://downloads.mesosphere.com/libmesos-bundle/libmesos-bundle-1.11.0.tar.gz"
 )
-_dcos_sdk_version = "0.42.2"
+_dcos_sdk_version = "0.42.5"
 
 _docs_root = "https://docs.mesosphere.com"
 

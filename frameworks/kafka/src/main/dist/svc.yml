@@ -17,6 +17,10 @@ pods:
       - {{SETUP_HELPER_URI}}
       - {{ZOOKEEPER_CLIENT_URI}}
       - {{CUSTOM_KAFKA_PRINCIPAL_URI}}
+    rlimits:
+      RLIMIT_NOFILE:
+        soft: {{RLIMIT_NOFILE_SOFT}}
+        hard: {{RLIMIT_NOFILE_HARD}}
     {{#ENABLE_VIRTUAL_NETWORK}}
     networks:
       {{VIRTUAL_NETWORK_NAME}}:

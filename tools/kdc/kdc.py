@@ -46,6 +46,12 @@ $ PYTHONPATH=testing ./tools/kdc/kdc.py
 will perform the following actions:
 1. Remove the KDC Marathoin application named `kdc`
 2. Remove the DC/OS secret `__dcos_base64___keytab`
+
+
+Note: The KDC this tool launches uses the following encryption key types:
+- aes256-cts-hmac-sha1-96
+- des3-cbc-sha1
+- arcfour-hmac-md5
 """
 import argparse
 import logging
@@ -84,7 +90,7 @@ def parse_principals(principals_file: str) -> list:
 def deploy(args: dict):
     log.info("Deploying KDC")
 
-    kerberos = sdk_auth.KerberosEnvironment()
+    kerberos = sdk_auth.KerberosEnvironment(persist=True)
 
     if args.principals_file:
         create_keytab_secret(args, kerberos)
@@ -95,7 +101,7 @@ def deploy(args: dict):
 def create_keytab_secret(args: dict, kerberos=None):
 
     if not kerberos:
-        kerberos = sdk_auth.KerberosEnvironment()
+        kerberos = sdk_auth.KerberosEnvironment(persist=True)
 
     principals = parse_principals(args.principals_file)
     kerberos.add_principals(principals)

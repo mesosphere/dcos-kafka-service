@@ -63,9 +63,10 @@ class UniverseReleaseBuilder(object):
     @staticmethod
     def apply_beta_version(package_version: str, is_beta: bool) -> str:
         """Add the '-beta' suffix to the package version if required"""
+
+        stripped_version = right_trim(package_version, "-beta")
         if is_beta:
-            stripped_version = right_trim(package_version, "-beta")
-            log.info("Applying -beta sufix to %s", stripped_version)
+            log.info("Applying -beta sufix to {}".format(stripped_version))
             return "{}-beta".format(stripped_version)
         else:
             # complain if version has '-beta' suffix but BETA mode was disabled:
@@ -75,7 +76,7 @@ class UniverseReleaseBuilder(object):
                     'Either remove the "-beta" suffix, or enable BETA mode.'.format(package_version)
                 )
 
-        return package_version
+        return stripped_version
 
     def __init__(
         self,
@@ -88,6 +89,7 @@ class UniverseReleaseBuilder(object):
         release_docker_image=os.environ.get("RELEASE_DOCKER_IMAGE"),
         release_dir_path=os.environ.get("RELEASE_DIR_PATH", ""),
         beta_release=os.environ.get("BETA", "False"),
+        upgrades_from=os.environ.get("UPGRADES_FROM", ""),
     ):
         self._dry_run = os.environ.get("DRY_RUN", "")
         self._force_upload = os.environ.get("FORCE_ARTIFACT_UPLOAD", "").lower() == "true"
@@ -109,7 +111,7 @@ class UniverseReleaseBuilder(object):
         s3_directory_url = "s3://{}/{}/{}".format(
             s3_release_bucket, release_dir_path, self._pkg_version
         )
-        self._uploader = universe.S3Uploader(self._pkg_name, s3_directory_url, self._dry_run)
+        self._uploader = universe.S3Uploader(s3_directory_url, self._dry_run)
         self._pkg_manager = universe.PackageManager()
 
         self._http_directory_url = "{}/{}/{}".format(
@@ -117,6 +119,7 @@ class UniverseReleaseBuilder(object):
         )
 
         self._release_docker_image = release_docker_image or None
+        self._upgrades_from = list(filter(None, map(str.strip, upgrades_from.split(","))))
 
         log.info(
             """###
@@ -124,8 +127,13 @@ Source URL:      {}
 Package name:    {}
 Package version: {}
 Artifact output: {}
+Upgrades from:   {}
 ###""".format(
-                self._stub_universe_url, self._pkg_name, self._pkg_version, self._http_directory_url
+                self._stub_universe_url,
+                self._pkg_name,
+                self._pkg_version,
+                self._http_directory_url,
+                self._upgrades_from,
             )
         )
 
@@ -221,12 +229,16 @@ Artifact output: {}
         package_json["name"] = self._pkg_name
         # Update package's version to reflect the user's input
         package_json["version"] = self._pkg_version
-        # Update package's upgradesFrom/downgradesTo to reflect any package name changes
-        # due to enabling or disabling a beta bit.
-        if self._stub_universe_pkg_name != self._pkg_name and (
+
+        if self._upgrades_from:
+            package_json["upgradesFrom"] = [*self._upgrades_from]
+            package_json["downgradesTo"] = [*self._upgrades_from]
+        elif self._stub_universe_pkg_name != self._pkg_name and (
             package_json.get("upgradesFrom", ["*"]) != ["*"]
             or package_json.get("downgradesTo", ["*"]) != ["*"]
         ):
+            # Update package's upgradesFrom/downgradesTo to reflect any package name changes
+            # due to enabling or disabling a beta bit.
             last_release = self._pkg_manager.get_latest(self._pkg_name)
             if last_release is None:
                 # nothing to upgrade from
@@ -277,6 +289,9 @@ Artifact output: {}
         """Rewrites all artifact urls in pkgdir to self.release_artifact_http_dir.
         Returns the original urls.
         """
+        if "resource" not in package_json:
+            return []
+
         # we expect the artifacts to share the same directory prefix as the stub universe file itself:
         original_artifact_prefix = "/".join(self._stub_universe_url.split("/")[:-1])
         log.info(
@@ -460,7 +475,7 @@ Artifact output: {}
         pkgdir = self._unpack_stub_universe(stub_universe_json, scratchdir)
         try:
             return publisher.publish(scratchdir, pkgdir)
-        except:  # noqa: E722
+        except Exception:
             log.error(
                 "Failed to create PR. "
                 "Note that any release artifacts were already uploaded to {}, "
@@ -489,15 +504,13 @@ def right_trim(string: str, suffix: str) -> str:
 
 def print_help(argv):
     log.info(
-        "Syntax: {} move|release <package-version> <stub-universe-url> [commit message]".format(
-            argv[0]
-        )
+        "Syntax: %s move|release <package-version> <stub-universe-url> [commit message]", argv[0]
     )
     log.info(
-        "  Example: $ {} 1.2.3-4.5.6 https://example.com/path/to/stub-universe-kafka.json".format(
-            argv[0]
-        )
+        "  Example: $ %s 1.2.3-4.5.6 https://example.com/path/to/stub-universe-hello-world.json",
+        argv[0],
     )
+
     log.info("Required credentials in env:")
     log.info("- AWS S3: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY")
     log.info("- Github (Personal Access Token): GITHUB_TOKEN (only required for release)")

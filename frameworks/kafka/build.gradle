@@ -25,6 +25,8 @@ ext {
 dependencies {
     compile "mesosphere:scheduler:${dcosSDKVer}"
     testCompile "mesosphere:testing:${dcosSDKVer}"
+    testCompile "junit:junit:${junitVer}"
+    testCompile "org.mockito:mockito-core:${mockitoVer}"
 }
 
 distributions {

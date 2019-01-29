@@ -24,7 +24,6 @@ ext {
 
 dependencies {
     compile "mesosphere:scheduler:${dcosSDKVer}"
-    compile "mesosphere:executor:${dcosSDKVer}"
     testCompile "mesosphere:testing:${dcosSDKVer}"
 }
 

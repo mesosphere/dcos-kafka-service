@@ -228,8 +228,8 @@
             }
           }
         },
-        "readiness_check" : {
-          "description" : "Readiness check settings. Excercise caution when modifying these default values as it can lead to spurious task failures.",
+        "readiness_check": {
+          "description": "Readiness check settings. Excercise caution when modifying these default values as it can lead to spurious task failures.",
           "type": "object",
           "properties": {
             "interval": {
@@ -249,6 +249,30 @@
               "description": "An amount of time in seconds to wait for a readiness check to succeed.",
               "default": 10,
               "minimum": 10
+            }
+          }
+        },
+        "rlimits": {
+          "description": "POSIX resource limits applied to the pod. Excercise caution when modifying these default values as it can lead to spurious task failures.",
+          "type": "object",
+          "properties": {
+            "rlimit_nofile": {
+              "description": "Specifies RLIMIT_NOFILE, a value one greater than the maximum file descriptor number that can be opened by this process.",
+              "type": "object",
+              "properties": {
+                "soft": {
+                  "type": "integer",
+                  "description": "The  soft  limit  is  the  value that the kernel enforces for the corresponding resource.",
+                  "default": 128000,
+                  "minimum": 128000
+                },
+                "hard": {
+                  "type": "integer",
+                  "description": "The  hard  limit  acts as a ceiling for the soft limit.",
+                  "default": 128000,
+                  "minimum": 128000
+                }
+              }
             }
           }
         }
@@ -832,7 +856,7 @@
           "title": "log.cleaner.io.max.bytes.per.second",
           "description": "The log cleaner will be throttled so that the sum of its read and write i/o will be less than this value on average",
           "type": "number",
-          "default": 1.7976931348623157E308
+          "default": 1.7976931348623157e+308
         },
         "log_cleaner_min_cleanable_ratio": {
           "title": "log.cleaner.min.cleanable.ratio",

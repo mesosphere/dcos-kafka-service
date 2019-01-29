@@ -58,16 +58,14 @@ public class Main {
         }
         LOGGER.info("Running Kafka with zookeeper path: {}", kafkaZookeeperUri);
 
-        SchedulerBuilder schedulerBuilder = DefaultScheduler.newBuilder(
-                DefaultServiceSpec
-                        .newGenerator(rawServiceSpec, schedulerConfig, yamlSpecFile.getParentFile())
+        DefaultServiceSpec defaultServiceSpec =
+                DefaultServiceSpec.newGenerator(rawServiceSpec, schedulerConfig, yamlSpecFile.getParentFile())
                         .setAllPodsEnv(KAFKA_ZK_URI_ENV, kafkaZookeeperUri)
-                        .build(),
-                schedulerConfig)
-                .setCustomConfigValidators(Arrays.asList(new KafkaZoneValidator()))
-                .setPlansFrom(rawServiceSpec);
+                        .build();
 
-        return schedulerBuilder
+        return DefaultScheduler.newBuilder(defaultServiceSpec, schedulerConfig)
+                .setCustomConfigValidators(Arrays.asList(new KafkaZoneValidator()))
+                .setPlansFrom(rawServiceSpec)
                 .setEndpointProducer("zookeeper", EndpointProducer.constant(kafkaZookeeperUri))
                 .setCustomResources(getResources(kafkaZookeeperUri))
                 .withSingleRegionConstraint();

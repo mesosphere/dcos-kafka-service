@@ -13,7 +13,6 @@ Misc utilities:
 
 - **[dcos_login.py](#dcos_loginpy)**: Log into a DC/OS cluster using default/test credentials.
 - **[print_package_tag.py](#print_package_tagpy)**: Return the Git repo SHA for the provided package on the cluster.
-- **[universe_builder.py](#universe_builderpy)**: Underlying script which builds a `stub-universe.zip` given the necessary template data (package name, version, upload dir, ...). This is called by `publish_aws.py` and `publish_http.py` after autogenerating an upload directory.
 
 These utilities are designed to be used both in automated CI flows, as well as locally on developer workstations.
 
@@ -56,7 +55,7 @@ For example, instead of `http://example.com/artifacts/1.1/scheduler.zip`, you sh
 
 Note that this only applies to the files that you expect to be built, uploaded, and included in every release of your service. External resources that aren't included in the main build, such as icons, JVM packages, or external libraries should instead be uploaded to a fixed location, and their paths in the packaging should point to that location without any templating.
 
-For some examples of this, take a look at `resource.json` for [Kafka](https://github.com/mesosphere/dcos-kafka-service/blob/master/universe/resource.json) or [Cassandra](https://github.com/mesosphere/dcos-cassandra-service/blob/master/universe/resource.json).
+For an example of this, take a look at `resource.json` for [Hello World](../frameworks/helloworld/universe/resource.json).
 
 #### Version label placeholder
 
@@ -72,33 +71,33 @@ After:
   "version": "{{package-version}}",
 ```
 
-For some examples of this, take a look at `package.json` for [Kafka](https://github.com/mesosphere/dcos-kafka-service/blob/master/universe/package.json) or [Cassandra](https://github.com/mesosphere/dcos-cassandra-service/blob/master/universe/package.json).
+For an example of this, take a look at `package.json` for [Hello World](../frameworks/helloworld/universe/package.json).
 
 #### Binary CLI module SHA placeholders
 
 If you are providing binary CLI modules with your service, the tooling supports automatically populating the package template with any required `sha256sum` values.
 
-The expected placeholder format is `{{sha256:yourfile.ext}}`, where `yourfile.ext` is one of the files which was passed to `publish_aws.py` or `publish_http.py`. Multiple files of the same name are not supported, as they all get uploaded to the same directory anyway. For example:
+The expected placeholder format is `{{sha256:yourfile.ext}}` or `{{sha256:yourfile.ext@http://example.com/SHA256SUMS}}`. In the first case, the local path to `yourfile.ext` must have been passed to `publish_aws.py` or `publish_http.py`, so that a SHA-256 can be generated. In the latter case, the URL should point to a SHA256SUMS file which lists `yourfile.ext`. Multiple files of the same name are not supported, as they all get uploaded to the same directory anyway. For example:
 
 Before:
 ```
   "x86-64":{
     "contentHash":[ { "algo":"sha256", "value":"6b6f79f0c5e055a19db188989f9bbf40b834e620914edc98b358fe1438caac42" } ],
     "kind":"executable",
-    "url":"{{artifact-dir}}/dcos-kafka-linux"
+    "url":"{{artifact-dir}}/dcos-service-cli-linux"
   }
 ```
 
 After:
 ```
   "x86-64":{
-    "contentHash":[ { "algo":"sha256", "value":"{{sha256:dcos-kafka-linux}}" } ],
+    "contentHash":[ { "algo":"sha256", "value":"{{sha256:dcos-service-cli-linux@https://downloads.mesosphere.com/dcos-commons/artifacts/SDK_VERSION/SHA256SUMS}}" } ],
     "kind":"executable",
-    "url":"{{artifact-dir}}/dcos-kafka-linux"
+    "url":"{{artifact-dir}}/dcos-service-cli-linux"
   }
 ```
 
-For some examples of this, take a look at `resource.json` for [Kafka](https://github.com/mesosphere/dcos-kafka-service/blob/master/universe/resource.json) or [Cassandra](https://github.com/mesosphere/dcos-cassandra-service/blob/master/universe/resource.json).
+For an example of this, take a look at `resource.json` for [Hello World](../frameworks/helloworld/universe/resource.json).
 
 #### Custom placeholders
 
@@ -112,19 +111,7 @@ Ideally you should have some script in your project repository which defines how
 
 We specifically recommend including this script in the project repository alongside your code. This will allow adding/modifying/removing artifacts from your build on a per-commit basis in lockstep with code changes, whereas a single external script would cause synchronization issues between branches which may each have different artifacts.
 
-For some examples of instantiation, take a look at `build.sh` for [Kafka](https://github.com/mesosphere/dcos-kafka-service/blob/master/build.sh) or [Cassandra](https://github.com/mesosphere/dcos-cassandra-service/blob/master/build.sh).
-
-#### Downloading the latest tools
-
-Within your script, it could make sense to just grab the latest .tgz release of these tools like so:
-
-```
-rm -rf dcos-commons-tools/ && \
-    curl https://infinity-artifacts.s3.amazonaws.com/dcos-commons-tools.tgz | tar xz
-./dcos-commons-tools/universe_builder.py
-```
-
-This .tgz is automatically updated when there's a change to `master`.
+For an example of instantiation, take a look at `build.sh` for [Hello World](../frameworks/helloworld/build.sh).
 
 ### Release script
 
@@ -140,7 +127,7 @@ What follows is a more detailed description of what each utility does and how it
 
 ### build_package.sh
 
-Given a set of build artifacts, this utility will generate a stub universe against those artifacts, and upload the whole set to S3. This is useful for quickly getting a local build up and available for installation in a DC/OS cluster. This tool relies on `universe_builder.py`, which is described below.
+Given a set of build artifacts, this utility will generate a stub universe against those artifacts, and upload the whole set to S3. This is useful for quickly getting a local build up and available for installation in a DC/OS cluster. This tool relies on `publish_http.py` or `publish_aws.py` based upon the inputs which are described below.
 
 The resulting uploaded stub universe URL is logged to stdout (while all other logging is to stderr).
 
@@ -160,22 +147,21 @@ AWS_SECRET_ACCESS_KEY=devKeySecret \
 S3_BUCKET=devBucket \
 S3_DIR_PATH=dcosArtifacts/dev \
 ./build_package.sh \
-    kafka \
-    /path/to/dcos-commons/frameworks/kafka
-    -a dcos-kafka-service/scheduler.zip \
-    -a dcos-kafka-service/executor.zip \
-    -a dcos-kafka-service/cli/dcos-kafka.exe \
-    -a dcos-kafka-service/cli/dcos-kafka-dawin \
-    -a dcos-kafka-service/cli/dcos-kafka-linux
+    helloworld \
+    /path/to/dcos-commons/frameworks/helloworld
+    -a helloworld/scheduler.zip \
+    -a helloworld/cli/dcos-service-cli.exe \
+    -a helloworld/cli/dcos-service-cli-dawin \
+    -a helloworld/cli/dcos-service-cli-linux
     aws
 [...]
 ---
 Built and uploaded stub universe:
-http://devBucket.s3.amazonaws.com/dcosArtifacts/dev/kafka/20160818-094133-hrjUfhcmQoznFVGP/stub-universe-kafka.zip
+http://devBucket.s3.amazonaws.com/dcosArtifacts/dev/helloworld/20160818-094133-hrjUfhcmQoznFVGP/stub-universe-helloworld.zip
 
 $ dcos package repo add --index=0 foo \
-http://devBucket.s3.amazonaws.com/dcosArtifacts/dev/kafka/20160818-094133-hrjUfhcmQoznFVGP/stub-universe-kafka.zip
-$ dcos package install kafka
+http://devBucket.s3.amazonaws.com/dcosArtifacts/dev/helloworld/20160818-094133-hrjUfhcmQoznFVGP/stub-universe-helloworld.zip
+$ dcos package install helloworld
 [... normal usage from here ...]
 ```
 
@@ -185,8 +171,7 @@ For other examples of usage, take a look at `build.sh` for [Hello World](https:/
 
 ##### Common
 
-- `TEMPLATE_<SOME_PARAM>`: Inherited by `universe_builder.py`, see below.
-- `CUSTOM_UNIVERSES_PATH`: Text file to write the stub universe URL into
+- `TEMPLATE_<SOME_PARAM>`: Inherited by `publish_http.py` and `publish_aws.py`, see below.
 
 ##### AWS Publish
 
@@ -205,13 +190,12 @@ Optional:
 - `HTTP_DIR` (default: `/tmp/dcos-http-<pkgname>/`): Local path to be hosted by the HTTP daemon.
 - `HTTP_HOST` (default: `172.17.0.1`, the IP used in dcos-docker): Host endpoint to be used by HTTP daemon.
 - `HTTP_PORT` (default: `0` for an ephemeral port): Port to be used by HTTP daemon.
-- `TEMPLATE_<SOME_PARAM>`: Inherited by `universe_builder.py`, see below.
 
 ### release_builder.py
 
-Takes a Universe 2.x-format package built by `universe_builder.py`, copies its artifacts to a production S3 location, and automatically builds a Universe 3.x-format PR against [https://github.com/mesosphere/universe](Universe) which reflects the production location. After you've finished your testing and have a 'gold' build, use this to release to DC/OS.
+Takes a Universe package built by `publish_aws.py`, copies its artifacts to a production S3 location, and automatically builds a Universe 3.x-format PR against [https://github.com/mesosphere/universe](Universe) which reflects the production location. After you've finished your testing and have a 'gold' build, use this to release to DC/OS.
 
-The only needed parameters are a `stub-universe.zip` (built by `publish_aws.py`, or directly by `universe_builder.py`) and a version string to be used for the released package (eg `1.2.3-4.5.6`). This tool only interacts with build artifacts and does not have any dependency on the originating source repository.
+The only needed parameters are a `stub-universe.zip` (built by `publish_aws.py`) and a version string to be used for the released package (eg `1.2.3-4.5.6`). This tool only interacts with build artifacts and does not have any dependency on the originating source repository.
 
 Only artifacts which share the same directory path as the `stub-universe.zip` itself are copied. This allows for artifacts which are not built as a part of every release, but are instead shared across builds (e.g. a JVM package).
 
@@ -235,7 +219,6 @@ $ GITHUB_USER=yourGithubUsername \
 GITHUB_TOKEN=yourGithubAuthToken \
 AWS_ACCESS_KEY_ID=yourAwsKeyId \
 AWS_SECRET_ACCESS_KEY=yourAwsKeySecret \
-MIN_DCOS_RELEASE_VERSION=1.7 \
 S3_RELEASE_BUCKET=your-release-bucket.example.com \
 HTTP_RELEASE_SERVER=https://your-release-web.example.com \
 RELEASE_DIR_PATH=dcos/release \
@@ -261,7 +244,6 @@ This tool requires the following environment variables in order to upload the re
 
 The following are optional:
 
-- `MIN_DCOS_RELEASE_VERSION` (default: 1.7): The value of `minDcosReleaseVersion` to use for the released package, or `0` to set no value. See [universe documentation](https://github.com/mesosphere/universe) for more details on this value.
 - `S3_RELEASE_BUCKET` (default: `downloads.mesosphere.io`): The S3 bucket to upload the release artifacts into.
 - `HTTP_RELEASE_SERVER` (default: `https://downloads.mesosphere.com`): The HTTP base URL for paths within the above bucket.
 - `RELEASE_DIR_PATH` (default: `<package-name>/assets`): The path prefix within `S3_RELEASE_BUCKET` and `HTTP_RELEASE_SERVER` to place the release artifacts. Artifacts will be stored in a `<package-version>` subdirectory within this path.
@@ -326,94 +308,6 @@ $ ./print_package_tag.py spark
 1.0.2-2.0.0
 ```
 
-### github_update.py
-
-Updates the correct GitHub PR with a status message about the progress of the build.
-This is mainly meant to be invoked by CI during a build/test run, rather than being invoked manually by the developer. Outside of CI environments it just prints out the provided status.
-
-#### Usage
-
-```
-$ ./github_update.py <state: pending|success|error|failure> <context_label> <status message>
-```
-
-Example:
-
-```
-$ GITHUB_TOKEN=yourGithubAuthToken \
-GITHUB_COMMIT_STATUS_URL=http://example.com/detailsLinkGoesHere.html \
-./github_update.py \
-    pending \
-    build \
-    Building CLI
-```
-
-For other examples of usage, take a look at the `build.sh` for [Kafka](https://github.com/mesosphere/dcos-kafka-service/blob/master/build.sh) or [Cassandra](https://github.com/mesosphere/dcos-cassandra-service/blob/master/build.sh).
-
-#### Environment variables
-
-Much of the logic for detecting the CI environment is handled automatically by checking one or more environment variables:
-
-- Detecting a CI environment: Non-empty `WORKSPACE`
-- GitHub [auth token](https://github.com/settings/tokens): `GITHUB_TOKEN_REPO_STATUS`, or `GITHUB_TOKEN`
-- git commit SHA: `ghprbActualCommit`, `GIT_COMMIT`, `${${GIT_COMMIT_ENV_NAME}}`, or finally by checking `git` directly.
-- GitHub repository path: `GITHUB_REPO_PATH`, or by checking `git` directly.
-- Detecting the link to include as a details link in the update: `GITHUB_COMMIT_STATUS_URL`, or `BUILD_URL/console`
-- Disabling the notification to GitHub (eg in out-of-band tests where updating the repo doesn't make sense): non-empty `GITHUB_DISABLE`
-
-Of these, `GITHUB_TOKEN` is the main one that needs to be set in a CI environment, while the others are generally autodetected.
-Meanwhile `GITHUB_COMMIT_STATUS_URL` is useful for providing custom links in status messages.
-
-### universe_builder.py
-
-Builds a self-contained Universe 2.x-format package ('stub-universe') which may be used to add/test a given build directly on a DC/OS cluster. The resulting zip file's path is printed to stdout, while all other logging goes to stderr.
-
-The provided universe files may contain template parameters of the form `{{some-param}}`. The following parameters are filled by default:
-- `{{package-version}}`: The version string to use for this package. Filled with the provided `package-version` argument
-- `{{artifact-dir}}`: Where the artifacts are being uploaded to. Filled with the provided `artifact-dir` argument
-- `{{sha256:somefile.txt}}`: Automatically populated with the sha256sum value of `somefile.txt`. The paths to these files must be provided as arguments when invoking the builder.
-
-In addition to these default template parameters, the caller may also provide environment variables of the form `TEMPLATE_SOME_PARAM` whose value will automatically be inserted into template fields named `{{some-param}}`. For example, running `TEMPLATE_DOCKER_IMAGE=mesosphere/docker-image ./universe_builder.py` would result in any `{{docker-image}}` parameters being replaced with `mesosphere/docker-image`.
-
-A universe template is effectively a directory with the JSON files that you want to include in your Universe package, with template paramters provided in the above format. For some real-world examples of universe templates, take a look at [Kafka's](https://github.com/mesosphere/dcos-kafka-service/tree/master/universe/) or [Cassandra's](https://github.com/mesosphere/dcos-cassandra-service/tree/master/universe/) templates.
-
-#### Usage
-
-```
-$ ./universe_builder.py \
-    <package-name> \
-    <package-version> \
-    <template-package-dir> \
-    <artifact-dir> \
-    [artifact files ...]
-```
-
-Example:
-
-```
-$ TEMPLATE_SOME_CUSTOM_STRING="this text replaces any instances of {{some-custom-string}}" \
-./universe_builder.py \
-    kafka \
-    1.2.3-4.5.6 \
-    dcos-kafka-service/universe/ \
-    https://example.com/path/to/kafka-artifacts \
-    dcos-kafka-service/build/scheduler.zip \
-    dcos-kafka-service/build/executor.zip \
-    dcos-kafka-service/build/cli.zip
-```
-
 #### Environment variables
 
 As described above, any `TEMPLATE_<SOME_PARAM>` values will automatically be inserted into template slots named `{{some-param}}`. No other environment variables are needed.
-
-#### Enable Mount Volumes Script
-```bash
-$ virtualenv -p `which python3` py3env
-$ source py3env/bin/activate
-$ pip3 install fabric3
-$ pip3 install boto3
-$ export AWS_SECRET_ACCESS_KEY=SeCrEt_KeY
-$ export AWS_ACCESS_KEY_ID=AcCeSs_Id
-$ export STACK_ID=arn:aws:cloudformation:us-west-1:273854.....
-$ ./tools/enable_mount_volumes.py
-```

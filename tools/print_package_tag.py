@@ -25,7 +25,7 @@ class PackageVersion(object):
         response_raw = self._get_cmd_stdout(cmd)
         try:
             return json.loads(response_raw)["version"]
-        except:  # noqa: E722
+        except Exception:
             logger.error(
                 'Failed to parse version from output of command "{}": {}'.format(cmd, response_raw)
             )
@@ -41,7 +41,7 @@ class PackageVersion(object):
             return self._get_cmd_stdout(
                 "git --git-dir=%s rev-parse %s^{}" % (repo_dotgit_path, version_tag)
             )
-        except:  # noqa: E722
+        except Exception:
             logger.error('Failed to retrieve SHA1 from git for tag "{}"'.format(version_tag))
             raise
 
@@ -59,7 +59,7 @@ class PackageVersion(object):
                 )
             # output format: '<tag>           <refname>'
             return rev.split()[0]
-        except:  # noqa: E722
+        except Exception:
             logger.error('Failed to retrieve SHA1 from git for tag "{}"'.format(version_tag))
             raise
 
@@ -69,7 +69,7 @@ class PackageVersion(object):
             output = subprocess.check_output(cmd.split(" ")).decode("utf-8").strip()
             logger.info("Output ({}b):\n{}".format(len(output), output))
             return output
-        except:  # noqa: E722
+        except Exception:
             logger.error('Failed to run command: "{}"'.format(cmd))
             raise
 

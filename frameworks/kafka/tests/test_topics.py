@@ -79,7 +79,8 @@ def test_topic_offsets_increase_with_writes(kafka_server: dict):
     def get_offset_change(topic_name, initial_offsets=[]):
         """
         Run:
-            `dcos kafa topic offsets --time="-1"`
+
+            `dcos kafka topic offsets --time="-1"`
         until the output is not the initial output specified
         """
         LOG.info("Getting offsets for %s", topic_name)

@@ -6,7 +6,7 @@ import uuid
 
 import sdk_auth
 import sdk_cmd
-import sdk_install
+import sdk_utils
 import sdk_marathon
 
 from tests import auth
@@ -99,7 +99,7 @@ class KafkaClient:
 
         if kerberos is not None:
             self._is_kerberos = True
-            options = sdk_install.merge_dictionaries(options, self._get_kerberos_options(kerberos))
+            options = sdk_utils.merge_dictionaries(options, self._get_kerberos_options(kerberos))
 
         sdk_marathon.install_app(options)
 

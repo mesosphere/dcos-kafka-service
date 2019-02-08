@@ -29,7 +29,11 @@ def zookeeper_server(configure_security):
                 service_options,
             )
 
-            sdk_security.setup_security(config.ZOOKEEPER_SERVICE_NAME, zk_account, zk_secret)
+            sdk_security.setup_security(
+                config.ZOOKEEPER_SERVICE_NAME,
+                service_account=zk_account,
+                service_account_secret=zk_secret,
+            )
 
         sdk_install.install(
             config.ZOOKEEPER_PACKAGE_NAME,

@@ -299,6 +299,13 @@ request.timeout.ms={{KAFKA_REQUEST_TIMEOUT_MS}}
 
 reserved.broker.max.id={{KAFKA_RESERVED_BROKER_MAX_ID}}
 
+{{#KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM}}
+ssl.endpoint.identification.algorithm=HTTPS
+{{/KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM}}
+{{^KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM}}
+ssl.endpoint.identification.algorithm=
+{{/KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM}}
+
 transaction.state.log.segment.bytes={{KAFKA_TRANSACTION_STATE_LOG_SEGMENT_BYTES}}
 transaction.remove.expired.transaction.cleanup.interval.ms={{KAFKA_TRANSACTION_REMOVE_EXPIRED_TRANSACTION_CLEANUP_INTERVAL_MS}}
 transaction.max.timeout.ms={{KAFKA_TRANSACTION_MAX_TIMEOUT_MS}}

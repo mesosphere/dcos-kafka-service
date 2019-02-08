@@ -990,6 +990,12 @@
           "default": 1,
           "minimum": 1
         },
+        "ssl_endpoint_identification_algorithm": {
+          "title": "ssl.endpoint.identification.algorithm",
+          "description": "By default enables the hostname verification when TLS connections are established between Kafka brokers. To disable hostname verification leave this option unchecked",
+          "type": "boolean",
+          "default": true
+        },
         "transaction_state_log_segment_bytes": {
           "title": "transaction.state.log.segment.bytes",
           "description": "The transaction topic segment bytes should be kept relatively small in order to facilitate faster log compaction and cache loads",

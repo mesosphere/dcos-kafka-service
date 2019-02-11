@@ -63,7 +63,7 @@ def kafka_server(zookeeper_server):
             zookeeper_server["package_name"],
             zookeeper_server["service"]["name"],
             "endpoint clientport",
-            json=True,
+            parse_json=True,
         )["dns"]
 
         sdk_install.uninstall(config.PACKAGE_NAME, config.SERVICE_NAME)

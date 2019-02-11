@@ -65,7 +65,7 @@ def test_service_startup_rapid():
         config.PACKAGE_NAME,
         config.SERVICE_NAME,
         "pod restart {}".format(task_short_name),
-        json=True,
+        parse_json=True,
     )
     assert len(jsonobj) == 2
     assert jsonobj["pod"] == task_short_name

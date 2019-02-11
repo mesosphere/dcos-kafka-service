@@ -78,7 +78,7 @@ def test_tls_endpoints(kafka_service):
         config.PACKAGE_NAME,
         config.SERVICE_NAME,
         "endpoints {name}".format(name=BROKER_TLS_ENDPOINT),
-        json=True,
+        parse_json=True,
     )
     assert len(endpoint_tls["dns"]) == config.DEFAULT_BROKER_COUNT
 
@@ -97,7 +97,7 @@ def test_producer_over_tls(kafka_service):
         config.PACKAGE_NAME,
         config.SERVICE_NAME,
         "topic describe {}".format(config.DEFAULT_TOPIC_NAME),
-        json=True,
+        parse_json=True,
     )
     assert len(topic_info["partitions"]) == config.DEFAULT_PARTITION_COUNT
 
@@ -107,14 +107,14 @@ def test_producer_over_tls(kafka_service):
         config.PACKAGE_NAME,
         config.SERVICE_NAME,
         "topic producer_test_tls {} {}".format(config.DEFAULT_TOPIC_NAME, num_messages),
-        json=True,
+        parse_json=True,
     )
 
     write_info = sdk_cmd.svc_cli(
         config.PACKAGE_NAME,
         config.SERVICE_NAME,
         "topic producer_test_tls {} {}".format(config.DEFAULT_TOPIC_NAME, num_messages),
-        json=True,
+        parse_json=True,
     )
     assert len(write_info) == 1
     assert write_info["message"].startswith("Output: {} records sent".format(num_messages))
@@ -130,13 +130,13 @@ def test_tls_ciphers(kafka_service):
         config.PACKAGE_NAME,
         config.SERVICE_NAME,
         "endpoints {}".format(BROKER_TLS_ENDPOINT),
-        json=True,
+        parse_json=True,
     )["dns"][0]
     ciphers_config_path = ["service", "security", "transport_encryption", "ciphers"]
     expected_ciphers = set(
         sdk_utils.get_in(
             ciphers_config_path,
-            sdk_cmd.svc_cli(config.PACKAGE_NAME, config.SERVICE_NAME, "describe", json=True),
+            sdk_cmd.svc_cli(config.PACKAGE_NAME, config.SERVICE_NAME, "describe", parse_json=True),
             "",
         )
         .rstrip()
@@ -182,7 +182,7 @@ def test_tls_ciphers(kafka_service):
 @pytest.mark.recovery
 def test_tls_recovery(kafka_service, service_account):
     pod_list = sdk_cmd.svc_cli(
-        kafka_service["package_name"], kafka_service["service"]["name"], "pod list", json=True
+        kafka_service["package_name"], kafka_service["service"]["name"], "pod list", parse_json=True
     )
 
     for pod in pod_list:

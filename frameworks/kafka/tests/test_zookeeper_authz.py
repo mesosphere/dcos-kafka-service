@@ -126,7 +126,7 @@ def test_authz_acls_required(kafka_client: client.KafkaClient, zookeeper_server,
             zookeeper_server["package_name"],
             zookeeper_server["service"]["name"],
             "endpoint clientport",
-            json=True,
+            parse_json=True,
         )["dns"]
 
         sdk_install.uninstall(config.PACKAGE_NAME, config.SERVICE_NAME)
@@ -160,7 +160,7 @@ def test_authz_acls_required(kafka_client: client.KafkaClient, zookeeper_server,
             kafka_server["package_name"],
             kafka_server["service"]["name"],
             "topic create {}".format(topic_name),
-            json=True,
+            parse_json=True,
         )
 
         kafka_client.connect(kafka_server)
@@ -233,7 +233,7 @@ def test_authz_acls_not_required(kafka_client: client.KafkaClient, zookeeper_ser
             zookeeper_server["package_name"],
             zookeeper_server["service"]["name"],
             "endpoint clientport",
-            json=True,
+            parse_json=True,
         )["dns"]
 
         sdk_install.uninstall(config.PACKAGE_NAME, config.SERVICE_NAME)
@@ -272,7 +272,7 @@ def test_authz_acls_not_required(kafka_client: client.KafkaClient, zookeeper_ser
             kafka_server["package_name"],
             kafka_server["service"]["name"],
             "topic create {}".format(topic_name),
-            json=True,
+            parse_json=True,
         )
 
         kafka_client.connect(kafka_server)

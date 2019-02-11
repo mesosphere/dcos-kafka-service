@@ -49,10 +49,10 @@ def test_topic_partition_count(kafka_server: dict):
     service_name = kafka_server["service"]["name"]
 
     sdk_cmd.svc_cli(
-        package_name, service_name, "topic create {}".format(config.DEFAULT_TOPIC_NAME), json=True
+        package_name, service_name, "topic create {}".format(config.DEFAULT_TOPIC_NAME), parse_json=True
     )
     topic_info = sdk_cmd.svc_cli(
-        package_name, service_name, "topic describe {}".format(config.DEFAULT_TOPIC_NAME), json=True
+        package_name, service_name, "topic describe {}".format(config.DEFAULT_TOPIC_NAME), parse_json=True
     )
     assert len(topic_info["partitions"]) == config.DEFAULT_PARTITION_COUNT
 
@@ -84,7 +84,7 @@ def test_topic_offsets_increase_with_writes(kafka_server: dict):
         """
         LOG.info("Getting offsets for %s", topic_name)
         offsets = sdk_cmd.svc_cli(
-            package_name, service_name, 'topic offsets --time="-1" {}'.format(topic_name), json=True
+            package_name, service_name, 'topic offsets --time="-1" {}'.format(topic_name), parse_json=True
         )
         LOG.info("offsets=%s", offsets)
         return initial_offsets, offsets
@@ -106,7 +106,7 @@ def test_topic_offsets_increase_with_writes(kafka_server: dict):
         package_name,
         service_name,
         "topic producer_test {} {}".format(topic_name, num_messages),
-        json=True,
+        parse_json=True,
     )
     assert len(write_info) == 1
     assert write_info["message"].startswith("Output: {} records sent".format(num_messages))
@@ -129,7 +129,7 @@ def test_decreasing_topic_partitions_fails(kafka_server: dict):
         "topic partitions {} {}".format(
             config.DEFAULT_TOPIC_NAME, config.DEFAULT_PARTITION_COUNT - 1
         ),
-        json=True,
+        parse_json=True,
     )
 
     assert len(partition_info) == 1
@@ -143,7 +143,7 @@ def test_setting_topic_partitions_to_same_value_fails(kafka_server: dict):
         config.PACKAGE_NAME,
         kafka_server["service"]["name"],
         "topic partitions {} {}".format(config.DEFAULT_TOPIC_NAME, config.DEFAULT_PARTITION_COUNT),
-        json=True,
+        parse_json=True,
     )
 
     assert len(partition_info) == 1
@@ -159,7 +159,7 @@ def test_increasing_topic_partitions_succeeds(kafka_server: dict):
         "topic partitions {} {}".format(
             config.DEFAULT_TOPIC_NAME, config.DEFAULT_PARTITION_COUNT + 1
         ),
-        json=True,
+        parse_json=True,
     )
 
     assert len(partition_info) == 1
@@ -176,7 +176,7 @@ def test_no_under_replicated_topics_exist(kafka_server: dict):
         config.PACKAGE_NAME,
         kafka_server["service"]["name"],
         "topic under_replicated_partitions",
-        json=True,
+        parse_json=True,
     )
 
     assert partition_info == {"message": ""}
@@ -188,7 +188,7 @@ def test_no_unavailable_partitions_exist(kafka_server: dict):
         config.PACKAGE_NAME,
         kafka_server["service"]["name"],
         "topic unavailable_partitions",
-        json=True,
+        parse_json=True,
     )
 
     assert partition_info == {"message": ""}

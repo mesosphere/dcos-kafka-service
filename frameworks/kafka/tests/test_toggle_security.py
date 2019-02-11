@@ -544,7 +544,7 @@ def service_get_brokers(kafka_server: dict, endpoint_name: str) -> list:
         kafka_server["package_name"],
         kafka_server["service"]["name"],
         "endpoint {}".format(endpoint_name),
-        json=True,
+        parse_json=True,
     )["dns"]
 
     return brokers
@@ -554,7 +554,7 @@ def service_has_brokers(
     kafka_server: dict, endpoint_name: str, number_of_brokers: int = None
 ) -> bool:
     endpoints = sdk_cmd.svc_cli(
-        kafka_server["package_name"], kafka_server["service"]["name"], "endpoint", json=True
+        kafka_server["package_name"], kafka_server["service"]["name"], "endpoint", parse_json=True
     )
 
     if endpoint_name not in endpoints:
@@ -583,7 +583,7 @@ def client_can_read_and_write(
         kafka_server["package_name"],
         kafka_server["service"]["name"],
         "topic create {}".format(topic_name),
-        json=True,
+        parse_json=True,
     )
 
     test_utils.wait_for_topic(

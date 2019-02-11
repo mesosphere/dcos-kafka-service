@@ -114,7 +114,7 @@ def kafka_server(kerberos, zookeeper_server):
         zookeeper_server["package_name"],
         zookeeper_server["service"]["name"],
         "endpoint clientport",
-        json=True,
+        parse_json=True,
     )["dns"]
 
     service_options = {
@@ -170,7 +170,7 @@ def test_client_can_read_and_write(kafka_client: client.KafkaClient, kafka_serve
         kafka_server["package_name"],
         kafka_server["service"]["name"],
         "topic create {}".format(topic_name),
-        json=True,
+        parse_json=True,
     )
 
     kafka_client.connect(kafka_server)

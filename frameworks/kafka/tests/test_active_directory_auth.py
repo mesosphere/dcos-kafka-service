@@ -72,7 +72,7 @@ def kafka_server(kerberos):
 def kafka_client(kerberos, kafka_server):
 
     brokers = sdk_cmd.svc_cli(
-        kafka_server["package_name"], kafka_server["service"]["name"], "endpoint broker", json=True
+        kafka_server["package_name"], kafka_server["service"]["name"], "endpoint broker", parse_json=True
     )["dns"]
 
     try:
@@ -120,7 +120,7 @@ def test_client_can_read_and_write(kafka_client, kafka_server, kerberos):
         kafka_server["package_name"],
         kafka_server["service"]["name"],
         "topic create {}".format(topic_name),
-        json=True,
+        parse_json=True,
     )
 
     test_utils.wait_for_topic(

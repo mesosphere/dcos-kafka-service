@@ -11,7 +11,7 @@ log = logging.getLogger(__name__)
 
 @retrying.retry(wait_fixed=1000, stop_max_delay=120 * 1000, retry_on_result=lambda res: not res)
 def broker_count_check(count, service_name=config.SERVICE_NAME):
-    brokers = sdk_cmd.svc_cli(config.PACKAGE_NAME, service_name, "broker list", parse_json=True)
+    _, brokers, _ = sdk_cmd.svc_cli(config.PACKAGE_NAME, service_name, "broker list", parse_json=True)
     return len(brokers) == count
 
 
@@ -20,7 +20,7 @@ def restart_broker_pods(service_name=config.SERVICE_NAME):
         pod_name = "{}-{}".format(config.DEFAULT_POD_TYPE, i)
         task_name = "{}-{}".format(pod_name, config.DEFAULT_TASK_NAME)
         broker_id = sdk_tasks.get_task_ids(service_name, task_name)
-        restart_info = sdk_cmd.svc_cli(
+        _, restart_info, _ = sdk_cmd.svc_cli(
             config.PACKAGE_NAME, service_name, "pod restart {}".format(pod_name), parse_json=True
         )
         assert len(restart_info) == 2
@@ -41,7 +41,7 @@ def replace_broker_pod(service_name=config.SERVICE_NAME):
 
 
 def wait_for_broker_dns(package_name: str, service_name: str):
-    brokers = sdk_cmd.svc_cli(package_name, service_name, "endpoint broker", parse_json=True)
+    _, brokers, _ = sdk_cmd.svc_cli(package_name, service_name, "endpoint broker", parse_json=True)
     broker_dns = list(map(lambda x: x.split(":")[0], brokers["dns"]))
 
     def get_scheduler_task_id(service_name: str) -> str:
@@ -58,7 +58,7 @@ def wait_for_broker_dns(package_name: str, service_name: str):
 
 def create_topic(topic_name, service_name=config.SERVICE_NAME):
     # Get the list of topics that exist before we create a new topic
-    topic_list_before = sdk_cmd.svc_cli(config.PACKAGE_NAME, service_name, "topic list", parse_json=True)
+    _, topic_list_before, _ = sdk_cmd.svc_cli(config.PACKAGE_NAME, service_name, "topic list", parse_json=True)
 
     _, create_info, _ = sdk_cmd.svc_cli(
         config.PACKAGE_NAME, service_name, "topic create {}".format(topic_name), parse_json=True
@@ -85,7 +85,7 @@ def create_topic(topic_name, service_name=config.SERVICE_NAME):
 
 
 def delete_topic(topic_name, service_name=config.SERVICE_NAME):
-    delete_info = sdk_cmd.svc_cli(
+    _, delete_info, _ = sdk_cmd.svc_cli(
         config.PACKAGE_NAME, service_name, "topic delete {}".format(topic_name), parse_json=True
     )
     assert len(delete_info) == 1
@@ -93,7 +93,7 @@ def delete_topic(topic_name, service_name=config.SERVICE_NAME):
         "Output: Topic {} is marked for deletion".format(topic_name)
     )
 
-    topic_info = sdk_cmd.svc_cli(
+    _, topic_info, _ = sdk_cmd.svc_cli(
         config.PACKAGE_NAME, service_name, "topic describe {}".format(topic_name), parse_json=True
     )
     assert len(topic_info) == 1

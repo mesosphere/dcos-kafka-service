@@ -135,7 +135,7 @@ def kafka_client(kerberos):
         sdk_marathon.install_app(client)
 
         # Create a TLS certificate for the TLS tests
-        transport_encryption.create_tls_artifacts(cn="client", task=client_id)
+        transport_encryption.create_tls_artifacts(cn="client", marathon_task=client_id)
 
         yield {**client, **{"tls-id": "client"}}
 
@@ -540,7 +540,7 @@ def update_service(package_name: str, service_name: str, options: dict):
 
 
 def service_get_brokers(kafka_server: dict, endpoint_name: str) -> list:
-    brokers = sdk_cmd.svc_cli(
+    _, brokers, _ = sdk_cmd.svc_cli(
         kafka_server["package_name"],
         kafka_server["service"]["name"],
         "endpoint {}".format(endpoint_name),
@@ -553,7 +553,7 @@ def service_get_brokers(kafka_server: dict, endpoint_name: str) -> list:
 def service_has_brokers(
     kafka_server: dict, endpoint_name: str, number_of_brokers: int = None
 ) -> bool:
-    endpoints = sdk_cmd.svc_cli(
+    _, endpoints, _ = sdk_cmd.svc_cli(
         kafka_server["package_name"], kafka_server["service"]["name"], "endpoint", parse_json=True
     )
 

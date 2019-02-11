@@ -59,7 +59,7 @@ def kafka_server(zookeeper_server):
     try:
 
         # Get the zookeeper DNS values
-        zookeeper_dns = sdk_cmd.svc_cli(
+        _, zookeeper_dns, _ = sdk_cmd.svc_cli(
             zookeeper_server["package_name"],
             zookeeper_server["service"]["name"],
             "endpoint clientport",

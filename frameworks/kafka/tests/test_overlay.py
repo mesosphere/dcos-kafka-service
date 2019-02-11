@@ -53,7 +53,7 @@ def test_overlay_network_deployment_and_endpoints():
     )
     sdk_networks.check_endpoints_on_overlay(broker_endpoints)
 
-    zookeeper = sdk_cmd.svc_cli(config.PACKAGE_NAME, config.SERVICE_NAME, "endpoints zookeeper")
+    _, zookeeper, _ = sdk_cmd.svc_cli(config.PACKAGE_NAME, config.SERVICE_NAME, "endpoints zookeeper")
     assert zookeeper.rstrip() == "master.mesos:2181/{}".format(
         sdk_utils.get_zk_path(config.SERVICE_NAME)
     )

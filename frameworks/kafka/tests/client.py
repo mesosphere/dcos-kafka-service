@@ -28,11 +28,11 @@ class KafkaService:
 
     def get_zookeeper_connect(self) -> str:
         return str(
-            sdk_cmd.svc_cli(self._package_name, self._service_name, "endpoint zookeeper")
+            sdk_cmd.svc_cli(self._package_name, self._service_name, "endpoint zookeeper")[1]
         ).strip()
 
     def get_brokers_endpoints(self, endpoint_name: str) -> list:
-        brokers = sdk_cmd.svc_cli(
+        _, brokers, _ = sdk_cmd.svc_cli(
             self._package_name, self._service_name, "endpoint {}".format(endpoint_name), parse_json=True
         )["dns"]
 

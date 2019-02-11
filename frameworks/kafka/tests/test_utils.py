@@ -60,7 +60,7 @@ def create_topic(topic_name, service_name=config.SERVICE_NAME):
     # Get the list of topics that exist before we create a new topic
     topic_list_before = sdk_cmd.svc_cli(config.PACKAGE_NAME, service_name, "topic list", parse_json=True)
 
-    create_info = sdk_cmd.svc_cli(
+    _, create_info, _ = sdk_cmd.svc_cli(
         config.PACKAGE_NAME, service_name, "topic create {}".format(topic_name), parse_json=True
     )
     log.info(create_info)
@@ -72,12 +72,12 @@ def create_topic(topic_name, service_name=config.SERVICE_NAME):
             in create_info["message"]
         )
 
-    topic_list_after = sdk_cmd.svc_cli(config.PACKAGE_NAME, service_name, "topic list", parse_json=True)
+    _, topic_list_after, _ = sdk_cmd.svc_cli(config.PACKAGE_NAME, service_name, "topic list", parse_json=True)
 
     new_topics = set(topic_list_after) - set(topic_list_before)
     assert topic_name in new_topics
 
-    topic_info = sdk_cmd.svc_cli(
+    _, topic_info, _ = sdk_cmd.svc_cli(
         config.PACKAGE_NAME, service_name, "topic describe {}".format(topic_name), parse_json=True
     )
     assert len(topic_info) == 1

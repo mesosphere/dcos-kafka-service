@@ -70,10 +70,10 @@ def kafka_client(kerberos):
 def setup_principals(kafka_client: client.KafkaClient):
     client_id = kafka_client.get_id()
 
-    transport_encryption.create_tls_artifacts(cn="client", task=client_id)
-    transport_encryption.create_tls_artifacts(cn="authorized", task=client_id)
-    transport_encryption.create_tls_artifacts(cn="unauthorized", task=client_id)
-    transport_encryption.create_tls_artifacts(cn="super", task=client_id)
+    transport_encryption.create_tls_artifacts(cn="client", marathon_task=client_id)
+    transport_encryption.create_tls_artifacts(cn="authorized", marathon_task=client_id)
+    transport_encryption.create_tls_artifacts(cn="unauthorized", marathon_task=client_id)
+    transport_encryption.create_tls_artifacts(cn="super", marathon_task=client_id)
 
 
 @pytest.mark.dcos_min_version("1.10")

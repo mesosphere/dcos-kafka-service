@@ -70,7 +70,7 @@ def kafka_service(service_account):
 @pytest.mark.smoke
 @pytest.mark.sanity
 def test_tls_endpoints(kafka_service):
-    endpoints = sdk_networks.get_and_test_endpoints(config.PACKAGE_NAME, config.SERVICE_NAME, "", 2)
+    endpoints = sdk_networks.check_endpoint_on_overlay(config.PACKAGE_NAME, config.SERVICE_NAME, "", 2)
     assert BROKER_TLS_ENDPOINT in endpoints
 
     # Test that broker-tls endpoint is available

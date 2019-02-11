@@ -136,7 +136,7 @@ def test_tls_ciphers(kafka_service):
     expected_ciphers = set(
         sdk_utils.get_in(
             ciphers_config_path,
-            sdk_cmd.svc_cli(config.PACKAGE_NAME, config.SERVICE_NAME, "describe", parse_json=True),
+            sdk_cmd.svc_cli(config.PACKAGE_NAME, config.SERVICE_NAME, "describe", parse_json=True)[1],
             "",
         )
         .rstrip()

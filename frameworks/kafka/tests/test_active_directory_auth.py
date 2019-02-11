@@ -73,7 +73,7 @@ def kafka_client(kerberos, kafka_server):
 
     brokers = sdk_cmd.svc_cli(
         kafka_server["package_name"], kafka_server["service"]["name"], "endpoint broker", parse_json=True
-    )["dns"]
+    )["dns"][1]
 
     try:
         client_id = "kafka-client"

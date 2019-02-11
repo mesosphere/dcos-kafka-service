@@ -34,7 +34,7 @@ class KafkaService:
     def get_brokers_endpoints(self, endpoint_name: str) -> list:
         _, brokers, _ = sdk_cmd.svc_cli(
             self._package_name, self._service_name, "endpoint {}".format(endpoint_name), parse_json=True
-        )["dns"]
+        )[1]["dns"]
 
         return brokers
 

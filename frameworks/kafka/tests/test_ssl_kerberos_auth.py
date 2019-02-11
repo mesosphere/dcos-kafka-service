@@ -100,7 +100,7 @@ def kafka_client(kerberos):
         # TODO: This flag should be set correctly.
         kafka_client._is_tls = True
 
-        transport_encryption.create_tls_artifacts(cn="client", task=kafka_client.get_id())
+        transport_encryption.create_tls_artifacts(cn="client", marathon_task=kafka_client.get_id())
 
         yield kafka_client
     finally:

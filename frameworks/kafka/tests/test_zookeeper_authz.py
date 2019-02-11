@@ -122,7 +122,7 @@ def kafka_client(kerberos):
 @pytest.mark.sanity
 def test_authz_acls_required(kafka_client: client.KafkaClient, zookeeper_server, kerberos):
     try:
-        zookeeper_dns = sdk_cmd.svc_cli(
+        _, zookeeper_dns, _ = sdk_cmd.svc_cli(
             zookeeper_server["package_name"],
             zookeeper_server["service"]["name"],
             "endpoint clientport",
@@ -229,7 +229,7 @@ def test_authz_acls_required(kafka_client: client.KafkaClient, zookeeper_server,
 @pytest.mark.sanity
 def test_authz_acls_not_required(kafka_client: client.KafkaClient, zookeeper_server, kerberos):
     try:
-        zookeeper_dns = sdk_cmd.svc_cli(
+        _, zookeeper_dns, _ = sdk_cmd.svc_cli(
             zookeeper_server["package_name"],
             zookeeper_server["service"]["name"],
             "endpoint clientport",

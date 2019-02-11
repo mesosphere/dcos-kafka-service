@@ -54,7 +54,7 @@ def test_endpoints_address():
             foldered_name,
             "endpoints {}".format(config.DEFAULT_TASK_NAME),
             parse_json=True,
-        )
+        )[1]
         if len(ret["address"]) == config.DEFAULT_BROKER_COUNT:
             return ret
         return False
@@ -74,7 +74,7 @@ def test_endpoints_address():
 @pytest.mark.sanity
 def test_endpoints_zookeeper_default():
     foldered_name = sdk_utils.get_foldered_name(config.SERVICE_NAME)
-    zookeeper = sdk_cmd.svc_cli(config.PACKAGE_NAME, foldered_name, "endpoints zookeeper")
+    _, zookeeper, _ = sdk_cmd.svc_cli(config.PACKAGE_NAME, foldered_name, "endpoints zookeeper")
     assert zookeeper.rstrip("\n") == "master.mesos:2181/{}".format(
         sdk_utils.get_zk_path(foldered_name)
     )
@@ -104,11 +104,11 @@ def test_custom_zookeeper():
     # wait for brokers to finish registering
     test_utils.broker_count_check(config.DEFAULT_BROKER_COUNT, service_name=foldered_name)
 
-    zookeeper = sdk_cmd.svc_cli(config.PACKAGE_NAME, foldered_name, "endpoints zookeeper")
+    _, zookeeper, _ = sdk_cmd.svc_cli(config.PACKAGE_NAME, foldered_name, "endpoints zookeeper")
     assert zookeeper.rstrip("\n") == zk_path
 
     # topic created earlier against default zk should no longer be present:
-    topic_list_info = sdk_cmd.svc_cli(config.PACKAGE_NAME, foldered_name, "topic list", parse_json=True)
+    _, topic_list_info, _ = sdk_cmd.svc_cli(config.PACKAGE_NAME, foldered_name, "topic list", parse_json=True)
 
     test_utils.assert_topic_lists_are_equal_without_automatic_topics([], topic_list_info)
 
@@ -121,7 +121,7 @@ def test_custom_zookeeper():
 @pytest.mark.smoke
 @pytest.mark.sanity
 def test_broker_list():
-    brokers = sdk_cmd.svc_cli(
+    _, brokers, _ = sdk_cmd.svc_cli(
         config.PACKAGE_NAME,
         sdk_utils.get_foldered_name(config.SERVICE_NAME),
         "broker list",

@@ -71,7 +71,7 @@ def zookeeper_server(kerberos):
 def kafka_server(kerberos, zookeeper_server):
 
     # Get the zookeeper DNS values
-    zookeeper_dns = sdk_cmd.svc_cli(
+    _, zookeeper_dns, _ = sdk_cmd.svc_cli(
         zookeeper_server["package_name"],
         zookeeper_server["service"]["name"],
         "endpoint clientport",
@@ -112,7 +112,7 @@ def kafka_server(kerberos, zookeeper_server):
 @pytest.fixture(scope="module", autouse=True)
 def kafka_client(kerberos, kafka_server):
 
-    brokers = sdk_cmd.svc_cli(
+    _, brokers, _ = sdk_cmd.svc_cli(
         kafka_server["package_name"], kafka_server["service"]["name"], "endpoint broker", parse_json=True
     )["dns"]
 

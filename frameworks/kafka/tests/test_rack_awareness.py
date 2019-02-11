@@ -24,10 +24,10 @@ def test_zones_not_referenced_in_placement_constraints():
 
     test_utils.broker_count_check(config.DEFAULT_BROKER_COUNT, service_name=foldered_name)
 
-    broker_ids = sdk_cmd.svc_cli(config.PACKAGE_NAME, foldered_name, "broker list", parse_json=True)
+    _, broker_ids, _ = sdk_cmd.svc_cli(config.PACKAGE_NAME, foldered_name, "broker list", parse_json=True)
 
     for broker_id in broker_ids:
-        broker_info = sdk_cmd.svc_cli(
+        _, broker_info, _ = sdk_cmd.svc_cli(
             config.PACKAGE_NAME, foldered_name, "broker get {}".format(broker_id), parse_json=True
         )
 
@@ -54,10 +54,10 @@ def test_zones_referenced_in_placement_constraints():
 
     test_utils.broker_count_check(config.DEFAULT_BROKER_COUNT, service_name=foldered_name)
 
-    broker_ids = sdk_cmd.svc_cli(config.PACKAGE_NAME, foldered_name, "broker list", parse_json=True)
+    _, broker_ids, _ = sdk_cmd.svc_cli(config.PACKAGE_NAME, foldered_name, "broker list", parse_json=True)
 
     for broker_id in broker_ids:
-        broker_info = sdk_cmd.svc_cli(
+        _, broker_info, _ = sdk_cmd.svc_cli(
             config.PACKAGE_NAME, foldered_name, "broker get {}".format(broker_id), parse_json=True
         )
 

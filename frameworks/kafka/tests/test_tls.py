@@ -74,7 +74,7 @@ def test_tls_endpoints(kafka_service):
     assert BROKER_TLS_ENDPOINT in endpoints
 
     # Test that broker-tls endpoint is available
-    endpoint_tls = sdk_cmd.svc_cli(
+    _, endpoint_tls, _ = sdk_cmd.svc_cli(
         config.PACKAGE_NAME,
         config.SERVICE_NAME,
         "endpoints {name}".format(name=BROKER_TLS_ENDPOINT),
@@ -93,7 +93,7 @@ def test_producer_over_tls(kafka_service):
         "topic create {}".format(config.DEFAULT_TOPIC_NAME),
     )
 
-    topic_info = sdk_cmd.svc_cli(
+    _, topic_info, _ = sdk_cmd.svc_cli(
         config.PACKAGE_NAME,
         config.SERVICE_NAME,
         "topic describe {}".format(config.DEFAULT_TOPIC_NAME),
@@ -103,14 +103,14 @@ def test_producer_over_tls(kafka_service):
 
     # Write twice: Warm up TLS connections
     num_messages = 10
-    write_info = sdk_cmd.svc_cli(
+    _, write_info, _ = sdk_cmd.svc_cli(
         config.PACKAGE_NAME,
         config.SERVICE_NAME,
         "topic producer_test_tls {} {}".format(config.DEFAULT_TOPIC_NAME, num_messages),
         parse_json=True,
     )
 
-    write_info = sdk_cmd.svc_cli(
+    _, write_info, _ = sdk_cmd.svc_cli(
         config.PACKAGE_NAME,
         config.SERVICE_NAME,
         "topic producer_test_tls {} {}".format(config.DEFAULT_TOPIC_NAME, num_messages),
@@ -126,7 +126,7 @@ def test_producer_over_tls(kafka_service):
 def test_tls_ciphers(kafka_service):
     task_name = "kafka-0-broker"
     task_id = sdk_tasks.get_task_ids(config.SERVICE_NAME, task_name)[0]
-    endpoint = sdk_cmd.svc_cli(
+    _, endpoint, _ = sdk_cmd.svc_cli(
         config.PACKAGE_NAME,
         config.SERVICE_NAME,
         "endpoints {}".format(BROKER_TLS_ENDPOINT),
@@ -181,7 +181,7 @@ def test_tls_ciphers(kafka_service):
 @pytest.mark.sanity
 @pytest.mark.recovery
 def test_tls_recovery(kafka_service, service_account):
-    pod_list = sdk_cmd.svc_cli(
+    _, pod_list, _ = sdk_cmd.svc_cli(
         kafka_service["package_name"], kafka_service["service"]["name"], "pod list", parse_json=True
     )
 

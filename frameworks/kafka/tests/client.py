@@ -85,7 +85,7 @@ class KafkaClient:
 
         return options
 
-    def install(self, kerberos: sdk_auth.KerberosEnvironment = None) -> dict:
+    def install(self) -> dict:
         options = {
             "id": self.id,
             "mem": 512,
@@ -132,7 +132,7 @@ class KafkaClient:
 
         return "broker"
 
-    def wait_for(self, kafka_server: dict, topic_name: str) -> bool:
+    def wait_for(self, topic_name: str) -> bool:
         """
         Wait for the service to be visible from a client perspective.
         """
@@ -156,9 +156,9 @@ class KafkaClient:
 
         return True
 
-    def connect(self, kafka_server: dict) -> bool:
+    def connect(self) -> bool:
         self.reset()
-        return self.wait_for(kafka_server, topic_name=None)
+        return self.wait_for(topic_name=None)
 
     def can_write_and_read(
         self, user: str, topic_name: str

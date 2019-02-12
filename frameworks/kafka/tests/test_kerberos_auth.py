@@ -61,7 +61,7 @@ def kafka_server(kerberos, kafka_client: client.KafkaClient):
             timeout_seconds=30 * 60,
         )
 
-        kafka_client.connect(config.DEFAULT_BROKER_COUNT)
+        kafka_client.connect()
         yield
     finally:
         sdk_install.uninstall(config.PACKAGE_NAME, config.SERVICE_NAME)
@@ -71,7 +71,7 @@ def kafka_server(kerberos, kafka_client: client.KafkaClient):
 def kafka_client(kerberos):
     try:
         kafka_client = client.KafkaClient("kafka-client", config.PACKAGE_NAME, config.SERVICE_NAME, kerberos)
-        kafka_client.install(kerberos)
+        kafka_client.install()
 
         yield kafka_client
     finally:
@@ -89,7 +89,7 @@ def test_no_vip(kafka_server):
 @pytest.mark.dcos_min_version("1.10")
 @sdk_utils.dcos_ee_only
 @pytest.mark.sanity
-def test_client_can_read_and_write(kafka_client, kerberos):
+def test_client_can_read_and_write(kafka_client):
 
     topic_name = "authn.test"
     sdk_cmd.svc_cli(

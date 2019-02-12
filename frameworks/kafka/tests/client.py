@@ -174,10 +174,10 @@ class KafkaClient:
         return write_success, read_sucesses, read_messages
 
     def read_from_topic(
-        self, user: str, topic_name: str, brokers: str, krb5: sdk_auth.KerberosEnvironment
+        self, user: str, topic_name: str, brokers: str
     ) -> list:
 
-        properties, environment = self._get_cli_settings(user, krb5)
+        properties, environment = self._get_cli_settings(user, self.kerberos)
         read_messages = auth.read_from_topic(
             user, self.id, topic_name, len(self.MESSAGES), properties, environment, brokers
         )

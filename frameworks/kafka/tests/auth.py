@@ -49,7 +49,7 @@ def wait_for_brokers(client: str, brokers: list):
         "-resolve-hosts",
         ",".join(brokers),
     ]
-    bootstrap_output = sdk_cmd.task_exec(client, " ".join(bootstrap_cmd))
+    bootstrap_output = sdk_cmd.marathon_task_exec(client, " ".join(bootstrap_cmd))
     LOG.info(bootstrap_output)
     assert "SDK Bootstrap successful" in " ".join(str(bo) for bo in bootstrap_output)
     return True
@@ -199,14 +199,14 @@ def write_to_topic(
     )
     def write_wrapper():
         LOG.info("Running: %s", write_cmd)
-        rc, stdout, stderr = sdk_cmd.task_exec(task, write_cmd)
+        rc, stdout, stderr = sdk_cmd.marathon_task_exec(task, write_cmd)
         LOG.info("rc=%s\nstdout=%s\nstderr=%s\n", rc, stdout, stderr)
 
         return rc, stdout, stderr
 
     rc, stdout, stderr = write_wrapper()
 
-    rc_success = rc is 0
+    rc_success = rc != 0
     stdout_success = ">>" in stdout
     stderr_success = not is_not_authorized(stderr)
 
@@ -265,12 +265,12 @@ def read_from_topic(
     )
     def read_wrapper():
         LOG.info("Running: %s", read_cmd)
-        rc, stdout, stderr = sdk_cmd.task_exec(task, read_cmd)
+        rc, stdout, stderr = sdk_cmd.marathon_task_exec(task, read_cmd)
         LOG.info("rc=%s\nstdout=%s\nstderr=%s\n", rc, stdout, stderr)
 
         return rc, stdout, stderr
 
     output = read_wrapper()
 
-    assert output[0] is 0
+    assert output[0] != 0
     return " ".join(str(o) for o in output)

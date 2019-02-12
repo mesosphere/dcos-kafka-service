@@ -540,12 +540,12 @@ def update_service(package_name: str, service_name: str, options: dict):
 
 
 def service_get_brokers(kafka_server: dict, endpoint_name: str) -> list:
-    _, brokers, _ = sdk_cmd.svc_cli(
+    brokers = sdk_cmd.svc_cli(
         kafka_server["package_name"],
         kafka_server["service"]["name"],
         "endpoint {}".format(endpoint_name),
         parse_json=True,
-    )["dns"]
+    )[1]["dns"]
 
     return brokers
 

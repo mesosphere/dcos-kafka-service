@@ -9,22 +9,35 @@ import sdk_install
 from tests import config
 from tests import test_utils
 from tests import topics
+from tests import client
 
 
 LOG = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="module", autouse=True)
-def kafka_server(configure_security):
+def kafka_client():
+    try:
+        kafka_client = client.KafkaClient("kafka-client")
+        kafka_client.install()
+
+        yield kafka_client
+    finally:
+        kafka_client.uninstall()
+
+
+@pytest.fixture(scope="module", autouse=True)
+def kafka_server(kafka_client: client.KafkaClient, configure_security):
     try:
         sdk_install.uninstall(config.PACKAGE_NAME, config.SERVICE_NAME)
         config.install(config.PACKAGE_NAME, config.SERVICE_NAME, config.DEFAULT_BROKER_COUNT)
-
-        # wait for brokers to finish registering before starting tests
-        test_utils.broker_count_check(config.DEFAULT_BROKER_COUNT, service_name=config.SERVICE_NAME)
-
-        # Since the tests below interact with the brokers, ensure that the DNS resolves
-        test_utils.wait_for_broker_dns(config.PACKAGE_NAME, config.SERVICE_NAME)
+        service_options = {
+            "service": {
+                "name": config.SERVICE_NAME,
+            }
+        }
+        kafka_server = {**service_options, **{"package_name": config.PACKAGE_NAME}}
+        kafka_client.connect(kafka_server)
 
         yield {"package_name": config.PACKAGE_NAME, "service": {"name": config.SERVICE_NAME}}
     finally:

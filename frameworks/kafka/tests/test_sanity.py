@@ -49,12 +49,12 @@ def test_endpoints_address():
 
     @retrying.retry(wait_fixed=1000, stop_max_delay=120 * 1000, retry_on_result=lambda res: not res)
     def wait():
-        ret = sdk_cmd.svc_cli(
+        _, ret, _ = sdk_cmd.svc_cli(
             config.PACKAGE_NAME,
             foldered_name,
             "endpoints {}".format(config.DEFAULT_TASK_NAME),
             parse_json=True,
-        )[1]
+        )
         if len(ret["address"]) == config.DEFAULT_BROKER_COUNT:
             return ret
         return False

@@ -2,7 +2,6 @@ import logging
 import retrying
 
 import sdk_cmd
-import sdk_hosts
 import sdk_tasks
 from tests import config
 
@@ -38,22 +37,6 @@ def replace_broker_pod(service_name=config.SERVICE_NAME):
     sdk_tasks.check_running(service_name, config.DEFAULT_BROKER_COUNT)
     # wait till all brokers register
     broker_count_check(config.DEFAULT_BROKER_COUNT, service_name=service_name)
-
-
-def wait_for_broker_dns(package_name: str, service_name: str):
-    _, brokers, _ = sdk_cmd.svc_cli(package_name, service_name, "endpoint broker", parse_json=True)
-    broker_dns = list(map(lambda x: x.split(":")[0], brokers["dns"]))
-
-    def get_scheduler_task_id(service_name: str) -> str:
-        for task in sdk_tasks.get_summary():
-            if task.name == service_name:
-                return task.id
-
-    scheduler_task_id = get_scheduler_task_id(service_name)
-    log.info("Scheduler task ID: %s", scheduler_task_id)
-    log.info("Waiting for brokers: %s", broker_dns)
-
-    assert sdk_hosts.resolve_hosts(scheduler_task_id, broker_dns)
 
 
 def create_topic(topic_name, service_name=config.SERVICE_NAME):

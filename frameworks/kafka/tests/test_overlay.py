@@ -5,6 +5,7 @@ import sdk_networks
 import sdk_tasks
 import sdk_utils
 import shakedown
+import tests.utils.kafka_networks as kafka_networks
 from tests import config, test_utils
 
 
@@ -48,10 +49,8 @@ def test_overlay_network_deployment_and_endpoints():
     endpoints = sdk_networks.get_endpoint_names(config.PACKAGE_NAME, config.SERVICE_NAME)
     assert "broker" in endpoints, "broker is missing from endpoints {}".format(endpoints)
     assert "zookeeper" in endpoints, "zookeeper missing from endpoints {}".format(endpoints)
-    broker_endpoints = sdk_networks.check_endpoint_on_overlay(
-        config.PACKAGE_NAME, config.SERVICE_NAME, "broker", 3
-    )
-    sdk_networks.check_endpoints_on_overlay(broker_endpoints)
+    broker_endpoints = sdk_networks.get_endpoint(config.PACKAGE_NAME, config.SERVICE_NAME, "broker")
+    kafka_networks.check_endpoints_on_overlay(broker_endpoints)
 
     _, zookeeper, _ = sdk_cmd.svc_cli(config.PACKAGE_NAME, config.SERVICE_NAME, "endpoints zookeeper")
     assert zookeeper.rstrip() == "master.mesos:2181/{}".format(

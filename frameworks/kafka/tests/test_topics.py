@@ -31,13 +31,7 @@ def kafka_server(kafka_client: client.KafkaClient, configure_security):
     try:
         sdk_install.uninstall(config.PACKAGE_NAME, config.SERVICE_NAME)
         config.install(config.PACKAGE_NAME, config.SERVICE_NAME, config.DEFAULT_BROKER_COUNT)
-        service_options = {
-            "service": {
-                "name": config.SERVICE_NAME,
-            }
-        }
-        kafka_server = {**service_options, **{"package_name": config.PACKAGE_NAME}}
-        kafka_client.connect(kafka_server)
+        kafka_client.connect()
 
         yield {"package_name": config.PACKAGE_NAME, "service": {"name": config.SERVICE_NAME}}
     finally:

@@ -57,6 +57,7 @@ def zookeeper_server(kerberos):
             config.ZOOKEEPER_PACKAGE_NAME,
             config.ZOOKEEPER_SERVICE_NAME,
             config.ZOOKEEPER_TASK_COUNT,
+            package_version=config.ZOOKEEPER_PACKAGE_VERSION,
             additional_options=service_kerberos_options,
             timeout_seconds=30 * 60,
         )

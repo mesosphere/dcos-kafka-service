@@ -6,6 +6,7 @@ PACKAGE_NAME = sdk_utils.get_package_name("kafka")
 SERVICE_NAME = sdk_utils.get_service_name(PACKAGE_NAME.lstrip("beta-"))
 
 ZOOKEEPER_PACKAGE_NAME = "kafka-zookeeper"
+ZOOKEEPER_PACKAGE_VERSION = ""  # Use latest available
 ZOOKEEPER_SERVICE_NAME = "kafka-zookeeper"
 ZOOKEEPER_TASK_COUNT = 6
 

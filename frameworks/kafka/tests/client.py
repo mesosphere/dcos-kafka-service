@@ -177,7 +177,7 @@ class KafkaClient:
         self, user: str, topic_name: str, brokers: str
     ) -> list:
 
-        properties, environment = self._get_cli_settings(user, self.kerberos)
+        properties, environment = self._get_cli_settings(user)
         read_messages = auth.read_from_topic(
             user, self.id, topic_name, len(self.MESSAGES), properties, environment, brokers
         )

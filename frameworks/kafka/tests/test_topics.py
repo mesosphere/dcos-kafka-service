@@ -18,7 +18,7 @@ LOG = logging.getLogger(__name__)
 @pytest.fixture(scope="module", autouse=True)
 def kafka_client():
     try:
-        kafka_client = client.KafkaClient("kafka-client")
+        kafka_client = client.KafkaClient("kafka-client", config.PACKAGE_NAME, config.SERVICE_NAME)
         kafka_client.install()
 
         yield kafka_client

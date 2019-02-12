@@ -126,12 +126,12 @@ def test_producer_over_tls(kafka_service):
 def test_tls_ciphers(kafka_service):
     task_name = "kafka-0-broker"
     task_id = sdk_tasks.get_task_ids(config.SERVICE_NAME, task_name)[0]
-    _, endpoint, _ = sdk_cmd.svc_cli(
+    endpoint = sdk_cmd.svc_cli(
         config.PACKAGE_NAME,
         config.SERVICE_NAME,
         "endpoints {}".format(BROKER_TLS_ENDPOINT),
         parse_json=True,
-    )["dns"][0]
+    )[1]["dns"][0]
     ciphers_config_path = ["service", "security", "transport_encryption", "ciphers"]
     expected_ciphers = set(
         sdk_utils.get_in(

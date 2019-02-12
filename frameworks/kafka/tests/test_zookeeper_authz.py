@@ -109,7 +109,7 @@ def zookeeper_server(kerberos):
 @pytest.fixture(scope="module", autouse=True)
 def kafka_client(kerberos):
     try:
-        kafka_client = client.KafkaClient("kafka-client")
+        kafka_client = client.KafkaClient("kafka-client", config.PACKAGE_NAME, config.SERVICE_NAME)
         kafka_client.install(kerberos)
 
         yield kafka_client
@@ -166,7 +166,7 @@ def test_authz_acls_required(kafka_client: client.KafkaClient, zookeeper_server,
         kafka_client.connect(kafka_server)
 
         # Clear the ACLs
-        kafka_client.remove_acls("authorized", kafka_server, topic_name)
+        kafka_client.remove_acls("authorized", topic_name)
 
         # Since no ACLs are specified, only the super user can read and write
         for user in ["super"]:
@@ -192,7 +192,7 @@ def test_authz_acls_required(kafka_client: client.KafkaClient, zookeeper_server,
             )
 
         log.info("Writing and reading: Adding acl for authorized user")
-        kafka_client.add_acls("authorized", kafka_server, topic_name)
+        kafka_client.add_acls("authorized", topic_name)
 
         # After adding ACLs the authorized user and super user should still have access to the topic.
         for user in ["authorized", "super"]:
@@ -219,7 +219,7 @@ def test_authz_acls_required(kafka_client: client.KafkaClient, zookeeper_server,
 
     finally:
         # Ensure that we clean up the ZK state.
-        kafka_client.remove_acls("authorized", kafka_server, topic_name)
+        kafka_client.remove_acls("authorized", topic_name)
 
         sdk_install.uninstall(config.PACKAGE_NAME, config.SERVICE_NAME)
 
@@ -278,7 +278,7 @@ def test_authz_acls_not_required(kafka_client: client.KafkaClient, zookeeper_ser
         kafka_client.connect(kafka_server)
 
         # Clear the ACLs
-        kafka_client.remove_acls("authorized", kafka_server, topic_name)
+        kafka_client.remove_acls("authorized", topic_name)
 
         # Since no ACLs are specified, all users can read and write.
         for user in ["authorized", "unauthorized", "super"]:
@@ -294,7 +294,7 @@ def test_authz_acls_not_required(kafka_client: client.KafkaClient, zookeeper_ser
             )
 
         log.info("Writing and reading: Adding acl for authorized user")
-        kafka_client.add_acls("authorized", kafka_server, topic_name)
+        kafka_client.add_acls("authorized", topic_name)
 
         # After adding ACLs the authorized user and super user should still have access to the topic.
         for user in ["authorized", "super"]:
@@ -321,6 +321,6 @@ def test_authz_acls_not_required(kafka_client: client.KafkaClient, zookeeper_ser
 
     finally:
         # Ensure that we clean up the ZK state.
-        kafka_client.remove_acls("authorized", kafka_server, topic_name)
+        kafka_client.remove_acls("authorized", topic_name)
 
         sdk_install.uninstall(config.PACKAGE_NAME, config.SERVICE_NAME)

@@ -80,7 +80,7 @@ def kafka_server(kerberos):
 @pytest.fixture(scope="module", autouse=True)
 def kafka_client(kerberos):
     try:
-        kafka_client = client.KafkaClient("kafka-client")
+        kafka_client = client.KafkaClient("kafka-client", config.PACKAGE_NAME, config.SERVICE_NAME)
         kafka_client.install(kerberos)
 
         yield kafka_client
@@ -119,7 +119,7 @@ def test_authz_acls_not_required(
         )
 
     log.info("Writing and reading: Adding acl for authorized user")
-    kafka_client.add_acls("authorized", kafka_server, topic_name)
+    kafka_client.add_acls("authorized", topic_name)
 
     # After adding ACLs the authorized user and super user should still have access to the topic.
     for user in ["authorized", "super"]:

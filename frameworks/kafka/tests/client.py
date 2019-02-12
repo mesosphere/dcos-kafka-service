@@ -3,6 +3,7 @@ A collection of client utilites for Kafka.
 """
 import logging
 import uuid
+import typing
 
 import sdk_auth
 import sdk_cmd
@@ -23,9 +24,9 @@ class KafkaService:
     A light wrapper around a Kafka service installed as part of the integration tests.
     """
 
-    def __init__(self, service_options: dict):
-        self._package_name = service_options["package_name"]
-        self._service_name = service_options["service"]["name"]
+    def __init__(self, package_name: str, service_name: str):
+        self._package_name = package_name
+        self._service_name = service_name
 
     def get_zookeeper_connect(self) -> str:
         return str(
@@ -45,11 +46,18 @@ class KafkaService:
 
 
 class KafkaClient:
-    def __init__(self, id: str):
+    def __init__(
+        self,
+        id: str,
+        package_name: str,
+        service_name: str,
+        kerberos: typing.Optional[sdk_auth.KerberosEnvironment] = None,
+    ) -> None:
 
+        self.kafka_service = KafkaService(package_name, service_name)
         self.id = id
 
-        self._is_kerberos = False
+        self.kerberos = kerberos
         self._is_tls = False
 
         self.reset()
@@ -57,7 +65,6 @@ class KafkaClient:
     def reset(self):
         self.MESSAGES = []
         self.brokers = None
-        self.topic_name = None
 
     def get_id(self) -> str:
         return self.id
@@ -94,9 +101,10 @@ class KafkaClient:
             },
         }
 
-        if kerberos is not None:
-            self._is_kerberos = True
-            options = sdk_utils.merge_dictionaries(options, self._get_kerberos_options(kerberos))
+        if self.kerberos:
+            options = sdk_utils.merge_dictionaries(
+                options, self._get_kerberos_options(self.kerberos)
+            )
 
         sdk_marathon.install_app(options)
 
@@ -105,16 +113,16 @@ class KafkaClient:
     def uninstall(self):
         sdk_marathon.destroy_app(self.id)
 
-    def _get_cli_settings(self, user: str, kerberos: sdk_auth.KerberosEnvironment):
+    def _get_cli_settings(self, user: str):
         properties = []
         environment = None
 
-        if self._is_kerberos:
+        if self.kerberos:
             properties.extend(auth.get_kerberos_client_properties(ssl_enabled=self._is_tls))
-            environment = auth.setup_krb5_env(user, self.id, kerberos)
+            environment = auth.setup_krb5_env(user, self.id, self.kerberos)
 
         if self._is_tls:
-            properties.extend(auth.get_ssl_client_properties(user, has_kerberos=self._is_kerberos))
+            properties.extend(auth.get_ssl_client_properties(user, has_kerberos=self.kerberos is not None))
 
         return properties, environment
 
@@ -128,7 +136,7 @@ class KafkaClient:
         """
         Wait for the service to be visible from a client perspective.
         """
-        service = KafkaService(kafka_server)
+        service = self.kafka_service
 
         if not self.brokers:
             brokers_list = service.get_brokers_endpoints(self.get_endpoint_name())
@@ -153,14 +161,14 @@ class KafkaClient:
         return self.wait_for(kafka_server, topic_name=None)
 
     def can_write_and_read(
-        self, user: str, kafka_server: dict, topic_name: str, krb5: sdk_auth.KerberosEnvironment
+        self, user: str, topic_name: str
     ) -> tuple:
 
-        if not self.wait_for(kafka_server, topic_name):
+        if not self.wait_for(topic_name):
             return False, [], []
 
-        write_success = self.write_to_topic(user, topic_name, self.brokers, krb5)
-        read_sucesses, read_messages = self.read_from_topic(user, topic_name, self.brokers, krb5)
+        write_success = self.write_to_topic(user, topic_name, self.brokers)
+        read_sucesses, read_messages = self.read_from_topic(user, topic_name, self.brokers)
 
         return write_success, read_sucesses, read_messages
 
@@ -178,13 +186,13 @@ class KafkaClient:
         return read_success, read_messages
 
     def write_to_topic(
-        self, user: str, topic_name: str, brokers: str, krb5: sdk_auth.KerberosEnvironment
+        self, user: str, topic_name: str, brokers: str
     ) -> bool:
 
         # Generate a unique message:
         message = str(uuid.uuid4())
 
-        properties, environment = self._get_cli_settings(user, krb5)
+        properties, environment = self._get_cli_settings(user)
         write_success = auth.write_to_topic(
             user, self.id, topic_name, message, properties, environment, brokers
         )
@@ -194,15 +202,15 @@ class KafkaClient:
 
         return write_success
 
-    def add_acls(self, user: str, kafka_server: dict, topic_name: str):
-        service = KafkaService(kafka_server)
+    def add_acls(self, user: str, topic_name: str):
+        service = self.kafka_service
 
         # TODO: If zookeeper has Kerberos enabled, then the environment should be changed
         environment = None
         topics.add_acls(user, self.id, topic_name, service.get_zookeeper_connect(), environment)
 
-    def remove_acls(self, user: str, kafka_server: dict, topic_name: str):
-        service = KafkaService(kafka_server)
+    def remove_acls(self, user: str, topic_name: str):
+        service = self.kafka_service
 
         # TODO: If zookeeper has Kerberos enabled, then the environment should be changed
         environment = None

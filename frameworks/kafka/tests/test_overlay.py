@@ -45,7 +45,7 @@ def test_service_overlay_health():
 def test_overlay_network_deployment_and_endpoints():
     # double check
     sdk_tasks.check_running(config.SERVICE_NAME, config.DEFAULT_BROKER_COUNT)
-    endpoints = sdk_networks.check_endpoint_on_overlay(config.PACKAGE_NAME, config.SERVICE_NAME, "", 2)
+    endpoints = sdk_networks.get_endpoint_names(config.PACKAGE_NAME, config.SERVICE_NAME)
     assert "broker" in endpoints, "broker is missing from endpoints {}".format(endpoints)
     assert "zookeeper" in endpoints, "zookeeper missing from endpoints {}".format(endpoints)
     broker_endpoints = sdk_networks.check_endpoint_on_overlay(

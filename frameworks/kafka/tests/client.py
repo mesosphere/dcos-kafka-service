@@ -8,6 +8,7 @@ import sdk_auth
 import sdk_cmd
 import sdk_utils
 import sdk_marathon
+import sdk_networks
 
 from tests import auth
 from tests import test_utils
@@ -32,11 +33,7 @@ class KafkaService:
         ).strip()
 
     def get_brokers_endpoints(self, endpoint_name: str) -> list:
-        _, brokers, _ = sdk_cmd.svc_cli(
-            self._package_name, self._service_name, "endpoint {}".format(endpoint_name), parse_json=True
-        )[1]["dns"]
-
-        return brokers
+        return sdk_networks.get_endpoint(self._package_name, self._service_name, endpoint_name)["dns"]
 
     def wait_for_topic(self, topic_name: str):
         if not topic_name:

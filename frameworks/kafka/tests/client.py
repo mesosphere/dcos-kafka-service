@@ -65,6 +65,7 @@ class KafkaClient:
     def reset(self):
         self.MESSAGES = []
         self.brokers = None
+        self.topic_name = None
 
     def get_id(self) -> str:
         return self.id

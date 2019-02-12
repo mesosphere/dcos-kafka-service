@@ -11,7 +11,7 @@ import sdk_utils
 
 from security import transport_encryption, cipher_suites
 
-from tests import config
+from tests import config, test_utils
 
 pytestmark = [
     pytest.mark.skipif(sdk_utils.is_open_dcos(), reason="Feature only supported in DC/OS EE"),
@@ -134,7 +134,7 @@ def test_tls_ciphers(kafka_service):
     )[1]["dns"][0]
     ciphers_config_path = ["service", "security", "transport_encryption", "ciphers"]
     expected_ciphers = set(
-        sdk_utils.get_in(
+        test_utils.get_in(
             ciphers_config_path,
             sdk_cmd.svc_cli(config.PACKAGE_NAME, config.SERVICE_NAME, "describe", parse_json=True)[1],
             "",
@@ -158,11 +158,11 @@ def test_tls_ciphers(kafka_service):
             len(missing_openssl_ciphers)
         )
     )
-    print("\n".join(sdk_utils.sort(list(missing_openssl_ciphers))))
+    print("\n".join(test_utils.sort(list(missing_openssl_ciphers))))
     print("\n{} expected ciphers:".format(len(expected_ciphers)))
-    print("\n".join(sdk_utils.sort(list(expected_ciphers))))
+    print("\n".join(test_utils.sort(list(expected_ciphers))))
     print("\n{} ciphers will be checked:".format(len(possible_openssl_ciphers)))
-    for openssl_cipher in sdk_utils.sort(list(possible_openssl_ciphers)):
+    for openssl_cipher in test_utils.sort(list(possible_openssl_ciphers)):
         print("{} ({})".format(cipher_suites.rfc_name(openssl_cipher), openssl_cipher))
 
     for openssl_cipher in possible_openssl_ciphers:
@@ -172,7 +172,7 @@ def test_tls_ciphers(kafka_service):
     print(
         "{} ciphers enabled out of {}:".format(len(enabled_ciphers), len(possible_openssl_ciphers))
     )
-    print("\n".join(sdk_utils.sort(list(enabled_ciphers))))
+    print("\n".join(test_utils.sort(list(enabled_ciphers))))
 
     assert expected_ciphers == enabled_ciphers, "Enabled ciphers should match expected ciphers"
 

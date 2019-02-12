@@ -35,9 +35,9 @@ def service_account(configure_security):
 
 
 @pytest.fixture(scope="module", autouse=True)
-def kafka_client(kerberos):
+def kafka_client():
     try:
-        kafka_client = client.KafkaClient("kafka-client", config.PACKAGE_NAME, config.SERVICE_NAME, kerberos)
+        kafka_client = client.KafkaClient("kafka-client", config.PACKAGE_NAME, config.SERVICE_NAME)
         kafka_client.install()
 
         # TODO: This flag should be set correctly.

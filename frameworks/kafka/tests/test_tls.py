@@ -152,7 +152,7 @@ def test_tls_ciphers(kafka_service):
     assert expected_ciphers, "Expected ciphers should be non-empty"
     assert possible_openssl_ciphers, "Possible OpenSSL ciphers should be non-empty"
 
-    sdk_cmd.task_exec(task_id, "openssl version")  # Output OpenSSL version.
+    sdk_cmd.marathon_task_exec(task_id, "openssl version")  # Output OpenSSL version.
     print(
         "\n{} OpenSSL ciphers missing from the cipher_suites module:".format(
             len(missing_openssl_ciphers)

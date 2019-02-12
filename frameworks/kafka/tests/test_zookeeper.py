@@ -39,6 +39,7 @@ def zookeeper_server(configure_security):
             config.ZOOKEEPER_PACKAGE_NAME,
             config.ZOOKEEPER_SERVICE_NAME,
             config.ZOOKEEPER_TASK_COUNT,
+            package_version=config.ZOOKEEPER_PACKAGE_VERSION,
             additional_options=service_options,
             timeout_seconds=30 * 60,
             insert_strict_options=False,

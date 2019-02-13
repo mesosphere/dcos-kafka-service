@@ -206,7 +206,7 @@ def write_to_topic(
 
     rc, stdout, stderr = write_wrapper()
 
-    rc_success = rc != 0
+    rc_success = rc == 0
     stdout_success = ">>" in stdout
     stderr_success = not is_not_authorized(stderr)
 
@@ -272,5 +272,5 @@ def read_from_topic(
 
     output = read_wrapper()
 
-    assert output[0] != 0
+    assert output[0] == 0
     return " ".join(str(o) for o in output)

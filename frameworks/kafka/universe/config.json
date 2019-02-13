@@ -990,8 +990,8 @@
           "default": 1,
           "minimum": 1
         },
-        "ssl_endpoint_identification_algorithm": {
-          "title": "ssl.endpoint.identification.algorithm",
+        "ssl_endpoint_identification_enabled": {
+          "title": "ssl.endpoint.identification.enabled",
           "description": "By default enables the hostname verification when TLS connections are established between Kafka brokers. To disable hostname verification leave this option unchecked",
           "type": "boolean",
           "default": true

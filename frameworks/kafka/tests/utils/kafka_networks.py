@@ -3,13 +3,13 @@ Kafka-Specific Utilities on networking
 
 (This file contains the kafka-specific additions on the `sdk_networks` file)
 """
-import shakedown
+import get_agents
 
 
 def check_endpoints_on_overlay(endpoints):
     def check_ip_addresses_on_overlay():
         # the overlay IP address should not contain any agent IPs
-        return len(set(ip_addresses).intersection(set(shakedown.get_agents()))) == 0
+        return len(set(ip_addresses).intersection(set(get_agents.get_agents()))) == 0
 
     assert "address" in endpoints, "endpoints: {} missing 'address' key".format(endpoints)
     assert "dns" in endpoints, "endpoints: {} missing 'dns' key".format(endpoints)

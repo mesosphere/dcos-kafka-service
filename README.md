@@ -20,12 +20,20 @@ In order to build a stub-universe hosted on an S3 bucket run:
 ./frameworks/kafka/build.sh aws
 ```
 
-This outputs
+This outputs XXXSomeStubUniverse
 
 ## Running tests
 
+### Using the Dockerfile
 
-###
+* XXX
+
+### Not using the Dockerfile
+
+* Set up your cluster, e.g. minidcos
+* Set up the CLI
+* Install dependencies
+* pytest -s -vvv ...
 
 ## How to update the Kafka base tech
 
@@ -39,4 +47,6 @@ This is not necessarily a comprehensive list of changes.
 * Read the CHANGELOGs between the current base tech and the desired base tech
 * Note any new configuration variables, and changes to default configurations
 * For each new configuration variable, choose whether to expose this configuration variable to DC/OS users
-* XXX
+* For each configuration variable to expose, add this to XXX and add a test that the option is passed through to Kafka
+* Add a test for upgrading from the previous version to the new version
+* Fix any upgrade issues

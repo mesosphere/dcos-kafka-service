@@ -12,12 +12,14 @@ import os.path
 import re
 import shutil
 import time
+import inspect
 
 import pytest
 import retrying
 
 import sdk_cmd
 import sdk_install
+import sdk_package_registry
 import sdk_plan
 import sdk_tasks
 
@@ -62,6 +64,11 @@ def get_test_suite_name(item: pytest.Item):
     """Returns the test suite name to use for a given test."""
     # frameworks/template/tests/test_sanity.py => test_sanity_py
     # tests/test_sanity.py => test_sanity_py
+
+    # use the class name as the suite name if item is a method
+    if inspect.ismethod(item.obj):
+        return os.path.basename(item.getparent(pytest.Class).name).replace(".", "_")
+
     return os.path.basename(item.parent.name).replace(".", "_")
 
 
@@ -81,7 +88,11 @@ def handle_test_setup(item: pytest.Item):
         _testlogs_current_test_suite = test_suite
         global _testlogs_ignored_task_ids
         _testlogs_ignored_task_ids = _testlogs_ignored_task_ids.union(
-            [task.id for task in sdk_tasks.get_summary(with_completed=True)]
+            [
+                task.id
+                for task in sdk_tasks.get_summary(with_completed=True)
+                if not _task_whitelist_callback(task)
+            ]
         )
         log.info(
             "Entering new test suite {}: {} preexisting tasks will be ignored on test failure.".format(
@@ -100,19 +111,51 @@ def handle_test_setup(item: pytest.Item):
     _testlogs_test_index += 1
 
 
+def _task_whitelist_callback(item: pytest.Item):
+    """Returns a callback configured by pytest marker diag_task_whitelist
+    to check if a task is whitelisted, which should be used like this:
+
+    def whitelist_fn(task):
+        return re.match('hello.*', task.name)
+
+    @pytest.mark.diag_task_whitelist.with_args(whitelist_fn)
+    def your_test_here(): ...
+
+    Note that the diag_task_whitelist marker can be used on function, class, or module
+    to be able to hierarchically configure the whitelist.
+    """
+    def _callback(task):
+        # get_closest_marker is only available in latest pytest versions
+        if item.get_closest_marker(name='diag_task_whitelist') is None:
+            return False
+
+        for mark in item.iter_markers(name='diag_task_whitelist'):
+            if mark.args[0](task):
+                return True
+
+        return False
+
+    return _callback
+
+
 def handle_test_report(item: pytest.Item, result):  # _pytest.runner.TestReport
     """Collects information from the cluster following a failed test.
 
     This should be called in a hookimpl fixture.
     See also handle_test_setup() which must be called in a pytest_runtest_setup() hook."""
 
-    if not result.failed:
-        return  # passed, nothing to do
+    if not result.failed or os.environ.get('DISABLE_DIAG'):
+        return  # passed, nothing to do, or diagnostics collection disabled
 
-    # Fetch all plans from all currently-installed services.
+    # Fetch all state from all currently-installed services.
     # We do this retrieval first in order to be closer to the actual test failure.
     # Services may still be installed when e.g. we're still in the middle of a test suite.
-    service_names = sdk_install.get_installed_service_names()
+    service_names = list(
+        filter(
+            lambda name: name != sdk_package_registry.PACKAGE_REGISTRY_SERVICE_NAME,
+            sdk_install.get_installed_service_names().union(_whitelisted_service_names(item)),
+        )
+    )
     if len(service_names) > 0:
         log.info(
             "Fetching plans for {} services that are currently installed: {}".format(
@@ -121,9 +164,11 @@ def handle_test_report(item: pytest.Item, result):  # _pytest.runner.TestReport
         )
         for service_name in service_names:
             try:
+                # Skip thread retrieval if plan retrieval fails:
                 _dump_plans(item, service_name)
+                _dump_threads(item, service_name)
             except Exception:
-                log.exception("Plan collection from service {} failed!".format(service_name))
+                log.exception("Plan/thread collection from service {} failed!".format(service_name))
 
     # Fetch all logs from tasks created since the last failure, or since the start of the suite.
     global _testlogs_ignored_task_ids
@@ -163,6 +208,26 @@ def handle_test_report(item: pytest.Item, result):  # _pytest.runner.TestReport
     log.info("Post-failure collection complete")
 
 
+def _whitelisted_service_names(item: pytest.Item) -> set:
+    """Returns a set of whitelisted service names configured by pytest marker diag_service_whitelist,
+    which should be used like this:
+
+    @pytest.mark.diag_service_whitelist(set('service1', 'service2'))
+    def your_test_here(): ...
+
+    Note that the diag_service_whitelist marker can be used on function, class, or module
+    to be able to hierarchically configure the whitelist.
+    """
+    if item.get_closest_marker(name='diag_service_whitelist') is None:
+        return set()
+
+    whitelisted_service_names = set()
+    for mark in item.iter_markers(name='diag_service_whitelist'):
+        whitelisted_service_names = whitelisted_service_names.union(mark.args[0])
+
+    return whitelisted_service_names
+
+
 def _dump_plans(item: pytest.Item, service_name: str):
     """If the test had failed, writes the plan state(s) to log file(s)."""
 
@@ -181,9 +246,20 @@ def _dump_plans(item: pytest.Item, service_name: str):
             f.write("\n")  # ... and a trailing newline
 
 
+def _dump_threads(item: pytest.Item, service_name: str):
+    threads = sdk_cmd.service_request(
+        "GET", service_name, "v1/debug/threads", timeout_seconds=5
+    ).text
+    out_path = _setup_artifact_path(item, "threads_{}.txt".format(service_name.replace("/", "_")))
+    log.info("=> Writing {} ({} bytes)".format(out_path, len(threads)))
+    with open(out_path, "w") as f:
+        f.write(threads)
+        f.write("\n")  # ... and a trailing newline
+
+
 def _dump_diagnostics_bundle(item: pytest.Item):
     """Creates and downloads a DC/OS diagnostics bundle, and saves it to the artifact path for this test."""
-    rc, _, _ = sdk_cmd.run_raw_cli("node diagnostics create all")
+    rc, _, _ = sdk_cmd.run_cli("node diagnostics create all")
     if rc:
         log.error("Diagnostics bundle creation failed.")
         return
@@ -194,7 +270,7 @@ def _dump_diagnostics_bundle(item: pytest.Item):
         retry_on_result=lambda result: result is None,
     )
     def wait_for_bundle_file():
-        rc, stdout, stderr = sdk_cmd.run_raw_cli("node diagnostics --status --json")
+        rc, stdout, stderr = sdk_cmd.run_cli("node diagnostics --status --json")
         if rc:
             return None
 
@@ -220,9 +296,7 @@ def _dump_diagnostics_bundle(item: pytest.Item):
 def _dump_mesos_state(item: pytest.Item):
     """Downloads state from the Mesos master and saves it to the artifact path for this test."""
     for name in ["state.json", "slaves"]:
-        r = sdk_cmd.cluster_request(
-            "GET", "/mesos/{}".format(name), verify=False, raise_on_error=False
-        )
+        r = sdk_cmd.cluster_request("GET", "/mesos/{}".format(name), raise_on_error=False)
         if r.ok:
             if name.endswith(".json"):
                 name = name[: -len(".json")]  # avoid duplicate '.json'
@@ -294,7 +368,7 @@ def _dump_task_logs_for_agent(item: pytest.Item, agent_id: str, agent_tasks: lis
 
 def _dump_task_logs_for_task(
     item: pytest.Item, agent_id: str, agent_executor_paths: dict, task_entry: _TaskEntry
-):
+) -> int:
     executor_browse_path = _find_matching_executor_path(agent_executor_paths, task_entry)
     if not executor_browse_path:
         # Expected executor path was not found on this agent. Did Mesos move their files around again?
@@ -303,7 +377,7 @@ def _dump_task_logs_for_task(
                 task_entry, agent_id, "\n  ".join(sorted(agent_executor_paths.keys()))
             )
         )
-        return
+        return 0
 
     # Fetch paths under the executor.
     executor_file_infos = sdk_cmd.cluster_request(
@@ -341,7 +415,7 @@ def _dump_task_logs_for_task(
         log.warning(
             "Unable to find any stdout/stderr files in above paths for task {}".format(task_entry)
         )
-        return
+        return 0
 
     byte_count = sum([f["size"] for f in selected_file_infos.values()])
     log.info(
@@ -450,10 +524,10 @@ def _select_log_files(
         if not logfile_pattern.match(file_info["path"]):
             continue
         # Example output filename (sort by time):
-        # 180125_225944.world-1-server__4d534510-35d9-4f06-811e-e9a9ffa4d14f.task.stdout
-        # 180126_000225.hello-0-server__15174696-2d3d-48e9-b492-d9a0cc289786.executor.stderr
-        # 180126_002024.hello-world.662e7976-0224-11e8-b2f2-deead5f2b92b.stdout.1
-        out_filename = "{}.{}.{}{}".format(
+        # 180125_225944.world-1-server__4d534510-35d9-4f06-811e-e9a9ffa4d14f.task.stdout.log
+        # 180126_000225.hello-0-server__15174696-2d3d-48e9-b492-d9a0cc289786.executor.stderr.log
+        # 180126_002024.hello-world.662e7976-0224-11e8-b2f2-deead5f2b92b.stdout.1.log
+        out_filename = "{}.{}.{}{}.log".format(
             time.strftime("%y%m%d_%H%M%S", time.gmtime(file_info["mtime"])),
             task_id,
             source,

@@ -57,6 +57,7 @@ def zookeeper_server(kerberos):
             config.ZOOKEEPER_PACKAGE_NAME,
             config.ZOOKEEPER_SERVICE_NAME,
             config.ZOOKEEPER_TASK_COUNT,
+            package_version=config.ZOOKEEPER_PACKAGE_VERSION,
             additional_options=service_kerberos_options,
             timeout_seconds=30 * 60,
         )
@@ -75,8 +76,8 @@ def kafka_server(kerberos, zookeeper_server):
         zookeeper_server["package_name"],
         zookeeper_server["service"]["name"],
         "endpoint clientport",
-        json=True,
-    )["dns"]
+        parse_json=True,
+    )[1]["dns"]
 
     service_kerberos_options = {
         "service": {
@@ -113,8 +114,8 @@ def kafka_server(kerberos, zookeeper_server):
 def kafka_client(kerberos, kafka_server):
 
     brokers = sdk_cmd.svc_cli(
-        kafka_server["package_name"], kafka_server["service"]["name"], "endpoint broker", json=True
-    )["dns"]
+        kafka_server["package_name"], kafka_server["service"]["name"], "endpoint broker", parse_json=True
+    )[1]["dns"]
 
     try:
         client_id = "kafka-client"
@@ -161,7 +162,7 @@ def test_client_can_read_and_write(kafka_client, kafka_server, kerberos):
         kafka_server["package_name"],
         kafka_server["service"]["name"],
         "topic create {}".format(topic_name),
-        json=True,
+        parse_json=True,
     )
 
     test_utils.wait_for_topic(

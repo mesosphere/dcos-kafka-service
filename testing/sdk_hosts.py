@@ -6,32 +6,15 @@ SHOULD ALSO BE APPLIED TO sdk_hosts IN ANY OTHER PARTNER REPOS
 ************************************************************************
 """
 import json
-import logging
 import retrying
-import shakedown
 
 import sdk_cmd
 import sdk_utils
 
-LOG = logging.getLogger(__name__)
 
-
-SYSTEM_HOST_SUFFIX = "mesos"
 AUTOIP_HOST_SUFFIX = "autoip.dcos.thisdcos.directory"
 VIP_HOST_SUFFIX = "l4lb.thisdcos.directory"
-
-
-def system_host(service_name, task_name, port=-1):
-    """Returns the mesos DNS name for the host machine of a given task, with handling of foldered services.
-    This maps to the host IP, which may be different from the container IP if CNI is enabled.
-
-    service=marathon task=/path/to/scheduler =>  scheduler-to-path.marathon.mesos
-    service=/path/to/scheduler task=node-0   =>  node-0.pathtoscheduler.mesos
-
-    See also: https://dcos.io/docs/1.8/usage/service-discovery/dns-overview/"""
-    return _to_host(
-        _safe_mesos_dns_taskname(task_name), _safe_name(service_name), SYSTEM_HOST_SUFFIX, port
-    )
+MARATHON_HOST_PREFIX = "marathon"
 
 
 def autoip_host(service_name, task_name, port=-1):
@@ -51,6 +34,19 @@ def custom_host(service_name, task_name, custom_domain, port=-1):
 def vip_host(service_name, vip_name, port=-1):
     """Returns the hostname of a specified service VIP, with handling of foldered services."""
     return _to_host(_safe_name(vip_name), _safe_name(service_name), VIP_HOST_SUFFIX, port)
+
+
+def scheduler_vip_host(service_name, vip_name, port=-1):
+    """Returns the scheduler hostname of a specified service VIP, with handling of foldered services.
+
+    e.g.: scheduler_vip_host("cassandra", "api") == "api.cassandra.marathon.l4lb.thisdcos.directory"
+    """
+    return _to_host(
+        _safe_name(vip_name),
+        _safe_name(service_name),
+        "{}.{}".format(MARATHON_HOST_PREFIX, VIP_HOST_SUFFIX),
+        port,
+    )
 
 
 def _safe_name(name):
@@ -74,40 +70,6 @@ def _to_host(host_first, host_second, host_third, port):
     return host
 
 
-def resolve_hosts(task_id: str, hosts: list) -> bool:
-    """
-    Use bootstrap to resolve the specified list of hosts
-    """
-    bootstrap_cmd = [
-        "./bootstrap",
-        "-print-env=false",
-        "-template=false",
-        "-install-certs=false",
-        "-self-resolve=false",
-        "-resolve-hosts",
-        ",".join(hosts),
-    ]
-    LOG.info("Running bootstrap to wait for DNS resolution of %s\n\t%s", hosts, bootstrap_cmd)
-    return_code, bootstrap_stdout, bootstrap_stderr = sdk_cmd.task_exec(
-        task_id, " ".join(bootstrap_cmd)
-    )
-
-    LOG.info("bootstrap return code: %s", return_code)
-    LOG.info("bootstrap STDOUT: %s", bootstrap_stdout)
-    LOG.info("bootstrap STDERR: %s", bootstrap_stderr)
-
-    # Note that bootstrap returns its output in STDERR
-    resolved = "SDK Bootstrap successful." in bootstrap_stderr
-    if not resolved:
-        for host in hosts:
-            resolved_host_string = "Resolved '{host}' =>".format(host=host)
-            host_resolved = resolved_host_string in bootstrap_stdout
-            if not host_resolved:
-                LOG.error("Could not resolve: %s", host)
-
-    return resolved
-
-
 def get_foldered_dns_name(service_name):
     if sdk_utils.dcos_version_less_than("1.10"):
         return service_name
@@ -122,9 +84,9 @@ def get_crypto_id_domain():
     These addresses are routable within the cluster but can be used to test setting a custom
     service domain.
     """
-    ok, lashup_response = shakedown.run_command_on_master("curl localhost:62080/lashup/key/")
-    assert ok
+    rc, stdout, _ = sdk_cmd.master_ssh("curl localhost:62080/lashup/key/")
+    assert rc == 0
 
-    crypto_id = json.loads(lashup_response.strip())["zbase32_public_key"]
+    crypto_id = json.loads(stdout.strip())["zbase32_public_key"]
 
     return "autoip.dcos.{}.dcos.directory".format(crypto_id)

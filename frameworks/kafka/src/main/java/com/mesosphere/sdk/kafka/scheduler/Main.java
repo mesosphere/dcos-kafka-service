@@ -12,6 +12,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.mesosphere.sdk.curator.CuratorUtils;
+import com.mesosphere.sdk.framework.EnvStore;
+import com.mesosphere.sdk.framework.FrameworkConfig;
 import com.mesosphere.sdk.http.types.EndpointProducer;
 import com.mesosphere.sdk.kafka.api.BrokerResource;
 import com.mesosphere.sdk.kafka.api.KafkaZKClient;
@@ -44,16 +46,16 @@ public class Main {
     private static SchedulerBuilder createSchedulerBuilder(File yamlSpecFile) throws Exception {
         RawServiceSpec rawServiceSpec = RawServiceSpec.newBuilder(yamlSpecFile).build();
 
-        Map<String, String> env = new HashMap<>(System.getenv());
-        env.put("ALLOW_REGION_AWARENESS", "true");
-        SchedulerConfig schedulerConfig = SchedulerConfig.fromMap(env);
+        final EnvStore envStore = EnvStore.fromEnv();
+        final SchedulerConfig schedulerConfig = SchedulerConfig.fromEnvStore(envStore);
+        final FrameworkConfig frameworkConfig = FrameworkConfig.fromEnvStore(envStore);
 
         // Allow users to manually specify a ZK location for kafka itself. Otherwise default to our service ZK location:
         String kafkaZookeeperUri = System.getenv(KAFKA_ZK_URI_ENV);
         if (StringUtils.isEmpty(kafkaZookeeperUri)) {
             // "master.mesos:2181" + "/dcos-service-path__to__my__kafka":
             kafkaZookeeperUri =
-                    SchedulerUtils.getZkHost(rawServiceSpec, schedulerConfig)
+                    frameworkConfig.getZookeeperHostPort()
                     + CuratorUtils.getServiceRootPath(rawServiceSpec.getName());
         }
         LOGGER.info("Running Kafka with zookeeper path: {}", kafkaZookeeperUri);

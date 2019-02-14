@@ -2,7 +2,6 @@
 #
 # Uploads artifacts to S3.
 # Produces a universe, and uploads it to S3.
-# If running in jenkins ($WORKSPACE is defined), writes $WORKSPACE/stub-universe.properties
 #
 # Env:
 #   S3_BUCKET (default: infinity-artifacts)
@@ -10,7 +9,6 @@
 #   S3_URL (default: s3://${S3_BUCKET}/${S3_DIR_PATH}/<pkg_name>/<random>
 #   ARTIFACT_DIR (default: ...s3.amazonaws.com...)
 #     Base HTTP dir to use when rendering links
-
 import logging
 import os
 import os.path
@@ -26,9 +24,7 @@ logging.basicConfig(level=logging.DEBUG, format="%(message)s")
 
 
 class AWSPublisher(object):
-    def __init__(
-        self, package_name, input_dir_path, artifact_paths, package_version="stub-universe"
-    ):
+    def __init__(self, package_name, package_version, input_dir_path, artifact_paths):
         self._dry_run = os.environ.get("DRY_RUN", "")
         self._pkg_name = package_name
         self._pkg_version = package_version
@@ -50,34 +46,8 @@ class AWSPublisher(object):
                 raise Exception(err)
             self._artifact_paths.append(artifact_path)
 
-        s3_bucket = os.environ.get("S3_BUCKET")
-        if not s3_bucket:
-            s3_bucket = "infinity-artifacts"
-        logger.info("Using artifact bucket: {}".format(s3_bucket))
-
-        s3_dir_path = os.environ.get("S3_DIR_PATH", "autodelete7d")
-        dir_name = "{}-{}".format(
-            time.strftime("%Y%m%d-%H%M%S"),
-            "".join(
-                [
-                    random.SystemRandom().choice(string.ascii_letters + string.digits)
-                    for i in range(16)
-                ]
-            ),
-        )
-
-        # sample s3_directory: 'infinity-artifacts/autodelete7d/kafka/20160815-134747-S6vxd0gRQBw43NNy'
-        s3_directory_url = os.environ.get(
-            "S3_URL", "s3://{}/{}/{}/{}".format(s3_bucket, s3_dir_path, package_name, dir_name)
-        )
-        self._uploader = universe.S3Uploader(self._pkg_name, s3_directory_url, self._dry_run)
-
-        self._http_directory_url = os.environ.get(
-            "ARTIFACT_DIR",
-            "https://{}.s3.amazonaws.com/{}/{}/{}".format(
-                s3_bucket, s3_dir_path, package_name, dir_name
-            ),
-        )
+        s3_directory_url, self._http_directory_url = s3_urls_from_env(self._pkg_name)
+        self._uploader = universe.S3Uploader(s3_directory_url, self._dry_run)
 
     def _spam_universe_url(self, universe_url):
         # write jenkins properties file to $WORKSPACE/<pkg_version>.properties:
@@ -157,12 +127,44 @@ class AWSPublisher(object):
         return universe_url
 
 
+def s3_urls_from_env(package_name):
+    s3_bucket = os.environ.get("S3_BUCKET") or "infinity-artifacts"
+    logger.info("Using artifact bucket: {}".format(s3_bucket))
+
+    s3_dir_path = os.environ.get("S3_DIR_PATH") or "autodelete7d"
+    s3_dir_name = os.environ.get("S3_DIR_NAME")
+    if not s3_dir_name:
+        s3_dir_name = "{}-{}".format(
+            time.strftime("%Y%m%d-%H%M%S"),
+            "".join(
+                [
+                    random.SystemRandom().choice(string.ascii_letters + string.digits)
+                    for _ in range(16)
+                ]
+            ),
+        )
+
+    # sample s3_directory: 'infinity-artifacts/autodelete7d/hello-world/20160815-134747-S6vxd0gRQBw43NNy'
+    s3_directory_url = os.environ.get(
+        "S3_URL", "s3://{}/{}/{}/{}".format(s3_bucket, s3_dir_path, package_name, s3_dir_name)
+    )
+
+    http_directory_url = os.environ.get(
+        "ARTIFACT_DIR",
+        "https://{}.s3.amazonaws.com/{}/{}/{}".format(
+            s3_bucket, s3_dir_path, package_name, s3_dir_name
+        ),
+    )
+
+    return s3_directory_url, http_directory_url
+
+
 def print_help(argv):
     logger.info(
         "Syntax: {} <package-name> <template-package-dir> [artifact files ...]".format(argv[0])
     )
     logger.info(
-        "  Example: $ {} kafka /path/to/universe/jsons/ /path/to/artifact1.zip /path/to/artifact2.zip /path/to/artifact3.zip".format(
+        "  Example: $ {} hello-world /path/to/universe/jsons/ /path/to/artifact1.zip /path/to/artifact2.zip /path/to/artifact3.zip".format(
             argv[0]
         )
     )
@@ -177,24 +179,28 @@ def main(argv):
         return 1
     # the package name:
     package_name = argv[1]
+    # the package version:
+    package_version = argv[2]
     # local path where the package template is located:
-    package_dir_path = argv[2].rstrip("/")
+    package_dir_path = argv[3].rstrip("/")
     # artifact paths (to upload along with stub universe)
-    artifact_paths = argv[3:]
+    artifact_paths = argv[4:]
     logger.info(
         """###
 Package:         {}
+Version:         {}
 Template path:   {}
 Artifacts:
 {}
 ###""".format(
             package_name,
+            package_version,
             package_dir_path,
             "\n".join(["- {}".format(path) for path in artifact_paths]),
         )
     )
 
-    AWSPublisher(package_name, package_dir_path, artifact_paths).upload()
+    AWSPublisher(package_name, package_version, package_dir_path, artifact_paths).upload()
     return 0
 
 

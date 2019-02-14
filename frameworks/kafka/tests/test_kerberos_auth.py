@@ -31,7 +31,7 @@ def kerberos(configure_security):
 
 
 @pytest.fixture(scope="module", autouse=True)
-def kafka_server(kerberos):
+def kafka_server(kerberos, kafka_client: client.KafkaClient):
     """
     A pytest fixture that installs a Kerberized kafka service.
 
@@ -61,16 +61,17 @@ def kafka_server(kerberos):
             timeout_seconds=30 * 60,
         )
 
-        yield {**service_kerberos_options, **{"package_name": config.PACKAGE_NAME}}
+        kafka_client.connect()
+        yield
     finally:
         sdk_install.uninstall(config.PACKAGE_NAME, config.SERVICE_NAME)
 
 
-@pytest.fixture(scope="module", autouse=True)
+@pytest.fixture(scope="module")
 def kafka_client(kerberos):
     try:
-        kafka_client = client.KafkaClient("kafka-client")
-        kafka_client.install(kerberos)
+        kafka_client = client.KafkaClient("kafka-client", config.PACKAGE_NAME, config.SERVICE_NAME, kerberos)
+        kafka_client.install()
 
         yield kafka_client
     finally:
@@ -81,30 +82,27 @@ def kafka_client(kerberos):
 @sdk_utils.dcos_ee_only
 @pytest.mark.sanity
 def test_no_vip(kafka_server):
-    endpoints = sdk_networks.get_and_test_endpoints(
-        kafka_server["package_name"], kafka_server["service"]["name"], "broker", 2
-    )
+    endpoints = sdk_networks.get_endpoint(config.PACKAGE_NAME, config.SERVICE_NAME, "broker")
     assert "vip" not in endpoints
 
 
 @pytest.mark.dcos_min_version("1.10")
 @sdk_utils.dcos_ee_only
 @pytest.mark.sanity
-def test_client_can_read_and_write(kafka_client, kafka_server, kerberos):
+def test_client_can_read_and_write(kafka_client):
 
     topic_name = "authn.test"
     sdk_cmd.svc_cli(
-        kafka_server["package_name"],
-        kafka_server["service"]["name"],
+        config.PACKAGE_NAME,
+        config.SERVICE_NAME,
         "topic create {}".format(topic_name),
-        json=True,
+        parse_json=True,
     )
 
-    kafka_client.connect(kafka_server)
     user = "client"
 
     write_success, read_successes, _ = kafka_client.can_write_and_read(
-        user, kafka_server, topic_name, kerberos
+        user, topic_name
     )
     assert write_success, "Write failed (user={})".format(user)
     assert read_successes, (

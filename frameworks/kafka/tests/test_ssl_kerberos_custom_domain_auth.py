@@ -96,13 +96,13 @@ def kafka_server(kerberos, service_account):
 @pytest.fixture(scope="module", autouse=True)
 def kafka_client(kerberos):
     try:
-        kafka_client = client.KafkaClient("kafka-client")
-        kafka_client.install(kerberos)
+        kafka_client = client.KafkaClient("kafka-client", config.PACKAGE_NAME, config.SERVICE_NAME, kerberos)
+        kafka_client.install()
 
         # TODO: This flag should be set correctly.
         kafka_client._is_tls = True
 
-        transport_encryption.create_tls_artifacts(cn="client", task=kafka_client.get_id())
+        transport_encryption.create_tls_artifacts(cn="client", marathon_task=kafka_client.get_id())
 
         yield kafka_client
     finally:
@@ -119,14 +119,14 @@ def test_client_can_read_and_write(kafka_client: client.KafkaClient, kafka_serve
         kafka_server["package_name"],
         kafka_server["service"]["name"],
         "topic create {}".format(topic_name),
-        json=True,
+        parse_json=True,
     )
 
-    kafka_client.connect(kafka_server)
+    kafka_client.connect()
 
     user = "client"
     write_success, read_successes, _ = kafka_client.can_write_and_read(
-        user, kafka_server, topic_name, kerberos
+        user, topic_name
     )
 
     assert write_success, "Write failed (user={})".format(user)

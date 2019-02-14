@@ -57,7 +57,7 @@ def _modify_role_acls(
     cmd = auth.get_bash_command(" ".join(cmd_list), env_str)
 
     LOG.info("Running: %s", cmd)
-    output = sdk_cmd.task_exec(marathon_task, cmd)
+    output = sdk_cmd.marathon_task_exec(marathon_task, cmd)
     LOG.info(output)
 
     return output

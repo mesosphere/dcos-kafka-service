@@ -24,17 +24,22 @@ def zookeeper_server(configure_security):
     try:
         sdk_install.uninstall(config.ZOOKEEPER_PACKAGE_NAME, config.ZOOKEEPER_SERVICE_NAME)
         if sdk_utils.is_strict_mode():
-            service_options = sdk_install.merge_dictionaries(
+            service_options = sdk_utils.merge_dictionaries(
                 {"service": {"service_account": zk_account, "service_account_secret": zk_secret}},
                 service_options,
             )
 
-            sdk_security.setup_security(config.ZOOKEEPER_SERVICE_NAME, zk_account, zk_secret)
+            sdk_security.setup_security(
+                config.ZOOKEEPER_SERVICE_NAME,
+                service_account=zk_account,
+                service_account_secret=zk_secret,
+            )
 
         sdk_install.install(
             config.ZOOKEEPER_PACKAGE_NAME,
             config.ZOOKEEPER_SERVICE_NAME,
             config.ZOOKEEPER_TASK_COUNT,
+            package_version=config.ZOOKEEPER_PACKAGE_VERSION,
             additional_options=service_options,
             timeout_seconds=30 * 60,
             insert_strict_options=False,
@@ -59,8 +64,8 @@ def kafka_server(zookeeper_server):
             zookeeper_server["package_name"],
             zookeeper_server["service"]["name"],
             "endpoint clientport",
-            json=True,
-        )["dns"]
+            parse_json=True,
+        )[1]["dns"]
 
         sdk_install.uninstall(config.PACKAGE_NAME, config.SERVICE_NAME)
 

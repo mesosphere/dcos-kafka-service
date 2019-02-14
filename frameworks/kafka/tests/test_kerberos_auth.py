@@ -61,6 +61,7 @@ def kafka_server(kerberos, kafka_client: client.KafkaClient):
             timeout_seconds=30 * 60,
         )
 
+        yield {**service_kerberos_options, **{"package_name": config.PACKAGE_NAME}}
         kafka_client.connect()
         yield
     finally:
@@ -70,7 +71,7 @@ def kafka_server(kerberos, kafka_client: client.KafkaClient):
 @pytest.fixture(scope="module")
 def kafka_client(kerberos):
     try:
-        kafka_client = client.KafkaClient("kafka-client", config.PACKAGE_NAME, config.SERVICE_NAME, kerberos)
+        kafka_client = client.KafkaClient("kafka-client", kafka_server["package_name"], kafka_server["service"]["name"], kerberos)
         kafka_client.install()
 
         yield kafka_client
@@ -82,7 +83,7 @@ def kafka_client(kerberos):
 @sdk_utils.dcos_ee_only
 @pytest.mark.sanity
 def test_no_vip(kafka_server):
-    endpoints = sdk_networks.get_endpoint(config.PACKAGE_NAME, config.SERVICE_NAME, "broker")
+    endpoints = sdk_networks.get_endpoint(kafka_server["package_name"], kafka_server["service"]["name"], "broker")
     assert "vip" not in endpoints
 
 

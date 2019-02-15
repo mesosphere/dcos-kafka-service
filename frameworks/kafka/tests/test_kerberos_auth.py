@@ -31,7 +31,7 @@ def kerberos(configure_security):
 
 
 @pytest.fixture(scope="module", autouse=True)
-def kafka_server(kerberos, kafka_client: client.KafkaClient):
+def kafka_server(kerberos):
     """
     A pytest fixture that installs a Kerberized kafka service.
 
@@ -60,20 +60,19 @@ def kafka_server(kerberos, kafka_client: client.KafkaClient):
             additional_options=service_kerberos_options,
             timeout_seconds=30 * 60,
         )
-
         yield {**service_kerberos_options, **{"package_name": config.PACKAGE_NAME}}
-        kafka_client.connect()
-        yield
     finally:
         sdk_install.uninstall(config.PACKAGE_NAME, config.SERVICE_NAME)
 
 
-@pytest.fixture(scope="module")
-def kafka_client(kerberos):
+@pytest.fixture(scope="module", autouse=True)
+def kafka_client(kerberos, kafka_server):
+    kafka_client = client.KafkaClient(
+        "kafka-client", kafka_server["package_name"], kafka_server["service"]["name"], kerberos
+    )
     try:
-        kafka_client = client.KafkaClient("kafka-client", kafka_server["package_name"], kafka_server["service"]["name"], kerberos)
         kafka_client.install()
-
+        kafka_client.connect()
         yield kafka_client
     finally:
         kafka_client.uninstall()

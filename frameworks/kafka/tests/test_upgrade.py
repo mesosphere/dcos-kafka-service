@@ -21,8 +21,8 @@ def test_upgrade_110_210(configure_security):
 
     # In case that 2.1.0 has been released upgrade we want to test to a specific
     # 2.1.0 version rather than to latest stub universe version.
-    ret_code, stdout, _ = sdk_cmd.run_raw_cli(
-        cmd='package describe kafka --package-versions'
+    ret_code, stdout, _ = sdk_cmd.run_cli(
+        cmd='package describe kafka --package-versions',
     )
     assert ret_code == 0
     # Filter old versions in custom format that doesn't matches the x.x.x-x.x.x
@@ -49,11 +49,11 @@ def test_upgrade_110_210(configure_security):
         test_utils.broker_count_check(config.DEFAULT_BROKER_COUNT, service_name=foldered_name)
 
         # Assert that inter broker protocol is set to 1.x version
-        options = sdk_cmd.svc_cli(
+        _, options, _ = sdk_cmd.svc_cli(
             config.PACKAGE_NAME,
             foldered_name,
             'describe',
-            json=True,
+            parse_json=True,
         )
         assert options['kafka']['inter_broker_protocol_version'] == '1.0'
 
@@ -87,11 +87,11 @@ def test_upgrade_110_210(configure_security):
         sdk_tasks.check_tasks_updated(foldered_name, "", task_ids)
 
         # Assert that inter broker protocol is set to 1.x version
-        options = sdk_cmd.svc_cli(
+        _, options, _ = sdk_cmd.svc_cli(
             config.PACKAGE_NAME,
             foldered_name,
             'describe',
-            json=True,
+            parse_json=True,
         )
         assert options['kafka']['inter_broker_protocol_version'] == '1.0'
 
@@ -107,11 +107,11 @@ def test_upgrade_110_210(configure_security):
             )
 
         # Assert that inter broker protocol is set to 2.1 version
-        options = sdk_cmd.svc_cli(
+        _, options, _ = sdk_cmd.svc_cli(
             config.PACKAGE_NAME,
             foldered_name,
             'describe',
-            json=True,
+            parse_json=True,
         )
         assert options['kafka']['inter_broker_protocol_version'] == '2.1'
 

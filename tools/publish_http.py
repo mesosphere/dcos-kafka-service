@@ -24,9 +24,7 @@ logging.basicConfig(level=logging.DEBUG, format="%(message)s")
 
 
 class HTTPPublisher(object):
-    def __init__(
-        self, package_name, input_dir_path, artifact_paths, package_version="stub-universe"
-    ):
+    def __init__(self, package_name, package_version, input_dir_path, artifact_paths):
         self._pkg_name = package_name
         self._pkg_version = package_version
         self._input_dir_path = input_dir_path
@@ -62,7 +60,6 @@ class HTTPPublisher(object):
                 os.path.join(jenkins_workspace_path, "{}.properties".format(self._pkg_version)), "w"
             )
             properties_file.write("STUB_UNIVERSE_URL={}\n".format(universe_url))
-            properties_file.write("STUB_UNIVERSE_S3_DIR={}\n".format(self._s3_directory))
             properties_file.flush()
             properties_file.close()
         # write URL to provided text file path:
@@ -111,7 +108,7 @@ class HTTPPublisher(object):
         try:
             subprocess.check_call("killall -9 {}".format(procname).split())
             logger.info("Killed previous HTTP process(es): {}".format(procname))
-        except:  # noqa: E722
+        except Exception:
             logger.info("No previous HTTP process found: {}".format(procname))
 
         if self._http_port == 0:
@@ -173,7 +170,7 @@ httpd.serve_forever()
         try:
             devnull = open(os.devnull, "wb")
             subprocess.check_call("dcos -h".split(), stdout=devnull, stderr=devnull)
-        except:  # noqa: E722
+        except Exception:
             logger.info('No "dcos" command in $PATH, skipping automatic repo configuration')
             return False
 
@@ -200,13 +197,10 @@ httpd.serve_forever()
 
 
 def print_help(argv):
+    logger.info("Syntax: %s <package-name> <template-package-dir> [artifact files ...]", argv[0])
     logger.info(
-        "Syntax: {} <package-name> <template-package-dir> [artifact files ...]".format(argv[0])
-    )
-    logger.info(
-        "  Example: $ {} kafka /path/to/universe/jsons/ /path/to/artifact1.zip /path/to/artifact2.zip /path/to/artifact3.zip".format(
-            argv[0]
-        )
+        "  Example: $ %s hello-world /path/to/universe/jsons/ /path/to/artifact1.zip /path/to/artifact2.zip /path/to/artifact3.zip",
+        argv[0],
     )
     logger.info(
         "In addition, environment variables named 'TEMPLATE_SOME_PARAMETER' will be inserted against the provided package template (with params of the form '{{some-parameter}}')"
@@ -219,24 +213,28 @@ def main(argv):
         return 1
     # the package name:
     package_name = argv[1]
+    # the package version:
+    package_version = argv[2]
     # local path where the package template is located:
-    package_dir_path = argv[2].rstrip("/")
+    package_dir_path = argv[3].rstrip("/")
     # artifact paths (to copy along with stub universe)
-    artifact_paths = argv[3:]
+    artifact_paths = argv[4:]
     logger.info(
         """###
 Package:         {}
+Version:         {}
 Template path:   {}
 Artifacts:
 {}
 ###""".format(
             package_name,
+            package_version,
             package_dir_path,
             "\n".join(["- {}".format(path) for path in artifact_paths]),
         )
     )
 
-    publisher = HTTPPublisher(package_name, package_dir_path, artifact_paths)
+    publisher = HTTPPublisher(package_name, package_version, package_dir_path, artifact_paths)
     http_url_root = publisher.launch_http()
     universe_url = publisher.build(http_url_root)
     repo_added = publisher.add_repo_to_cli(universe_url)

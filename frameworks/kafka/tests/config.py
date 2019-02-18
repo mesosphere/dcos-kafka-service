@@ -6,6 +6,7 @@ PACKAGE_NAME = sdk_utils.get_package_name("kafka")
 SERVICE_NAME = sdk_utils.get_service_name(PACKAGE_NAME.lstrip("beta-"))
 
 ZOOKEEPER_PACKAGE_NAME = "kafka-zookeeper"
+ZOOKEEPER_PACKAGE_VERSION = ""  # Use latest available
 ZOOKEEPER_SERVICE_NAME = "kafka-zookeeper"
 ZOOKEEPER_TASK_COUNT = 6
 
@@ -39,7 +40,7 @@ def install(
         package_name=package_name,
         expected_running_tasks=expected_running_tasks,
         service_name=service_name,
-        additional_options=sdk_install.merge_dictionaries(test_options, additional_options),
+        additional_options=sdk_utils.merge_dictionaries(test_options, additional_options),
         package_version=package_version,
         timeout_seconds=timeout_seconds,
         wait_for_deployment=wait_for_deployment,

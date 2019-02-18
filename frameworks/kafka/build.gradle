@@ -18,14 +18,15 @@ repositories {
 ext {
     junitVer = "4.12"
     systemRulesVer = "1.16.0"
-    mockitoVer = "1.9.5"
-    dcosSDKVer = "0.42.5"
+    mockitoVer = "2.10.0"
+    dcosSDKVer = "0.55.2"
 }
 
 dependencies {
     compile "mesosphere:scheduler:${dcosSDKVer}"
-    compile "mesosphere:executor:${dcosSDKVer}"
     testCompile "mesosphere:testing:${dcosSDKVer}"
+    testCompile "junit:junit:${junitVer}"
+    testCompile "org.mockito:mockito-core:${mockitoVer}"
 }
 
 distributions {

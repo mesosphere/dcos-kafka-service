@@ -18,10 +18,8 @@ logging.basicConfig(level=logging.DEBUG, format="%(message)s")
 
 _jre_url = "https://downloads.mesosphere.com/java/server-jre-8u192-linux-x64.tar.gz"
 _libmesos_bundle_url = (
-    "https://downloads.mesosphere.com/libmesos-bundle/libmesos-bundle-1.11.0.tar.gz"
+    "https://downloads.mesosphere.com/libmesos-bundle/libmesos-bundle-1.12.0.tar.gz"
 )
-_dcos_sdk_version = "0.42.5"
-
 _docs_root = "https://docs.mesosphere.com"
 
 _config_json_filename = "config.json"
@@ -42,7 +40,7 @@ class UniversePackageBuilder(object):
         package,
         package_manager,
         input_dir_path,
-        upload_dir_url,
+        upload_dir_uri,
         artifact_paths,
         dry_run=False,
     ):
@@ -50,7 +48,7 @@ class UniversePackageBuilder(object):
         self._dry_run = dry_run
         self._package = package
         self._package_manager = package_manager
-        self._upload_dir_url = upload_dir_url
+        self._upload_dir_uri = upload_dir_uri
 
         self.set_input_dir_path(input_dir_path)
 
@@ -175,12 +173,11 @@ class UniversePackageBuilder(object):
             "package-build-time-str": time.strftime("%a %b %d %Y %H:%M:%S +0000", time.gmtime(now)),
             "upgrades-from": self._get_upgrades_from(),
             "downgrades-to": self._get_downgrades_to(),
-            "artifact-dir": self._upload_dir_url,
+            "artifact-dir": self._upload_dir_uri,
             "documentation-path": self._get_documentation_path(),
             "issues-path": self._get_issues_path(),
             "jre-url": _jre_url,
-            "libmesos-bundle-url": _libmesos_bundle_url,
-            "dcos-sdk-version": _dcos_sdk_version,
+            "libmesos-bundle-url": _libmesos_bundle_url
         }
 
         # import any custom "TEMPLATE_SOME_PARAM" environment variables as "some-param":
@@ -297,18 +294,21 @@ class UniversePackageBuilder(object):
 
         return {"packages": [package_json]}
 
-    def build_package(self):
-        """builds a stub universe json package and returns its location on disk"""
-
+    def build_package_files(self):
+        """builds package files and returns a dict containing them"""
         # read files into memory and apply templating to files:
         updated_package_files = {}
         for filename, content in self._iterate_package_files():
             updated_package_files[filename] = self._apply_templating_to_file(filename, content)
-        scratchdir = tempfile.mkdtemp(prefix="stub-universe-tmp")
+        return updated_package_files
+
+    def build_package(self):
+        """builds a stub universe json package and returns its location on disk"""
+
         jsonpath = os.path.join(
-            scratchdir, "stub-universe-{}.json".format(self._package.get_name())
+            tempfile.mkdtemp(prefix="stub-universe-tmp"),
+            "stub-universe-{}.json".format(self._package.get_name()),
         )
         with open(jsonpath, "w") as jsonfile:
-            json.dump(self._generate_packages_dict(updated_package_files), jsonfile, indent=2)
-
+            json.dump(self._generate_packages_dict(self.build_package_files()), jsonfile, indent=2)
         return jsonpath

@@ -12,6 +12,7 @@ from tests import config, test_utils
 
 
 @pytest.mark.dcos_min_version("1.10")
+@pytest.mark.ee_only
 def test_upgrade_110_210(configure_security):
     foldered_name = sdk_utils.get_foldered_name(config.SERVICE_NAME)
     sdk_install.uninstall(config.PACKAGE_NAME, foldered_name)

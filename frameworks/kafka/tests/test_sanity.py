@@ -263,6 +263,7 @@ def test_metrics():
 
     sdk_metrics.wait_for_service_metrics(
         config.PACKAGE_NAME,
+        config.SERVICE_NAME,
         sdk_utils.get_foldered_name(config.SERVICE_NAME),
         "kafka-0-broker",
         config.DEFAULT_KAFKA_TIMEOUT,

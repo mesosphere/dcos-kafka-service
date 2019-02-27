@@ -18,11 +18,6 @@ from tests import config
 log = logging.getLogger(__name__)
 
 
-pytestmark = pytest.mark.skipif(
-    sdk_utils.is_open_dcos(), reason="Feature only supported in DC/OS EE"
-)
-
-
 @pytest.fixture(scope="module", autouse=True)
 def service_account(configure_security):
     """
@@ -177,7 +172,7 @@ def test_authz_acls_required(
 
 
 @pytest.mark.dcos_min_version("1.10")
-@pytest.mark.ee_only
+@sdk_utils.dcos_ee_only
 @pytest.mark.sanity
 def test_authz_acls_not_required(
     kafka_client: client.KafkaClient, kerberos, service_account, setup_principals

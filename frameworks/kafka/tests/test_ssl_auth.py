@@ -15,11 +15,6 @@ from tests import auth
 log = logging.getLogger(__name__)
 
 
-pytestmark = pytest.mark.skipif(
-    sdk_utils.is_open_dcos(), reason="Feature only supported in DC/OS EE"
-)
-
-
 @pytest.fixture(scope="module", autouse=True)
 def service_account(configure_security):
     """
@@ -59,7 +54,7 @@ def setup_principals(kafka_client: client.KafkaClient):
 
 
 @pytest.mark.dcos_min_version("1.10")
-@pytest.mark.ee_only
+@sdk_utils.dcos_ee_only
 @pytest.mark.sanity
 def test_authn_client_can_read_and_write(
     kafka_client: client.KafkaClient, service_account, setup_principals
@@ -113,7 +108,7 @@ def test_authn_client_can_read_and_write(
 
 
 @pytest.mark.dcos_min_version("1.10")
-@pytest.mark.ee_only
+@sdk_utils.dcos_ee_only
 @pytest.mark.sanity
 def test_authz_acls_required(kafka_client: client.KafkaClient, service_account, setup_principals):
 
@@ -204,7 +199,7 @@ def test_authz_acls_required(kafka_client: client.KafkaClient, service_account, 
 
 
 @pytest.mark.dcos_min_version("1.10")
-@pytest.mark.ee_only
+@sdk_utils.dcos_ee_only
 @pytest.mark.sanity
 def test_authz_acls_not_required(kafka_client, service_account, setup_principals):
 

@@ -247,10 +247,6 @@ def test_pod_cli():
 @pytest.mark.sanity
 @pytest.mark.metrics
 @pytest.mark.dcos_min_version("1.9")
-@pytest.mark.skipif(
-    sdk_utils.dcos_version_at_least("1.12"),
-    reason="Metrics are not working on 1.12. Reenable once this is fixed",
-)
 def test_metrics():
     expected_metrics = [
         "kafka.network.RequestMetrics.ResponseQueueTimeMs.max",
@@ -261,10 +257,12 @@ def test_metrics():
     def expected_metrics_exist(emitted_metrics):
         return sdk_metrics.check_metrics_presence(emitted_metrics, expected_metrics)
 
+    pod_name = "{}-0".format(config.DEFAULT_POD_TYPE)
+    foldered_name = sdk_utils.get_foldered_name(config.SERVICE_NAME)
     sdk_metrics.wait_for_service_metrics(
         config.PACKAGE_NAME,
-        config.SERVICE_NAME,
-        sdk_utils.get_foldered_name(config.SERVICE_NAME),
+        foldered_name,
+        pod_name,
         "kafka-0-broker",
         config.DEFAULT_KAFKA_TIMEOUT,
         expected_metrics_exist,

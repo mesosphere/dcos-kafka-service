@@ -42,3 +42,11 @@ integration/env/
 # tools
 tools/shakedown_env
 *.pyc
+
+#build
+.stub_universe_url
+.package-options.json
+*.pem
+venv/
+logs/
+env/

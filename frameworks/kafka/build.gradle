@@ -37,4 +37,10 @@ distributions {
     }
 }
 
+task printDcosVersion {
+    doLast {
+        println "${project.findProperty('dcosSDKVer') ?: 'latest'}"
+    }
+}
+
 mainClassName = 'com.mesosphere.sdk.kafka.scheduler.Main'

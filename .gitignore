@@ -43,7 +43,7 @@ integration/env/
 tools/shakedown_env
 *.pyc
 
-#build
+# build
 .stub_universe_url
 .package-options.json
 *.pem

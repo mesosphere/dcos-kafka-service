@@ -37,7 +37,7 @@ distributions {
     }
 }
 
-task printDcosVersion {
+task printSDKVersion {
     doLast {
         println "${project.findProperty('dcosSDKVer') ?: 'latest'}"
     }

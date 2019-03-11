@@ -1,13 +1,13 @@
 .PHONY : install validate-aws-credentials get-security-mode
 #This makefile should not contain anything specific for a framework, like the framework name
 
+SDK_VERSION := $$(./gradlew  --project-dir=frameworks/$(FRAMEWORK_NAME) printSDKVersion -q)
 
-SDK_VERSION := $$(./gradlew  --project-dir=frameworks/$(FRAMEWORK_NAME) printDcosVersion -q)
+RANDOM_ALPHANUMERIC := $(shell cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 16 | head -n 1)
 
 get-container-version: enter-container
 	@echo "$(DOCKER_IMAGE):$(SDK_VERSION)"
 
-# launch the container
 enter-container:
 ifndef INSIDE_CONTAINER
 	$(call run_container, /bin/bash, -t -e HOST_USER=$(shell id -un))
@@ -50,7 +50,7 @@ create-service-accounts:
 	SERVICE_NAME=$(SERVICE_NAME) \
 	SECURITY_MODE=$(SECURITY_MODE) \
 	SERVICE_ACCOUNT_NAME=$(SERVICE_ACCOUNT_NAME) \
-    SERVICE_ACCOUNT_SECRET_NAME=$(SERVICE_ACCOUNT_SECRET_NAME) \
+	SERVICE_ACCOUNT_SECRET_NAME=$(SERVICE_ACCOUNT_SECRET_NAME) \
 	make/create-service-account.sh
 
 generate-package-options: attach-dcos detect-security-mode
@@ -77,17 +77,17 @@ endif
 
 test: export STUB_UNIVERSE_URL := $(shell cat $(UNIVERSE_URL_PATH))
 test: attach-dcos
-	@curl -o /tmp/text_requirements.txt https://raw.githubusercontent.com/mesosphere/dcos-commons/$(SDK_VERSION)/test_requirements.txt
-	pip install pytest==$(PY_TEST_VERSION) && \
-		pip3 install -r /tmp/text_requirements.txt
-	@py.test -vvv --capture=no $(FRAMEWORK_PATH)/tests
+	@curl -o /tmp/$(RANDOM_ALPHANUMERIC)-requirements.txt https://raw.githubusercontent.com/mesosphere/dcos-commons/$(SDK_VERSION)/test_requirements.txt
+	pip3 install pytest==$(PY_TEST_VERSION) && \
+		pip3 install -r /tmp/$(RANDOM_ALPHANUMERIC)-requirements.txt
+	@py.test -vvv --capture=no $(FRAMEWORK_PATH)/tests --maxfail=$(PY_SINGLE_TEST_MAX_FAILURE)
 
 test-%: export STUB_UNIVERSE_URL := $(shell cat $(UNIVERSE_URL_PATH))
 test-%: attach-dcos
 	@echo "Starting test $* ..." >&2
-	@curl -o /tmp/text_requirements.txt https://raw.githubusercontent.com/mesosphere/dcos-commons/$(SDK_VERSION)/test_requirements.txt
-	pip install pytest==$(PY_TEST_VERSION) && \
-		pip3 install -r /tmp/text_requirements.txt
+	@curl -o /tmp/$(RANDOM_ALPHANUMERIC)-requirements.txt https://raw.githubusercontent.com/mesosphere/dcos-commons/$(SDK_VERSION)/test_requirements.txt
+	pip3 install pytest==$(PY_TEST_VERSION) && \
+		pip3 install -r /tmp/$(RANDOM_ALPHANUMERIC)-requirements.txt
 	@py.test -vvv --capture=no $(FRAMEWORK_PATH)/tests/$* --maxfail=$(PY_SINGLE_TEST_MAX_FAILURE)
 
 container-required:
@@ -108,6 +108,3 @@ clean-stub:
 clean: clean-stub
 	rm -f $(PACKAGE_OPTIONS)
 	rm -rf $(FRAMEWORK_PATH)/build
-
-
-

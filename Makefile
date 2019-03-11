@@ -30,13 +30,13 @@ DCOS_PASSWORD ?= deleteme
 PY_TEST_VERSION ?= 3.10.0
 
 # max failures, used when running a single test
-PY_SINGLE_TEST_MAX_FAILURE ?= 1
+PY_SINGLE_TEST_MAX_FAILURE ?= 0
 
 # default service name where the package is installed
-SERVICE_NAME ?= kafka
+SERVICE_NAME ?= $(FRAMEWORK_NAME)
 
 # default service account name
-SERVICE_ACCOUNT_NAME ?= kafka-sa
+SERVICE_ACCOUNT_NAME ?= $(SERVICE_NAME)-sa
 
 # default service account secret name
 SERVICE_ACCOUNT_SECRET_NAME ?= kafka-sa-secret

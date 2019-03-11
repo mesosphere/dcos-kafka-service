@@ -8,7 +8,7 @@ This is the source repository for the [DC/OS Apache Kafka](https://mesosphere.co
 
 ### Pre-requisites
 
-- Install the Docker, preferentially >18.09
+- Install Docker, preferentially >18.09
 
 - Setup AWS credentials. The build uses the `AWS_PROFILE` environment variable to know which AWS profile to use. Make sure to export the env variable `export AWS_PROFILE=YOUR_AWS_PROFILE` or add it to `.bashrc` or `zshrc` 
 

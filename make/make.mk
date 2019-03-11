@@ -33,7 +33,7 @@ endif
 
 install: export STUB_UNIVERSE_URL := $(shell cat $(UNIVERSE_URL_PATH))
 install: attach-dcos create-service-accounts generate-package-options
-	@echo "Installing the $(FRAMEWORK_NAME) package $(STUB_UNIVERSE_URL) in $(CLUSTER_URL)"
+	@echo "Installing the $(FRAMEWORK_NAME) package $(STUB_UNIVERSE_URL) in $(CLUSTER_URL)" >&2
 ifdef STUB_UNIVERSE_URL
 	$(MAKE) build
 else
@@ -60,7 +60,7 @@ generate-package-options: attach-dcos detect-security-mode
 	SERVICE_ACCOUNT_SECRET_NAME=$(SERVICE_ACCOUNT_SECRET_NAME) \
 	SECURITY_MODE=$(SECURITY_MODE) \
 	 	make/generate-package-options.sh
-	@echo "Package options generated to $(PACKAGE_OPTIONS)"
+	@echo "Package options generated to $(PACKAGE_OPTIONS)" >&2
 
 
 
@@ -84,7 +84,7 @@ test: attach-dcos
 
 test-%: export STUB_UNIVERSE_URL := $(shell cat $(UNIVERSE_URL_PATH))
 test-%: attach-dcos
-	@echo "Starting test $* ..."
+	@echo "Starting test $* ..." >&2
 	@curl -o /tmp/text_requirements.txt https://raw.githubusercontent.com/mesosphere/dcos-commons/$(SDK_VERSION)/test_requirements.txt
 	pip install pytest==$(PY_TEST_VERSION) && \
 		pip3 install -r /tmp/text_requirements.txt
@@ -100,7 +100,7 @@ endif
 detect-security-mode:
 	$(eval SECURITY_MODE := $(shell curl -X GET -s -k -H "Authorization: token=$(shell dcos config show core.dcos_acs_token)" \
 		$(shell dcos config show core.dcos_url)/dcos-metadata/bootstrap-config.json | jq .security))
-	@echo "Cluster security mode is $(SECURITY_MODE)"
+	@echo "Cluster security mode is $(SECURITY_MODE)" >&2
 
 clean-stub:
 	@rm -f $(UNIVERSE_URL_PATH)

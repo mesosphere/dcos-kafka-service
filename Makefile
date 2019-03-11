@@ -11,13 +11,13 @@ UPLOAD_METHOD ?= aws
 # docker image that is used to build/test/install the package.
 DOCKER_IMAGE ?= mesosphere/dcos-commons
 
-# default S3_BUCKET where the stub in uploaded.
+# default S3_BUCKET where the stub is uploaded.
 S3_BUCKET ?= infinity-artifacts
 
-# default PATH where the stub url will be stored.
+# default path where the stub url will be stored.
 UNIVERSE_URL_PATH ?= .stub_universe_url
 
-# default PATH for the package options
+# default path for the package options
 PACKAGE_OPTIONS ?= .package-options.json
 
 # default DC/OS user name

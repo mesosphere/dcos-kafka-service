@@ -6,7 +6,7 @@ Launches the container mesosphere/dcos-commons with version present in build.gra
 
 **make get-container-version**
 
-prints the container version that would be launched. 
+Prints the container version that would be launched. 
 
 ```
 root@00d5a2d9bd1a:/build# make get-container-version
@@ -23,7 +23,7 @@ Creates the service-account and secret necessary for the package to be installed
 
 **make generate-package-options**
 
-Create a json file with pacakge options. As for now just configures the service account if they are needed.
+Creates a json file with pacakge options. As for now just configures the service account if they are needed.
 
 **make detect-security-mode**
 

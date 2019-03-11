@@ -28,5 +28,5 @@ if [ "${SECURITY_MODE}" == "permissive" ]; then
 	grant_framework_permissions "${SERVICE_ACCOUNT_NAME}" nobody
 fi
 if [ "${SECURITY_MODE}" == "disabled" ]; then
-	echo "Skipping service account creation" ;
+	echo "Skipping service account creation" >&2
 fi

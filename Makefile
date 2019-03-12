@@ -39,7 +39,7 @@ SERVICE_NAME ?= $(FRAMEWORK_NAME)
 SERVICE_ACCOUNT_NAME ?= $(SERVICE_NAME)-sa
 
 # default service account secret name
-SERVICE_ACCOUNT_SECRET_NAME ?= kafka-sa-secret
+SERVICE_ACCOUNT_SECRET_NAME ?= $(SERVICE_NAME)-sa-secret
 
 include ./make/make.mk
 include ./make/docker.mk

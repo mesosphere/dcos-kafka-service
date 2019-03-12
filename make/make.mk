@@ -3,7 +3,7 @@
 
 SDK_VERSION := $$(./gradlew  --project-dir=frameworks/$(FRAMEWORK_NAME) printSDKVersion -q)
 
-RANDOM_ALPHANUMERIC := $(shell cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 16 | head -n 1)
+RANDOM_ALPHANUMERIC := $(shell cat /dev/urandom | LC_ALL=C tr -dc 'a-zA-Z0-9' | fold -w 16 | head -n 1)
 
 get-container-version: enter-container
 	@echo "$(DOCKER_IMAGE):$(SDK_VERSION)"

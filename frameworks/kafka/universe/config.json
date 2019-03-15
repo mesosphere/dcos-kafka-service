@@ -8,7 +8,8 @@
         "name": {
           "description": "Apache Kafka",
           "type": "string",
-          "default": "kafka"
+          "default": "kafka",
+          "pattern": "^(\\/?((\\.\\.)|(([a-z0-9]|[a-z0-9][a-z0-9\\-]*[a-z0-9])\\.)*([a-z0-9]|[a-z0-9][a-z0-9\\-]*[a-z0-9]))?($|\\/))+$"
         },
         "user": {
           "description": "The user that the service will run as.",

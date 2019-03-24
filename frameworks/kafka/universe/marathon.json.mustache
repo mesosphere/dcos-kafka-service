@@ -129,6 +129,18 @@
     "TASKCFG_ALL_SECURITY_AUTHORIZATION_ALLOW_EVERYONE_IF_NO_ACL_FOUND": "{{service.security.authorization.allow_everyone_if_no_acl_found}}",
     {{/service.security.authorization.enabled}}
 
+    "TASKCFG_SECURE_JMX_ENABLED": "{{service.jmx.enabled}}",
+    {{#service.jmx.enabled}}
+	"SECURE_JMX_PORT" : "{{service.jmx.port}}",
+	"SECURE_JMX_PWD_FILE" : "{{service.jmx.password_file}}",
+	"SECURE_JMX_ACCESS_FILE" : "{{service.jmx.access_file}}",
+	"SECURE_JMX_TRUST_STORE" : "{{service.jmx.trust_store}}",
+	"SECURE_JMX_TRUST_STORE_PASSWORD" : "{{service.jmx.trust_store_password_file}}",
+	"SECURE_JMX_KEY_STORE" : "{{service.jmx.key_store}}",
+	"SECURE_JMX_KEY_STORE_PASSWORD" : "{{service.jmx.trust_store_password_file}}",
+    {{/service.jmx.enabled}}
+
+
     "KAFKA_VERSION_PATH": "kafka_{{kafka-version}}",
 
     "KAFKA_ZOOKEEPER_URI": "{{kafka.kafka_zookeeper_uri}}",

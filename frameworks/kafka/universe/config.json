@@ -220,6 +220,81 @@
             }
           }
         },
+        "jmx": {
+          "title": "Secure JMX configuration",
+          "description": "Configure the secure JMX settings.",
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "description": "By default JMX is disabled. This option allows to expose secure JMX.",
+              "type": "boolean",
+              "enum": [
+                true,
+                false
+              ],
+              "default": false
+            }
+          },
+          "dependencies": {
+            "enabled": {
+              "oneOf": [
+                {
+                  "properties": {
+                    "enabled": {
+                      "enum": [
+                        false
+                      ]
+                    }
+                  }
+                },
+                {
+                  "properties": {
+                    "enabled": {
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "port": {
+                      "description": "JMX port to expose.",
+                      "type": "integer",
+                      "default": 31419
+                    },
+                    "password_file": {
+                      "description": "Path to password file.",
+                      "type": "string",
+                      "default": ""
+                    },
+                    "access_file": {
+                      "description": "Path to access file.",
+                      "type": "string",
+                      "default": ""
+                    },
+                    "key_store": {
+                      "description": "path to key store file.",
+                      "type": "string",
+                      "default": ""
+                    },
+                    "key_store_password_file": {
+                      "description": "path to key store password file.",
+                      "type": "string",
+                      "default": ""
+                    },
+                    "trust_store": {
+                      "description": "Path to trust store file.",
+                      "type": "string",
+                      "default": ""
+                    },
+                    "trust_store_password_file": {
+                      "description": "path to trust store password file.",
+                      "type": "string",
+                      "default": ""
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
         "readiness_check": {
           "description": "Readiness check settings. Excercise caution when modifying these default values as it can lead to spurious task failures.",
           "type": "object",

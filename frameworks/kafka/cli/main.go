@@ -191,14 +191,14 @@ func handleTopicSection(app *kingpin.Application) {
 	create := topic.Command(
 		"create",
 		"Creates a new topic").Action(cmd.runCreate)
-	create.Arg("topic", "The topic to create").StringVar(&cmd.topic)
+	create.Arg("topic", "The topic to create").Required().StringVar(&cmd.topic)
 	create.Flag("partitions", "Number of partitions").Short('p').Default("1").Envar("KAFKA_DEFAULT_PARTITION_COUNT").IntVar(&cmd.createPartitions)
 	create.Flag("replication", "Replication factor").Short('r').Default("3").Envar("KAFKA_DEFAULT_REPLICATION_FACTOR").IntVar(&cmd.createReplication)
 
 	delete := topic.Command(
 		"delete",
 		"Deletes an existing topic").Action(cmd.runDelete)
-	delete.Arg("topic", "The topic to delete").StringVar(&cmd.topic)
+	delete.Arg("topic", "The topic to delete").Required().StringVar(&cmd.topic)
 
 	describe := topic.Command(
 		"describe",
@@ -212,26 +212,26 @@ func handleTopicSection(app *kingpin.Application) {
 	offsets := topic.Command(
 		"offsets",
 		"Returns the current offset counts for a topic").Action(cmd.runOffsets)
-	offsets.Arg("topic", "The topic to examine").StringVar(&cmd.topic)
+	offsets.Arg("topic", "The topic to examine").Required().StringVar(&cmd.topic)
 	offsets.Flag("time", "Offset for the topic: 'first'/'last'/timestamp_millis").Default("last").StringVar(&cmd.offsetsTime)
 
 	partitions := topic.Command(
 		"partitions",
 		"Alters partition count for an existing topic").Action(cmd.runPartitions)
-	partitions.Arg("topic", "The topic to update").StringVar(&cmd.topic)
-	partitions.Arg("count", "The number of partitions to assign").IntVar(&cmd.partitionCount)
+	partitions.Arg("topic", "The topic to update").Required().StringVar(&cmd.topic)
+	partitions.Arg("count", "The number of partitions to assign").Required().IntVar(&cmd.partitionCount)
 
 	producerTest := topic.Command(
 		"producer_test",
 		"Produces some test messages against a topic").Action(cmd.runProducerTest)
-	producerTest.Arg("topic", "The topic to test").StringVar(&cmd.topic)
-	producerTest.Arg("messages", "The number of messages to produce").IntVar(&cmd.produceMessageCount)
+	producerTest.Arg("topic", "The topic to test").Required().StringVar(&cmd.topic)
+	producerTest.Arg("messages", "The number of messages to produce").Default("1").IntVar(&cmd.produceMessageCount)
 
 	producerTestTLS := topic.Command(
 		"producer_test_tls",
 		"Produces some test messages against a topic over a TLS connection").Action(cmd.runProducerTestTLS)
-	producerTestTLS.Arg("topic", "The topic to test").StringVar(&cmd.topic)
-	producerTestTLS.Arg("messages", "The number of messages to produce").IntVar(&cmd.produceMessageCount)
+	producerTestTLS.Arg("topic", "The topic to test").Required().StringVar(&cmd.topic)
+	producerTestTLS.Arg("messages", "The number of messages to produce").Default("1").IntVar(&cmd.produceMessageCount)
 
 	topic.Command(
 		"unavailable_partitions",

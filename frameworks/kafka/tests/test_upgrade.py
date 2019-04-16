@@ -13,11 +13,11 @@ from tests import config, test_utils
 
 @pytest.mark.dcos_min_version("1.10")
 @sdk_utils.dcos_ee_only
-def test_upgrade_110_210(configure_security):
+def test_upgrade_111_210(configure_security):
     foldered_name = sdk_utils.get_foldered_name(config.SERVICE_NAME)
     sdk_install.uninstall(config.PACKAGE_NAME, foldered_name)
 
-    from_version = '2.3.0-1.1.0'
+    from_version = '2.4.0-1.1.1'
     to_version = 'stub-universe'
 
     # In case that 2.1.0 has been released upgrade we want to test to a specific

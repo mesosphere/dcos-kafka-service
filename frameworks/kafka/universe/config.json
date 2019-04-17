@@ -259,35 +259,74 @@
                       "type": "integer",
                       "default": 31419
                     },
-                    "password_file": {
-                      "description": "Path to password file.",
+                    "rmi_port": {
+                      "description": "RMI port to expose.",
+                      "type": "integer",
+                      "default": 31420
+                    },
+                    "access_file": {
+                      "description": "Secret name that contains access file",
                       "type": "string",
                       "default": ""
                     },
-                    "access_file": {
-                      "description": "Path to access file.",
+                    "password_file": {
+                      "description": "Secret name that contains password file.",
                       "type": "string",
                       "default": ""
                     },
                     "key_store": {
-                      "description": "path to key store file.",
+                      "description": "Secret name that contains key store file.",
                       "type": "string",
+                      "title": "key store",
                       "default": ""
                     },
                     "key_store_password_file": {
-                      "description": "path to key store password file.",
+                      "description": "Secret name that contains key store password file.",
                       "type": "string",
                       "default": ""
                     },
-                    "trust_store": {
-                      "description": "Path to trust store file.",
-                      "type": "string",
-                      "default": ""
-                    },
-                    "trust_store_password_file": {
-                      "description": "path to trust store password file.",
-                      "type": "string",
-                      "default": ""
+                    "add_trust_store": {
+                      "description": "By default user specified trust store is disabled. And DC/OS cert based trust store is added. This option allows to specify user provided trust store.",
+                      "type": "boolean",
+                      "enum": [
+                        true,
+                        false
+                      ],
+                      "default": false
+                    }
+                  },
+                  "dependencies": {
+                    "add_trust_store": {
+                      "oneOf": [
+                        {
+                          "properties": {
+                            "add_trust_store": {
+                              "enum": [
+                                false
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "properties": {
+                            "add_trust_store": {
+                              "enum": [
+                                true
+                              ]
+                            },
+                            "trust_store": {
+                              "description": "Secret name that contains trust store file.",
+                              "type": "string",
+                              "default": ""
+                            },
+                            "trust_store_password_file": {
+                              "description": "Secret name that contains trust store password file.",
+                              "type": "string",
+                              "default": ""
+                            }
+                          }
+                        }
+                      ]
                     }
                   }
                 }

@@ -30,28 +30,30 @@ pods:
       keytab:
         secret: {{SECURITY_KERBEROS_KEYTAB_SECRET}}
         file: kafka.keytab
-      {{#TASKCFG_SECURE_JMX_ENABLED}}
+      {{#TASKCFG_ALL_SECURE_JMX_ENABLED}}
       jmxPasswordFile:
         secret: {{SECURE_JMX_PWD_FILE}}
         file: jmx/key_file
       jmxAccessFile:
         secret: {{SECURE_JMX_ACCESS_FILE}}
         file: jmx/access_file
+      {{#SECURE_JMX_TRUST_STORE_ENABLED}}
       jmxTrustStore:
         secret: {{SECURE_JMX_TRUST_STORE}}
         file: jmx/trust_store
+      jmxTrustStorePass:
+        secret: {{SECURE_JMX_TRUST_STORE_PASSWORD}}
+        file: jmx/trust_store_pass
+      {{/SECURE_JMX_TRUST_STORE_ENABLED}}
       jmxKeyStore:
         secret: {{SECURE_JMX_KEY_STORE}}
         file: jmx/key_store
-      jmxTrustStorePass:
-        secret: {{SECURE_JMX_TRUST_STORE_PASSWORD}}
-        env-key: SECURE_JMX_TRUST_STORE_PASSWORD
       jmxKeyStorePass:
         secret: {{SECURE_JMX_KEY_STORE_PASSWORD}}
-        env-key: SECURE_JMX_KEY_STORE_PASSWORD
-      {{/TASKCFG_SECURE_JMX_ENABLED}}
-      {{/TASKCFG_ALL_SECURITY_KERBEROS_ENABLED}}
-    {{#TASKCFG_SECURE_JMX_ENABLED}}
+        file: jmx/key_store_pass
+      {{/TASKCFG_ALL_SECURE_JMX_ENABLED}}
+    {{/TASKCFG_ALL_SECURITY_KERBEROS_ENABLED}}
+    {{#TASKCFG_ALL_SECURE_JMX_ENABLED}}
     {{^TASKCFG_ALL_SECURITY_KERBEROS_ENABLED}}
     secrets:
       jmxPasswordFile:
@@ -60,20 +62,22 @@ pods:
       jmxAccessFile:
         secret: {{SECURE_JMX_ACCESS_FILE}}
         file: jmx/access_file
+      {{#SECURE_JMX_TRUST_STORE_ENABLED}}
       jmxTrustStore:
         secret: {{SECURE_JMX_TRUST_STORE}}
         file: jmx/trust_store
+      jmxTrustStorePass:
+        secret: {{SECURE_JMX_TRUST_STORE_PASSWORD}}
+        file: jmx/trust_store_pass
+      {{/SECURE_JMX_TRUST_STORE_ENABLED}}
       jmxKeyStore:
         secret: {{SECURE_JMX_KEY_STORE}}
         file: jmx/key_store
-      jmxTrustStorePass:
-        secret: {{SECURE_JMX_TRUST_STORE_PASSWORD}}
-        env-key: SECURE_JMX_TRUST_STORE_PASSWORD
       jmxKeyStorePass:
         secret: {{SECURE_JMX_KEY_STORE_PASSWORD}}
-        env-key: SECURE_JMX_KEY_STORE_PASSWORD
-  {{/TASKCFG_ALL_SECURITY_KERBEROS_ENABLED}}
-  {{/TASKCFG_SECURE_JMX_ENABLED}}
+        file: jmx/key_store_pass
+    {{/TASKCFG_ALL_SECURITY_KERBEROS_ENABLED}}
+    {{/TASKCFG_ALL_SECURE_JMX_ENABLED}}
     tasks:
       broker:
         cpus: {{BROKER_CPUS}}
@@ -112,6 +116,12 @@ pods:
               port: 9093
             {{/TASKCFG_ALL_SECURITY_KERBEROS_ENABLED}}
           {{/TASKCFG_ALL_SECURITY_TRANSPORT_ENCRYPTION_ENABLED}}
+          {{#TASKCFG_ALL_SECURE_JMX_ENABLED}}
+          jmx-port:
+            port: {{SECURE_JMX_PORT}}
+          rmi-port:
+            port: {{SECURE_JMX_RMI_PORT}}
+          {{/TASKCFG_ALL_SECURE_JMX_ENABLED}}
         volume:
           path: {{BROKER_DISK_PATH}}
           type: {{BROKER_DISK_TYPE}}
@@ -131,16 +141,47 @@ pods:
           export KAFKA_OPTS="-Dsun.security.krb5.debug=true $KAFKA_OPTS"
         {{/TASKCFG_ALL_SECURITY_KERBEROS_DEBUG}}
       {{/TASKCFG_ALL_SECURITY_KERBEROS_ENABLED}}
-      {{#TASKCFG_SECURE_JMX_ENABLED}}
+      {{#TASKCFG_ALL_SECURE_JMX_ENABLED}}
+          # add DC/OS default certificate to trust store for secure JMX access
+          export TRUST_STORE_PATH=$MESOS_SANDBOX/.ssl/trust_store
+          if [ -f "$MESOS_SANDBOX/jmx/trust_store" ]
+          then
+          # add DC/OS cert to user provided trust store
+          export SECURE_JMX_TRUST_STORE_PASSWORD_ENV=`cat $MESOS_SANDBOX/jmx/trust_store_pass`
+          cp $MESOS_SANDBOX/jmx/trust_store $TRUST_STORE_PATH
+          else
+          # add DC/OS cert to a new trust store
+          # create an empty trust store
+          export SECURE_JMX_TRUST_STORE_PASSWORD_ENV=changeit
+          $JAVA_HOME/bin/keytool -import -noprompt -trustcacerts -alias root -file $MESOS_SANDBOX/.ssl/ca-bundle.crt -storepass $SECURE_JMX_TRUST_STORE_PASSWORD_ENV -keystore $TRUST_STORE_PATH
+          fi
+
           export JMX_PORT={{SECURE_JMX_PORT}}
-          export KAFKA_JMX_OPTS="$KAFKA_JMX_OPTS -Dcom.sun.management.jmxremote=true -Dcom.sun.management.jmxremote.port={{SECURE_JMX_PORT}} "
-          export KAFKA_JMX_OPTS="$KAFKA_JMX_OPTS -Dcom.sun.management.jmxremote.password.file=keyfile -Dcom.sun.management.jmxremote.access.file=$MESOS_SANDBOX/jmx/access_file"
-          export KAFKA_JMX_OPTS="$KAFKA_JMX_OPTS -Dcom.sun.management.jmxremote.registry.ssl=true -Djavax.net.ssl.keyStore=$MESOS_SANDBOX/jmx/key_store"
-          export KAFKA_JMX_OPTS="$KAFKA_JMX_OPTS -Djavax.net.ssl.keyStorePassword=${SECURE_JMX_KEY_STORE_PASSWORD} -Djavax.net.ssl.trustStore=$MESOS_SANDBOX/jmx/trust_store"
-          export KAFKA_JMX_OPTS="$KAFKA_JMX_OPTS -Djavax.net.ssl.trustStorePassword=${SECURE_JMX_TRUST_STORE_PASSWORD}"
-          cp $MESOS_SANDBOX/jmx/key_file keyfile
-          chmod 600 keyfile
-      {{/TASKCFG_SECURE_JMX_ENABLED}}
+          export SECURE_JMX_KEY_STORE_PASSWORD_ENV=`cat $MESOS_SANDBOX/jmx/key_store_pass`
+
+          export KAFKA_JMX_OPTS_SECRET="$KAFKA_JMX_OPTS_SECRET -Djava.rmi.server.hostname=$MESOS_CONTAINER_IP"
+          export KAFKA_JMX_OPTS_SECRET="$KAFKA_JMX_OPTS_SECRET -Dcom.sun.management.jmxremote=true"
+          export KAFKA_JMX_OPTS_SECRET="$KAFKA_JMX_OPTS_SECRET -Dcom.sun.management.jmxremote.authenticate=true"
+          export KAFKA_JMX_OPTS_SECRET="$KAFKA_JMX_OPTS_SECRET -Dcom.sun.management.jmxremote.rmi.port={{SECURE_JMX_RMI_PORT}}"
+          export KAFKA_JMX_OPTS_SECRET="$KAFKA_JMX_OPTS_SECRET -Dcom.sun.management.jmxremote.registry.ssl=true"
+          export KAFKA_JMX_OPTS_SECRET="$KAFKA_JMX_OPTS_SECRET -Dcom.sun.management.jmxremote.ssl.need.client.auth=true"
+          export KAFKA_JMX_OPTS_SECRET="$KAFKA_JMX_OPTS_SECRET -Dcom.sun.management.jmxremote.password.file=$MESOS_SANDBOX/.ssl/key_file"
+          export KAFKA_JMX_OPTS_SECRET="$KAFKA_JMX_OPTS_SECRET -Dcom.sun.management.jmxremote.access.file=$MESOS_SANDBOX/jmx/access_file"
+          export KAFKA_JMX_OPTS_SECRET="$KAFKA_JMX_OPTS_SECRET -Dcom.sun.management.jmxremote.ssl=true"
+          export KAFKA_JMX_OPTS_SECRET="$KAFKA_JMX_OPTS_SECRET -Dcom.sun.management.jmxremote.local.only=false"
+          export KAFKA_JMX_OPTS_SECRET="$KAFKA_JMX_OPTS_SECRET -Dcom.sun.management.jmxremote.ssl.config.file=$MESOS_SANDBOX/.ssl/jmxremote.ssl.properties"
+
+          if [ ! -f "$MESOS_SANDBOX/jmx/key_file" ] ; then
+              echo "Secure JMX is enabled but no JMX pwd file was provided. Exiting."
+              exit 1
+          fi
+          if [ ! -f "$MESOS_SANDBOX/jmx/access_file" ] ; then
+              echo "Secure JMX is enabled but no JMX access file was provided. Exiting."
+              exit 1
+          fi
+          cp $MESOS_SANDBOX/jmx/key_file $MESOS_SANDBOX/.ssl/key_file
+          chmod 600 $MESOS_SANDBOX/.ssl/key_file
+      {{/TASKCFG_ALL_SECURE_JMX_ENABLED}}
 
           # setup-helper determines the correct listeners and security.inter.broker.protocol.
           # it relies on the task IP being stored in MESOS_CONTAINER_IP
@@ -164,11 +205,16 @@ pods:
           rm $MESOS_SANDBOX/{{KAFKA_VERSION_PATH}}/libs/zookeeper*.jar
           mv -v zookeeper*.jar $MESOS_SANDBOX/{{KAFKA_VERSION_PATH}}/libs/
           mv -v kafka-custom-principal-builder* $MESOS_SANDBOX/{{KAFKA_VERSION_PATH}}/libs/
-
+          chmod +x .ssl/jmx-ssl-properties.sh
+          ./.ssl/jmx-ssl-properties.sh 2>&1
+          export KAFKA_JMX_OPTS=$KAFKA_JMX_OPTS_SECRET
           # Start kafka.
           exec $MESOS_SANDBOX/{{KAFKA_VERSION_PATH}}/bin/kafka-server-start.sh \
                $MESOS_SANDBOX/{{KAFKA_VERSION_PATH}}/config/server.properties
         configs:
+          jmx-config:
+            template: jmx-ssl-properties.sh
+            dest: .ssl/jmx-ssl-properties.sh
           server-properties:
             template: server.properties.mustache
             dest: {{KAFKA_VERSION_PATH}}/config/server.properties

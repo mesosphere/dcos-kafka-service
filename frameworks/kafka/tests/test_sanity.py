@@ -1,3 +1,4 @@
+import logging
 import pytest
 import retrying
 import sdk_cmd
@@ -12,10 +13,13 @@ import sdk_utils
 import shakedown
 from tests import config, test_utils
 
+log = logging.getLogger(__name__)
+
 
 @pytest.fixture(scope="module", autouse=True)
 def configure_package(configure_security):
     try:
+        log.info("Ensure kafka is uninstalled...")
         foldered_name = sdk_utils.get_foldered_name(config.SERVICE_NAME)
         sdk_install.uninstall(config.PACKAGE_NAME, foldered_name)
 
@@ -23,7 +27,7 @@ def configure_package(configure_security):
             config.PACKAGE_NAME,
             foldered_name,
             config.DEFAULT_BROKER_COUNT,
-            additional_options={"service": {"name": foldered_name}, "brokers": {"cpus": 0.5}},
+            from_options={"service": {"name": foldered_name}, "brokers": {"cpus": 0.5}},
         )
 
         # wait for brokers to finish registering before starting tests
@@ -31,6 +35,7 @@ def configure_package(configure_security):
 
         yield  # let the test session execute
     finally:
+        log.info("Clean up kafka...")
         sdk_install.uninstall(config.PACKAGE_NAME, foldered_name)
 
 

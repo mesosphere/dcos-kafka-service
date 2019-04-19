@@ -37,7 +37,7 @@ Older versions of `build.gradle` contained the following dependencies and no ent
 * `compile "mesosphere:scheduler:<CURRENT_SDK_VERSION>"`
 * `testCompile "mesosphere:testing:<CURRENT_SDK_VERSION>"`
 
-Although this is supported in the current upgrade path, it is recommended that hese are changed to match the dependencies at the start of this section as this will result in a single line diff in the `build.gradle` file on update.
+Although this is supported in the current upgrade path, it is recommended that these are changed to match the dependencies at the start of this section as this will result in a single line diff in the `build.gradle` file on update.
 
 ### Check the `universe/resource.json` file
 
@@ -110,7 +110,7 @@ nothing to commit, working tree clean
 Assuming the `build.gradle` and `resource.json` files have been updated accordingly, the update to a specific version of the SDK can be performed as follows:
 ```bash
 $ docker pull mesosphere/dcos-commons:latest
-$ docker run --rm -ti -v $(pwd):$(pwd) mesosphere/dcos-commons:latest init $(pwd) --update-sdk <NEW_SDK_VERSION>
+$ docker run --rm -ti -v $(pwd):$(pwd) mesosphere/dcos-commons:latest copy-files $(pwd) --update-sdk <NEW_SDK_VERSION>
 ```
 
 Running a `git status` after this process should show something like:
@@ -121,21 +121,13 @@ Changes not staged for commit:
   (use "git add <file>..." to update what will be committed)
   (use "git checkout -- <file>..." to discard changes in working directory)
 
-	modified:   build.gradle
-	modified:   testing/sdk_auth.py
-	modified:   testing/sdk_cmd.py
-	modified:   testing/sdk_hosts.py
-	modified:   testing/sdk_install.py
-	modified:   testing/sdk_marathon.py
-	modified:   testing/sdk_repository.py
-	modified:   testing/sdk_security.py
-	modified:   testing/sdk_upgrade.py
-	modified:   testing/sdk_utils.py
-	modified:   testing/security/transport_encryption.py
-	modified:   tools/ci/init
-	modified:   tools/release_builder.py
-	modified:   tools/universe/package_builder.py
-	modified:   tools/universe/package_manager.py
+	modified:   TESTING.md
+	modified:   UPDATING.md
+	modified:   conftest.py
+	modified:   test.sh
+	modified:   testing/README.md
+	[...]
+	modified:   tools/validate_pip_freeze.py
 
 no changes added to commit (use "git add" and/or "git commit -a")
 ```
@@ -143,10 +135,10 @@ Note that the update procedure could also *delete* unneeded files.
 
 Check the differences in `build.gradle` and `tools/release_builder.py` to ensure that the `<NEW_SDK_VERSION>` is present in both files.
 
-Now add the changes to version control using the required git commants (`git add`, `git rm`).
+Now add the changes to version control using the required git commands (`git add`, `git rm`).
 
 ## Further steps
 
 * See the SDK release notes for any changes required when consuming the SKD.
 * If the build process is heavily customized, it may be that additional changes will be required to the `build.sh` file in the repo.
-* The API of the testing tools in `testing` could have changed, and any integration tests may need to be updted. Run `git diff testing` to check for any relevant changes.
+* The API of the testing tools in `testing` could have changed, and any integration tests may need to be updated. Run `git diff testing` to check for any relevant changes.

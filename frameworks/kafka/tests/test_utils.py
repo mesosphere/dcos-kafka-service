@@ -49,7 +49,7 @@ def create_topic(topic_name, service_name=config.SERVICE_NAME):
         config.PACKAGE_NAME, service_name, "topic create {}".format(topic_name), parse_json=True
     )
     log.info(create_info)
-    assert 'Created topic "%s".\n' % topic_name in create_info["message"]
+    assert 'Created topic %s.\n' % topic_name in create_info["message"]
 
     if "." in topic_name or "_" in topic_name:
         assert (

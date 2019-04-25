@@ -96,7 +96,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(kafka_server_BrokerTopicMetrics_MessagesInPerSec_1MinuteRate{service_name=\"$service_name\"})",
+          "expr": "sum(kafka_server_brokertopicmetrics_messagesinpersec_all_1minuterate{service_name=\"$service_name\"})",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -178,7 +178,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(kafka_server_BrokerTopicMetrics_MessagesInPerSec_5MinuteRate{service_name=\"$service_name\"})",
+          "expr": "sum(kafka_server_brokertopicmetrics_messagesinpersec_all_5minuterate{service_name=\"$service_name\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "",
@@ -259,7 +259,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(kafka_server_BrokerTopicMetrics_MessagesInPerSec_15MinuteRate{service_name=\"$service_name\"})",
+          "expr": "sum(kafka_server_brokertopicmetrics_messagesinpersec_all_15minuterate{service_name=\"$service_name\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "",
@@ -3796,6 +3796,32 @@
       {
         "allValue": null,
         "current": {
+          "selected": true,
+          "text": "kafka",
+          "value": "kafka"
+        },
+        "datasource": "prometheus",
+        "hide": 0,
+        "includeAll": false,
+        "label": "service_name",
+        "multi": false,
+        "name": "service_name",
+        "options": [],
+        "query": "label_values({executor_name=\"kafka\"}, service_name)",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": null,
+        "current": {
+          "selected": true,
           "text": "kafka-0-broker",
           "value": "kafka-0-broker"
         },
@@ -3806,57 +3832,7 @@
         "multi": false,
         "name": "broker",
         "options": [],
-        "query": "label_values(kafka_server_KafkaServer_BrokerState, task_name)",
-        "refresh": 1,
-        "regex": "",
-        "skipUrlSync": false,
-        "sort": 0,
-        "tagValuesQuery": "",
-        "tags": [],
-        "tagsQuery": "",
-        "type": "query",
-        "useTags": false
-      },
-      {
-        "allValue": null,
-        "current": {
-          "isNone": true,
-          "text": "None",
-          "value": ""
-        },
-        "datasource": "prometheus",
-        "hide": 0,
-        "includeAll": false,
-        "label": "topic",
-        "multi": false,
-        "name": "topic",
-        "options": [],
-        "query": "label_values(topic)",
-        "refresh": 1,
-        "regex": "",
-        "skipUrlSync": false,
-        "sort": 0,
-        "tagValuesQuery": "",
-        "tags": [],
-        "tagsQuery": "",
-        "type": "query",
-        "useTags": false
-      },
-      {
-        "allValue": null,
-        "current": {
-          "tags": [],
-          "text": "kafka-dev",
-          "value": "kafka-dev"
-        },
-        "datasource": "prometheus",
-        "hide": 0,
-        "includeAll": false,
-        "label": "service_name",
-        "multi": false,
-        "name": "service_name",
-        "options": [],
-        "query": "label_values({executor_name=\"kafka\"}, service_name)",
+        "query": "label_values({executor_name=\"kafka\",service_name=\"$service_name\"},task_name)",
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
@@ -3901,5 +3877,5 @@
   "timezone": "",
   "title": "DC/OS Extended Kafka Dashboard",
   "uid": "Vbm7Botmk",
-  "version": 4
+  "version": 11
 }

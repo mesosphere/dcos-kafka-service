@@ -14,7 +14,7 @@
       "type": "grafana",
       "id": "grafana",
       "name": "Grafana",
-      "version": "5.1.3"
+      "version": "5.3.4"
     },
     {
       "type": "panel",
@@ -27,6 +27,18 @@
       "id": "prometheus",
       "name": "Prometheus",
       "version": "5.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "singlestat",
+      "name": "Singlestat",
+      "version": "5.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "table",
+      "name": "Table",
+      "version": "5.0.0"
     }
   ],
   "annotations": {
@@ -37,17 +49,19 @@
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
+        "limit": 100,
         "name": "Annotations & Alerts",
+        "showIn": 0,
         "type": "dashboard"
       }
     ]
   },
-  "description": "Global Kafka Dashboard for DC/OS 1.13- For Operators: Global view metrics of all Kafka Clusters, Brokers, and Topics",
+  "description": "Kafka Clusters Overview Dashboard for DC/OS versions >= 1.13",
   "editable": true,
   "gnetId": 9018,
   "graphTooltip": 0,
-  "id": 32,
-  "iteration": 1556614710477,
+  "id": null,
+  "iteration": 1557397375539,
   "links": [],
   "panels": [
     {
@@ -58,18 +72,19 @@
         "x": 0,
         "y": 0
       },
-      "id": 38,
+      "id": 139,
       "panels": [],
-      "title": "Global Kafka Overview",
+      "title": "Overview",
       "type": "row"
     },
     {
       "cacheTimeout": null,
       "colorBackground": false,
-      "colorValue": false,
+      "colorPostfix": true,
+      "colorValue": true,
       "colors": [
-        "#299c46",
-        "rgba(237, 129, 40, 0.89)",
+        "#962d82",
+        "#ba43a9",
         "#d44a3a"
       ],
       "datasource": "${DS_PROMETHEUS}",
@@ -82,9 +97,92 @@
         "thresholdMarkers": true
       },
       "gridPos": {
-        "h": 8,
+        "h": 4,
         "w": 4,
         "x": 0,
+        "y": 1
+      },
+      "id": 147,
+      "interval": null,
+      "links": [],
+      "mappingType": 1,
+      "mappingTypes": [
+        {
+          "name": "value to text",
+          "value": 1
+        },
+        {
+          "name": "range to text",
+          "value": 2
+        }
+      ],
+      "maxDataPoints": 100,
+      "nullPointMode": "connected",
+      "nullText": null,
+      "postfix": " Brokers",
+      "postfixFontSize": "50%",
+      "prefix": "",
+      "prefixFontSize": "50%",
+      "rangeMaps": [
+        {
+          "from": "null",
+          "text": "N/A",
+          "to": "null"
+        }
+      ],
+      "sparkline": {
+        "fillColor": "rgba(31, 118, 189, 0.18)",
+        "full": false,
+        "lineColor": "rgb(31, 120, 193)",
+        "show": false
+      },
+      "tableColumn": "",
+      "targets": [
+        {
+          "expr": "count(kafka_server_KafkaServer_BrokerState{executor_name=\"kafka\",service_name=\"$service_name\"})",
+          "format": "time_series",
+          "instant": true,
+          "interval": "",
+          "intervalFactor": 1,
+          "refId": "A"
+        }
+      ],
+      "thresholds": "",
+      "title": "Broker Count",
+      "type": "singlestat",
+      "valueFontSize": "80%",
+      "valueMaps": [
+        {
+          "op": "=",
+          "text": "0",
+          "value": "null"
+        }
+      ],
+      "valueName": "current"
+    },
+    {
+      "cacheTimeout": null,
+      "colorBackground": false,
+      "colorValue": false,
+      "colors": [
+        "#299c46",
+        "rgba(237, 129, 40, 0.89)",
+        "#d44a3a"
+      ],
+      "datasource": "${DS_PROMETHEUS}",
+      "decimals": null,
+      "format": "none",
+      "gauge": {
+        "maxValue": 100,
+        "minValue": 0,
+        "show": false,
+        "thresholdLabels": false,
+        "thresholdMarkers": true
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
         "y": 1
       },
       "id": 105,
@@ -118,6 +216,576 @@
       "repeat": null,
       "repeatDirection": "h",
       "sparkline": {
+        "fillColor": "#614d93",
+        "full": false,
+        "lineColor": "#962d82",
+        "show": true
+      },
+      "tableColumn": "",
+      "targets": [
+        {
+          "expr": "sum(kafka_server_BrokerTopicMetrics_MessagesInPerSec_5MinuteRate{service_name=\"$service_name\"})",
+          "format": "time_series",
+          "instant": false,
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "thresholds": "",
+      "title": "Global avg msg/sec for ($service_name)",
+      "type": "singlestat",
+      "valueFontSize": "80%",
+      "valueMaps": [
+        {
+          "op": "=",
+          "text": "0",
+          "value": "null"
+        }
+      ],
+      "valueName": "current"
+    },
+    {
+      "cacheTimeout": null,
+      "colorBackground": false,
+      "colorValue": false,
+      "colors": [
+        "#299c46",
+        "rgba(237, 129, 40, 0.89)",
+        "#d44a3a"
+      ],
+      "datasource": "${DS_PROMETHEUS}",
+      "format": "none",
+      "gauge": {
+        "maxValue": 100,
+        "minValue": 0,
+        "show": false,
+        "thresholdLabels": false,
+        "thresholdMarkers": true
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 1
+      },
+      "id": 144,
+      "interval": null,
+      "links": [],
+      "mappingType": 1,
+      "mappingTypes": [
+        {
+          "name": "value to text",
+          "value": 1
+        },
+        {
+          "name": "range to text",
+          "value": 2
+        }
+      ],
+      "maxDataPoints": 100,
+      "nullPointMode": "connected",
+      "nullText": null,
+      "postfix": " msg",
+      "postfixFontSize": "50%",
+      "prefix": "",
+      "prefixFontSize": "50%",
+      "rangeMaps": [
+        {
+          "from": "null",
+          "text": "N/A",
+          "to": "null"
+        }
+      ],
+      "sparkline": {
+        "fillColor": "#614d93",
+        "full": false,
+        "lineColor": "#962d82",
+        "show": true
+      },
+      "tableColumn": "",
+      "targets": [
+        {
+          "expr": "sum(kafka_server_BrokerTopicMetrics_MessagesInPerSec_all_count{executor_name=\"kafka\",service_name=\"$service_name\"})",
+          "format": "time_series",
+          "instant": false,
+          "intervalFactor": 1,
+          "refId": "A"
+        }
+      ],
+      "thresholds": "",
+      "title": "Total Messages In",
+      "type": "singlestat",
+      "valueFontSize": "80%",
+      "valueMaps": [
+        {
+          "op": "=",
+          "text": "0",
+          "value": "null"
+        }
+      ],
+      "valueName": "current"
+    },
+    {
+      "cacheTimeout": null,
+      "colorBackground": false,
+      "colorValue": false,
+      "colors": [
+        "#299c46",
+        "rgba(237, 129, 40, 0.89)",
+        "#d44a3a"
+      ],
+      "datasource": "${DS_PROMETHEUS}",
+      "format": "decbytes",
+      "gauge": {
+        "maxValue": 100,
+        "minValue": 0,
+        "show": false,
+        "thresholdLabels": false,
+        "thresholdMarkers": true
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 1
+      },
+      "id": 145,
+      "interval": null,
+      "links": [],
+      "mappingType": 1,
+      "mappingTypes": [
+        {
+          "name": "value to text",
+          "value": 1
+        },
+        {
+          "name": "range to text",
+          "value": 2
+        }
+      ],
+      "maxDataPoints": 100,
+      "nullPointMode": "connected",
+      "nullText": null,
+      "postfix": "",
+      "postfixFontSize": "50%",
+      "prefix": "",
+      "prefixFontSize": "50%",
+      "rangeMaps": [
+        {
+          "from": "null",
+          "text": "N/A",
+          "to": "null"
+        }
+      ],
+      "sparkline": {
+        "fillColor": "#614d93",
+        "full": false,
+        "lineColor": "#962d82",
+        "show": true
+      },
+      "tableColumn": "",
+      "targets": [
+        {
+          "expr": "sum(kafka_server_BrokerTopicMetrics_BytesInPerSec_all_count{executor_name=\"kafka\",service_name=\"$service_name\"})",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "refId": "A"
+        }
+      ],
+      "thresholds": "",
+      "title": "Total Messages In Size",
+      "type": "singlestat",
+      "valueFontSize": "80%",
+      "valueMaps": [
+        {
+          "op": "=",
+          "text": "0",
+          "value": "null"
+        }
+      ],
+      "valueName": "current"
+    },
+    {
+      "cacheTimeout": null,
+      "colorBackground": false,
+      "colorValue": true,
+      "colors": [
+        "#299c46",
+        "#962d82",
+        "#d44a3a"
+      ],
+      "datasource": "${DS_PROMETHEUS}",
+      "format": "none",
+      "gauge": {
+        "maxValue": 100,
+        "minValue": 0,
+        "show": false,
+        "thresholdLabels": false,
+        "thresholdMarkers": true
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 1
+      },
+      "id": 167,
+      "interval": null,
+      "links": [],
+      "mappingType": 1,
+      "mappingTypes": [
+        {
+          "name": "value to text",
+          "value": 1
+        },
+        {
+          "name": "range to text",
+          "value": 2
+        }
+      ],
+      "maxDataPoints": 100,
+      "nullPointMode": "connected",
+      "nullText": null,
+      "postfix": "",
+      "postfixFontSize": "50%",
+      "prefix": "",
+      "prefixFontSize": "50%",
+      "rangeMaps": [
+        {
+          "from": "null",
+          "text": "N/A",
+          "to": "null"
+        }
+      ],
+      "sparkline": {
+        "fillColor": "#705da0",
+        "full": false,
+        "lineColor": "#962d82",
+        "show": true
+      },
+      "tableColumn": "",
+      "targets": [
+        {
+          "expr": "count(count by (topic) (kafka_server_BrokerTopicMetrics_MessagesInPerSec_5MinuteRate{executor_name=\"kafka\",service_name=\"$service_name\"}))",
+          "format": "time_series",
+          "instant": false,
+          "intervalFactor": 1,
+          "refId": "A"
+        }
+      ],
+      "thresholds": "",
+      "title": "Total Topic Count",
+      "type": "singlestat",
+      "valueFontSize": "80%",
+      "valueMaps": [
+        {
+          "op": "=",
+          "text": "0",
+          "value": "null"
+        }
+      ],
+      "valueName": "current"
+    },
+    {
+      "cacheTimeout": null,
+      "colorBackground": false,
+      "colorValue": true,
+      "colors": [
+        "#299c46",
+        "#962d82",
+        "#d44a3a"
+      ],
+      "datasource": "${DS_PROMETHEUS}",
+      "format": "none",
+      "gauge": {
+        "maxValue": 100,
+        "minValue": 0,
+        "show": false,
+        "thresholdLabels": false,
+        "thresholdMarkers": true
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 1
+      },
+      "id": 149,
+      "interval": null,
+      "links": [],
+      "mappingType": 1,
+      "mappingTypes": [
+        {
+          "name": "value to text",
+          "value": 1
+        },
+        {
+          "name": "range to text",
+          "value": 2
+        }
+      ],
+      "maxDataPoints": 100,
+      "nullPointMode": "connected",
+      "nullText": null,
+      "postfix": "",
+      "postfixFontSize": "50%",
+      "prefix": "",
+      "prefixFontSize": "50%",
+      "rangeMaps": [
+        {
+          "from": "null",
+          "text": "N/A",
+          "to": "null"
+        }
+      ],
+      "sparkline": {
+        "fillColor": "#705da0",
+        "full": false,
+        "lineColor": "#962d82",
+        "show": true
+      },
+      "tableColumn": "",
+      "targets": [
+        {
+          "expr": "max(kafka_server_ReplicaManager_PartitionCount{executor_name=\"kafka\",service_name=\"$service_name\"})",
+          "format": "time_series",
+          "instant": false,
+          "intervalFactor": 1,
+          "refId": "A"
+        }
+      ],
+      "thresholds": "",
+      "title": "Total Partition Count",
+      "type": "singlestat",
+      "valueFontSize": "80%",
+      "valueMaps": [
+        {
+          "op": "=",
+          "text": "0",
+          "value": "null"
+        }
+      ],
+      "valueName": "current"
+    },
+    {
+      "cacheTimeout": null,
+      "colorBackground": false,
+      "colorValue": false,
+      "colors": [
+        "#299c46",
+        "rgba(237, 129, 40, 0.89)",
+        "#d44a3a"
+      ],
+      "datasource": "${DS_PROMETHEUS}",
+      "format": "percent",
+      "gauge": {
+        "maxValue": 100,
+        "minValue": 0,
+        "show": true,
+        "thresholdLabels": false,
+        "thresholdMarkers": true
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 5
+      },
+      "id": 161,
+      "interval": null,
+      "links": [],
+      "mappingType": 1,
+      "mappingTypes": [
+        {
+          "name": "value to text",
+          "value": 1
+        },
+        {
+          "name": "range to text",
+          "value": 2
+        }
+      ],
+      "maxDataPoints": 100,
+      "nullPointMode": "connected",
+      "nullText": null,
+      "postfix": "",
+      "postfixFontSize": "50%",
+      "prefix": "",
+      "prefixFontSize": "50%",
+      "rangeMaps": [
+        {
+          "from": "null",
+          "text": "N/A",
+          "to": "null"
+        }
+      ],
+      "sparkline": {
+        "fillColor": "#705da0",
+        "full": false,
+        "lineColor": "#962d82",
+        "show": false
+      },
+      "tableColumn": "",
+      "targets": [
+        {
+          "expr": "avg(kafka_server_KafkaRequestHandlerPool_RequestHandlerAvgIdlePercent_5MinuteRate{executor_name=\"kafka\",service_name=\"$service_name\"})",
+          "format": "time_series",
+          "instant": true,
+          "intervalFactor": 1,
+          "refId": "A"
+        }
+      ],
+      "thresholds": "50,80",
+      "title": "Request Handler Avg Idle %",
+      "type": "singlestat",
+      "valueFontSize": "80%",
+      "valueMaps": [
+        {
+          "op": "=",
+          "text": "0",
+          "value": "null"
+        }
+      ],
+      "valueName": "current"
+    },
+    {
+      "cacheTimeout": null,
+      "colorBackground": true,
+      "colorValue": false,
+      "colors": [
+        "#629e51",
+        "#629e51",
+        "#bf1b00"
+      ],
+      "datasource": "${DS_PROMETHEUS}",
+      "description": "In a healthy cluster, the number of in sync replicas (ISRs) should be exactly equal to the total number of replicas. If partition replicas fall too far behind their leaders, the follower partition is removed from the ISR pool, and you should see a corresponding increase in IsrShrinksPerSec. Since Kafka’s high-availability guarantees cannot be met without replication, investigation is certainly warranted should this metric value exceed zero for extended time periods.\n\nIf this metric has a value greater than 1 it means that data is not being replicated to enough number of brokers thereby increasing the probability of data loss.",
+      "format": "none",
+      "gauge": {
+        "maxValue": 100,
+        "minValue": 0,
+        "show": false,
+        "thresholdLabels": false,
+        "thresholdMarkers": true
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 5
+      },
+      "id": 142,
+      "interval": null,
+      "links": [],
+      "mappingType": 1,
+      "mappingTypes": [
+        {
+          "name": "value to text",
+          "value": 1
+        },
+        {
+          "name": "range to text",
+          "value": 2
+        }
+      ],
+      "maxDataPoints": 100,
+      "nullPointMode": "connected",
+      "nullText": null,
+      "postfix": "",
+      "postfixFontSize": "50%",
+      "prefix": "",
+      "prefixFontSize": "50%",
+      "rangeMaps": [
+        {
+          "from": "null",
+          "text": "N/A",
+          "to": "null"
+        }
+      ],
+      "sparkline": {
+        "fillColor": "rgba(31, 118, 189, 0.18)",
+        "full": false,
+        "lineColor": "#890f02",
+        "show": true
+      },
+      "tableColumn": "",
+      "targets": [
+        {
+          "expr": "sum(kafka_server_ReplicaManager_UnderReplicatedPartitions{service_name=\"$service_name\"})",
+          "format": "time_series",
+          "instant": false,
+          "intervalFactor": 1,
+          "refId": "A"
+        }
+      ],
+      "thresholds": "0,1",
+      "title": "Under Replicated Partitions for $service_name",
+      "type": "singlestat",
+      "valueFontSize": "80%",
+      "valueMaps": [
+        {
+          "op": "=",
+          "text": "0",
+          "value": "null"
+        }
+      ],
+      "valueName": "current"
+    },
+    {
+      "cacheTimeout": null,
+      "colorBackground": true,
+      "colorPostfix": true,
+      "colorValue": false,
+      "colors": [
+        "#bf1b00",
+        "#bf1b00",
+        "#629e51"
+      ],
+      "datasource": "${DS_PROMETHEUS}",
+      "format": "none",
+      "gauge": {
+        "maxValue": 100,
+        "minValue": 0,
+        "show": false,
+        "thresholdLabels": false,
+        "thresholdMarkers": true
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 5
+      },
+      "id": 164,
+      "interval": null,
+      "links": [],
+      "mappingType": 1,
+      "mappingTypes": [
+        {
+          "name": "value to text",
+          "value": 1
+        },
+        {
+          "name": "range to text",
+          "value": 2
+        }
+      ],
+      "maxDataPoints": 100,
+      "nullPointMode": "connected",
+      "nullText": null,
+      "postfix": "",
+      "postfixFontSize": "50%",
+      "prefix": "",
+      "prefixFontSize": "50%",
+      "rangeMaps": [
+        {
+          "from": "null",
+          "text": "N/A",
+          "to": "null"
+        }
+      ],
+      "sparkline": {
         "fillColor": "rgba(31, 118, 189, 0.18)",
         "full": false,
         "lineColor": "rgb(31, 120, 193)",
@@ -126,22 +794,687 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(kafka_server_BrokerTopicMetrics_MessagesInPerSec_[[rate]]{service_name=\"$service_name\"})",
+          "expr": "sum(kafka_controller_KafkaController_ActiveControllerCount{executor_name=\"kafka\",service_name=\"$service_name\"})",
           "format": "time_series",
+          "instant": true,
           "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "",
           "refId": "A"
         }
       ],
-      "thresholds": "",
-      "title": "Global avg msg/sec ($rate) for ($service_name)",
+      "thresholds": "0,1",
+      "title": "Active Controller Count",
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
         {
           "op": "=",
+          "text": "0",
+          "value": "null"
+        }
+      ],
+      "valueName": "current"
+    },
+    {
+      "cacheTimeout": null,
+      "colorBackground": true,
+      "colorPostfix": true,
+      "colorValue": false,
+      "colors": [
+        "#bf1b00",
+        "#bf1b00",
+        "#629e51"
+      ],
+      "datasource": "${DS_PROMETHEUS}",
+      "format": "none",
+      "gauge": {
+        "maxValue": 100,
+        "minValue": 0,
+        "show": false,
+        "thresholdLabels": false,
+        "thresholdMarkers": true
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 5
+      },
+      "id": 165,
+      "interval": null,
+      "links": [],
+      "mappingType": 1,
+      "mappingTypes": [
+        {
+          "name": "value to text",
+          "value": 1
+        },
+        {
+          "name": "range to text",
+          "value": 2
+        }
+      ],
+      "maxDataPoints": 100,
+      "nullPointMode": "connected",
+      "nullText": null,
+      "postfix": "",
+      "postfixFontSize": "50%",
+      "prefix": "",
+      "prefixFontSize": "50%",
+      "rangeMaps": [
+        {
+          "from": "null",
           "text": "N/A",
+          "to": "null"
+        }
+      ],
+      "sparkline": {
+        "fillColor": "rgba(31, 118, 189, 0.18)",
+        "full": false,
+        "lineColor": "rgb(31, 120, 193)",
+        "show": false
+      },
+      "tableColumn": "",
+      "targets": [
+        {
+          "expr": "max(kafka_server_SessionExpireListener_ZooKeeperSyncConnectsPerSec_count{service_name=\"$service_name\"})",
+          "format": "time_series",
+          "instant": true,
+          "interval": "",
+          "intervalFactor": 1,
+          "refId": "A"
+        }
+      ],
+      "thresholds": "0,1",
+      "title": "Zookeeper Sync Connects / sec",
+      "type": "singlestat",
+      "valueFontSize": "80%",
+      "valueMaps": [
+        {
+          "op": "=",
+          "text": "0",
+          "value": "null"
+        }
+      ],
+      "valueName": "current"
+    },
+    {
+      "cacheTimeout": null,
+      "colorBackground": false,
+      "colorPostfix": true,
+      "colorValue": true,
+      "colors": [
+        "#299c46",
+        "#962d82",
+        "#d44a3a"
+      ],
+      "datasource": "${DS_PROMETHEUS}",
+      "decimals": 2,
+      "format": "none",
+      "gauge": {
+        "maxValue": 100,
+        "minValue": 0,
+        "show": false,
+        "thresholdLabels": false,
+        "thresholdMarkers": true
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 5
+      },
+      "id": 168,
+      "interval": null,
+      "links": [],
+      "mappingType": 1,
+      "mappingTypes": [
+        {
+          "name": "value to text",
+          "value": 1
+        },
+        {
+          "name": "range to text",
+          "value": 2
+        }
+      ],
+      "maxDataPoints": 100,
+      "nullPointMode": "connected",
+      "nullText": null,
+      "postfix": " req / sec",
+      "postfixFontSize": "50%",
+      "prefix": "",
+      "prefixFontSize": "50%",
+      "rangeMaps": [
+        {
+          "from": "null",
+          "text": "N/A",
+          "to": "null"
+        }
+      ],
+      "sparkline": {
+        "fillColor": "#705da0",
+        "full": false,
+        "lineColor": "#962d82",
+        "show": true
+      },
+      "tableColumn": "",
+      "targets": [
+        {
+          "expr": "avg(kafka_server_FetcherStats_RequestsPerSec_5MinuteRate{executor_name=\"kafka\",service_name=\"$service_name\"})",
+          "format": "time_series",
+          "instant": false,
+          "intervalFactor": 1,
+          "refId": "A"
+        }
+      ],
+      "thresholds": "",
+      "title": "Fetcher Request / sec",
+      "type": "singlestat",
+      "valueFontSize": "80%",
+      "valueMaps": [
+        {
+          "op": "=",
+          "text": "0",
+          "value": "null"
+        }
+      ],
+      "valueName": "current"
+    },
+    {
+      "cacheTimeout": null,
+      "colorBackground": false,
+      "colorValue": true,
+      "colors": [
+        "#299c46",
+        "#962d82",
+        "#d44a3a"
+      ],
+      "datasource": "${DS_PROMETHEUS}",
+      "format": "none",
+      "gauge": {
+        "maxValue": 100,
+        "minValue": 0,
+        "show": false,
+        "thresholdLabels": false,
+        "thresholdMarkers": true
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 5
+      },
+      "id": 151,
+      "interval": null,
+      "links": [],
+      "mappingType": 1,
+      "mappingTypes": [
+        {
+          "name": "value to text",
+          "value": 1
+        },
+        {
+          "name": "range to text",
+          "value": 2
+        }
+      ],
+      "maxDataPoints": 100,
+      "nullPointMode": "connected",
+      "nullText": null,
+      "postfix": "",
+      "postfixFontSize": "50%",
+      "prefix": "",
+      "prefixFontSize": "50%",
+      "rangeMaps": [
+        {
+          "from": "null",
+          "text": "N/A",
+          "to": "null"
+        }
+      ],
+      "sparkline": {
+        "fillColor": "#705da0",
+        "full": false,
+        "lineColor": "#962d82",
+        "show": true
+      },
+      "tableColumn": "",
+      "targets": [
+        {
+          "expr": "max(kafka_server_ReplicaManager_LeaderCount{executor_name=\"kafka\",service_name=\"$service_name\"})",
+          "format": "time_series",
+          "instant": false,
+          "intervalFactor": 1,
+          "refId": "A"
+        }
+      ],
+      "thresholds": "",
+      "title": "Total Leader Count",
+      "type": "singlestat",
+      "valueFontSize": "80%",
+      "valueMaps": [
+        {
+          "op": "=",
+          "text": "0",
+          "value": "null"
+        }
+      ],
+      "valueName": "current"
+    },
+    {
+      "cacheTimeout": null,
+      "colorBackground": false,
+      "colorValue": false,
+      "colors": [
+        "#299c46",
+        "rgba(237, 129, 40, 0.89)",
+        "#d44a3a"
+      ],
+      "datasource": "${DS_PROMETHEUS}",
+      "format": "none",
+      "gauge": {
+        "maxValue": 100,
+        "minValue": 0,
+        "show": false,
+        "thresholdLabels": false,
+        "thresholdMarkers": true
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 9
+      },
+      "id": 156,
+      "interval": null,
+      "links": [],
+      "mappingType": 1,
+      "mappingTypes": [
+        {
+          "name": "value to text",
+          "value": 1
+        },
+        {
+          "name": "range to text",
+          "value": 2
+        }
+      ],
+      "maxDataPoints": 100,
+      "nullPointMode": "connected",
+      "nullText": null,
+      "postfix": "",
+      "postfixFontSize": "50%",
+      "prefix": "",
+      "prefixFontSize": "50%",
+      "rangeMaps": [
+        {
+          "from": "null",
+          "text": "N/A",
+          "to": "null"
+        }
+      ],
+      "sparkline": {
+        "fillColor": "#705da0",
+        "full": false,
+        "lineColor": "#962d82",
+        "show": true
+      },
+      "tableColumn": "",
+      "targets": [
+        {
+          "expr": "mesos_master_frameworks_offers_sent{framework_name=\"$service_name\"}",
+          "format": "time_series",
+          "instant": true,
+          "intervalFactor": 1,
+          "refId": "A"
+        },
+        {
+          "expr": "",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "refId": "B"
+        }
+      ],
+      "thresholds": "",
+      "title": "Mesos Offers Sent",
+      "type": "singlestat",
+      "valueFontSize": "80%",
+      "valueMaps": [
+        {
+          "op": "=",
+          "text": "0",
+          "value": "null"
+        }
+      ],
+      "valueName": "current"
+    },
+    {
+      "cacheTimeout": null,
+      "colorBackground": false,
+      "colorValue": false,
+      "colors": [
+        "#299c46",
+        "rgba(237, 129, 40, 0.89)",
+        "#d44a3a"
+      ],
+      "datasource": "${DS_PROMETHEUS}",
+      "format": "none",
+      "gauge": {
+        "maxValue": 100,
+        "minValue": 0,
+        "show": false,
+        "thresholdLabels": false,
+        "thresholdMarkers": true
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 9
+      },
+      "id": 155,
+      "interval": null,
+      "links": [],
+      "mappingType": 1,
+      "mappingTypes": [
+        {
+          "name": "value to text",
+          "value": 1
+        },
+        {
+          "name": "range to text",
+          "value": 2
+        }
+      ],
+      "maxDataPoints": 100,
+      "nullPointMode": "connected",
+      "nullText": null,
+      "postfix": "",
+      "postfixFontSize": "50%",
+      "prefix": "",
+      "prefixFontSize": "50%",
+      "rangeMaps": [
+        {
+          "from": "null",
+          "text": "N/A",
+          "to": "null"
+        }
+      ],
+      "sparkline": {
+        "fillColor": "#705da0",
+        "full": false,
+        "lineColor": "#962d82",
+        "show": true
+      },
+      "tableColumn": "",
+      "targets": [
+        {
+          "expr": "mesos_master_frameworks_offers_accepted{framework_name=\"$service_name\"}",
+          "format": "time_series",
+          "instant": true,
+          "intervalFactor": 1,
+          "refId": "A"
+        },
+        {
+          "expr": "",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "refId": "B"
+        }
+      ],
+      "thresholds": "",
+      "title": "Mesos Offers Accepted",
+      "type": "singlestat",
+      "valueFontSize": "80%",
+      "valueMaps": [
+        {
+          "op": "=",
+          "text": "0",
+          "value": "null"
+        }
+      ],
+      "valueName": "current"
+    },
+    {
+      "cacheTimeout": null,
+      "colorBackground": true,
+      "colorValue": false,
+      "colors": [
+        "#bf1b00",
+        "#bf1b00",
+        "#629e51"
+      ],
+      "datasource": "${DS_PROMETHEUS}",
+      "format": "none",
+      "gauge": {
+        "maxValue": 100,
+        "minValue": 0,
+        "show": false,
+        "thresholdLabels": false,
+        "thresholdMarkers": true
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 9
+      },
+      "id": 157,
+      "interval": null,
+      "links": [],
+      "mappingType": 1,
+      "mappingTypes": [
+        {
+          "name": "value to text",
+          "value": 1
+        },
+        {
+          "name": "range to text",
+          "value": 2
+        }
+      ],
+      "maxDataPoints": 100,
+      "nullPointMode": "connected",
+      "nullText": null,
+      "postfix": "",
+      "postfixFontSize": "50%",
+      "prefix": "",
+      "prefixFontSize": "50%",
+      "rangeMaps": [
+        {
+          "from": "null",
+          "text": "N/A",
+          "to": "null"
+        }
+      ],
+      "sparkline": {
+        "fillColor": "#705da0",
+        "full": false,
+        "lineColor": "#962d82",
+        "show": false
+      },
+      "tableColumn": "",
+      "targets": [
+        {
+          "expr": "mesos_master_frameworks_tasks_active{framework_name=\"$service_name\",task_state=\"task_running\"}",
+          "format": "time_series",
+          "instant": true,
+          "intervalFactor": 1,
+          "refId": "A"
+        }
+      ],
+      "thresholds": "0,1",
+      "title": "Service Tasks Running",
+      "type": "singlestat",
+      "valueFontSize": "80%",
+      "valueMaps": [
+        {
+          "op": "=",
+          "text": "0",
+          "value": "null"
+        }
+      ],
+      "valueName": "current"
+    },
+    {
+      "cacheTimeout": null,
+      "colorBackground": false,
+      "colorValue": false,
+      "colors": [
+        "#299c46",
+        "rgba(237, 129, 40, 0.89)",
+        "#d44a3a"
+      ],
+      "datasource": "${DS_PROMETHEUS}",
+      "format": "none",
+      "gauge": {
+        "maxValue": 100,
+        "minValue": 0,
+        "show": false,
+        "thresholdLabels": false,
+        "thresholdMarkers": true
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 9
+      },
+      "id": 158,
+      "interval": null,
+      "links": [],
+      "mappingType": 1,
+      "mappingTypes": [
+        {
+          "name": "value to text",
+          "value": 1
+        },
+        {
+          "name": "range to text",
+          "value": 2
+        }
+      ],
+      "maxDataPoints": 100,
+      "nullPointMode": "connected",
+      "nullText": null,
+      "postfix": "",
+      "postfixFontSize": "50%",
+      "prefix": "",
+      "prefixFontSize": "50%",
+      "rangeMaps": [
+        {
+          "from": "null",
+          "text": "N/A",
+          "to": "null"
+        }
+      ],
+      "sparkline": {
+        "fillColor": "#705da0",
+        "full": false,
+        "lineColor": "#962d82",
+        "show": true
+      },
+      "tableColumn": "",
+      "targets": [
+        {
+          "expr": "mesos_master_frameworks_tasks_terminal{framework_name=\"$service_name\",task_state=\"task_failed\"}",
+          "format": "time_series",
+          "instant": true,
+          "intervalFactor": 1,
+          "refId": "A"
+        }
+      ],
+      "thresholds": "",
+      "title": "Service Tasks Failed",
+      "type": "singlestat",
+      "valueFontSize": "80%",
+      "valueMaps": [
+        {
+          "op": "=",
+          "text": "0",
+          "value": "null"
+        }
+      ],
+      "valueName": "current"
+    },
+    {
+      "cacheTimeout": null,
+      "colorBackground": false,
+      "colorPostfix": true,
+      "colorValue": true,
+      "colors": [
+        "#299c46",
+        "#962d82",
+        "#d44a3a"
+      ],
+      "datasource": "${DS_PROMETHEUS}",
+      "format": "Bps",
+      "gauge": {
+        "maxValue": 100,
+        "minValue": 0,
+        "show": false,
+        "thresholdLabels": false,
+        "thresholdMarkers": true
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 9
+      },
+      "id": 169,
+      "interval": null,
+      "links": [],
+      "mappingType": 1,
+      "mappingTypes": [
+        {
+          "name": "value to text",
+          "value": 1
+        },
+        {
+          "name": "range to text",
+          "value": 2
+        }
+      ],
+      "maxDataPoints": 100,
+      "nullPointMode": "connected",
+      "nullText": null,
+      "postfix": "",
+      "postfixFontSize": "50%",
+      "prefix": "",
+      "prefixFontSize": "50%",
+      "rangeMaps": [
+        {
+          "from": "null",
+          "text": "N/A",
+          "to": "null"
+        }
+      ],
+      "sparkline": {
+        "fillColor": "#705da0",
+        "full": false,
+        "lineColor": "#962d82",
+        "show": true
+      },
+      "tableColumn": "",
+      "targets": [
+        {
+          "expr": "avg(kafka_server_FetcherStats_BytesPerSec_5MinuteRate{executor_name=\"kafka\",service_name=\"$service_name\"})",
+          "format": "time_series",
+          "instant": false,
+          "intervalFactor": 1,
+          "refId": "A"
+        }
+      ],
+      "thresholds": "",
+      "title": "Fetcher Bytes / sec",
+      "type": "singlestat",
+      "valueFontSize": "80%",
+      "valueMaps": [
+        {
+          "op": "=",
+          "text": "0",
           "value": "null"
         }
       ],
@@ -153,24 +1486,25 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
-      "decimals": 2,
-      "description": "Average messages per second per Kafka broker",
+      "decimals": 0,
+      "description": "",
       "fill": 1,
       "gridPos": {
-        "h": 8,
-        "w": 9,
-        "x": 4,
-        "y": 1
+        "h": 6,
+        "w": 12,
+        "x": 0,
+        "y": 13
       },
-      "id": 108,
+      "id": 172,
       "legend": {
-        "alignAsTable": true,
+        "alignAsTable": false,
         "avg": false,
         "current": true,
+        "hideEmpty": false,
         "max": false,
         "min": false,
-        "rightSide": true,
-        "show": true,
+        "rightSide": false,
+        "show": false,
         "total": false,
         "values": true
       },
@@ -184,22 +1518,22 @@
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": false,
+      "stack": true,
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(kafka_server_BrokerTopicMetrics_MessagesInPerSec_[[rate]]{service_name=\"$service_name\"})by(topic)",
+          "expr": "sum(kafka_server_BrokerTopicMetrics_BytesInPerSec_all_meanRate{executor_name=\"kafka\",service_name=\"$service_name\"})",
           "format": "time_series",
-          "interval": "",
+          "instant": false,
           "intervalFactor": 1,
-          "legendFormat": "{{topic}}",
+          "legendFormat": "{{$service_name}}",
           "refId": "A"
         }
       ],
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Kafka avg msg/sec ($rate) by Topic for ($service_name)",
+      "title": "Bytes In / sec",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -215,9 +1549,9 @@
       },
       "yaxes": [
         {
-          "decimals": 0,
-          "format": "short",
-          "label": null,
+          "decimals": null,
+          "format": "Bps",
+          "label": "",
           "logBase": 1,
           "max": null,
           "min": null,
@@ -229,7 +1563,7 @@
           "logBase": 1,
           "max": null,
           "min": null,
-          "show": true
+          "show": false
         }
       ],
       "yaxis": {
@@ -243,22 +1577,24 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
+      "decimals": 0,
+      "description": "",
       "fill": 1,
       "gridPos": {
-        "h": 8,
-        "w": 11,
-        "x": 13,
-        "y": 1
+        "h": 6,
+        "w": 12,
+        "x": 12,
+        "y": 13
       },
-      "id": 135,
+      "id": 171,
       "legend": {
-        "alignAsTable": true,
+        "alignAsTable": false,
         "avg": false,
         "current": true,
         "max": false,
         "min": false,
-        "rightSide": true,
-        "show": true,
+        "rightSide": false,
+        "show": false,
         "total": false,
         "values": true
       },
@@ -272,21 +1608,22 @@
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": false,
+      "stack": true,
       "steppedLine": false,
       "targets": [
         {
-          "expr": "(kafka_server_BrokerTopicMetrics_MessagesInPerSec_all_count{service_name=\"$service_name\", task_name=~\"$task_name\"})",
+          "expr": "sum(kafka_server_BrokerTopicMetrics_BytesOutPerSec_all_meanRate{executor_name=\"kafka\",service_name=\"$service_name\"})",
           "format": "time_series",
+          "instant": false,
           "intervalFactor": 1,
-          "legendFormat": "{{task_name}}",
+          "legendFormat": "{{$service_name}}",
           "refId": "A"
         }
       ],
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Messages in per sec for ($task_name) count",
+      "title": "Bytes Out / sec",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -302,8 +1639,9 @@
       },
       "yaxes": [
         {
-          "format": "short",
-          "label": null,
+          "decimals": null,
+          "format": "Bps",
+          "label": "",
           "logBase": 1,
           "max": null,
           "min": null,
@@ -315,7 +1653,7 @@
           "logBase": 1,
           "max": null,
           "min": null,
-          "show": true
+          "show": false
         }
       ],
       "yaxis": {
@@ -329,7 +1667,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 9
+        "y": 19
       },
       "id": 40,
       "panels": [],
@@ -400,21 +1738,120 @@
       "datasource": "${DS_PROMETHEUS}",
       "decimals": 0,
       "description": "The first node to boot in a Kafka cluster automatically becomes the controller, and there can be only one. The controller in a Kafka cluster is responsible for maintaining the list of partition leaders, and coordinating leadership transitions (in the event a partition leader becomes unavailable). If it becomes necessary to replace the controller, a new controller is randomly chosen by ZooKeeper from the pool of brokers. In general, it is not possible for this value to be greater than one, but you should definitely alert on a value of zero that lasts for more than a short period (< 1s) of time.",
-      "fill": 1,
+      "fill": 10,
       "gridPos": {
         "h": 7,
         "w": 8,
         "x": 0,
-        "y": 10
+        "y": 20
       },
       "id": 114,
       "legend": {
         "alignAsTable": true,
         "avg": false,
         "current": true,
+        "hideEmpty": false,
+        "hideZero": false,
         "max": false,
         "min": false,
-        "rightSide": true,
+        "rightSide": false,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 0,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": true,
+      "targets": [
+        {
+          "expr": "sum(kafka_controller_KafkaController_ActiveControllerCount{executor_name=\"kafka\",service_name=\"$service_name\"})by(task_name, service_name)",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "{{task_name}}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [
+        {
+          "colorMode": "critical",
+          "fill": true,
+          "line": true,
+          "op": "gt",
+          "value": 1,
+          "yaxis": "left"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "ActiveController for ($service_name)",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": "Active",
+          "logBase": 1,
+          "max": "1",
+          "min": "0",
+          "show": false
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "${DS_PROMETHEUS}",
+      "decimals": 0,
+      "description": "The number of in-sync replicas (ISRs) for a particular partition should remain fairly static, the only exceptions are when you are expanding your broker cluster or removing partitions. In order to maintain high availability, a healthy Kafka cluster requires a minimum number of ISRs for failover. A replica could be removed from the ISR pool for a couple of reasons: it is too far behind the leader’s offset (user-configurable by setting the replica.lag.max.messages configuration parameter), or it has not contacted the leader for some time (configurable with the replica.socket.timeout.ms parameter). No matter the reason, an increase in IsrShrinksPerSec without a corresponding increase in IsrExpandsPerSec shortly thereafter is cause for concern and requires user intervention.The Kafka documentation provides a wealth of information on the user-configurable parameters for brokers.",
+      "fill": 1,
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 20
+      },
+      "id": 118,
+      "legend": {
+        "alignAsTable": true,
+        "avg": false,
+        "current": true,
+        "max": false,
+        "min": false,
+        "rightSide": false,
         "show": true,
         "total": false,
         "values": true
@@ -433,25 +1870,105 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(kafka_controller_KafkaController_ActiveControllerCount{service_name=\"$service_name\",task_name=~\"$task_name\"})by(task_name, service_name)",
+          "expr": "kafka_server_ReplicaManager_IsrExpandsPerSec_5MinuteRate{executor_name=\"kafka\",service_name=\"$service_name\",task_name=~\"$broker\"}",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{task_name}}",
           "refId": "A"
         }
       ],
-      "thresholds": [
-        {
-          "colorMode": "critical",
-          "fill": true,
-          "line": true,
-          "op": "gt",
-          "value": 1
-        }
-      ],
+      "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "ActiveControllerCount for ($service_name) broker ($task_name)",
+      "title": "ISR Expansion Rate (Broker) for ($service_name) broker ($broker)",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "${DS_PROMETHEUS}",
+      "decimals": 0,
+      "description": "This value should be 0",
+      "fill": 1,
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 20
+      },
+      "id": 116,
+      "legend": {
+        "alignAsTable": true,
+        "avg": false,
+        "current": true,
+        "max": false,
+        "min": false,
+        "rightSide": false,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "sum(kafka_controller_KafkaController_OfflinePartitionsCount{executor_name=\"kafka\",service_name=\"$service_name\",task_name=~\"$broker\"})by(task_name)",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "{{task_name}}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Offline Partitions for ($service_name) broker ($broker)",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -481,6 +1998,811 @@
           "max": null,
           "min": null,
           "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "${DS_PROMETHEUS}",
+      "decimals": 0,
+      "description": "The first node to boot in a Kafka cluster automatically becomes the controller, and there can be only one. The controller in a Kafka cluster is responsible for maintaining the list of partition leaders, and coordinating leadership transitions (in the event a partition leader becomes unavailable). If it becomes necessary to replace the controller, a new controller is randomly chosen by ZooKeeper from the pool of brokers. In general, it is not possible for this value to be greater than one, but you should definitely alert on a value of zero that lasts for more than a short period (< 1s) of time.",
+      "fill": 1,
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 27
+      },
+      "id": 117,
+      "legend": {
+        "alignAsTable": true,
+        "avg": false,
+        "current": true,
+        "max": false,
+        "min": false,
+        "rightSide": false,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "(kafka_controller_KafkaController_GlobalPartitionCount{executor_name=\"kafka\",service_name=\"$service_name\",task_name=~\"$broker\"})",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "{{task_name}}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Total Partition Count (Broker) for ($service_name) broker ($broker)",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "${DS_PROMETHEUS}",
+      "decimals": 0,
+      "description": "Number of requests waiting in the producer purgatory. This should be non-zero when acks=all is used on the producer.",
+      "fill": 1,
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 27
+      },
+      "id": 120,
+      "legend": {
+        "alignAsTable": true,
+        "avg": false,
+        "current": true,
+        "max": false,
+        "min": false,
+        "rightSide": false,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "sum(kafka_server_DelayedOperationPurgatory_NumDelayedOperations{executor_name=\"kafka\",service_name=\"$service_name\",task_name=~\"$broker\"})by(task_name)",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "{{task_name}}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Producer Purgatory Requests Waiting for ($service_name) broker ($broker)",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "${DS_PROMETHEUS}",
+      "decimals": 0,
+      "description": "The number of in-sync replicas (ISRs) for a particular partition should remain fairly static, the only exceptions are when you are expanding your broker cluster or removing partitions. In order to maintain high availability, a healthy Kafka cluster requires a minimum number of ISRs for failover. A replica could be removed from the ISR pool for a couple of reasons: it is too far behind the leader’s offset (user-configurable by setting the replica.lag.max.messages configuration parameter), or it has not contacted the leader for some time (configurable with the replica.socket.timeout.ms parameter). No matter the reason, an increase in IsrShrinksPerSec without a corresponding increase in IsrExpandsPerSec shortly thereafter is cause for concern and requires user intervention.The Kafka documentation provides a wealth of information on the user-configurable parameters for brokers.",
+      "fill": 1,
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 27
+      },
+      "id": 119,
+      "legend": {
+        "alignAsTable": true,
+        "avg": false,
+        "current": true,
+        "max": false,
+        "min": false,
+        "rightSide": false,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "(kafka_server_ReplicaManager_IsrShrinksPerSec_5MinuteRate{service_name=\"$service_name\",task_name=~\"$broker\"})",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "{{task_name}}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "ISR Shrink Rate (Broker) for ($service_name) broker ($broker)",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "${DS_PROMETHEUS}",
+      "description": "Number of partitions on this broker. This should be mostly even across all brokers.",
+      "fill": 1,
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 34
+      },
+      "id": 60,
+      "legend": {
+        "alignAsTable": true,
+        "avg": false,
+        "current": true,
+        "max": false,
+        "min": false,
+        "rightSide": false,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": true,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "(kafka_server_ReplicaManager_PartitionCount{executor_name=\"kafka\",service_name=\"$service_name\",task_name=~\"$broker\"})",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "{{task_name}}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Partition Count Across Brokers for ($service_name) broker ($broker)",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "${DS_PROMETHEUS}",
+      "decimals": 0,
+      "description": "",
+      "fill": 1,
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 34
+      },
+      "id": 121,
+      "legend": {
+        "alignAsTable": true,
+        "avg": false,
+        "current": true,
+        "max": false,
+        "min": false,
+        "rightSide": false,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "sum(kafka_server_DelayedOperationPurgatory_PurgatorySize{service_name=\"$service_name\",task_name=~\"$broker\"})by(task_name)",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "{{task_name}}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Delayed Fetch Operation Purgatory Size for ($service_name) broker ($broker)",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "decbytes",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "${DS_PROMETHEUS}",
+      "description": "Generally, disk throughput tends to be the main bottleneck in Kafka performance. However, that’s not to say that the network is never a bottleneck. Depending on your use case, hardware, and configuration, the network can quickly become the slowest segment of a message’s trip, especially if you are sending messages across data centers. Tracking network throughput on your brokers gives you more information as to where potential bottlenecks may lie, and can inform decisions like whether or not you should enable end-to-end compression of your messages.",
+      "fill": 1,
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 41
+      },
+      "id": 20,
+      "legend": {
+        "alignAsTable": true,
+        "avg": false,
+        "current": true,
+        "max": false,
+        "min": false,
+        "rightSide": false,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": true,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "(kafka_server_BrokerTopicMetrics_BytesInPerSec_all_5MinuteRate{executor_name=\"kafka\",service_name=\"$service_name\",task_name=~\"$broker\"})",
+          "format": "time_series",
+          "interval": "15s",
+          "intervalFactor": 1,
+          "legendFormat": "{{task_name}}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "All Bytes In per (Broker) for ($service_name) broker ($broker)",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "Bps",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": "0",
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "${DS_PROMETHEUS}",
+      "description": "Generally, disk throughput tends to be the main bottleneck in Kafka performance. However, that’s not to say that the network is never a bottleneck. Depending on your use case, hardware, and configuration, the network can quickly become the slowest segment of a message’s trip, especially if you are sending messages across data centers. Tracking network throughput on your brokers gives you more information as to where potential bottlenecks may lie, and can inform decisions like whether or not you should enable end-to-end compression of your messages.",
+      "fill": 1,
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 41
+      },
+      "id": 22,
+      "legend": {
+        "alignAsTable": true,
+        "avg": false,
+        "current": true,
+        "max": false,
+        "min": false,
+        "rightSide": false,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "(kafka_server_BrokerTopicMetrics_BytesOutPerSec_all_5MinuteRate{executor_name=\"kafka\",service_name=\"$service_name\",task_name=~\"$broker\"})",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "{{task_name}}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "All Bytes Out per (Broker) for ($service_name) broker ($broker)",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "Bps",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "${DS_PROMETHEUS}",
+      "fill": 1,
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 41
+      },
+      "id": 135,
+      "legend": {
+        "alignAsTable": true,
+        "avg": false,
+        "current": true,
+        "max": false,
+        "min": false,
+        "rightSide": false,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": true,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "(kafka_server_BrokerTopicMetrics_MessagesInPerSec_all_count{service_name=\"$service_name\", task_name=~\"$broker\"})",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "{{task_name}}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Messages in per sec for ($broker) count",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 48
+      },
+      "id": 163,
+      "panels": [],
+      "title": "Topics Overview",
+      "type": "row"
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "${DS_PROMETHEUS}",
+      "decimals": null,
+      "description": "Average messages per second per Kafka broker",
+      "fill": 1,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 49
+      },
+      "id": 108,
+      "legend": {
+        "alignAsTable": true,
+        "avg": false,
+        "current": true,
+        "hideEmpty": false,
+        "hideZero": false,
+        "max": false,
+        "min": false,
+        "rightSide": false,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "sum(kafka_server_BrokerTopicMetrics_MessagesInPerSec_5MinuteRate{executor_name=\"kafka\",service_name=\"$service_name\"})by(topic)",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "{{topic}}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Kafka avg msg/sec by Topic for ($service_name)",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": null,
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
         }
       ],
       "yaxis": {
@@ -531,19 +2853,20 @@
       "description": "In a healthy cluster, the number of in sync replicas (ISRs) should be exactly equal to the total number of replicas. If partition replicas fall too far behind their leaders, the follower partition is removed from the ISR pool, and you should see a corresponding increase in IsrShrinksPerSec. Since Kafka’s high-availability guarantees cannot be met without replication, investigation is certainly warranted should this metric value exceed zero for extended time periods.\n\nIf this metric has a value greater than 1 it means that data is not being replicated to enough number of brokers thereby increasing the probability of data loss.",
       "fill": 1,
       "gridPos": {
-        "h": 7,
-        "w": 8,
-        "x": 8,
-        "y": 10
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 49
       },
       "id": 115,
       "legend": {
         "alignAsTable": true,
         "avg": false,
         "current": true,
+        "hideZero": false,
         "max": false,
         "min": false,
-        "rightSide": true,
+        "rightSide": false,
         "show": true,
         "total": false,
         "values": true
@@ -562,7 +2885,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "max(kafka_cluster_Partition_UnderReplicated{service_name=\"$service_name\",task_name=~\"$task_name\"})by(topic, task_name)",
+          "expr": "max(kafka_cluster_Partition_UnderReplicated{executor_name=\"kafka\",service_name=\"$service_name\",task_name=~\"$broker\"})by(topic, task_name)",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{task_name}} / {{topic}}",
@@ -580,710 +2903,7 @@
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Under Replicated Partitions for ($service_name) broker ($task_name)",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
-      "decimals": 0,
-      "description": "This value should be 0",
-      "fill": 1,
-      "gridPos": {
-        "h": 7,
-        "w": 8,
-        "x": 16,
-        "y": 10
-      },
-      "id": 116,
-      "legend": {
-        "alignAsTable": true,
-        "avg": false,
-        "current": true,
-        "max": false,
-        "min": false,
-        "rightSide": true,
-        "show": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "percentage": false,
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "sum(kafka_controller_KafkaController_OfflinePartitionsCount{service_name=\"$service_name\",task_name=~\"$task_name\"})by(task_name)",
-          "format": "time_series",
-          "intervalFactor": 1,
-          "legendFormat": "{{task_name}}",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Offline Partitions for ($service_name) broker ($task_name)",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
-      "decimals": 0,
-      "description": "The first node to boot in a Kafka cluster automatically becomes the controller, and there can be only one. The controller in a Kafka cluster is responsible for maintaining the list of partition leaders, and coordinating leadership transitions (in the event a partition leader becomes unavailable). If it becomes necessary to replace the controller, a new controller is randomly chosen by ZooKeeper from the pool of brokers. In general, it is not possible for this value to be greater than one, but you should definitely alert on a value of zero that lasts for more than a short period (< 1s) of time.",
-      "fill": 1,
-      "gridPos": {
-        "h": 7,
-        "w": 8,
-        "x": 0,
-        "y": 17
-      },
-      "id": 117,
-      "legend": {
-        "alignAsTable": true,
-        "avg": false,
-        "current": true,
-        "max": false,
-        "min": false,
-        "rightSide": true,
-        "show": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "percentage": false,
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "(kafka_controller_KafkaController_GlobalPartitionCount{service_name=\"$service_name\",task_name=~\"$task_name\"})",
-          "format": "time_series",
-          "intervalFactor": 1,
-          "legendFormat": "{{task_name}}",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Total Partition Count (Broker) for ($service_name) broker ($task_name)",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
-      "decimals": 0,
-      "description": "The number of in-sync replicas (ISRs) for a particular partition should remain fairly static, the only exceptions are when you are expanding your broker cluster or removing partitions. In order to maintain high availability, a healthy Kafka cluster requires a minimum number of ISRs for failover. A replica could be removed from the ISR pool for a couple of reasons: it is too far behind the leader’s offset (user-configurable by setting the replica.lag.max.messages configuration parameter), or it has not contacted the leader for some time (configurable with the replica.socket.timeout.ms parameter). No matter the reason, an increase in IsrShrinksPerSec without a corresponding increase in IsrExpandsPerSec shortly thereafter is cause for concern and requires user intervention.The Kafka documentation provides a wealth of information on the user-configurable parameters for brokers.",
-      "fill": 1,
-      "gridPos": {
-        "h": 7,
-        "w": 8,
-        "x": 8,
-        "y": 17
-      },
-      "id": 118,
-      "legend": {
-        "alignAsTable": true,
-        "avg": false,
-        "current": true,
-        "max": false,
-        "min": false,
-        "rightSide": true,
-        "show": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "percentage": false,
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "(kafka_server_ReplicaManager_IsrExpandsPerSec_5MinuteRate{service_name=\"$service_name\",task_name=~\"$task_name\"})",
-          "format": "time_series",
-          "intervalFactor": 1,
-          "legendFormat": "{{task_name}}",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "ISR Expansion Rate (Broker) for ($service_name) broker ($task_name)",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
-      "decimals": 0,
-      "description": "The number of in-sync replicas (ISRs) for a particular partition should remain fairly static, the only exceptions are when you are expanding your broker cluster or removing partitions. In order to maintain high availability, a healthy Kafka cluster requires a minimum number of ISRs for failover. A replica could be removed from the ISR pool for a couple of reasons: it is too far behind the leader’s offset (user-configurable by setting the replica.lag.max.messages configuration parameter), or it has not contacted the leader for some time (configurable with the replica.socket.timeout.ms parameter). No matter the reason, an increase in IsrShrinksPerSec without a corresponding increase in IsrExpandsPerSec shortly thereafter is cause for concern and requires user intervention.The Kafka documentation provides a wealth of information on the user-configurable parameters for brokers.",
-      "fill": 1,
-      "gridPos": {
-        "h": 7,
-        "w": 8,
-        "x": 16,
-        "y": 17
-      },
-      "id": 119,
-      "legend": {
-        "alignAsTable": true,
-        "avg": false,
-        "current": true,
-        "max": false,
-        "min": false,
-        "rightSide": true,
-        "show": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "percentage": false,
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "(kafka_server_ReplicaManager_IsrShrinksPerSec_5MinuteRate{service_name=\"$service_name\",task_name=~\"$task_name\"})",
-          "format": "time_series",
-          "intervalFactor": 1,
-          "legendFormat": "{{task_name}}",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "ISR Shrink Rate (Broker) for ($service_name) broker ($task_name)",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
-      "decimals": 0,
-      "description": "Number of requests waiting in the producer purgatory. This should be non-zero when acks=all is used on the producer.",
-      "fill": 1,
-      "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 0,
-        "y": 24
-      },
-      "id": 120,
-      "legend": {
-        "alignAsTable": true,
-        "avg": false,
-        "current": true,
-        "max": false,
-        "min": false,
-        "rightSide": true,
-        "show": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "percentage": false,
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "sum(kafka_server_DelayedOperationPurgatory_NumDelayedOperations{service_name=\"$service_name\",task_name=~\"$task_name\"})by(task_name)",
-          "format": "time_series",
-          "intervalFactor": 1,
-          "legendFormat": "{{task_name}}",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Producer Purgatory Requests Waiting for ($service_name) broker ($task_name)",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
-      "decimals": 0,
-      "description": "",
-      "fill": 1,
-      "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 12,
-        "y": 24
-      },
-      "id": 121,
-      "legend": {
-        "alignAsTable": true,
-        "avg": false,
-        "current": true,
-        "max": false,
-        "min": false,
-        "rightSide": true,
-        "show": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "percentage": false,
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "sum(kafka_server_DelayedOperationPurgatory_PurgatorySize{service_name=\"$service_name\",task_name=~\"$task_name\"})by(task_name)",
-          "format": "time_series",
-          "intervalFactor": 1,
-          "legendFormat": "{{task_name}}",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Delayed Fetch Operation Purgatory Size for ($service_name) broker ($task_name)",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "decbytes",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
-      "description": "Number of partitions on this broker. This should be mostly even across all brokers.",
-      "fill": 1,
-      "gridPos": {
-        "h": 9,
-        "w": 12,
-        "x": 0,
-        "y": 31
-      },
-      "id": 60,
-      "legend": {
-        "alignAsTable": true,
-        "avg": false,
-        "current": true,
-        "max": false,
-        "min": false,
-        "rightSide": true,
-        "show": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "percentage": false,
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "(kafka_server_ReplicaManager_PartitionCount{service_name=\"$service_name\",task_name=~\"$task_name\"})",
-          "format": "time_series",
-          "intervalFactor": 1,
-          "legendFormat": "{{task_name}}",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Partition Count Across Brokers for ($service_name) broker ($task_name)",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
-      "decimals": 0,
-      "description": "States:\n\n0 = NotRunning\n\n1 = Starting\n\n2 = RecoveringFromUncleanShutdown\n\n3 = RunningAsBroker\n\n6 = PendingControlledShutdown\n\n7 = BrokerShuttingDown",
-      "fill": 1,
-      "gridPos": {
-        "h": 9,
-        "w": 12,
-        "x": 12,
-        "y": 31
-      },
-      "id": 133,
-      "legend": {
-        "alignAsTable": true,
-        "avg": false,
-        "current": true,
-        "max": false,
-        "min": false,
-        "rightSide": true,
-        "show": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "percentage": false,
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "(kafka_server_KafkaServer_BrokerState{service_name=\"$service_name\",task_name=~\"$task_name\"})",
-          "format": "time_series",
-          "intervalFactor": 1,
-          "legendFormat": "{{task_name}}",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Broker State for ($service_name) broker ($task_name)",
+      "title": "Under Replicated Partitions for ($service_name) broker ($broker)",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -1330,10 +2950,10 @@
       "description": "Average messages per second per Kafka broker",
       "fill": 1,
       "gridPos": {
-        "h": 9,
-        "w": 9,
+        "h": 8,
+        "w": 12,
         "x": 0,
-        "y": 40
+        "y": 57
       },
       "hideTimeOverride": false,
       "id": 2,
@@ -1343,7 +2963,7 @@
         "current": true,
         "max": false,
         "min": false,
-        "rightSide": true,
+        "rightSide": false,
         "show": true,
         "total": false,
         "values": true
@@ -1362,7 +2982,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "(kafka_server_BrokerTopicMetrics_MessagesInPerSec_[[rate]]{service_name=\"$service_name\",task_name=~\"$task_name\"})",
+          "expr": "(kafka_server_BrokerTopicMetrics_MessagesInPerSec_5MinuteRate{executor_name=\"kafka\",service_name=\"$service_name\",task_name=~\"$broker\"})",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -1373,7 +2993,7 @@
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Avg msg/sec ($rate) per (Broker / Topic) for ($service_name) broker ($task_name)",
+      "title": "Avg msg/sec per (Broker / Topic) for ($service_name) broker ($broker)",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -1389,7 +3009,7 @@
       },
       "yaxes": [
         {
-          "decimals": 0,
+          "decimals": null,
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -1412,179 +3032,78 @@
       }
     },
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
+      "columns": [],
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Generally, disk throughput tends to be the main bottleneck in Kafka performance. However, that’s not to say that the network is never a bottleneck. Depending on your use case, hardware, and configuration, the network can quickly become the slowest segment of a message’s trip, especially if you are sending messages across data centers. Tracking network throughput on your brokers gives you more information as to where potential bottlenecks may lie, and can inform decisions like whether or not you should enable end-to-end compression of your messages.",
-      "fill": 1,
+      "fontSize": "100%",
       "gridPos": {
-        "h": 9,
-        "w": 8,
-        "x": 9,
-        "y": 40
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 57
       },
-      "id": 20,
-      "legend": {
-        "alignAsTable": true,
-        "avg": false,
-        "current": true,
-        "max": false,
-        "min": false,
-        "rightSide": true,
-        "show": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
+      "id": 153,
       "links": [],
-      "nullPointMode": "null",
-      "percentage": false,
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
+      "pageSize": null,
+      "scroll": true,
+      "showHeader": true,
+      "sort": {
+        "col": 1,
+        "desc": false
+      },
+      "styles": [
+        {
+          "alias": "Time",
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "pattern": "Time",
+          "type": "date"
+        },
+        {
+          "alias": "",
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "decimals": 2,
+          "pattern": "/^(__name__|container_id|dcos_cluster_id|dcos_cluster_name|executor_name|fault_domain_region|fault_domain_zone|host|instance|job|metric_type|service_name|Time)$/",
+          "thresholds": [],
+          "type": "hidden",
+          "unit": "short"
+        },
+        {
+          "alias": "Count",
+          "colorMode": "cell",
+          "colors": [
+            "#7eb26d",
+            "#7eb26d",
+            "#bf1b00"
+          ],
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "decimals": 2,
+          "mappingType": 1,
+          "pattern": "Value",
+          "thresholds": [
+            "0",
+            "1"
+          ],
+          "type": "number",
+          "unit": "short"
+        }
+      ],
       "targets": [
         {
-          "expr": "(kafka_server_BrokerTopicMetrics_BytesInPerSec_all_[[rate]]{service_name=\"$service_name\",task_name=~\"$task_name\"})",
-          "format": "time_series",
-          "interval": "15s",
+          "expr": "sum by(topic) (kafka_cluster_Partition_UnderReplicated{executor_name=\"kafka\",service_name=\"$service_name\"})",
+          "format": "table",
+          "instant": true,
           "intervalFactor": 1,
-          "legendFormat": "{{task_name}}",
+          "legendFormat": "",
           "refId": "A"
         }
       ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "All Bytes In ($rate) per (Broker) for ($service_name) broker ($task_name)",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "Bps",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": "0",
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
-      "description": "Generally, disk throughput tends to be the main bottleneck in Kafka performance. However, that’s not to say that the network is never a bottleneck. Depending on your use case, hardware, and configuration, the network can quickly become the slowest segment of a message’s trip, especially if you are sending messages across data centers. Tracking network throughput on your brokers gives you more information as to where potential bottlenecks may lie, and can inform decisions like whether or not you should enable end-to-end compression of your messages.",
-      "fill": 1,
-      "gridPos": {
-        "h": 9,
-        "w": 7,
-        "x": 17,
-        "y": 40
-      },
-      "id": 22,
-      "legend": {
-        "alignAsTable": true,
-        "avg": false,
-        "current": true,
-        "max": false,
-        "min": false,
-        "rightSide": true,
-        "show": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "percentage": false,
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "(kafka_server_BrokerTopicMetrics_BytesOutPerSec_all_[[rate]]{service_name=\"$service_name\",task_name=~\"$task_name\"})",
-          "format": "time_series",
-          "intervalFactor": 1,
-          "legendFormat": "{{task_name}}",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "All Bytes Out ($rate) per (Broker) for ($service_name) broker ($task_name)",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "Bps",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": false
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
+      "title": "Under Replicated Partitions",
+      "transform": "table",
+      "type": "table"
     },
     {
       "collapsed": false,
@@ -1592,7 +3111,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 49
+        "y": 65
       },
       "id": 93,
       "panels": [],
@@ -1611,7 +3130,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 50
+        "y": 66
       },
       "id": 50,
       "legend": {
@@ -1620,7 +3139,7 @@
         "current": true,
         "max": false,
         "min": false,
-        "rightSide": true,
+        "rightSide": false,
         "show": true,
         "sort": "current",
         "sortDesc": true,
@@ -1637,11 +3156,11 @@
       "renderer": "flot",
       "seriesOverrides": [],
       "spaceLength": 10,
-      "stack": false,
+      "stack": true,
       "steppedLine": false,
       "targets": [
         {
-          "expr": "(kafka_server_ReplicaManager_LeaderCount{service_name=\"$service_name\",task_name=~\"$task_name\"})",
+          "expr": "(kafka_server_ReplicaManager_LeaderCount{executor_name=\"kafka\",service_name=\"$service_name\",task_name=~\"$broker\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{task_name}}",
@@ -1651,7 +3170,7 @@
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Number of Leaders per (Broker) for ($service_name) broker ($task_name)",
+      "title": "Number of Leaders per (Broker) for ($service_name) broker ($broker)",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -1701,7 +3220,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 50
+        "y": 66
       },
       "id": 123,
       "legend": {
@@ -1710,7 +3229,7 @@
         "current": true,
         "max": false,
         "min": false,
-        "rightSide": true,
+        "rightSide": false,
         "show": true,
         "total": false,
         "values": true
@@ -1729,7 +3248,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "max(kafka_controller_ControllerStats_UncleanLeaderElectionsPerSec_[[rate]]{service_name=\"$service_name\",task_name=~\"$task_name\"})by(task_name)",
+          "expr": "max(kafka_controller_ControllerStats_UncleanLeaderElectionsPerSec_5MinuteRate{executor_name=\"kafka\",service_name=\"$service_name\",task_name=~\"$broker\"})by(task_name)",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{task_name}}",
@@ -1739,7 +3258,7 @@
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Unclean Leader Elections ($rate) for ($service_name) broker ($task_name)",
+      "title": "Unclean Leader Elections for ($service_name) broker ($broker)",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -1789,7 +3308,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 57
+        "y": 73
       },
       "id": 122,
       "legend": {
@@ -1798,7 +3317,7 @@
         "current": false,
         "max": true,
         "min": false,
-        "rightSide": true,
+        "rightSide": false,
         "show": true,
         "total": false,
         "values": true
@@ -1817,7 +3336,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "max(kafka_controller_ControllerStats_LeaderElectionRateAndTimeMs_max{service_name=\"$service_name\",task_name=~\"$task_name\"})by(task_name)",
+          "expr": "max(kafka_controller_ControllerStats_LeaderElectionRateAndTimeMs_max{executor_name=\"kafka\",service_name=\"$service_name\",task_name=~\"$broker\"})by(task_name)",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{task_name}}",
@@ -1827,7 +3346,7 @@
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Max Recorded Leader Election Latency (ms) for ($service_name) broker ($task_name)",
+      "title": "Max Recorded Leader Election Latency (ms) for ($service_name) broker ($broker)",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -1877,7 +3396,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 57
+        "y": 73
       },
       "id": 124,
       "legend": {
@@ -1886,7 +3405,7 @@
         "current": false,
         "max": true,
         "min": false,
-        "rightSide": true,
+        "rightSide": false,
         "show": true,
         "total": false,
         "values": true
@@ -1905,7 +3424,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "max(kafka_server_ReplicaFetcherManager_MaxLag{service_name=\"$service_name\",task_name=~\"$task_name\"})by(task_name)",
+          "expr": "max(kafka_server_ReplicaFetcherManager_MaxLag{executor_name=\"kafka\",service_name=\"$service_name\",task_name=~\"$broker\"})by(task_name)",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{task_name}}",
@@ -1915,7 +3434,7 @@
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Max Lag - Follower/Leader Replicas for ($service_name) broker ($task_name)",
+      "title": "Max Lag - Follower/Leader Replicas for ($service_name) broker ($broker)",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -1965,7 +3484,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 64
+        "y": 80
       },
       "id": 125,
       "legend": {
@@ -1974,7 +3493,7 @@
         "current": true,
         "max": false,
         "min": false,
-        "rightSide": true,
+        "rightSide": false,
         "show": true,
         "total": false,
         "values": true
@@ -1993,7 +3512,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "avg(kafka_network_RequestMetrics_RemoteTimeMs_mean{service_name=\"$service_name\",task_name=~\"$task_name\"})by(task_name)",
+          "expr": "avg(kafka_network_RequestMetrics_RemoteTimeMs_mean{executor_name=\"kafka\",service_name=\"$service_name\",task_name=~\"$broker\"})by(task_name)",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{task_name}}",
@@ -2003,7 +3522,7 @@
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Avg Time Request Waits for Follower (ms) for ($service_name) broker ($task_name)",
+      "title": "Avg Time Request Waits for Follower (ms) for ($service_name) broker ($broker)",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -2046,7 +3565,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 71
+        "y": 87
       },
       "id": 91,
       "panels": [],
@@ -2065,7 +3584,7 @@
         "h": 9,
         "w": 8,
         "x": 0,
-        "y": 72
+        "y": 88
       },
       "id": 126,
       "legend": {
@@ -2074,7 +3593,7 @@
         "current": true,
         "max": false,
         "min": false,
-        "rightSide": true,
+        "rightSide": false,
         "show": true,
         "total": false,
         "values": true
@@ -2093,7 +3612,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "(kafka_network_RequestChannel_RequestQueueSize{service_name=\"$service_name\",task_name=~\"$task_name\"})",
+          "expr": "kafka_network_RequestChannel_RequestQueueSize{executor_name=\"kafka\",service_name=\"$service_name\",task_name=~\"$broker\"}",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -2104,7 +3623,7 @@
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Current Request Queue Size (Broker) for ($service_name) broker ($task_name)",
+      "title": "Current Request Queue Size (Broker) for ($service_name) broker ($broker)",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -2120,7 +3639,7 @@
       },
       "yaxes": [
         {
-          "decimals": 0,
+          "decimals": null,
           "format": "short",
           "label": null,
           "logBase": 1,
@@ -2154,7 +3673,7 @@
         "h": 9,
         "w": 8,
         "x": 8,
-        "y": 72
+        "y": 88
       },
       "id": 127,
       "legend": {
@@ -2163,7 +3682,7 @@
         "current": false,
         "max": false,
         "min": false,
-        "rightSide": true,
+        "rightSide": false,
         "show": true,
         "total": false,
         "values": true
@@ -2182,7 +3701,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "avg(kafka_network_RequestMetrics_TotalTimeMs_mean{service_name=\"$service_name\",task_name=~\"$task_name\"})by(task_name)",
+          "expr": "avg(kafka_network_RequestMetrics_TotalTimeMs_mean{executor_name=\"kafka\",service_name=\"$service_name\",task_name=~\"$broker\"})by(task_name)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -2193,7 +3712,7 @@
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Avg Total Time Request Serve (ms) for ($service_name) broker ($task_name)",
+      "title": "Avg Total Time Request Serve (ms) for ($service_name) broker ($broker)",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -2209,7 +3728,7 @@
       },
       "yaxes": [
         {
-          "decimals": 0,
+          "decimals": null,
           "format": "ms",
           "label": null,
           "logBase": 1,
@@ -2243,7 +3762,7 @@
         "h": 9,
         "w": 8,
         "x": 16,
-        "y": 72
+        "y": 88
       },
       "id": 128,
       "legend": {
@@ -2252,7 +3771,7 @@
         "current": true,
         "max": false,
         "min": false,
-        "rightSide": true,
+        "rightSide": false,
         "show": true,
         "total": false,
         "values": true
@@ -2271,7 +3790,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "avg(kafka_network_RequestMetrics_ResponseSendTimeMs_mean{service_name=\"$service_name\",task_name=~\"$task_name\"})by(task_name)",
+          "expr": "avg(kafka_network_RequestMetrics_ResponseSendTimeMs_mean{executor_name=\"kafka\",service_name=\"$service_name\",task_name=~\"$broker\"})by(task_name)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -2282,7 +3801,7 @@
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Avg Request Response Time (ms) for ($service_name) broker ($task_name)",
+      "title": "Avg Request Response Time (ms) for ($service_name) broker ($broker)",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -2298,7 +3817,7 @@
       },
       "yaxes": [
         {
-          "decimals": 0,
+          "decimals": null,
           "format": "ms",
           "label": null,
           "logBase": 1,
@@ -2332,7 +3851,7 @@
         "h": 9,
         "w": 8,
         "x": 0,
-        "y": 81
+        "y": 97
       },
       "id": 129,
       "legend": {
@@ -2341,7 +3860,7 @@
         "current": true,
         "max": false,
         "min": false,
-        "rightSide": true,
+        "rightSide": false,
         "show": true,
         "total": false,
         "values": true
@@ -2360,7 +3879,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "avg(kafka_network_RequestMetrics_RequestQueueTimeMs_mean{service_name=\"$service_name\",task_name=~\"$task_name\"})by(task_name)",
+          "expr": "avg(kafka_network_RequestMetrics_RequestQueueTimeMs_mean{executor_name=\"kafka\",service_name=\"$service_name\",task_name=~\"$broker\"})by(task_name)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -2371,7 +3890,7 @@
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Avg Request Waiting Time in Request Queue (ms) for ($service_name) broker ($task_name)",
+      "title": "Avg Request Waiting Time in Request Queue (ms) for ($service_name) broker ($broker)",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -2387,7 +3906,7 @@
       },
       "yaxes": [
         {
-          "decimals": 0,
+          "decimals": null,
           "format": "ms",
           "label": null,
           "logBase": 1,
@@ -2421,7 +3940,7 @@
         "h": 9,
         "w": 8,
         "x": 8,
-        "y": 81
+        "y": 97
       },
       "id": 130,
       "legend": {
@@ -2430,7 +3949,7 @@
         "current": true,
         "max": false,
         "min": false,
-        "rightSide": true,
+        "rightSide": false,
         "show": true,
         "total": false,
         "values": true
@@ -2449,7 +3968,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "avg(kafka_network_RequestMetrics_ResponseQueueTimeMs_mean{service_name=\"$service_name\",task_name=~\"$task_name\"})by(task_name)",
+          "expr": "avg(kafka_network_RequestMetrics_ResponseQueueTimeMs_mean{executor_name=\"kafka\",service_name=\"$service_name\",task_name=~\"$broker\"})by(task_name)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -2460,7 +3979,7 @@
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Avg Request Waiting Time in Response Queue (ms) for ($service_name) broker ($task_name)",
+      "title": "Avg Request Waiting Time in Response Queue (ms) for ($service_name) broker ($broker)",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -2476,7 +3995,7 @@
       },
       "yaxes": [
         {
-          "decimals": 0,
+          "decimals": null,
           "format": "ms",
           "label": null,
           "logBase": 1,
@@ -2510,7 +4029,7 @@
         "h": 9,
         "w": 8,
         "x": 16,
-        "y": 81
+        "y": 97
       },
       "id": 131,
       "legend": {
@@ -2519,7 +4038,7 @@
         "current": true,
         "max": false,
         "min": false,
-        "rightSide": true,
+        "rightSide": false,
         "show": true,
         "total": false,
         "values": true
@@ -2538,7 +4057,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "avg(kafka_network_RequestMetrics_LocalTimeMs_mean{service_name=\"$service_name\",task_name=~\"$task_name\"})by(task_name)",
+          "expr": "avg(kafka_network_RequestMetrics_LocalTimeMs_mean{executor_name=\"kafka\",service_name=\"$service_name\",task_name=~\"$broker\"})by(task_name)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -2549,7 +4068,7 @@
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Avg Request Processing Time (ms) at Leader for ($service_name) broker ($task_name)",
+      "title": "Avg Request Processing Time (ms) at Leader for ($service_name) broker ($broker)",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -2565,7 +4084,7 @@
       },
       "yaxes": [
         {
-          "decimals": 0,
+          "decimals": null,
           "format": "ms",
           "label": null,
           "logBase": 1,
@@ -2598,7 +4117,7 @@
         "h": 9,
         "w": 8,
         "x": 0,
-        "y": 90
+        "y": 106
       },
       "id": 111,
       "legend": {
@@ -2607,7 +4126,7 @@
         "current": true,
         "max": false,
         "min": false,
-        "rightSide": true,
+        "rightSide": false,
         "show": true,
         "total": false,
         "values": true
@@ -2626,23 +4145,17 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "(kafka_server_BrokerTopicMetrics_TotalProduceRequestsPerSec_[[rate]]{service_name=\"$service_name\",task_name=~\"$task_name\"})",
+          "expr": "(kafka_server_BrokerTopicMetrics_TotalProduceRequestsPerSec_5MinuteRate{executor_name=\"kafka\",service_name=\"$service_name\",task_name=~\"$broker\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{task_name}} / {{topic}}",
           "refId": "A"
-        },
-        {
-          "expr": "",
-          "format": "time_series",
-          "intervalFactor": 1,
-          "refId": "B"
         }
       ],
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Produce Request Rate / sec ($rate) by (Broker / Topic) for ($service_name) broker ($task_name)",
+      "title": "Produce Request Rate / sec by (Broker / Topic) for ($service_name) broker ($broker)",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -2691,7 +4204,7 @@
         "h": 9,
         "w": 8,
         "x": 8,
-        "y": 90
+        "y": 106
       },
       "id": 112,
       "legend": {
@@ -2700,7 +4213,7 @@
         "current": true,
         "max": false,
         "min": false,
-        "rightSide": true,
+        "rightSide": false,
         "show": true,
         "total": false,
         "values": true
@@ -2719,7 +4232,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "(kafka_server_BrokerTopicMetrics_TotalFetchRequestsPerSec_[[rate]]{service_name=\"$service_name\",task_name=~\"$task_name\"})",
+          "expr": "(kafka_server_BrokerTopicMetrics_TotalFetchRequestsPerSec_5MinuteRate{executor_name=\"kafka\",service_name=\"$service_name\",task_name=~\"$broker\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{task_name}} / {{topic}}",
@@ -2729,7 +4242,7 @@
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Fetch Request Rate / sec ($rate) by (Broker / Topic) for ($service_name) broker ($task_name)",
+      "title": "Fetch Request Rate / sec by (Broker / Topic) for ($service_name) broker ($broker)",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -2811,7 +4324,7 @@
         "h": 9,
         "w": 8,
         "x": 16,
-        "y": 90
+        "y": 106
       },
       "id": 137,
       "legend": {
@@ -2820,7 +4333,7 @@
         "current": true,
         "max": false,
         "min": false,
-        "rightSide": true,
+        "rightSide": false,
         "show": true,
         "total": false,
         "values": true
@@ -2839,7 +4352,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "(kafka_server_KafkaRequestHandlerPool_RequestHandlerAvgIdlePercent_[[rate]]{service_name=\"$service_name\"})",
+          "expr": "(kafka_server_KafkaRequestHandlerPool_RequestHandlerAvgIdlePercent_5MinuteRate{executor_name=\"kafka\",service_name=\"$service_name\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{task_name}}",
@@ -2900,7 +4413,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 99
+        "y": 115
       },
       "id": 46,
       "panels": [],
@@ -2919,7 +4432,7 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 100
+        "y": 116
       },
       "id": 54,
       "legend": {
@@ -2928,7 +4441,7 @@
         "current": true,
         "max": false,
         "min": false,
-        "rightSide": true,
+        "rightSide": false,
         "show": true,
         "total": false,
         "values": true
@@ -2947,7 +4460,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "(kafka_server_FetcherStats_RequestsPerSec_[[rate]]{service_name=\"$service_name\",task_name=~\"$task_name\"})",
+          "expr": "(kafka_server_FetcherStats_RequestsPerSec_5MinuteRate{executor_name=\"kafka\",service_name=\"$service_name\",task_name=~\"$broker\"})",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{task_name}}",
@@ -2957,7 +4470,7 @@
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Network Request Rate / sec ($rate) by (Broker) for ($service_name) broker ($task_name)",
+      "title": "Network Request Rate / sec by (Broker) for ($service_name) broker ($broker)",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -3005,7 +4518,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 100
+        "y": 116
       },
       "id": 48,
       "legend": {
@@ -3014,7 +4527,7 @@
         "current": true,
         "max": false,
         "min": false,
-        "rightSide": true,
+        "rightSide": false,
         "show": true,
         "total": false,
         "values": true
@@ -3033,7 +4546,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(kafka_network_Processor_IdlePercent{service_name=\"$service_name\",task_name=~\"$task_name\"})by(task_name)",
+          "expr": "sum(kafka_network_Processor_IdlePercent{executor_name=\"kafka\",service_name=\"$service_name\",task_name=~\"$broker\"})by(task_name)",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{task_name}}",
@@ -3043,7 +4556,7 @@
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Network Processor Idle (%) for ($service_name) broker ($task_name)",
+      "title": "Network Processor Idle (%) for ($service_name) broker ($broker)",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -3084,15 +4597,15 @@
   "refresh": false,
   "schemaVersion": 16,
   "style": "dark",
-  "tags": [],
+  "tags": [
+    "kafka",
+    "data-services"
+  ],
   "templating": {
     "list": [
       {
         "allValue": null,
-        "current": {
-          "text": "kafka",
-          "value": "kafka"
-        },
+        "current": {},
         "datasource": "${DS_PROMETHEUS}",
         "hide": 0,
         "includeAll": false,
@@ -3101,7 +4614,7 @@
         "name": "service_name",
         "options": [],
         "query": "label_values({executor_name=\"kafka\"}, service_name)",
-        "refresh": 1,
+        "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
         "sort": 0,
@@ -3113,85 +4626,16 @@
       },
       {
         "allValue": null,
-        "current": {
-          "tags": [],
-          "text": "5MinuteRate",
-          "value": "5MinuteRate"
-        },
-        "hide": 0,
-        "includeAll": false,
-        "label": "rate",
-        "multi": false,
-        "name": "rate",
-        "options": [
-          {
-            "selected": false,
-            "text": "1MinuteRate",
-            "value": "1MinuteRate"
-          },
-          {
-            "selected": true,
-            "text": "5MinuteRate",
-            "value": "5MinuteRate"
-          },
-          {
-            "selected": false,
-            "text": "15MinuteRate",
-            "value": "15MinuteRate"
-          },
-          {
-            "selected": false,
-            "text": "min",
-            "value": "min"
-          },
-          {
-            "selected": false,
-            "text": "max",
-            "value": "max"
-          },
-          {
-            "selected": false,
-            "text": "count",
-            "value": "count"
-          },
-          {
-            "selected": false,
-            "text": "mean",
-            "value": "mean"
-          },
-          {
-            "selected": false,
-            "text": "meanRate",
-            "value": "meanRate"
-          },
-          {
-            "selected": false,
-            "text": "median",
-            "value": "median"
-          }
-        ],
-        "query": "1MinuteRate,5MinuteRate,15MinuteRate,min,max,count,mean,meanRate,median",
-        "skipUrlSync": false,
-        "type": "custom"
-      },
-      {
-        "allValue": null,
-        "current": {
-          "tags": [],
-          "text": "All",
-          "value": [
-            "$__all"
-          ]
-        },
+        "current": {},
         "datasource": "${DS_PROMETHEUS}",
         "hide": 0,
         "includeAll": true,
-        "label": "task_name",
+        "label": "broker",
         "multi": true,
-        "name": "task_name",
+        "name": "broker",
         "options": [],
-        "query": "label_values({executor_name=\"kafka\"},task_name)",
-        "refresh": 1,
+        "query": "label_values({executor_name=\"kafka\",service_name=\"$service_name\"},task_name)",
+        "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
         "sort": 0,
@@ -3233,7 +4677,7 @@
     ]
   },
   "timezone": "",
-  "title": "DC/OS Extended Kafka Dashboard",
+  "title": "Kafka: Cluster Summary",
   "uid": "otWaoQkZk",
-  "version": 2
+  "version": 8
 }

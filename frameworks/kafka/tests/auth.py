@@ -56,7 +56,7 @@ def wait_for_brokers(client: str, brokers: list):
 
 
 def is_not_authorized(output: str) -> bool:
-    return "AuthorizationException: Not authorized to access" in output
+    return "Not authorized to access" in output
 
 
 def get_kerberos_client_properties(ssl_enabled: bool) -> list:
@@ -178,6 +178,9 @@ def write_to_topic(
         rc = output[0]
         stderr = output[2]
 
+        if "TOPIC_AUTHORIZATION_FAILED" in stderr:
+            LOG.info("Skipping retry - Authorization error: %s", stderr)
+            return False
         if rc:
             LOG.error("Write failed with non-zero return code")
             return True
@@ -248,6 +251,9 @@ def read_from_topic(
         rc = output[0]
         stderr = output[2]
 
+        if "TOPIC_AUTHORIZATION_FAILED" in stderr:
+            LOG.info("Skipping retry - Authorization error: %s", stderr)
+            return False
         if rc:
             LOG.error("Read failed with non-zero return code")
             return True
@@ -272,5 +278,7 @@ def read_from_topic(
 
     output = read_wrapper()
 
-    assert output[0] == 0
+    if "TOPIC_AUTHORIZATION_FAILED" not in output[2]:
+        # skip asserting rc code when authorization failed
+        assert output[0] == 0
     return " ".join(str(o) for o in output)

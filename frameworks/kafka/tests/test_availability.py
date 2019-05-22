@@ -18,12 +18,13 @@ EXPECTED_DCOS_STARTUP_SECONDS = os.environ.get("DCOS_EXPECTED_STARTUP", 30)
 STARTUP_POLL_DELAY_SECONDS = os.environ.get("STARTUP_LOG_POLL_DELAY", 2)
 
 
-def setup_module(module):
+@pytest.fixture(scope="module", autouse=True)
+def setup_module(configure_security):
     options = {"brokers": {"kill_grace_period": BROKER_KILL_GRACE_PERIOD}}
 
     sdk_install.uninstall(config.PACKAGE_NAME, config.SERVICE_NAME)
 
-    config.install(
+    sdk_install.install(
         config.PACKAGE_NAME,
         config.SERVICE_NAME,
         config.DEFAULT_BROKER_COUNT,
@@ -39,6 +40,7 @@ def teardown_module(module):
 @pytest.mark.availability
 @pytest.mark.soak_availability
 @pytest.mark.dcos_min_version("1.9")
+@pytest.mark.sanity
 def test_service_startup_rapid():
     max_restart_seconds = EXPECTED_KAFKA_STARTUP_SECONDS
     startup_padding_seconds = EXPECTED_DCOS_STARTUP_SECONDS
@@ -84,7 +86,7 @@ def test_service_startup_rapid():
     starting_time = started_time = None
     retry_seconds_remaining = max_restart_seconds + startup_padding_seconds
     while retry_seconds_remaining > 0.0 and (starting_time is None or started_time is None):
-        stdout = sdk_cmd.run_cli("task log --lines=1000 {}".format(broker_task_id_1))
+        _, stdout, _ = sdk_cmd.run_cli("task log --lines=1000 {}".format(broker_task_id_1))
         task_lines = stdout.split("\n")
         for log_line in reversed(task_lines):
             if starting_time is None and " starting (kafka.server.KafkaServer)" in log_line:

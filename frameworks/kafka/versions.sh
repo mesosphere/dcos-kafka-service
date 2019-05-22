@@ -13,4 +13,4 @@
 # instructions at:
 # https://wiki.mesosphere.com/display/ENGINEERING/Uploading+an+asset+to+production
 export TEMPLATE_KAFKA_VERSION="2.12-2.2.0"
-export TEMPLATE_DCOS_SDK_VERSION="0.56.0"
+export TEMPLATE_DCOS_SDK_VERSION="0.56.1"

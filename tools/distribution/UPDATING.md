@@ -51,7 +51,7 @@ In order to facilitate upgrades, the `universe/resource.json` file should contai
 "uris": {
     "...": "...",
     "bootstrap-zip": "https://downloads.mesosphere.com/dcos-commons/artifacts/{{dcos-sdk-version}}/bootstrap.zip",
-    "executor-zip": "http://downloads.mesosphere.com/dcos-commons/artifacts/{{dcos-sdk-version}}/executor.zip",
+    "executor-zip": "https://downloads.mesosphere.com/dcos-commons/artifacts/{{dcos-sdk-version}}/executor.zip",
     "...": "..."
 }
 ```

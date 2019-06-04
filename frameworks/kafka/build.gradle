@@ -8,10 +8,10 @@ repositories {
     jcenter()
     mavenCentral()
     maven {
-        url "http://downloads.mesosphere.com/maven/"
+        url "https://downloads.mesosphere.com/maven/"
     }
     maven {
-        url "http://downloads.mesosphere.com/maven-snapshot/"
+        url "https://downloads.mesosphere.com/maven-snapshot/"
     }
 }
 

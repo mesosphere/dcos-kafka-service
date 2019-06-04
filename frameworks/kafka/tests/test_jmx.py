@@ -39,11 +39,11 @@ def install_jmx_configured_kafka(self_signed_trust_store: bool = True):
                                  "trust_store_password_file": TRUST_STORE_PASS}}},
             service_options)
 
-    sdk_install.install(
-        package_name=config.PACKAGE_NAME,
-        service_name=foldered_name,
+    config.install(
+        config.PACKAGE_NAME,
+        foldered_name,
+        1,
         additional_options=service_options,
-        expected_running_tasks=1
     )
 
 
@@ -81,6 +81,7 @@ def uninstall_jmx_secrets():
 
 
 @pytest.mark.sanity
+@sdk_utils.dcos_ee_only
 @pytest.mark.parametrize('self_signed_trust_store', [
     False,
     True

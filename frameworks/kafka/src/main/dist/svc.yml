@@ -157,7 +157,7 @@ pods:
 
           export JMX_PORT={{SECURE_JMX_PORT}}
           export SECURE_JMX_RMI_PORT={{SECURE_JMX_RMI_PORT}}
-          export KAFKA_JMX_OPTS="-Djava.rmi.server.hostname=$MESOS_CONTAINER_IP -Dcom.sun.management.config.file=$MESOS_SANDBOX/.ssl/jmx.properties"
+          export KAFKA_JMX_OPTS="-Djava.rmi.server.hostname=$MESOS_CONTAINER_IP -Dcom.sun.management.config.file=$MESOS_SANDBOX/jmx_properties/jmx.properties"
 
           if [ ! -f "$MESOS_SANDBOX/jmx/key_file" ] ; then
               echo "Secure JMX is enabled but no JMX password file was provided. Exiting." >&2
@@ -167,7 +167,8 @@ pods:
               echo "Secure JMX is enabled but no JMX access file was provided. Exiting." >&2
               exit 1
           fi
-          (umask u=rw,g=,o= && cp $MESOS_SANDBOX/jmx/key_file $MESOS_SANDBOX/.ssl/key_file)
+          mkdir jmx_properties
+          (umask u=rw,g=,o= && cp $MESOS_SANDBOX/jmx/key_file $MESOS_SANDBOX/jmx_properties/key_file)
       {{/TASKCFG_ALL_SECURE_JMX_ENABLED}}
 
           # setup-helper determines the correct listeners and security.inter.broker.protocol.
@@ -193,8 +194,8 @@ pods:
           mv -v zookeeper*.jar $MESOS_SANDBOX/{{KAFKA_VERSION_PATH}}/libs/
           mv -v kafka-custom-principal-builder* $MESOS_SANDBOX/{{KAFKA_VERSION_PATH}}/libs/
         {{#TASKCFG_ALL_SECURE_JMX_ENABLED}}
-          chmod +x $MESOS_SANDBOX/.ssl/jmx-ssl-properties.sh
-          $MESOS_SANDBOX/.ssl/jmx-ssl-properties.sh
+          chmod +x $MESOS_SANDBOX/jmx_properties/jmx-ssl-properties.sh
+          $MESOS_SANDBOX/jmx_properties/jmx-ssl-properties.sh
         {{/TASKCFG_ALL_SECURE_JMX_ENABLED}}
           # Start kafka.
           exec $MESOS_SANDBOX/{{KAFKA_VERSION_PATH}}/bin/kafka-server-start.sh \
@@ -203,7 +204,7 @@ pods:
         {{#TASKCFG_ALL_SECURE_JMX_ENABLED}}
           jmx-config:
             template: jmx-ssl-properties.sh
-            dest: .ssl/jmx-ssl-properties.sh
+            dest: jmx_properties/jmx-ssl-properties.sh
         {{/TASKCFG_ALL_SECURE_JMX_ENABLED}}
           server-properties:
             template: server.properties.mustache

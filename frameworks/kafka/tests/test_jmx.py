@@ -30,7 +30,7 @@ def install_jmx_configured_kafka(self_signed_trust_store: bool = True):
                             "key_store": KEY_STORE,
                             "key_store_password_file": KEY_STORE_PASS
                          }
-                        }, "brokers": {"cpus": 0.5, "count": 1}}
+                        }, "brokers": {"cpus": 0.5, "count": 3}}
 
     if self_signed_trust_store:
         service_options = sdk_utils.merge_dictionaries(

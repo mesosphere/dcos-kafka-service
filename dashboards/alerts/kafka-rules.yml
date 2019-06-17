@@ -1,0 +1,27 @@
+
+groups:
+- name: Kafka_Alerts
+  rules:
+    - alert: Offline_Partiton_Count
+      expr: kafka_controller_KafkaController_OfflinePartitionsCount{executor_name="kafka"} > 1
+      for: 10m
+      labels:
+        severity: major
+      annotations:
+        description: 'Some partitons are offline for > 10 minutes. Please investigate.'
+
+    - alert: Active_Controller
+      expr: kafka_controller_KafkaController_ActiveControllerCount{executor_name="kafka"} < 1
+      for: 1m
+      labels:
+        severity: major
+      annotations:
+        description: 'No active cluster controller is online!'
+
+    - alert: Topic_Count
+      expr: count(count by (topic) (kafka_server_BrokerTopicMetrics_MessagesInPerSec_5MinuteRate{executor_name="kafka"})) > 1000
+      for: 5m
+      labels:
+        severity: informational
+      annotations:
+        description: 'The number of active topics in the cluster has reached 1000.'

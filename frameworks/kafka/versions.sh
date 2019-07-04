@@ -12,5 +12,5 @@
 # To upload a new version of the Kafka package to that repository, follow the
 # instructions at:
 # https://wiki.mesosphere.com/display/ENGINEERING/Uploading+an+asset+to+production
-export TEMPLATE_KAFKA_VERSION="2.12-2.2.1"
+export TEMPLATE_KAFKA_VERSION="2.12-2.3.0"
 export TEMPLATE_DCOS_SDK_VERSION="0.56.1"

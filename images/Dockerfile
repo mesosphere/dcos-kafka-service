@@ -18,11 +18,11 @@ COPY --from=java8-builder /srv/jdk /usr/share/java
 ENV PATH="$PATH:/usr/share/java/bin" \
     JAVA_HOME="/usr/share/java" \
     KAFKA_HOME="/opt/kafka" \
-    KAFKA_VERSION="2.2.1" \
     SCALA_VERSION="2.12" \
     JMX_EXPORTER_PATH="/opt/jmx-exporter" \
     JMX_EXPORTER_VERSION="0.1.0"
 
+ARG KAFKA_VERSION
 ARG UNAME=kafka
 ARG UID=1000
 ARG GID=1000

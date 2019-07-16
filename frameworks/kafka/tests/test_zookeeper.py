@@ -9,9 +9,6 @@ import sdk_utils
 from tests import config, test_utils
 
 
-pytestmark = pytest.mark.skip(reason="INFINITY-3363: Skipping test until it is better implemented")
-
-
 @pytest.fixture(scope="module", autouse=True)
 def zookeeper_server(configure_security):
     service_options = {
@@ -92,7 +89,7 @@ def test_zookeeper_reresolution(kafka_server):
     broker_log_line = []
 
     for id in range(0, config.DEFAULT_BROKER_COUNT):
-        rc, stdout, _ = sdk_cmd.run_raw_cli("task log kafka-{}-broker --lines 1".format(id))
+        rc, stdout, _ = sdk_cmd.run_cli("task log kafka-{}-broker --lines 1".format(id))
 
         if rc or not stdout:
             raise Exception("No task logs for kafka-{}-broker".format(id))
@@ -116,9 +113,7 @@ def test_zookeeper_reresolution(kafka_server):
 
     # Now, verify that Kafka remains happy
     def check_broker(id: int):
-        rc, stdout, _ = sdk_cmd.run_raw_cli(
-            "task log kafka-{}-broker --lines 1000".format(id), print_output=False
-        )
+        rc, stdout, _ = sdk_cmd.run_cli("task log kafka-{}-broker --lines 1000".format(id))
 
         if rc or not stdout:
             raise Exception("No task logs for kafka-{}-broker".format(id))

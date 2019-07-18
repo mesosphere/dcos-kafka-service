@@ -1071,6 +1071,13 @@
           "default": 300000,
           "minimum": 1
         },
+        "max_connections": {
+          "title": "max.connections",
+          "description": "The maximum number of connections we allow in the broker at any time.",
+          "type": "integer",
+          "default": 2147483647,
+          "minimum": 0
+        },
         "max_connections_per_ip": {
           "title": "max.connections.per.ip",
           "description": "The maximum number of connections we allow from each ip address",

@@ -50,13 +50,13 @@ def zookeeper_server(configure_security):
         )
 
         yield {**service_options, **{"package_name": config.ZOOKEEPER_PACKAGE_NAME}}
-
-        finally:
+    finally:
         sdk_install.uninstall(config.ZOOKEEPER_PACKAGE_NAME, config.ZOOKEEPER_SERVICE_NAME)
         if sdk_utils.is_strict_mode():
             sdk_security.delete_service_account(
                 service_account_name=zk_account, service_account_secret=zk_secret
             )
+
 
 @pytest.fixture(scope="module", autouse=True)
 def kafka_client():
@@ -97,12 +97,17 @@ def kafka_server(zookeeper_server):
     finally:
         sdk_install.uninstall(config.PACKAGE_NAME, config.SERVICE_NAME)
 
+
 def topic_create(kafka_server: dict):
     return test_utils.create_topic(config.EPHEMERAL_TOPIC_NAME, kafka_server["service"]["name"])
 
+
 def fetch_topic():
-    _, topic_list, _ = sdk_cmd.svc_cli(config.PACKAGE_NAME, service_name, "topic list", parse_json=True)
+    _, topic_list, _ = sdk_cmd.svc_cli(
+        config.PACKAGE_NAME, service_name, "topic list", parse_json=True
+    )
     return topic_list
+
 
 def restart_zookeeper_node(id: int):
     sdk_cmd.svc_cli(
@@ -112,6 +117,7 @@ def restart_zookeeper_node(id: int):
     )
     sdk_plan.wait_for_kicked_off_recovery(config.ZOOKEEPER_SERVICE_NAME)
     sdk_plan.wait_for_completed_recovery(config.ZOOKEEPER_SERVICE_NAME)
+
 
 def check_topic_list_on_zk_restart(kafka_server):
     ID = 0

@@ -121,8 +121,7 @@ def restart_zookeeper_node(id: int):
 
 def check_topic_list_on_zk_restart(kafka_server):
     ID = 0
-    topic_creation_status = topic_create(kafka_server)
-    LOG.info(topic_create)
+    topic_create(kafka_server)
     topic_list_before = fetch_topic(kafka_server)
     restart_zookeeper_node(ID)
     topic_list_after = fetch_topic(kafka_server)

@@ -1,14 +1,14 @@
-import uuid
 import logging
-import retrying
 import pytest
 
 import sdk_cmd
 import sdk_install
+import sdk_plan
+import sdk_security
+import sdk_utils
 
 from tests import config
 from tests import test_utils
-from tests import topics
 from tests import client
 
 
@@ -102,9 +102,9 @@ def topic_create(kafka_server: dict):
     return test_utils.create_topic(config.EPHEMERAL_TOPIC_NAME, kafka_server["service"]["name"])
 
 
-def fetch_topic():
+def fetch_topic(kafka_server: dict):
     _, topic_list, _ = sdk_cmd.svc_cli(
-        config.PACKAGE_NAME, service_name, "topic list", parse_json=True
+        config.PACKAGE_NAME, kafka_server["service"]["name"], "topic list", parse_json=True
     )
     return topic_list
 
@@ -122,8 +122,8 @@ def restart_zookeeper_node(id: int):
 def check_topic_list_on_zk_restart(kafka_server):
     ID = 0
     topic_creation_status = topic_create(kafka_server)
-    topic_list_before = fetch_topic()
+    LOG.info(topic_create)
+    topic_list_before = fetch_topic(kafka_server)
     restart_zookeeper_node(ID)
-    topic_list_after = fetch_topic()
-
+    topic_list_after = fetch_topic(kafka_server)
     assert topic_list_before == topic_list_after

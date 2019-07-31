@@ -118,8 +118,9 @@ def restart_zookeeper_node(id: int):
     sdk_plan.wait_for_kicked_off_recovery(config.ZOOKEEPER_SERVICE_NAME)
     sdk_plan.wait_for_completed_recovery(config.ZOOKEEPER_SERVICE_NAME)
 
-
-def check_topic_list_on_zk_restart(kafka_server):
+@pytest.mark.sanity
+@pytest.mark.zookeeper
+def test_check_topic_list_on_zk_restart(kafka_server):
     ID = 0
     topic_create(kafka_server)
     topic_list_before = fetch_topic(kafka_server)

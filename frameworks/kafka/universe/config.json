@@ -163,6 +163,11 @@
                   "description": "The Kerberos primary used by Kafka tasks.  The full principal will be <service.kerberos.primary>/<mesos_dns_address>@<service.kerberos.realm>",
                   "default": "kafka"
                 },
+                "health_check_primary": {
+                  "type": "string",
+                  "description": "The Kerberos primary used by Kafka health check if enabled.  The full principal will be <service.kerberos.health-check-primary>/<mesos_dns_address>@<service.kerberos.realm>",
+                  "default": "kafka-health-check-client"
+                },
                 "realm": {
                   "type": "string",
                   "description": "The Kerberos realm used to render the principal of Kafka tasks."
@@ -382,6 +387,90 @@
               "description": "An amount of time in seconds to wait for a readiness check to succeed.",
               "default": 10,
               "minimum": 10
+            }
+          }
+        },
+        "health_check": {
+          "title": "Service Health Check",
+          "description": "Health check settings. Excercise caution when modifying these default values as it can lead to spurious task failures.",
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "description": "Enable Health Checks",
+              "type": "boolean",
+              "enum": [
+                true,
+                false
+              ],
+              "default": false
+            }
+          },
+          "dependencies": {
+            "enabled": {
+              "oneOf": [
+                {
+                  "properties": {
+                    "enabled": {
+                      "enum": [
+                        false
+                      ]
+                    }
+                  }
+                },
+                {
+                  "properties": {
+                    "enabled": {
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "method": {
+                      "description": "Health Check Method. BROKER PORT CHECK will only check if the broker port is open while BROKER FUNCTIONAL CHECK publishes and fetches messages to and from the broker to check if the broker can respond to client requests.",
+                      "type": "string",
+                      "enum": [
+                        "PORT",
+                        "FUNCTIONAL"
+                      ],
+                      "default": "PORT"
+                    },
+                    "interval": {
+                      "type": "integer",
+                      "description": "The period in seconds to wait after the last health check has completed to start the next check.",
+                      "default": 60,
+                      "minimum": 60
+                    },
+                    "delay": {
+                      "type": "integer",
+                      "description": "An amount of time in seconds to wait before starting the health check attempts.",
+                      "default": 20,
+                      "minimum": 20
+                    },
+                    "timeout": {
+                      "type": "integer",
+                      "description": "An amount of time in seconds to wait for a health check to succeed.",
+                      "default": 60,
+                      "minimum": 60
+                    },
+                    "grace-period": {
+                      "type": "integer",
+                      "description": "An amount of time in seconds after the task is launched during which health check failures are ignored. Once a health check succeeds for the first time, the grace period does not apply anymore. Note that it includes delay_seconds, i.e., setting grace_period_seconds < delay_seconds has no effect.",
+                      "default": 30,
+                      "minimum": 30
+                    },
+                    "max-consecutive-failures": {
+                      "type": "integer",
+                      "description": "It is the maximum consecutive number of failures after which task will be killed.",
+                      "default": 3,
+                      "minimum": 3
+                    },
+                    "health-check-topic-prefix": {
+                      "type": "string",
+                      "description": "Prefix for the health check topic name. Used when BROKER FUNCTIONAL CHECK is selected.",
+                      "default": "KafkaHealthCheck"
+                    }
+                  }
+                }
+              ]
             }
           }
         },

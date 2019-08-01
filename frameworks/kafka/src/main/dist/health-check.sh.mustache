@@ -1,0 +1,128 @@
+#!/usr/bin/env bash
+
+#set -e
+
+KAFKA_BROKER_ADDRESS=$MESOS_CONTAINER_IP
+
+{{#SECURITY_TRANSPORT_ENCRYPTION_ENABLED}}
+  KAFKA_BROKER_PORT=$KAFKA_BROKER_PORT_TLS
+  KAFKA_BROKER_ADDRESS=${TASK_NAME}.${FRAMEWORK_HOST}
+  KAFKA_PRODUCER_CONFIG_OPTIONS="--producer-property security.protocol=SSL"
+  KAFKA_CONSUMER_CONFIG_OPTIONS="--consumer-property security.protocol=SSL"
+  
+  # If Kerberos is NOT enabled, then SSL authentication can be turned on.
+  {{^SECURITY_KERBEROS_ENABLED}}
+  {{#SECURITY_SSL_AUTHENTICATION_ENABLED}}
+  KAFKA_PRODUCER_CONFIG_OPTIONS="$KAFKA_PRODUCER_CONFIG_OPTIONS --producer-property ssl.keystore.location=$MESOS_SANDBOX/broker.keystore --producer-property ssl.keystore.password=notsecure --producer-property ssl.key.password=notsecure --producer-property ssl.truststore.location=$MESOS_SANDBOX/broker.truststore --producer-property ssl.truststore.password=notsecure"
+  KAFKA_CONSUMER_CONFIG_OPTIONS="$KAFKA_CONSUMER_CONFIG_OPTIONS --consumer-property ssl.keystore.location=$MESOS_SANDBOX/broker.keystore --consumer-property ssl.keystore.password=notsecure --consumer-property ssl.key.password=notsecure --consumer-property ssl.truststore.location=$MESOS_SANDBOX/broker.truststore --consumer-property ssl.truststore.password=notsecure"
+  {{/SECURITY_SSL_AUTHENTICATION_ENABLED}}
+  {{/SECURITY_KERBEROS_ENABLED}}
+
+{{/SECURITY_TRANSPORT_ENCRYPTION_ENABLED}}
+
+# HEALTH CHECK: KAFKA PORT CHECK
+if [ "{{HEALTH_CHECK_METHOD}}" == "PORT" ]
+then
+  if ./nc64 -z -n -v $MESOS_CONTAINER_IP $KAFKA_BROKER_PORT 2>&1 | grep -q 'open'
+  then
+    echo "Health check passed! Kafka broker listening on $KAFKA_BROKER_PORT"
+    exit 0
+  else
+    echo "Health check falied! Port $KAFKA_BROKER_PORT is closed."
+    exit 1
+  fi
+fi
+
+# HEALTH CHECK: KAFKA FUNCTIONAL CHECK
+if [ "{{HEALTH_CHECK_METHOD}}" == "FUNCTIONAL" ]
+then
+  export JAVA_HOME=$(ls -d $MESOS_SANDBOX/jdk*/)
+  KAFKA_HEALTH_CHECK_TOPIC_PREFIX={{HEALTH_CHECK_TOPIC_PREFIX}}
+  
+  {{#SECURITY_KERBEROS_ENABLED}}
+    KAFKA_BROKER_ADDRESS=${TASK_NAME}.${FRAMEWORK_HOST}
+    
+    printf 'KafkaClient {\ncom.sun.security.auth.module.Krb5LoginModule required\nuseKeyTab=true\nstoreKey=true\nuseTicketCache=false\nkeyTab="kafka.keytab"\nprincipal="{{SECURITY_KERBEROS_HEALTH_CHECK_PRIMARY}}/%s.%s@{{SECURITY_KERBEROS_REALM}}";\n};' $TASK_NAME $FRAMEWORK_HOST > /tmp/kafka_health_check_client_jaas.conf
+    {{#SECURITY_KERBEROS_ENABLED_FOR_ZOOKEEPER}}
+    printf '\nClient {\ncom.sun.security.auth.module.Krb5LoginModule required\nuseKeyTab=true\nstoreKey=true\nuseTicketCache=false\nkeyTab="kafka.keytab"\nprincipal="{{SECURITY_KERBEROS_HEALTH_CHECK_PRIMARY}}/%s.%s@{{SECURITY_KERBEROS_REALM}}";\n};' $TASK_NAME $FRAMEWORK_HOST >> /tmp/kafka_health_check_client_jaas.conf
+    {{/SECURITY_KERBEROS_ENABLED_FOR_ZOOKEEPER}}
+    
+    export KAFKA_OPTS="-Djava.security.auth.login.config=/tmp/kafka_health_check_client_jaas.conf -Djava.security.krb5.conf=$MESOS_SANDBOX/{{KAFKA_VERSION_PATH}}/config/krb5.conf"
+    
+    {{#SECURITY_TRANSPORT_ENCRYPTION_ENABLED}}
+    SECURITY_PROTOCOL=SASL_SSL
+    {{/SECURITY_TRANSPORT_ENCRYPTION_ENABLED}}
+    {{^SECURITY_TRANSPORT_ENCRYPTION_ENABLED}}
+    SECURITY_PROTOCOL=SASL_PLAINTEXT
+    {{/SECURITY_TRANSPORT_ENCRYPTION_ENABLED}}
+    
+    KAFKA_PRODUCER_CONFIG_OPTIONS="--producer-property sasl.mechanism=GSSAPI --producer-property security.protocol=$SECURITY_PROTOCOL --producer-property sasl.kerberos.service.name={{SECURITY_KERBEROS_PRIMARY}}"
+    KAFKA_CONSUMER_CONFIG_OPTIONS="--consumer-property sasl.mechanism=GSSAPI --consumer-property security.protocol=$SECURITY_PROTOCOL --consumer-property sasl.kerberos.service.name={{SECURITY_KERBEROS_PRIMARY}}"
+  {{/SECURITY_KERBEROS_ENABLED}}
+  
+  if ! ./{{KAFKA_VERSION_PATH}}/bin/kafka-topics.sh --list --zookeeper $KAFKA_ZOOKEEPER_URI | grep -q ${KAFKA_HEALTH_CHECK_TOPIC_PREFIX}${POD_INSTANCE_INDEX}
+  then
+    ./{{KAFKA_VERSION_PATH}}/bin/kafka-topics.sh --create \
+      --zookeeper $KAFKA_ZOOKEEPER_URI --topic ${KAFKA_HEALTH_CHECK_TOPIC_PREFIX}${POD_INSTANCE_INDEX} \
+      --replica-assignment $POD_INSTANCE_INDEX 2>&1
+  fi
+  
+  # Create a random message
+  random_message=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 13 ; echo '')
+  echo $random_message > /tmp/kafka_health_check_msg
+  
+  # Publish the message to topic
+  if [ $( ./{{KAFKA_VERSION_PATH}}/bin/kafka-console-producer.sh $KAFKA_PRODUCER_CONFIG_OPTIONS \
+    --broker-list ${KAFKA_BROKER_ADDRESS}:${KAFKA_BROKER_PORT} \
+    --topic ${KAFKA_HEALTH_CHECK_TOPIC_PREFIX}${POD_INSTANCE_INDEX} 2>&1 < /tmp/kafka_health_check_msg | grep -c ">>" ) -ne 1 ]
+  then
+    echo "Health check falied as the message cannot be published! topic: $KAFKA_HEALTH_CHECK_TOPIC_PREFIX$POD_INSTANCE_INDEX msg: $random_message"
+    exit 1
+  else
+    CHECK_CONSUMER=false
+    {{#SECURITY_KERBEROS_ENABLED}}
+    CHECK_CONSUMER=true
+    {{/SECURITY_KERBEROS_ENABLED}}
+    {{#SECURITY_TRANSPORT_ENCRYPTION_ENABLED}}
+    CHECK_CONSUMER=true
+    {{/SECURITY_TRANSPORT_ENCRYPTION_ENABLED}}
+    if $CHECK_CONSUMER
+    then 
+      if ./{{KAFKA_VERSION_PATH}}/bin/kafka-console-consumer.sh $KAFKA_CONSUMER_CONFIG_OPTIONS \
+        --bootstrap-server $KAFKA_BROKER_ADDRESS:$KAFKA_BROKER_PORT \
+        --topic ${KAFKA_HEALTH_CHECK_TOPIC_PREFIX}${POD_INSTANCE_INDEX} \
+        --from-beginning --max-messages 1 2>&1 | grep -q "Processed a total of 1 messages"
+      then
+        echo "Health check passed! topic: ${KAFKA_HEALTH_CHECK_TOPIC_PREFIX}${POD_INSTANCE_INDEX}"
+        exit 0
+      else
+        echo "Health check falied as consumer cannot read any messages! topic: ${KAFKA_HEALTH_CHECK_TOPIC_PREFIX}${POD_INSTANCE_INDEX}"
+        exit 1
+      fi
+    fi
+  fi
+  
+  {{^SECURITY_TRANSPORT_ENCRYPTION_ENABLED}}
+  {{^SECURITY_KERBEROS_ENABLED}}
+    # Get the number of messages in the topic
+    message_count=$(./{{KAFKA_VERSION_PATH}}/bin/kafka-run-class.sh kafka.tools.GetOffsetShell \
+      --broker-list $KAFKA_BROKER_ADDRESS:$KAFKA_BROKER_PORT \
+      --partitions 0 --topic ${KAFKA_HEALTH_CHECK_TOPIC_PREFIX}${POD_INSTANCE_INDEX} | awk -F: '{print $NF}')
+  
+    # Check if the last message is the one we published
+    if ./{{KAFKA_VERSION_PATH}}/bin/kafka-console-consumer.sh $KAFKA_CONSUMER_CONFIG_OPTIONS \
+      --bootstrap-server $KAFKA_BROKER_ADDRESS:$KAFKA_BROKER_PORT \
+      --topic ${KAFKA_HEALTH_CHECK_TOPIC_PREFIX}${POD_INSTANCE_INDEX} \
+      --offset $(( message_count - 1 )) \
+      --partition 0 --max-messages 1 | grep -q $random_message
+    then
+      echo "Health check passed! topic: ${KAFKA_HEALTH_CHECK_TOPIC_PREFIX}${POD_INSTANCE_INDEX} msg: $random_message"
+      exit 0
+    else
+      echo "Health check falied due to message mismatch! topic: ${KAFKA_HEALTH_CHECK_TOPIC_PREFIX}${POD_INSTANCE_INDEX} msg: $random_message"
+      exit 1
+    fi
+  {{/SECURITY_KERBEROS_ENABLED}}
+  {{/SECURITY_TRANSPORT_ENCRYPTION_ENABLED}}
+
+fi

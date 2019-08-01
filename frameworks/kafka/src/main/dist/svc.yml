@@ -16,6 +16,7 @@ pods:
       - {{SETUP_HELPER_URI}}
       - {{ZOOKEEPER_CLIENT_URI}}
       - {{CUSTOM_KAFKA_PRINCIPAL_URI}}
+      - {{NETCAT_URI}}
     rlimits:
       RLIMIT_NOFILE:
         soft: {{RLIMIT_NOFILE_SOFT}}
@@ -201,6 +202,10 @@ pods:
           chmod +x $MESOS_SANDBOX/jmx_properties/jmx-ssl-properties.sh
           $MESOS_SANDBOX/jmx_properties/jmx-ssl-properties.sh
         {{/TASKCFG_ALL_SECURE_JMX_ENABLED}}
+        {{#HEALTH_CHECK_ENABLED}}
+          chmod +x $MESOS_SANDBOX/health-check.sh
+          chmod +x nc64
+        {{/HEALTH_CHECK_ENABLED}}
           # Start kafka.
           exec $MESOS_SANDBOX/{{KAFKA_VERSION_PATH}}/bin/kafka-server-start.sh \
                $MESOS_SANDBOX/{{KAFKA_VERSION_PATH}}/config/server.properties
@@ -221,6 +226,11 @@ pods:
             template: krb5.conf.mustache
             dest: {{KAFKA_VERSION_PATH}}/config/krb5.conf
         {{/TASKCFG_ALL_SECURITY_KERBEROS_ENABLED}}
+        {{#HEALTH_CHECK_ENABLED}}
+          health-check:
+            template: health-check.sh.mustache
+            dest: health-check.sh
+        {{/HEALTH_CHECK_ENABLED}}
         readiness-check:
           cmd: |
             # The broker has started when it logs a specific "started" log line. An example is below:
@@ -240,6 +250,16 @@ pods:
           interval: {{READINESS_CHECK_INTERVAL}}
           delay: {{READINESS_CHECK_DELAY}}
           timeout: {{READINESS_CHECK_TIMEOUT}}
+        {{#HEALTH_CHECK_ENABLED}}
+        health-check:
+          cmd: |
+            $MESOS_SANDBOX/health-check.sh
+          interval: {{HEALTH_CHECK_INTERVAL}}
+          grace-period: {{HEALTH_CHECK_GRACE_PERIOD}}
+          max-consecutive-failures: {{HEALTH_CHECK_MAX_CONSECUTIVE_FALIURES}}
+          delay: {{HEALTH_CHECK_DELAY}}
+          timeout: {{HEALTH_CHECK_TIMEOUT}}
+        {{/HEALTH_CHECK_ENABLED}}
         {{#TASKCFG_ALL_SECURITY_TRANSPORT_ENCRYPTION_ENABLED}}
         transport-encryption:
           - name: broker

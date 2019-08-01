@@ -43,6 +43,7 @@
     "LIBMESOS_URI": "{{resource.assets.uris.libmesos-bundle-tar-gz}}",
     "BOOTSTRAP_URI": "{{resource.assets.uris.bootstrap-zip}}",
     "ALLOW_REGION_AWARENESS": "true",
+    "NETCAT_URI": "{{resource.assets.uris.netcat}}",
     "KAFKA_URI": "{{resource.assets.uris.kafka-tgz}}",
     "KAFKA_JAVA_URI": "{{resource.assets.uris.kafka-jre-tar-gz}}",
     "JAVA_URI": "{{resource.assets.uris.jre-tar-gz}}",
@@ -118,6 +119,7 @@
     "TASKCFG_ALL_SECURITY_KERBEROS_ENABLED": "{{service.security.kerberos.enabled}}",
     "TASKCFG_ALL_SECURITY_KERBEROS_ENABLED_FOR_ZOOKEEPER": "{{service.security.kerberos.enabled_for_zookeeper}}",
     "TASKCFG_ALL_SECURITY_KERBEROS_PRIMARY": "{{service.security.kerberos.primary}}",
+    "TASKCFG_ALL_SECURITY_KERBEROS_HEALTH_CHECK_PRIMARY": "{{service.security.kerberos.health_check_primary}}",
     "TASKCFG_ALL_SECURITY_KERBEROS_REALM": "{{service.security.kerberos.realm}}",
     {{#service.security.kerberos.debug}}
     "TASKCFG_ALL_SECURITY_KERBEROS_DEBUG": "{{service.security.kerberos.debug}}",
@@ -147,6 +149,7 @@
 
 
     "KAFKA_VERSION_PATH": "kafka_{{kafka-version}}",
+    "TASKCFG_ALL_KAFKA_VERSION_PATH": "kafka_{{kafka-version}}",
 
     "KAFKA_ZOOKEEPER_URI": "{{kafka.kafka_zookeeper_uri}}",
 
@@ -280,6 +283,17 @@
     "READINESS_CHECK_INTERVAL": "{{service.readiness_check.interval}}",
     "READINESS_CHECK_DELAY": "{{service.readiness_check.delay}}",
     "READINESS_CHECK_TIMEOUT": "{{service.readiness_check.timeout}}",
+
+    "HEALTH_CHECK_ENABLED": "{{service.health_check.enabled}}",
+    {{#service.health_check.enabled}}
+    "HEALTH_CHECK_INTERVAL": "{{service.health_check.interval}}",
+    "HEALTH_CHECK_DELAY": "{{service.health_check.delay}}",
+    "HEALTH_CHECK_TIMEOUT": "{{service.health_check.timeout}}",
+    "HEALTH_CHECK_GRACE_PERIOD": "{{service.health_check.grace-period}}",
+    "HEALTH_CHECK_MAX_CONSECUTIVE_FALIURES": "{{service.health_check.max-consecutive-failures}}",
+    "TASKCFG_ALL_HEALTH_CHECK_METHOD": "{{service.health_check.method}}",
+    "TASKCFG_ALL_HEALTH_CHECK_TOPIC_PREFIX": "{{service.health_check.health-check-topic-prefix}}",
+    {{/service.health_check.enabled}}
 
     "RLIMIT_NOFILE_SOFT": "{{service.rlimits.rlimit_nofile.soft}}",
     "RLIMIT_NOFILE_HARD": "{{service.rlimits.rlimit_nofile.hard}}"

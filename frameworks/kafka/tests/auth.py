@@ -13,12 +13,15 @@ LOG = logging.getLogger(__name__)
 USERS = ["client", "authorized", "unauthorized", "super"]
 
 
-def get_service_principals(service_name: str, realm: str, custom_domain: str = None) -> list:
+def get_service_principals(service_name: str, realm: str, custom_domain: str = None, health_check: bool = False) -> list:
     """
-    Sets up the appropriate principals needed for a kerberized deployment of HDFS.
+    Sets up the appropriate principals needed for a kerberized deployment of Kafka.
     :return: A list of said principals
     """
     primaries = ["kafka"]
+
+    if health_check:
+        primaries.append("kafka-health-check-client")
 
     tasks = ["kafka-0-broker", "kafka-1-broker", "kafka-2-broker"]
 

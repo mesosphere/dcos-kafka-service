@@ -1,6 +1,7 @@
 import logging
 import re
 import tempfile
+import retrying
 
 import sdk_cmd
 import sdk_tasks
@@ -12,6 +13,7 @@ from tests import config
 log = logging.getLogger(__name__)
 
 
+@retrying.retry(stop_max_delay=2 * 60 * 1000, retry_on_exception=lambda e: isinstance(e, Exception))
 def check_health_check_logs():
     broker = None
     executor_path = None

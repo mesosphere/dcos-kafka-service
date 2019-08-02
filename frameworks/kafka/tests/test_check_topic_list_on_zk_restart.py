@@ -23,7 +23,6 @@ def zookeeper_server(configure_security):
             "virtual_network_enabled": True,
         }
     }
-    ZOOKEEPER_TASK_COUNT = 2
     zk_account = "test-zookeeper-service-account"
     zk_secret = "test-zookeeper-secret"
 
@@ -52,7 +51,7 @@ def zookeeper_server(configure_security):
         sdk_install.install(
             config.ZOOKEEPER_PACKAGE_NAME,
             config.ZOOKEEPER_SERVICE_NAME,
-            ZOOKEEPER_TASK_COUNT,
+            config.ZOOKEEPER_TASK_COUNT,
             package_version=config.ZOOKEEPER_PACKAGE_VERSION,
             additional_options=service_options,
             timeout_seconds=30 * 60,
@@ -171,9 +170,11 @@ def restart_zookeeper_node(id: int):
 @pytest.mark.sanity
 @pytest.mark.zookeeper
 def test_check_topic_list_on_zk_restart(kafka_server: dict):
-    ID = 0
     topic_create(kafka_server)
     topic_list_before = fetch_topic(kafka_server)
-    restart_zookeeper_node(ID)
+    for id in range(
+        0, int(config.ZOOKEEPER_TASK_COUNT / 2)
+    ):
+        restart_zookeeper_node(id)
     topic_list_after = fetch_topic(kafka_server)
     assert topic_list_before == topic_list_after

@@ -115,7 +115,7 @@ def kafka_server_with_health_check(request, health_check_method, service_account
             additional_options=service_options,
             timeout_seconds=30 * 60,
         )
-        yield {**{"package_name": config.PACKAGE_NAME}}
+        yield {**{"package_name": config.PACKAGE_NAME}, "method": health_check_method, "mode": request.param}
     finally:
         sdk_install.uninstall(config.PACKAGE_NAME, config.SERVICE_NAME)
 
@@ -124,4 +124,8 @@ def kafka_server_with_health_check(request, health_check_method, service_account
 @sdk_utils.dcos_ee_only
 @pytest.mark.sanity
 def test_health_check(kafka_server_with_health_check):
+    if sdk_utils.dcos_version_less_than("1.12") and kafka_server_with_health_check["mode"] == "SASL_SSL" and kafka_server_with_health_check["method"] == "FUNCTIONAL":
+        log.info("Skipping check of Health-Check logs as DC/OS version is less than 1.12.")
+        return
+
     check_health_check_logs()

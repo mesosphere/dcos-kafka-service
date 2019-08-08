@@ -62,9 +62,21 @@ then
   
   if ! ./{{KAFKA_VERSION_PATH}}/bin/kafka-topics.sh --list --zookeeper $KAFKA_ZOOKEEPER_URI | grep -q ${KAFKA_HEALTH_CHECK_TOPIC_PREFIX}${POD_INSTANCE_INDEX}
   then
+    {{#SECURITY_KERBEROS_ENABLED}}
+        export KAFKA_OPTS="-Djava.security.auth.login.config=$MESOS_SANDBOX/{{KAFKA_VERSION_PATH}}/config/kafka_server_jaas.conf -Djava.security.krb5.conf=$MESOS_SANDBOX/{{KAFKA_VERSION_PATH}}/config/krb5.conf"
+    {{/SECURITY_KERBEROS_ENABLED}}
     ./{{KAFKA_VERSION_PATH}}/bin/kafka-topics.sh --create \
       --zookeeper $KAFKA_ZOOKEEPER_URI --topic ${KAFKA_HEALTH_CHECK_TOPIC_PREFIX}${POD_INSTANCE_INDEX} \
       --replica-assignment $POD_INSTANCE_INDEX 2>&1
+    {{#SECURITY_KERBEROS_ENABLED}}
+        ./{{KAFKA_VERSION_PATH}}/bin/kafka-acls.sh --authorizer-properties $KAFKA_ZOOKEEPER_URI \
+        --add --allow-principal User:{{SECURITY_KERBEROS_HEALTH_CHECK_PRIMARY}} \
+        --producer --topic ${KAFKA_HEALTH_CHECK_TOPIC_PREFIX}${POD_INSTANCE_INDEX}
+        ./{{KAFKA_VERSION_PATH}}/bin/kafka-acls.sh --authorizer-properties $KAFKA_ZOOKEEPER_URI \
+        --add --allow-principal User:{{SECURITY_KERBEROS_HEALTH_CHECK_PRIMARY}} \
+        --consumer --topic ${KAFKA_HEALTH_CHECK_TOPIC_PREFIX}${POD_INSTANCE_INDEX} --group *
+        export KAFKA_OPTS="-Djava.security.auth.login.config=/tmp/kafka_health_check_client_jaas.conf -Djava.security.krb5.conf=$MESOS_SANDBOX/{{KAFKA_VERSION_PATH}}/config/krb5.conf"
+    {{/SECURITY_KERBEROS_ENABLED}}
   fi
   
   # Create a random message

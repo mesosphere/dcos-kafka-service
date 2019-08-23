@@ -85,6 +85,22 @@ def delete_topic(topic_name, service_name=config.SERVICE_NAME):
     assert len(topic_info["partitions"]) == config.DEFAULT_PARTITION_COUNT
 
 
+def set_topic_config(topic_name, configuration, service_name=config.SERVICE_NAME):
+    _, config_set_info, _ = sdk_cmd.svc_cli(
+        config.PACKAGE_NAME, service_name, "topic config {} {}".format(topic_name, configuration), parse_json=True
+    )
+    assert len(config_set_info) == 1
+    assert "Updated config for topic {}.".format(topic_name) in config_set_info["message"]
+
+
+def delete_topic_config(topic_name, configuration, service_name=config.SERVICE_NAME):
+    _, config_delete_info, _ = sdk_cmd.svc_cli(
+        config.PACKAGE_NAME, service_name, "topic delete-config {} {}".format(topic_name, configuration), parse_json=True
+    )
+    assert len(config_delete_info) == 1
+    assert "Updated config for topic {}.".format(topic_name) in config_delete_info["message"]
+
+
 def wait_for_topic(package_name: str, service_name: str, topic_name: str):
     """
     Execute `dcos kafka topic describe` to wait for topic creation.

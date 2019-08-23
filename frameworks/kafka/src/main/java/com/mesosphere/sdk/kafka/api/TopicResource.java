@@ -90,8 +90,34 @@ public class TopicResource {
     }
 
     @PUT
-    @Path("/{name}/operation/{type}")
+    @Path("/{name}/operation/config")
     public Response operationOnTopic(
+            @PathParam("name") String topicName,
+            @QueryParam("value") String value) {
+        try {
+            return ResponseUtils.jsonOkResponse(cmdExecutor.configureTopic(topicName, value, "set"));
+        } catch (Exception ex) {
+            log.error("Failed to add configuration: " + value + " to topic: " + topicName + " with exception: " + ex);
+            return Response.serverError().build();
+        }
+    }
+
+    @DELETE
+    @Path("/{name}/operation/config/{value}")
+    public Response deleteTopicConfiguration(
+            @PathParam("name") String topicName,
+            @PathParam("value") String value) {
+        try {
+            return ResponseUtils.jsonOkResponse(cmdExecutor.configureTopic(topicName, value, "delete"));
+        } catch (Exception ex) {
+            log.error("Failed to delete configuration: " + value + " for topic: " + topicName + " with exception: " + ex);
+            return Response.serverError().build();
+        }
+    }
+
+    @PUT
+    @Path("/{name}/operation/{type}")
+    public Response setTopicConfiguration(
             @PathParam("name") String topicName,
             @PathParam("type") String type,
             @QueryParam("value") String value,

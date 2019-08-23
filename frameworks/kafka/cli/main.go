@@ -18,6 +18,7 @@ func main() {
 
 	handleBrokerSection(app)
 	handleTopicSection(app)
+	handleAclSection(app)
 
 	kingpin.MustParse(app.Parse(cli.GetArguments()))
 }
@@ -66,6 +67,7 @@ type TopicHandler struct {
 	offsetsTime         string
 	partitionCount      int
 	produceMessageCount int
+	configuration       string
 }
 
 func (cmd *TopicHandler) runList(a *kingpin.Application, e *kingpin.ParseElement, c *kingpin.ParseContext) error {
@@ -86,6 +88,29 @@ func (cmd *TopicHandler) runDescribe(a *kingpin.Application, e *kingpin.ParseEle
 	}
 	return nil
 }
+
+func (cmd *TopicHandler) runSetConfiguration(a *kingpin.Application, e *kingpin.ParseElement, c *kingpin.ParseContext) error {
+	query := url.Values{}
+	query.Set("value", cmd.configuration)
+	responseBytes, err := client.HTTPServicePutQuery(fmt.Sprintf("v1/topics/%s/operation/config", cmd.topic), query.Encode())
+	if err != nil {
+		client.PrintMessageAndExit(err.Error())
+	} else {
+		client.PrintJSONBytes(responseBytes)
+	}
+	return nil
+}
+
+func (cmd *TopicHandler) runDeleteConfiguration(a *kingpin.Application, e *kingpin.ParseElement, c *kingpin.ParseContext) error {
+	responseBytes, err := client.HTTPServiceDelete(fmt.Sprintf("v1/topics/%s/operation/config/%s", cmd.topic, cmd.configuration))
+	if err != nil {
+		client.PrintMessageAndExit(err.Error())
+	} else {
+		client.PrintJSONBytes(responseBytes)
+	}
+	return nil
+}
+
 func (cmd *TopicHandler) runCreate(a *kingpin.Application, e *kingpin.ParseElement, c *kingpin.ParseContext) error {
 	query := url.Values{}
 	query.Set("partitions", strconv.FormatInt(int64(cmd.createPartitions), 10))
@@ -204,6 +229,18 @@ func handleTopicSection(app *kingpin.Application) {
 		"describe",
 		"Describes a single existing topic").Action(cmd.runDescribe)
 	describe.Arg("topic", "The topic to describe").StringVar(&cmd.topic)
+
+	config := topic.Command(
+		"config",
+		"Configures a single existing topic").Action(cmd.runSetConfiguration)
+	config.Arg("topic", "The topic to configure").StringVar(&cmd.topic)
+	config.Arg("configuration", "The configuration string").StringVar(&cmd.configuration)
+
+	deleteConfig := topic.Command(
+		"delete-config",
+		"Deletes a single configuration from a single existing topic").Action(cmd.runDeleteConfiguration)
+	deleteConfig.Arg("topic", "The topic to configure").StringVar(&cmd.topic)
+	deleteConfig.Arg("configuration", "The configuration string").StringVar(&cmd.configuration)
 
 	topic.Command(
 		"list",

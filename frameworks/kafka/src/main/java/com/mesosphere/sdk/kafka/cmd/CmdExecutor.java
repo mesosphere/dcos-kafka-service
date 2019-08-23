@@ -84,6 +84,30 @@ public class CmdExecutor {
         return runCmd(cmd);
     }
 
+    public JSONObject configureTopic(String name, String config, String action) throws Exception {
+        /*
+        e.g. ./kafka-topics.sh --zookeeper master.mesos:2181/kafka --topic topic0 --config retention.ms=1000
+        e.g. ./kafka-topics.sh --zookeeper master.mesos:2181/kafka --topic topic0 --delete-config retention.ms
+        */
+        List<String> cmd = new ArrayList<String>();
+        cmd.add(binPath + "kafka-topics.sh");
+        cmd.add("--alter");
+        cmd.add("--zookeeper");
+        cmd.add(zkUri);
+        cmd.add("--topic");
+        cmd.add(name);
+        if (action == "set") {
+          cmd.add("--config");
+          cmd.add(config);
+        }
+        if (action == "delete") {
+          cmd.add("--delete-config");
+          cmd.add(config);
+        }
+
+        return runCmd(cmd);
+    }
+
     public JSONObject producerTest(String topicName, int messages) throws Exception {
         /* e.g. ./kafka-producer-perf-test.sh --topic topic0 --num-records 1000 --producer-props
          bootstrap.servers=
@@ -268,5 +292,123 @@ public class CmdExecutor {
         }
 
         return builder.toString();
+    }
+
+    public JSONObject configureAcl(
+        String action,
+        String resource,
+        String topicName,
+        String consumerGroupName,
+        String resourcePatternType,
+        String principal,
+        String principalAction,
+        String operation,
+        String host,
+        String hostAction,
+        boolean producer,
+        boolean consumer,
+        String group,
+        String transactionalId,
+        boolean idempotent
+    ) throws Exception {
+        /*
+        e.g. ./kafka-acls.sh --authorizer-properties --zookeeper master.mesos:2181/kafka
+                             --add --allow-principal User:Alice
+                             --allow-host Host1,Host2
+                             --operation Read,Write --topic Test-topic
+        */
+        List<String> cmd = new ArrayList<String>();
+        cmd.add(binPath + "kafka-acls.sh");
+        cmd.add("--authorizer-properties");
+        cmd.add("zookeeper.connect=" + zkUri);
+        switch(action) {
+            case "add":
+            case "remove":
+                cmd.add("--" + action);
+                setAclResource(cmd, resource, topicName, consumerGroupName, group, resourcePatternType);
+                setAclHosts(cmd, host, hostAction);
+                setAclPrincipal(cmd, principal, principalAction);
+                cmd.add("--operation");
+                cmd.add(operation);
+                if(producer) cmd.add("--producer");
+                if(consumer) {
+                    cmd.add("--consumer");
+                    if(consumerGroupName != null && !consumerGroupName.isEmpty()) {
+                        cmd.add("--consumer-group");
+                        cmd.add(consumerGroupName);
+                   }
+                }
+                if(transactionalId !=null & !transactionalId.isEmpty()) {
+                    cmd.add("--transactional-id");
+                    cmd.add(transactionalId);
+                }
+                if(idempotent) {
+                    cmd.add("--idempotent");
+                }
+                break;
+            case "list":
+                cmd.add("--list");
+                setAclResource(cmd, resource, topicName, consumerGroupName, group, resourcePatternType);
+                break;
+        }
+
+        cmd.add("--force");
+        return runCmd(cmd);
+    }
+
+    private void setAclPrincipal(List<String> cmd, String principal, String principalAction) {
+        if (principal != null && !principal.isEmpty()) {
+          switch(principalAction) {
+            case "allow":
+                cmd.add("--allow-principal");
+                cmd.add(principal);
+                break;
+            case "deny":
+                cmd.add("--deny-principal");
+                cmd.add(principal);
+                break;
+          }
+        }
+    }
+
+    private void setAclHosts(List<String> cmd, String host, String hostAction) {
+        if (host != null && !host.isEmpty()) {
+          switch(hostAction) {
+            case "allow":
+                cmd.add("--allow-host");
+                cmd.add(host);
+                break;
+            case "deny":
+                cmd.add("--deny-host");
+                cmd.add(host);
+                break;
+          }
+        }
+    }
+
+    private void setAclResource(List<String> cmd, String resource, String topicName, String consumerGroupName, String group, String resourcePatternType) {
+        if (resource != null && !resource.isEmpty()) {
+            switch(resource) {
+                case "cluster":
+                    cmd.add("--cluster");
+                    break;
+                case "topic":
+                    cmd.add("--topic");
+                    cmd.add(topicName);
+                    break;
+                case "consumer-group":
+                    cmd.add("--consumer-group");
+                    cmd.add(consumerGroupName);
+                    break;
+            }
+            if(resourcePatternType != null && !resourcePatternType.isEmpty()) {
+                cmd.add("--resource-pattern-type");
+                cmd.add(resourcePatternType);
+            }
+            if(group !=null && !group.isEmpty()) {
+                cmd.add("--group");
+                cmd.add(group);
+            }
+        }
     }
 }

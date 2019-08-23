@@ -18,6 +18,7 @@ import com.mesosphere.sdk.http.types.EndpointProducer;
 import com.mesosphere.sdk.kafka.api.BrokerResource;
 import com.mesosphere.sdk.kafka.api.KafkaZKClient;
 import com.mesosphere.sdk.kafka.api.TopicResource;
+import com.mesosphere.sdk.kafka.api.AclResource;
 import com.mesosphere.sdk.kafka.cmd.CmdExecutor;
 import com.mesosphere.sdk.scheduler.DefaultScheduler;
 import com.mesosphere.sdk.scheduler.SchedulerBuilder;
@@ -78,6 +79,9 @@ public class Main {
         final Collection<Object> apiResources = new ArrayList<>();
         apiResources.add(new BrokerResource(kafkaZKClient));
         apiResources.add(new TopicResource(
+                new CmdExecutor(kafkaZKClient, kafkaZookeeperUri, System.getenv("KAFKA_VERSION_PATH")),
+                kafkaZKClient));
+        apiResources.add(new AclResource(
                 new CmdExecutor(kafkaZKClient, kafkaZookeeperUri, System.getenv("KAFKA_VERSION_PATH")),
                 kafkaZKClient));
         return apiResources;

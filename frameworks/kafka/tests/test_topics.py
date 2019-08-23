@@ -50,6 +50,18 @@ def test_topic_delete(kafka_server: dict):
     test_utils.delete_topic(config.EPHEMERAL_TOPIC_NAME, kafka_server["service"]["name"])
 
 
+@pytest.mark.smoke
+@pytest.mark.sanity
+def test_topic_set_config(kafka_server: dict):
+    test_utils.set_topic_config(config.EPHEMERAL_TOPIC_NAME, "retention.ms=5000", kafka_server["service"]["name"])
+
+
+@pytest.mark.smoke
+@pytest.mark.sanity
+def test_topic_delete_config(kafka_server: dict):
+    test_utils.delete_topic_config(config.EPHEMERAL_TOPIC_NAME, "retention.ms", kafka_server["service"]["name"])
+
+
 @pytest.mark.sanity
 def test_topic_partition_count(kafka_server: dict):
     package_name = kafka_server["package_name"]

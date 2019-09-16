@@ -19,7 +19,7 @@ ext {
     junitVer = "4.12"
     systemRulesVer = "1.16.0"
     mockitoVer = "2.10.0"
-    dcosSDKVer = "0.56.2"
+    dcosSDKVer = "0.57.0"
 }
 
 dependencies {

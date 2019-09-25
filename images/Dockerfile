@@ -44,9 +44,6 @@ RUN curl -O "https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_jav
 
 WORKDIR $KAFKA_HOME
 
-COPY scripts/start-kafka.sh /opt/kafka/bin/
 COPY scripts/metrics-config.yml /opt/kafka/
-COPY scripts/generate-configuration.sh /opt/kafka/
-COPY scripts/readiness-check.sh /opt/kafka/
 
 USER $UNAME

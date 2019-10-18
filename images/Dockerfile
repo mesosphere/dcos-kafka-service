@@ -42,6 +42,8 @@ RUN curl -O "https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_jav
     mkdir -p $JMX_EXPORTER_PATH/config  && \
     mv "jmx_prometheus_javaagent-${JMX_EXPORTER_VERSION}.jar" "/opt/jmx-exporter/jmx_prometheus_javaagent.jar"
 
+RUN curl "https://downloads.mesosphere.com/kafka/assets/kafka-custom-principal-builder-1.0.0.jar" --output ${KAFKA_HOME}/libs/kafka-custom-principal-builder-1.0.0.jar
+
 WORKDIR $KAFKA_HOME
 
 COPY scripts/metrics-config.yml /opt/kafka/

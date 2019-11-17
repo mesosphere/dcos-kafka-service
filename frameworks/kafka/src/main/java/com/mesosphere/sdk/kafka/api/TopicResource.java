@@ -60,7 +60,16 @@ public class TopicResource {
         try {
             int partCount = Integer.parseInt(partitionCount);
             int replFactor = Integer.parseInt(replicationFactor);
-            return ResponseUtils.jsonOkResponse(cmdExecutor.createTopic(name, partCount, replFactor));
+            JSONObject result = cmdExecutor.createTopic(name, partCount, replFactor);
+            String message = result.getString("message");
+            Response.Status status;
+            if (message.contains("Created topic")) {
+                status = Response.Status.OK;
+            } else {
+                status = Response.Status.INTERNAL_SERVER_ERROR;
+				log.error("Failed to verify the topic creation: " + name + " with output: " + message);
+            }
+            return ResponseUtils.jsonResponse(result, status);
         } catch (Exception ex) {
             log.error("Failed to create topic: " + name + " with exception: " + ex);
             return Response.serverError().build();

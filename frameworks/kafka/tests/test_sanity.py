@@ -4,10 +4,7 @@ import retrying
 import sdk_cmd
 import sdk_hosts
 import sdk_install
-import sdk_marathon
 import sdk_metrics
-import sdk_plan
-import sdk_tasks
 import sdk_upgrade
 import sdk_utils
 import shakedown
@@ -43,6 +40,7 @@ def configure_package(configure_security):
 @pytest.mark.smoke
 def test_service_health():
     assert shakedown.service_healthy(sdk_utils.get_foldered_name(config.SERVICE_NAME))
+
 
 # --------- Endpoints -------------
 
@@ -85,41 +83,6 @@ def test_endpoints_zookeeper_default():
     )
 
 
-@pytest.mark.smoke
-@pytest.mark.sanity
-def test_custom_zookeeper():
-    foldered_name = sdk_utils.get_foldered_name(config.SERVICE_NAME)
-    broker_ids = sdk_tasks.get_task_ids(foldered_name, "{}-".format(config.DEFAULT_POD_TYPE))
-
-    # create a topic against the default zk:
-    test_utils.create_topic(config.DEFAULT_TOPIC_NAME, service_name=foldered_name)
-
-    marathon_config = sdk_marathon.get_config(foldered_name)
-    # should be using default path when this envvar is empty/unset:
-    assert marathon_config["env"]["KAFKA_ZOOKEEPER_URI"] == ""
-
-    # use a custom zk path that's WITHIN the 'dcos-service-' path, so that it's automatically cleaned up in uninstall:
-    zk_path = "master.mesos:2181/{}/CUSTOMPATH".format(sdk_utils.get_zk_path(foldered_name))
-    marathon_config["env"]["KAFKA_ZOOKEEPER_URI"] = zk_path
-    sdk_marathon.update_app(marathon_config)
-
-    sdk_tasks.check_tasks_updated(foldered_name, "{}-".format(config.DEFAULT_POD_TYPE), broker_ids)
-    sdk_plan.wait_for_completed_deployment(foldered_name)
-
-    # wait for brokers to finish registering
-    test_utils.broker_count_check(config.DEFAULT_BROKER_COUNT, service_name=foldered_name)
-
-    _, zookeeper, _ = sdk_cmd.svc_cli(config.PACKAGE_NAME, foldered_name, "endpoints zookeeper")
-    assert zookeeper.rstrip("\n") == zk_path
-
-    # topic created earlier against default zk should no longer be present:
-    _, topic_list_info, _ = sdk_cmd.svc_cli(config.PACKAGE_NAME, foldered_name, "topic list", parse_json=True)
-
-    test_utils.assert_topic_lists_are_equal_without_automatic_topics([], topic_list_info)
-
-    # tests from here continue with the custom ZK path...
-
-
 # --------- Broker -------------
 
 
@@ -138,7 +101,7 @@ def test_broker_list():
 @pytest.mark.smoke
 @pytest.mark.sanity
 def test_broker_invalid():
-    rc, stdout , stderr = sdk_cmd.svc_cli(
+    rc, stdout, stderr = sdk_cmd.svc_cli(
         config.PACKAGE_NAME,
         sdk_utils.get_foldered_name(config.SERVICE_NAME),
         "broker get {}".format(config.DEFAULT_BROKER_COUNT + 1),
@@ -176,15 +139,21 @@ def test_help_cli():
 @pytest.mark.sanity
 def test_config_cli():
     foldered_name = sdk_utils.get_foldered_name(config.SERVICE_NAME)
-    _, configs, _ = sdk_cmd.svc_cli(config.PACKAGE_NAME, foldered_name, "config list", parse_json=True)
+    _, configs, _ = sdk_cmd.svc_cli(
+        config.PACKAGE_NAME, foldered_name, "config list", parse_json=True
+    )
     # refrain from breaking this test if earlier tests did a config update
     assert len(configs) >= 1
 
     assert sdk_cmd.svc_cli(
         config.PACKAGE_NAME, foldered_name, "config show {}".format(configs[0]), print_output=False
-    )[1]  # noisy output
+    )[
+        1
+    ]  # noisy output
     assert sdk_cmd.svc_cli(config.PACKAGE_NAME, foldered_name, "config target", parse_json=True)[1]
-    assert sdk_cmd.svc_cli(config.PACKAGE_NAME, foldered_name, "config target_id", parse_json=True)[1]
+    assert sdk_cmd.svc_cli(config.PACKAGE_NAME, foldered_name, "config target_id", parse_json=True)[
+        1
+    ]
 
 
 @pytest.mark.smoke
@@ -226,8 +195,12 @@ def test_plan_cli():
 @pytest.mark.sanity
 def test_state_cli():
     foldered_name = sdk_utils.get_foldered_name(config.SERVICE_NAME)
-    assert sdk_cmd.svc_cli(config.PACKAGE_NAME, foldered_name, "state framework_id", parse_json=True)[1]
-    assert sdk_cmd.svc_cli(config.PACKAGE_NAME, foldered_name, "state properties", parse_json=True)[1]
+    assert sdk_cmd.svc_cli(
+        config.PACKAGE_NAME, foldered_name, "state framework_id", parse_json=True
+    )[1]
+    assert sdk_cmd.svc_cli(config.PACKAGE_NAME, foldered_name, "state properties", parse_json=True)[
+        1
+    ]
 
 
 @pytest.mark.smoke
@@ -246,7 +219,9 @@ def test_pod_cli():
         foldered_name,
         "pod info {}-0".format(config.DEFAULT_POD_TYPE),
         print_output=False,
-    )[1]  # noisy output
+    )[
+        1
+    ]  # noisy output
 
 
 @pytest.mark.sanity

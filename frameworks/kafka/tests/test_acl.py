@@ -38,7 +38,7 @@ def test_add_topic_acl(kafka_topic: dict):
         parse_json=True,
     )
 
-    assert "Output: Adding ACLs for resource `Topic:LITERAL:{}`".format(kafka_topic["name"]) in acl_info["message"]
+    assert "Output: Adding ACLs for resource `ResourcePattern(resourceType=TOPIC, name={}, patternType=LITERAL)".format(kafka_topic["name"]) in acl_info["message"]
     assert "User:DCOS has Allow permission for operations: All from hosts: 192.168.1.2" in acl_info["message"]
 
 

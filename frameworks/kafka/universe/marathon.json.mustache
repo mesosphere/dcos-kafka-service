@@ -112,6 +112,8 @@
     {{#service.security.ssl_authentication.enabled}}
     "TASKCFG_ALL_SECURITY_SSL_AUTHENTICATION_ENABLED": "{{service.security.ssl_authentication.enabled}}",
     {{/service.security.ssl_authentication.enabled}}
+
+    "CUSTOM_TLS_CERT_FILE": "{{service.security.transport_encryption.tls_cert}}",
     {{/service.security.transport_encryption.enabled}}
 
     {{#service.security.kerberos.enabled}}

@@ -31,6 +31,9 @@ pods:
       keytab:
         secret: {{SECURITY_KERBEROS_KEYTAB_SECRET}}
         file: kafka.keytab
+      tlsCertFile:
+        secret: {{CUSTOM_TLS_CERT_FILE}}
+        file: customtls/crt_file
       {{#TASKCFG_ALL_SECURE_JMX_ENABLED}}
       jmxPasswordFile:
         secret: {{SECURE_JMX_PWD_FILE}}
@@ -57,6 +60,9 @@ pods:
     {{#TASKCFG_ALL_SECURE_JMX_ENABLED}}
     {{^TASKCFG_ALL_SECURITY_KERBEROS_ENABLED}}
     secrets:
+      tlsCertFile:
+        secret: {{CUSTOM_TLS_CERT_FILE}}
+        file: customtls/crt_file
       jmxPasswordFile:
         secret: {{SECURE_JMX_PWD_FILE}}
         file: jmx/key_file

@@ -195,6 +195,22 @@
                   "type": "boolean",
                   "default": false
                 },
+                "tls_cert": {
+                  "description": "Secret name that contains tls cert",
+                  "type": "string",
+                  "default": "",
+                  "media": {
+                    "type": "application/x-secret+string"
+                  }
+                },
+                "tls_key": {
+                  "description": "Secret name that contains tls key",
+                  "type": "string",
+                  "default": "",
+                  "media": {
+                    "type": "application/x-secret+string"
+                  }
+                },
                 "allow_plaintext": {
                   "description": "Allow plaintext alongside encrypted traffic",
                   "type": "boolean",

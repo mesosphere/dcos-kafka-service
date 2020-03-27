@@ -203,8 +203,41 @@
                     "type": "application/x-secret+string"
                   }
                 },
-                "tls_key": {
+                "tls_cert_key": {
                   "description": "Secret name that contains tls key",
+                  "type": "string",
+                  "default": "",
+                  "media": {
+                    "type": "application/x-secret+string"
+                  }
+                },
+                "key_store": {
+                  "description": "Secret name that contains key store file.",
+                  "type": "string",
+                  "title": "key store",
+                  "default": "",
+                  "media": {
+                    "type": "application/x-secret+string"
+                  }
+                },
+                "key_store_password_file": {
+                  "description": "Secret name that contains key store password file.",
+                  "type": "string",
+                  "default": "",
+                  "media": {
+                    "type": "application/x-secret+string"
+                  }
+                },
+                "trust_store": {
+                  "description": "Secret name that contains trust store file.",
+                  "type": "string",
+                  "default": "",
+                  "media": {
+                    "type": "application/x-secret+string"
+                  }
+                },
+                "trust_store_password_file": {
+                  "description": "Secret name that contains trust store password file.",
                   "type": "string",
                   "default": "",
                   "media": {

@@ -114,6 +114,11 @@
     {{/service.security.ssl_authentication.enabled}}
 
     "CUSTOM_TLS_CERT_FILE": "{{service.security.transport_encryption.tls_cert}}",
+    "CUSTOM_TLS_CERT_KEY_FILE": "{{service.security.transport_encryption.tls_cert_key}}",
+    "TASK_CFG_ALL_CUSTOM_TLS_KEY_STORE": "{{service.security.transport_encryption.key_store}}",
+    "TASK_CFG_ALL_CUSTOM_TLS_KEY_STORE_PASSWORD": "{{service.security.transport_encryption.key_store_password_file}}",
+    "TASK_CFG_ALL_CUSTOM_TLS_TRUST_STORE": "{{service.security.transport_encryption.trust_store}}",
+    "TASK_CFG_ALL_CUSTOM_TLS_TRUST_STORE_PASSWORD": "{{service.security.transport_encryption.trust_store_password_file}}",
     {{/service.security.transport_encryption.enabled}}
 
     {{#service.security.kerberos.enabled}}

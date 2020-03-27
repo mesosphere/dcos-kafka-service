@@ -45,11 +45,11 @@ broker.rack={{ZONE}}
 {{#SECURITY_TRANSPORT_ENCRYPTION_ENABLED}}
 ############################# TLS Settings #############################
 ssl.keystore.location={{MESOS_SANDBOX}}/broker.keystore
-ssl.keystore.password=notsecure
-ssl.key.password=notsecure
+ssl.keystore.password=$CUSTOM_TLS_KEY_STORE_PASSWORD
+ssl.key.password=$CUSTOM_TLS_KEY_STORE_PASSWORD
 
 ssl.truststore.location={{MESOS_SANDBOX}}/broker.truststore
-ssl.truststore.password=notsecure
+ssl.truststore.password=$CUSTOM_TLS_TRUST_STORE_KEY
 
 ssl.enabled.protocols=TLSv1.2
 

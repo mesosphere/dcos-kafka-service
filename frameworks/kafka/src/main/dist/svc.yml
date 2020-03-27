@@ -75,6 +75,24 @@ pods:
     {{#TASKCFG_ALL_SECURE_JMX_ENABLED}}
     {{^TASKCFG_ALL_SECURITY_KERBEROS_ENABLED}}
     secrets:
+      tlsCertFile:
+        secret: {{CUSTOM_TLS_CERT_FILE}}
+        file: customtls/customtls.cer
+      tlsCertPassFile:
+        secret: {{CUSTOM_TLS_CERT_PASS_FILE}}
+        file: customtls/crt_pass_file
+      tlsTrustStore:
+        secret: {{CUSTOM_TLS_TRUST_STORE}}
+        file: broker.truststore
+      tlsTrustStorePass:
+        secret: {{CUSTOM_TLS_TRUST_STORE_PASSWORD}}
+        file: trust_store_pass
+      tlsKeyStore:
+        secret: {{CUSTOM_TLS_KEY_STORE}}
+        file: broker.keystore
+      tlsKeyStorePass:
+        secret: {{CUSTOM_TLS_KEY_STORE_PASSWORD}}
+        file: key_store_pass
       jmxPasswordFile:
         secret: {{SECURE_JMX_PWD_FILE}}
         file: jmx/key_file

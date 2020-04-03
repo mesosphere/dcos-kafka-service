@@ -211,15 +211,6 @@
                     "type": "application/x-secret+string"
                   }
                 },
-                "key_store": {
-                  "description": "Secret name that contains key store file.",
-                  "type": "string",
-                  "title": "key store",
-                  "default": "",
-                  "media": {
-                    "type": "application/x-secret+string"
-                  }
-                },
                 "key_store_password_file": {
                   "description": "Secret name that contains key store password file.",
                   "type": "string",

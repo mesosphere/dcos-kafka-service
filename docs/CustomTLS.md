@@ -12,11 +12,11 @@ To use the custom TLS certs for kafka service, we need to add the following opti
     "name" : "kafka",
     "transport_encryption": {
         "enabled": true,
-        "custom_tls_certificate": "kafka/customtlscert",
-        "custom_tls_keystore": "kafka/keystore",
-        "custom_tls_keystore_password_file": "kafka/keystorepass",
-        "custom_tls_truststore": "kafka/truststore",
-        "custom_tls_truststore_password_file": "kafka/truststorepass",
+        "tls_cert": "${SERVICE_NAME}/customtlscert",
+        "key_store": "${SERVICE_NAME}/keystore",
+        "key_store_password_file": "${SERVICE_NAME}/keystorepass",
+        "trust_store": "${SERVICE_NAME}/truststore",
+        "trust_store_password_file": "${SERVICE_NAME}/truststorepass"
         "allow_plaintext": false
     }
 }

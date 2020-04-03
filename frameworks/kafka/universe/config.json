@@ -203,14 +203,6 @@
                     "type": "application/x-secret+string"
                   }
                 },
-                "tls_cert_key": {
-                  "description": "Secret name that contains tls key",
-                  "type": "string",
-                  "default": "",
-                  "media": {
-                    "type": "application/x-secret+string"
-                  }
-                },
                 "key_store": {
                   "description": "Secret name that contains key store file.",
                   "type": "string",

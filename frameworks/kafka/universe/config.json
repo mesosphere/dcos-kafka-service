@@ -195,24 +195,16 @@
                   "type": "boolean",
                   "default": false
                 },
-                "tls_cert": {
-                  "description": "Secret name that contains tls cert",
+                "custom_tls_certificate": {
+                  "description": "Secret name that contains tls certificate",
                   "type": "string",
                   "default": "",
                   "media": {
                     "type": "application/x-secret+string"
                   }
                 },
-                "tls_cert_key": {
-                  "description": "Secret name that contains tls key",
-                  "type": "string",
-                  "default": "",
-                  "media": {
-                    "type": "application/x-secret+string"
-                  }
-                },
-                "key_store": {
-                  "description": "Secret name that contains key store file.",
+                "custom_tls_keystore": {
+                  "description": "Secret name that contains keystore file.",
                   "type": "string",
                   "title": "key store",
                   "default": "",
@@ -220,24 +212,24 @@
                     "type": "application/x-secret+string"
                   }
                 },
-                "key_store_password_file": {
-                  "description": "Secret name that contains key store password file.",
+                "custom_tls_keystore_password_file": {
+                  "description": "Secret name that contains keystore password file.",
                   "type": "string",
                   "default": "",
                   "media": {
                     "type": "application/x-secret+string"
                   }
                 },
-                "trust_store": {
-                  "description": "Secret name that contains trust store file.",
+                "custom_tls_truststore": {
+                  "description": "Secret name that contains truststore file.",
                   "type": "string",
                   "default": "",
                   "media": {
                     "type": "application/x-secret+string"
                   }
                 },
-                "trust_store_password_file": {
-                  "description": "Secret name that contains trust store password file.",
+                "custom_tls_truststore_password_file": {
+                  "description": "Secret name that contains truststore password file.",
                   "type": "string",
                   "default": "",
                   "media": {
@@ -1300,7 +1292,7 @@
           "title": "ssl.endpoint.identification.enabled",
           "description": "By default enables the hostname verification when TLS connections are established between Kafka brokers. To disable hostname verification leave this option unchecked",
           "type": "boolean",
-          "default": false
+          "default": true
         },
         "transaction_state_log_segment_bytes": {
           "title": "transaction.state.log.segment.bytes",

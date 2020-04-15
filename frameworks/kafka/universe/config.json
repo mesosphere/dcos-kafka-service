@@ -1180,6 +1180,13 @@
           "description": "Per-ip or hostname overrides to the default maximum number of connections",
           "default": ""
         },
+        "max_incremental_fetch_session_cache_slots": {
+          "title": "max.incremental.fetch.session.cache.slots",
+          "description": "The maximum number of incremental fetch sessions that we will maintain",
+          "type": "integer",
+          "default": 1000,
+          "minimum": 0
+        },
         "num_partitions": {
           "title": "num.partitions",
           "description": "The default number of log partitions per topic",

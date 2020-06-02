@@ -204,7 +204,7 @@ pods:
           mkdir jmx_properties
           (umask u=rw,g=,o= && cp $MESOS_SANDBOX/jmx/key_file $MESOS_SANDBOX/jmx_properties/key_file)
       {{/TASKCFG_ALL_SECURE_JMX_ENABLED}}
-      {{#TASKCFG_ALL_SECURITYCUSTOM_TRANSPORT_ENCRYPTION_ENABLED}}
+      {{#TASKCFG_ALL_SECURITY_CUSTOM_TRANSPORT_ENCRYPTION_ENABLED}}
           export KEY_STORE_PATH=$MESOS_SANDBOX/customtls/broker.keystore
           if [ -f "$MESOS_SANDBOX/customtls/broker.keystore" ]; then
               # load user provided trust store

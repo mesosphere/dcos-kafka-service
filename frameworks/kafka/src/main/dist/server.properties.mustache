@@ -44,18 +44,32 @@ broker.rack={{ZONE}}
 
 {{#SECURITY_TRANSPORT_ENCRYPTION_ENABLED}}
 ############################# TLS Settings #############################
-ssl.keystore.location={{MESOS_SANDBOX}}/customtls/broker.keystore
-ssl.keystore.password={{CUSTOM_TLS_KEY_STORE_PASSWORD}}
-ssl.key.password={{CUSTOM_TLS_KEY_STORE_PASSWORD}}
 
-ssl.truststore.location={{MESOS_SANDBOX}}/customtls/broker.truststore
-ssl.truststore.password={{CUSTOM_TLS_TRUST_STORE_KEY}}
+# Use default TLS credentials if custom TLS is not enabled
+{{^SECURITY_CUSTOM_TRANSPORT_ENCRYPTION_ENABLED}}
+ssl.keystore.location={{MESOS_SANDBOX}}/broker.keystore
+ssl.keystore.password=notsecure
+ssl.key.password=notsecure
+
+ssl.truststore.location={{MESOS_SANDBOX}}/broker.truststore
+ssl.truststore.password=notsecure
+{{/SECURITY_CUSTOM_TRANSPORT_ENCRYPTION_ENABLED}}
 
 ssl.enabled.protocols=TLSv1.2
 
 {{#SECURITY_TRANSPORT_ENCRYPTION_CIPHERS}}
 ssl.cipher.suites={{SECURITY_TRANSPORT_ENCRYPTION_CIPHERS}}
 {{/SECURITY_TRANSPORT_ENCRYPTION_CIPHERS}}
+
+# Use TLS certificate provided by user when custom TLS is enabled
+{{#SECURITY_CUSTOM_TRANSPORT_ENCRYPTION_ENABLED}}
+ssl.keystore.location={{MESOS_SANDBOX}}/customtls/broker.keystore
+ssl.keystore.password={{CUSTOM_TLS_KEY_STORE_PASSWORD}}
+ssl.key.password={{CUSTOM_TLS_KEY_STORE_PASSWORD}}
+
+ssl.truststore.location={{MESOS_SANDBOX}}/customtls/broker.truststore
+ssl.truststore.password={{CUSTOM_TLS_TRUST_STORE_KEY}}
+{{/SECURITY_CUSTOM_TRANSPORT_ENCRYPTION_ENABLED}}
 
 # If Kerberos is NOT enabled, then SSL authentication can be turned on.
 {{^SECURITY_KERBEROS_ENABLED}}

@@ -47,7 +47,12 @@ def kafka_service(service_account):
             "name": config.SERVICE_NAME,
             "service_account": service_account["name"],
             "service_account_secret": service_account["secret"],
-            "security": {"transport_encryption": {"enabled": True}},
+            "security": {
+                "transport_encryption": {
+                    "enabled": True,
+                    "ciphers": "TLS_RSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_CBC_SHA256,TLS_DHE_RSA_WITH_AES_128_GCM_SHA256,TLS_DHE_RSA_WITH_AES_128_CBC_SHA256,TLS_DHE_RSA_WITH_AES_256_GCM_SHA384,TLS_DHE_RSA_WITH_AES_256_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
+                }
+            },
         }
     }
 
@@ -136,13 +141,15 @@ def test_tls_ciphers(kafka_service):
     expected_ciphers = set(
         test_utils.get_in(
             ciphers_config_path,
-            sdk_cmd.svc_cli(config.PACKAGE_NAME, config.SERVICE_NAME, "describe", parse_json=True)[1],
+            sdk_cmd.svc_cli(config.PACKAGE_NAME, config.SERVICE_NAME, "describe", parse_json=True)[
+                1
+            ],
             "",
         )
         .rstrip()
         .split(",")
     )
-
+    print("The expected cyphers are\n", expected_ciphers)
     openssl_ciphers = sdk_security.openssl_ciphers()
     missing_openssl_ciphers = cipher_suites.missing_openssl_ciphers(openssl_ciphers)
     possible_openssl_ciphers = openssl_ciphers - missing_openssl_ciphers

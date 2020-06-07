@@ -1,8 +1,5 @@
 # Use custom TLS certificate for Kafka
 
-TODO: Move this doc to official dcos docs
-This documentation is just here for archive purpose and must be removed once its moved to docs-site repo.
-
 ## Using Custom TLS settings Kafka package
 
 To use the custom TLS certs for kafka service, we need to add the following options in the configuration of the package:
@@ -12,7 +9,6 @@ To use the custom TLS certs for kafka service, we need to add the following opti
     "name" : "kafka",
     "transport_encryption": {
         "enabled": true,
-        "tls_cert": "${SERVICE_NAME}/customtlscert",
         "key_store": "${SERVICE_NAME}/keystore",
         "key_store_password_file": "${SERVICE_NAME}/keystorepass",
         "trust_store": "${SERVICE_NAME}/truststore",
@@ -105,7 +101,6 @@ cat <<EOF >>dcos-kafka-options-customtls.json
       "transport_encryption": {
         "enabled": true,
         "allow_plaintext": false,
-        "tls_cert": "${SERVICE_NAME}/customtlscert",
         "key_store": "${SERVICE_NAME}/keystore",
         "key_store_password_file": "${SERVICE_NAME}/keystorepass",
         "trust_store": "${SERVICE_NAME}/truststore",

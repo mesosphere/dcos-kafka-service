@@ -1353,7 +1353,7 @@
           "title": "ssl.endpoint.identification.enabled",
           "description": "By default enables the hostname verification when TLS connections are established between Kafka brokers. To disable hostname verification leave this option unchecked",
           "type": "boolean",
-          "default": false
+          "default": true
         },
         "transaction_state_log_segment_bytes": {
           "title": "transaction.state.log.segment.bytes",

@@ -101,6 +101,11 @@
     {{#service.security.transport_encryption.enabled}}
     "BROKER_PORT_TLS": "{{brokers.port_tls}}",
     "TASKCFG_ALL_SECURITY_TRANSPORT_ENCRYPTION_ENABLED": "{{service.security.transport_encryption.enabled}}",
+    
+    {{#service.security.transport_encryption.custom_transport_encryption}}
+    "TASKCFG_ALL_SECURITY_CUSTOM_TRANSPORT_ENCRYPTION_ENABLED": "{{service.security.transport_encryption.custom_transport_encryption}}",
+    {{/service.security.transport_encryption.custom_transport_encryption}}
+
     {{#service.security.transport_encryption.allow_plaintext}}
     "TASKCFG_ALL_SECURITY_TRANSPORT_ENCRYPTION_ALLOW_PLAINTEXT": "{{service.security.transport_encryption.allow_plaintext}}",
     {{/service.security.transport_encryption.allow_plaintext}}
@@ -112,6 +117,13 @@
     {{#service.security.ssl_authentication.enabled}}
     "TASKCFG_ALL_SECURITY_SSL_AUTHENTICATION_ENABLED": "{{service.security.ssl_authentication.enabled}}",
     {{/service.security.ssl_authentication.enabled}}
+
+    {{#service.security.transport_encryption.custom_transport_encryption}}
+    "CUSTOM_TLS_KEY_STORE": "{{service.security.transport_encryption.key_store}}",
+    "CUSTOM_TLS_KEY_STORE_PASSWORD": "{{service.security.transport_encryption.key_store_password_file}}",
+    "CUSTOM_TLS_TRUST_STORE": "{{service.security.transport_encryption.trust_store}}",
+    "CUSTOM_TLS_TRUST_STORE_PASSWORD": "{{service.security.transport_encryption.trust_store_password_file}}",
+    {{/service.security.transport_encryption.custom_transport_encryption}}
     {{/service.security.transport_encryption.enabled}}
 
     {{#service.security.kerberos.enabled}}

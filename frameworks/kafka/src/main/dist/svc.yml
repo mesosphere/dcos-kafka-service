@@ -31,6 +31,20 @@ pods:
       keytab:
         secret: {{SECURITY_KERBEROS_KEYTAB_SECRET}}
         file: kafka.keytab
+      {{#TASKCFG_ALL_SECURITY_CUSTOM_TRANSPORT_ENCRYPTION_ENABLED}}
+      tlsTrustStore:
+        secret: {{CUSTOM_TLS_TRUST_STORE}}
+        file: broker.truststore
+      tlsTrustStorePass:
+        secret: {{CUSTOM_TLS_TRUST_STORE_PASSWORD}}
+        file: trust_store_pass
+      tlsKeyStore:
+        secret: {{CUSTOM_TLS_KEY_STORE}}
+        file: broker.keystore
+      tlsKeyStorePass:
+        secret: {{CUSTOM_TLS_KEY_STORE_PASSWORD}}
+        file: key_store_pass
+      {{/TASKCFG_ALL_SECURITY_CUSTOM_TRANSPORT_ENCRYPTION_ENABLED}}
       {{#TASKCFG_ALL_SECURE_JMX_ENABLED}}
       jmxPasswordFile:
         secret: {{SECURE_JMX_PWD_FILE}}
@@ -79,6 +93,21 @@ pods:
         file: jmx/key_store_pass
     {{/TASKCFG_ALL_SECURITY_KERBEROS_ENABLED}}
     {{/TASKCFG_ALL_SECURE_JMX_ENABLED}}
+    {{#TASKCFG_ALL_SECURITY_CUSTOM_TRANSPORT_ENCRYPTION_ENABLED}}
+    secrets:
+      tlsTrustStore:
+        secret: {{CUSTOM_TLS_TRUST_STORE}}
+        file: customtls/broker.truststore
+      tlsTrustStorePass:
+        secret: {{CUSTOM_TLS_TRUST_STORE_PASSWORD}}
+        file: customtls/trust_store_pass
+      tlsKeyStore:
+        secret: {{CUSTOM_TLS_KEY_STORE}}
+        file: customtls/broker.keystore
+      tlsKeyStorePass:
+        secret: {{CUSTOM_TLS_KEY_STORE_PASSWORD}}
+        file: customtls/key_store_pass
+    {{/TASKCFG_ALL_SECURITY_CUSTOM_TRANSPORT_ENCRYPTION_ENABLED}}
     tasks:
       broker:
         cpus: {{BROKER_CPUS}}
@@ -175,6 +204,21 @@ pods:
           mkdir jmx_properties
           (umask u=rw,g=,o= && cp $MESOS_SANDBOX/jmx/key_file $MESOS_SANDBOX/jmx_properties/key_file)
       {{/TASKCFG_ALL_SECURE_JMX_ENABLED}}
+      {{#TASKCFG_ALL_SECURITY_CUSTOM_TRANSPORT_ENCRYPTION_ENABLED}}
+          export KEY_STORE_PATH=$MESOS_SANDBOX/customtls/broker.keystore
+          if [ -f "$MESOS_SANDBOX/customtls/broker.keystore" ]; then
+              # load user provided trust store
+              echo "Found broker.keystore" >&2
+              export CUSTOM_TLS_KEY_STORE_PATH=$MESOS_SANDBOX/customtls/broker.truststore
+              export CUSTOM_TLS_KEY_STORE_KEY=`cat $MESOS_SANDBOX/customtls/trust_store_pass`
+          fi
+          if [ -f "$MESOS_SANDBOX/customtls/broker.truststore" ]; then
+              # load user provided trust store
+              echo "Found broker.truststore" >&2
+              export CUSTOM_TLS_TRUST_STORE_PATH=$MESOS_SANDBOX/customtls/broker.truststore
+              export CUSTOM_TLS_TRUST_STORE_KEY=`cat $MESOS_SANDBOX/customtls/trust_store_pass`
+          fi
+      {{/TASKCFG_ALL_SECURITY_CUSTOM_TRANSPORT_ENCRYPTION_ENABLED}}
 
           # setup-helper determines the correct listeners and security.inter.broker.protocol.
           # it relies on the task IP being stored in MESOS_CONTAINER_IP

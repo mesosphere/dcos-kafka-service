@@ -64,8 +64,8 @@ ssl.cipher.suites={{SECURITY_TRANSPORT_ENCRYPTION_CIPHERS}}
 # Use TLS certificate provided by user when custom TLS is enabled
 {{#SECURITY_CUSTOM_TRANSPORT_ENCRYPTION_ENABLED}}
 ssl.keystore.location={{MESOS_SANDBOX}}/customtls/broker.keystore
-ssl.keystore.password={{CUSTOM_TLS_KEY_STORE_PASSWORD}}
-ssl.key.password={{CUSTOM_TLS_KEY_STORE_PASSWORD}}
+ssl.keystore.password={{CUSTOM_TLS_KEY_STORE_KEY}}
+ssl.key.password={{CUSTOM_TLS_KEY_STORE_KEY}}
 
 ssl.truststore.location={{MESOS_SANDBOX}}/customtls/broker.truststore
 ssl.truststore.password={{CUSTOM_TLS_TRUST_STORE_KEY}}

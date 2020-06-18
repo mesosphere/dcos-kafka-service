@@ -187,23 +187,118 @@
               }
             },
             "transport_encryption": {
+              "title": "Transport Encryption Configuration",
               "type": "object",
-              "description": "Transport encryption settings",
+              "description": "Transport Encryption Settings",
               "properties": {
                 "enabled": {
                   "description": "Enable transport encryption (TLS)",
                   "type": "boolean",
+                  "enum": [
+                    true,
+                    false
+                  ],
                   "default": false
-                },
-                "allow_plaintext": {
-                  "description": "Allow plaintext alongside encrypted traffic",
-                  "type": "boolean",
-                  "default": false
-                },
-                "ciphers": {
-                  "description": "Comma-separated list of JSSE Cipher Suite Names",
-                  "type": "string",
-                  "default": "TLS_RSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_CBC_SHA256,TLS_DHE_RSA_WITH_AES_128_GCM_SHA256,TLS_DHE_RSA_WITH_AES_128_CBC_SHA256,TLS_DHE_RSA_WITH_AES_256_GCM_SHA384,TLS_DHE_RSA_WITH_AES_256_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384"
+                }
+              },
+              "dependencies": {
+                "enabled": {
+                  "oneOf": [
+                    {
+                      "properties": {
+                        "enabled": {
+                          "enum": [
+                            false
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "properties": {
+                        "enabled": {
+                          "enum": [
+                            true
+                          ]
+                        },
+                        "allow_plaintext": {
+                          "description": "Allow plaintext alongside encrypted traffic",
+                          "type": "boolean",
+                          "default": false
+                        },
+                        "ciphers": {
+                          "description": "Comma-separated list of JSSE Cipher Suite Names",
+                          "type": "string",
+                          "default": "TLS_RSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_CBC_SHA256,TLS_DHE_RSA_WITH_AES_128_GCM_SHA256,TLS_DHE_RSA_WITH_AES_128_CBC_SHA256,TLS_DHE_RSA_WITH_AES_256_GCM_SHA384,TLS_DHE_RSA_WITH_AES_256_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384"
+                        },
+                        "custom_transport_encryption": {
+                          "description": "By default the use of custom TLS certificates is disabled. Enable it to use the custom TLS certificate for the Kafka service.",
+                          "type": "boolean",
+                          "enum": [
+                            true,
+                            false
+                          ],
+                          "default": false
+                        }
+                      },
+                      "dependencies": {
+                        "custom_transport_encryption": {
+                          "oneOf": [
+                            {
+                              "properties": {
+                                "custom_transport_encryption": {
+                                  "enum": [
+                                    false
+                                  ]
+                                }
+                              }
+                            },
+                            {
+                              "properties": {
+                                "custom_transport_encryption": {
+                                  "enum": [
+                                    true
+                                  ]
+                                },
+                                "key_store": {
+                                  "description": "Secret name that contains key store file.",
+                                  "type": "string",
+                                  "title": "key store",
+                                  "default": "",
+                                  "media": {
+                                    "type": "application/x-secret+string"
+                                  }
+                                },
+                                "key_store_password_file": {
+                                  "description": "Secret name that contains key store password file.",
+                                  "type": "string",
+                                  "default": "",
+                                  "media": {
+                                    "type": "application/x-secret+string"
+                                  }
+                                },
+                                "trust_store": {
+                                  "description": "Secret name that contains trust store file.",
+                                  "type": "string",
+                                  "default": "",
+                                  "media": {
+                                    "type": "application/x-secret+string"
+                                  }
+                                },
+                                "trust_store_password_file": {
+                                  "description": "Secret name that contains trust store password file.",
+                                  "type": "string",
+                                  "default": "",
+                                  "media": {
+                                    "type": "application/x-secret+string"
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
                 }
               }
             },

@@ -14,7 +14,7 @@ Service documentation can be found here : [DC/OS Apache Kafka Documentation](htt
 
 ## Development
 
-Also make sure your Docker daemon is [running under a non-root
+Make sure your Docker daemon is [running under a non-root
 user](https://docs.docker.com/install/linux/linux-postinstall/).
 
 ### Cloning the repository

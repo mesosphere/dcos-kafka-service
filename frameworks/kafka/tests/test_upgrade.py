@@ -56,9 +56,7 @@ def test_upgrade_230_240(configure_security):
             parse_json=True,
         )
         assert options['kafka']['inter_broker_protocol_version'] == '2.1'
-
-        task_ids = sdk_tasks.get_task_ids(foldered_name, "")
-
+        
         # Run update to the new version
         with tempfile.NamedTemporaryFile() as opts_f:
             opts_f.write(json.dumps({

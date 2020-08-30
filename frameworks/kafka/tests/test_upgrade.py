@@ -13,15 +13,14 @@ from tests import config, test_utils
 
 @pytest.mark.dcos_min_version("1.10")
 @sdk_utils.dcos_ee_only
-def test_upgrade_111_210(configure_security):
+def test_upgrade_230_240(configure_security):
     foldered_name = sdk_utils.get_foldered_name(config.SERVICE_NAME)
     sdk_install.uninstall(config.PACKAGE_NAME, foldered_name)
 
-    from_version = '2.4.0-1.1.1'
+    from_version = '2.7.0-2.3.0'
     to_version = 'stub-universe'
 
-    # In case that 2.1.0 has been released upgrade we want to test to a specific
-    # 2.1.0 version rather than to latest stub universe version.
+    # Use a specific kafka version to test upgrade against it.
     ret_code, stdout, _ = sdk_cmd.run_cli(
         cmd='package describe kafka --package-versions',
     )
@@ -31,7 +30,7 @@ def test_upgrade_111_210(configure_security):
         v for v in json.loads(stdout) if re.match(r'^([\d\.]+)\-([\d\.]+)$', v)
     ]
     version_210 = sorted(
-        [v for v in package_versions if v.split('-')[1] == '2.1.0'],
+        [v for v in package_versions if v.split('-')[1] == '2.3.0'],
         reverse=True,
     )
     if len(version_210) > 0:
@@ -49,14 +48,14 @@ def test_upgrade_111_210(configure_security):
         # wait for brokers to finish registering before starting tests
         test_utils.broker_count_check(config.DEFAULT_BROKER_COUNT, service_name=foldered_name)
 
-        # Assert that inter broker protocol is set to 1.x version
+        # Assert that inter broker protocol is set to 2.x version
         _, options, _ = sdk_cmd.svc_cli(
             config.PACKAGE_NAME,
             foldered_name,
             'describe',
             parse_json=True,
         )
-        assert options['kafka']['inter_broker_protocol_version'] == '1.0'
+        assert options['kafka']['inter_broker_protocol_version'] == '2.1'
 
         task_ids = sdk_tasks.get_task_ids(foldered_name, "")
 
@@ -64,7 +63,7 @@ def test_upgrade_111_210(configure_security):
         with tempfile.NamedTemporaryFile() as opts_f:
             opts_f.write(json.dumps({
                 'kafka': {
-                    'inter_broker_protocol_version': '1.0'
+                    'inter_broker_protocol_version': '2.1'
                 }
             }).encode('utf-8'))
             opts_f.flush()
@@ -87,14 +86,14 @@ def test_upgrade_111_210(configure_security):
         )
         sdk_tasks.check_tasks_updated(foldered_name, "", task_ids)
 
-        # Assert that inter broker protocol is set to 1.x version
+        # Assert that inter broker protocol is set to 2.x version
         _, options, _ = sdk_cmd.svc_cli(
             config.PACKAGE_NAME,
             foldered_name,
             'describe',
             parse_json=True,
         )
-        assert options['kafka']['inter_broker_protocol_version'] == '1.0'
+        assert options['kafka']['inter_broker_protocol_version'] == '2.1'
 
         # Update protocol to 2.1 (serially) by changing kafka configuration
         with tempfile.NamedTemporaryFile() as opts_f:

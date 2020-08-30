@@ -84,7 +84,6 @@ def test_upgrade_230_240(configure_security):
                 to_version, config.PACKAGE_NAME,
             )
         )
-        sdk_tasks.check_tasks_updated(foldered_name, "", task_ids)
 
         # Assert that inter broker protocol is set to 2.x version
         _, options, _ = sdk_cmd.svc_cli(

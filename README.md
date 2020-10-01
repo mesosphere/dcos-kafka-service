@@ -98,12 +98,12 @@ PR titles should be in imperative mood, useful, concise and follow the following
 format:
 
 ```
-[DCOS-xxxxx] Add support for new thing.
+[D2IQ-xxxxx] Add support for new thing.
 ```
 
-In the example above a JIRA ticket is referenced with the `[DCOS-xxxxx]` tag. If
+In the example above a JIRA ticket is referenced with the `[D2IQ-xxxxx]` tag. If
 for some reason the PR isn't related to a ticket, feel free to use "free-form"
-tags, ideally ones that were already used like `[DOCS]`, `[SDK]`, `[MISC]`,
+tags, ideally ones that were already used like `[D2IQ]`, `[SDK]`, `[MISC]`,
 `[TOOLS]` or even `[SDK][TOOLS]` for increased specificity.
 
 PR descriptions should include additional context regarding what is achieved
@@ -139,7 +139,7 @@ When all checks are green, a PR should be merged as a squash-commit, with its
 message being the PR title followed by the PR number. Example:
 
 ```
-[DCOS-xxxxx] Add support for new thing. (#42)
+[D2IQ-xxxxx] Add support for new thing. (#42)
 ```
 
 The description for the squash-commit will ideally be the PR description

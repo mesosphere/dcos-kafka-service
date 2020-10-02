@@ -13,6 +13,7 @@ from tests import config, test_utils
 
 @pytest.mark.dcos_min_version("1.10")
 @sdk_utils.dcos_ee_only
+@pytest.mark.skip(reason="Not relevant.Will be updated or removed later.")
 def test_upgrade_111_210(configure_security):
     foldered_name = sdk_utils.get_foldered_name(config.SERVICE_NAME)
     sdk_install.uninstall(config.PACKAGE_NAME, foldered_name)

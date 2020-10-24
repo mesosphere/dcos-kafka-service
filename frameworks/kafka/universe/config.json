@@ -62,6 +62,22 @@
           ],
           "default": "INFO"
         },
+        "logrotate_options": {
+          "description": "The logrotate options for the DC/OS service.",
+          "type": "object",
+          "properties": {
+            "stdout_max_size": {
+              "description": "Logrotate stdout max size. Sizes must be an integer of less than 2^64 and must be suffixed with a unit such as B (bytes), KB, MB, GB, or TB. There should be no whitespace between the integer and unit.",
+              "type": "string",
+              "default": "8MB"
+            },
+            "stderr_max_size": {
+              "description": "Logrotate stderr max size. Sizes must be an integer of less than 2^64 and must be suffixed with a unit such as B (bytes), KB, MB, GB, or TB. There should be no whitespace between the integer and unit.",
+              "type": "string",
+              "default": "8MB"
+            }
+          }
+        },
         "placement_constraint": {
           "description": "Placement constraints for broker nodes. Example: [[\"rack_id\", \"LIKE\", \"rack-foo-.*\"], [\"rack_id\", \"MAX_PER\", \"2\"]]",
           "type": "string",

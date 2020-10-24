@@ -309,7 +309,9 @@
     {{/service.health_check.enabled}}
 
     "RLIMIT_NOFILE_SOFT": "{{service.rlimits.rlimit_nofile.soft}}",
-    "RLIMIT_NOFILE_HARD": "{{service.rlimits.rlimit_nofile.hard}}"
+    "RLIMIT_NOFILE_HARD": "{{service.rlimits.rlimit_nofile.hard}}",
+    "CONTAINER_LOGGER_LOGROTATE_MAX_STDOUT_SIZE": "{{service.logrotate_options.stdout_max_size}}",
+    "CONTAINER_LOGGER_LOGROTATE_MAX_STDERR_SIZE": "{{service.logrotate_options.stderr_max_size}}"
   },
   "uris": [
     "{{resource.assets.uris.bootstrap-zip}}",
